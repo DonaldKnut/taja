@@ -1,0 +1,28 @@
+[build]
+  # Install deps deterministically, then force a standard NODE_ENV for the build
+  command = "npm ci && NODE_ENV=production npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NEXT_PUBLIC_API_URL = "https://tajaapp-backend-nzkj.onrender.com"
+  NEXTAUTH_URL = "https://tajaapp.shop"
+  FRONTEND_URL = "https://tajaapp.shop"
+  # Google OAuth redirect URI should point to FRONTEND, not backend
+  GOOGLE_REDIRECT_URI = "https://tajaapp.shop/api/auth/oauth/google/callback"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Next.js configuration for Netlify
+[functions]
+  node_bundler = "esbuild"
+
+# Headers for Next.js
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
