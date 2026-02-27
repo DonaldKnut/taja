@@ -48,6 +48,9 @@ export default function CheckoutPage() {
   const [shippingCost, setShippingCost] = useState(0);
   const [subtotal, setSubtotal] = useState(0);
   const [discount, setDiscount] = useState(0);
+  const [shopId, setShopId] = useState<string | null>(null);
+  const [deliverySlots, setDeliverySlots] = useState<Array<any>>([]);
+  const [selectedDeliverySlotId, setSelectedDeliverySlotId] = useState<string>("");
 
   useEffect(() => {
     const loadData = async () => {
@@ -112,6 +115,46 @@ export default function CheckoutPage() {
     setSubtotal(total);
   }, [cartItems]);
 
+  useEffect(() => {
+    const loadDeliverySlots = async () => {
+      try {
+        if (!cartItems.length) {
+          setShopId(null);
+          setDeliverySlots([]);
+          setSelectedDeliverySlotId("");
+          return;
+        }
+
+        // Determine shop from the first product in cart
+        const productRes: any = await fetch(`/api/products/${encodeURIComponent(cartItems[0]._id)}`).then((r) => r.json());
+        const resolvedShopId = productRes?.data?.shop?._id || null;
+        if (!resolvedShopId) {
+          setShopId(null);
+          setDeliverySlots([]);
+          setSelectedDeliverySlotId("");
+          return;
+        }
+
+        setShopId(resolvedShopId);
+        const slotsRes: any = await fetch(`/api/shops/${encodeURIComponent(resolvedShopId)}/delivery-slots`).then((r) => r.json());
+        if (slotsRes?.success && Array.isArray(slotsRes?.data)) {
+          setDeliverySlots(slotsRes.data);
+          // Reset selection if slot no longer exists
+          if (selectedDeliverySlotId && !slotsRes.data.find((s: any) => s.id === selectedDeliverySlotId)) {
+            setSelectedDeliverySlotId("");
+          }
+        } else {
+          setDeliverySlots([]);
+        }
+      } catch (e) {
+        console.error("Failed to load delivery slots", e);
+        setDeliverySlots([]);
+      }
+    };
+    loadDeliverySlots();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartItems.length]);
+
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
       toast.error("Please select a shipping address");
@@ -134,6 +177,7 @@ export default function CheckoutPage() {
         shippingAddress: selectedAddress,
         paymentMethod: selectedPaymentMethod || undefined,
         couponCode: couponCode || undefined,
+        deliverySlotId: selectedDeliverySlotId || undefined,
       };
 
       const response = await checkoutApi.createOrder(orderData);
@@ -312,6 +356,45 @@ export default function CheckoutPage() {
                   </div>
                 )}
               </div>
+
+              {/* Delivery Slot (optional) */}
+              {deliverySlots.length > 0 && (
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Truck className="h-5 w-5 text-emerald-600" />
+                    <h2 className="text-lg font-semibold text-gray-900">Delivery Slot</h2>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Pick a delivery time window (optional). Slots can fill up based on the seller’s daily capacity.
+                  </p>
+                  <select
+                    value={selectedDeliverySlotId}
+                    onChange={(e) => setSelectedDeliverySlotId(e.target.value)}
+                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900"
+                  >
+                    <option value="">No slot selected</option>
+                    {deliverySlots.map((s: any) => {
+                      const dateLabel = s?.date ? new Date(s.date).toLocaleDateString() : "";
+                      const timeLabel = s?.endTime ? `${s.startTime}–${s.endTime}` : s.startTime;
+                      const remaining = typeof s.remaining === "number" ? s.remaining : undefined;
+                      const disabled = remaining === 0;
+                      const suffix = typeof remaining === "number" ? ` • ${remaining} left` : "";
+                      return (
+                        <option key={s.id} value={s.id} disabled={disabled}>
+                          {dateLabel} • {timeLabel}
+                          {suffix}
+                          {disabled ? " (Full)" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {selectedDeliverySlotId && (
+                    <p className="mt-3 text-sm text-emerald-700 font-medium">
+                      Slot selected. Your order will be reserved for this time window (subject to capacity).
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Payment Method */}
               <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">

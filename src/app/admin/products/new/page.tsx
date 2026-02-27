@@ -16,9 +16,11 @@ import {
   Tag,
   CheckCircle,
   AlertTriangle,
+  Upload,
+  X,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { api } from "@/lib/api";
+import { api, uploadProductImage } from "@/lib/api";
 import toast from "react-hot-toast";
 
 interface Shop {
@@ -62,6 +64,8 @@ export default function AdminProductsNewPage() {
     stock: "1",
     status: "active",
   });
+  const [imageList, setImageList] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -89,9 +93,10 @@ export default function AdminProductsNewPage() {
       toast.error("Fill required fields: Shop, Title, Description, Category, Price");
       return;
     }
-    const images = form.imageUrls.trim() ? form.imageUrls.trim().split(/[\n\s]+/).filter(Boolean) : [];
+    const fromPaste = form.imageUrls.trim() ? form.imageUrls.trim().split(/[\n\s]+/).filter(Boolean) : [];
+    const images = [...imageList, ...fromPaste].filter(Boolean);
     if (images.length === 0) {
-      toast.error("Add at least one image URL");
+      toast.error("Add at least one image (upload or paste URLs)");
       return;
     }
     setLoading(true);
@@ -124,10 +129,34 @@ export default function AdminProductsNewPage() {
     }
   };
 
+  const fromPasteCount = form.imageUrls.trim() ? form.imageUrls.trim().split(/[\n\s]+/).filter(Boolean).length : 0;
+  const imageCount = imageList.length + fromPasteCount;
   const hasRequiredFields =
-    !!form.shopId && !!form.title.trim() && !!form.description.trim() && !!form.category && !!form.price.trim() && !!form.imageUrls.trim();
+    !!form.shopId && !!form.title.trim() && !!form.description.trim() && !!form.category && !!form.price.trim() && imageCount > 0;
 
-  const imageCount = form.imageUrls.trim() ? form.imageUrls.trim().split(/[\n\s]+/).filter(Boolean).length : 0;
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const toUpload = Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, 10 - imageList.length);
+    if (toUpload.length === 0) {
+      toast.error("Select image files only (e.g. JPG, PNG)");
+      return;
+    }
+    if (toUpload.length < files.length) toast.error("Only image files were added. Max 10 images.");
+    setUploadingImages(true);
+    try {
+      const urls = await Promise.all(toUpload.map((file) => uploadProductImage(file)));
+      setImageList((prev) => [...prev, ...urls].slice(0, 10));
+      toast.success(`${urls.length} image(s) uploaded`);
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImageList((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <div className="min-h-screen bg-motif-blanc selection:bg-taja-primary/30">
@@ -305,19 +334,71 @@ export default function AdminProductsNewPage() {
                 )}
               </div>
 
-              <div className="group space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                  Image URLs * (one per line)
-                </label>
-                <textarea
-                  rows={4}
-                  required
-                  value={form.imageUrls}
-                  onChange={(e) => setForm((f) => ({ ...f, imageUrls: e.target.value }))}
-                  className="w-full p-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-3xl text-sm font-mono text-taja-secondary placeholder:text-gray-300 resize-none leading-relaxed"
-                  placeholder={"https://example.com/image1.jpg\nhttps://example.com/image2.jpg"}
-                />
-                <p className="text-[9px] font-bold text-gray-400 ml-1 mt-1">Paste direct image links, one per line.</p>
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 block mb-2">
+                    Upload images *
+                  </label>
+                  <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-white/60 rounded-2xl cursor-pointer hover:border-taja-primary/50 hover:bg-white/20 transition-all bg-white/5 group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(e.target.files)}
+                      disabled={uploadingImages || imageList.length >= 10}
+                    />
+                    {uploadingImages ? (
+                      <div className="flex flex-col items-center gap-2 py-6">
+                        <Loader2 className="h-10 w-10 animate-spin text-taja-primary" />
+                        <span className="text-[10px] font-bold text-taja-primary uppercase tracking-widest">Uploading…</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 py-6">
+                        <div className="w-14 h-14 rounded-2xl bg-taja-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Upload className="h-6 w-6 text-taja-primary" />
+                        </div>
+                        <span className="text-[10px] font-black text-taja-secondary uppercase tracking-widest">Choose multiple images</span>
+                        <span className="text-[9px] font-bold text-gray-400">JPG, PNG, WebP · up to 10</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {imageList.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-3">Preview ({imageList.length} uploaded)</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {imageList.map((url, index) => (
+                        <div key={`${url}-${index}`} className="relative aspect-square rounded-2xl overflow-hidden border border-white/60 bg-slate-100 group/thumb">
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 p-1.5 bg-rose-500/90 text-white rounded-lg opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-rose-600"
+                            aria-label="Remove image"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="group space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                    Or paste image URLs (one per line)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={form.imageUrls}
+                    onChange={(e) => setForm((f) => ({ ...f, imageUrls: e.target.value }))}
+                    className="w-full p-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-3xl text-sm font-mono text-taja-secondary placeholder:text-gray-300 resize-none leading-relaxed"
+                    placeholder={"https://example.com/image1.jpg\nhttps://example.com/image2.jpg"}
+                  />
+                  <p className="text-[9px] font-bold text-gray-400 ml-1 mt-1">Paste direct image links, one per line. These are added to uploaded images.</p>
+                </div>
               </div>
             </motion.section>
           </div>

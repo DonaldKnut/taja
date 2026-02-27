@@ -119,10 +119,34 @@ export default function SellerLogisticsPage() {
   const [loading, setLoading] = useState(true);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
-  const [shop, setShop] = useState<{ _id: string; settings?: { defaultDeliveryFee?: number; pickupPoints?: Array<{ name: string; address: string; city: string; state: string; phone?: string }> } } | null>(null);
+  const [shop, setShop] = useState<{
+    _id: string;
+    settings?: {
+      defaultDeliveryFee?: number;
+      pickupPoints?: Array<{ name: string; address: string; city: string; state: string; phone?: string }>;
+      globalDeliveryEnabled?: boolean;
+      globalMinOrderAmount?: number;
+      deliveryFeeTiers?: Array<{ minWeightKg: number; maxWeightKg: number; priceNaira: number }>;
+      deliverySlots?: Array<{
+        id: string;
+        date: Date;
+        startTime: string;
+        endTime?: string;
+        maxOrders: number;
+        notes?: string;
+        active?: boolean;
+      }>;
+    };
+  } | null>(null);
   const [deliverySaving, setDeliverySaving] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [pickupPoints, setPickupPoints] = useState<Array<{ name: string; address: string; city: string; state: string; phone?: string }>>([]);
+  const [globalDeliveryEnabled, setGlobalDeliveryEnabled] = useState(true);
+  const [globalMinOrderAmount, setGlobalMinOrderAmount] = useState(0);
+  const [deliveryFeeTiers, setDeliveryFeeTiers] = useState<Array<{ minWeightKg: number; maxWeightKg: number; priceNaira: number }>>([]);
+  const [deliverySlots, setDeliverySlots] = useState<
+    Array<{ id: string; date: string; startTime: string; endTime: string; maxOrders: number; notes?: string; active: boolean }>
+  >([]);
 
   useEffect(() => {
     (async () => {
@@ -132,6 +156,26 @@ export default function SellerLogisticsPage() {
           setShop(res.data);
           setDeliveryFee(res.data.settings?.defaultDeliveryFee ?? 0);
           setPickupPoints(res.data.settings?.pickupPoints?.length ? [...res.data.settings.pickupPoints] : []);
+          setGlobalDeliveryEnabled(
+            typeof res.data.settings?.globalDeliveryEnabled === "boolean" ? res.data.settings.globalDeliveryEnabled : true
+          );
+          setGlobalMinOrderAmount(res.data.settings?.globalMinOrderAmount ?? 0);
+          setDeliveryFeeTiers(
+            Array.isArray(res.data.settings?.deliveryFeeTiers) ? [...res.data.settings.deliveryFeeTiers] : []
+          );
+          setDeliverySlots(
+            Array.isArray(res.data.settings?.deliverySlots)
+              ? res.data.settings.deliverySlots.map((slot: any) => ({
+                  id: slot.id,
+                  date: slot.date ? new Date(slot.date).toISOString().slice(0, 10) : "",
+                  startTime: slot.startTime || "",
+                  endTime: slot.endTime || "",
+                  maxOrders: slot.maxOrders ?? 0,
+                  notes: slot.notes || "",
+                  active: slot.active !== false,
+                }))
+              : []
+          );
         }
       } catch {
         // no shop
@@ -150,10 +194,49 @@ export default function SellerLogisticsPage() {
             ...shop.settings,
             defaultDeliveryFee: deliveryFee,
             pickupPoints: pickupPoints.filter((p) => p.name.trim() || p.address.trim()),
+            globalDeliveryEnabled,
+            globalMinOrderAmount,
+            deliveryFeeTiers: deliveryFeeTiers.filter(
+              (t) => t.maxWeightKg > 0 && t.priceNaira >= 0
+            ),
+            deliverySlots: deliverySlots
+              .filter((s) => s.date && s.startTime && s.maxOrders > 0)
+              .map((s) => ({
+                id: s.id,
+                date: new Date(s.date),
+                startTime: s.startTime,
+                endTime: s.endTime || undefined,
+                maxOrders: s.maxOrders,
+                notes: s.notes || undefined,
+                active: s.active,
+              })),
           },
         }),
       });
-      setShop((s) => s ? { ...s, settings: { ...s.settings, defaultDeliveryFee: deliveryFee, pickupPoints } } : null);
+      setShop((s) =>
+        s
+          ? {
+              ...s,
+              settings: {
+                ...s.settings,
+                defaultDeliveryFee: deliveryFee,
+                pickupPoints,
+                globalDeliveryEnabled,
+                globalMinOrderAmount,
+                deliveryFeeTiers,
+                deliverySlots: deliverySlots.map((slot) => ({
+                  id: slot.id,
+                  date: new Date(slot.date),
+                  startTime: slot.startTime,
+                  endTime: slot.endTime || undefined,
+                  maxOrders: slot.maxOrders,
+                  notes: slot.notes || undefined,
+                  active: slot.active,
+                })),
+              },
+            }
+          : null
+      );
     } catch (e: any) {
       console.error(e);
     } finally {
@@ -261,13 +344,55 @@ export default function SellerLogisticsPage() {
         </div>
       </motion.div>
 
-      {/* Delivery & fees (manage delivery fee and pickup points) */}
+      {/* Delivery & fees (manage delivery fee, pickup points, tiers & slots) */}
       {shop && (
         <motion.div variants={item} className="glass-panel rounded-2xl border border-white/60 p-6 space-y-4">
           <h3 className="text-sm font-bold text-taja-secondary flex items-center gap-2">
             <MapPin className="h-4 w-4 text-taja-primary" />
-            Delivery fee & pickup points
+            Delivery & capacity configuration
           </h3>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setGlobalDeliveryEnabled((v) => !v)}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition-all ${
+                  globalDeliveryEnabled ? "bg-emerald-500 border-emerald-500" : "bg-gray-200 border-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                    globalDeliveryEnabled ? "translate-x-5" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <div>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                  Global Delivery {globalDeliveryEnabled ? "Enabled" : "Disabled"}
+                </p>
+                <p className="text-[11px] text-gray-500">
+                  Controls whether this shop offers delivery (vs pickup-only).
+                </p>
+              </div>
+            </div>
+            <div className="w-full md:w-64">
+              <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">
+                Minimum order amount (₦)
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={100}
+                value={globalMinOrderAmount}
+                onChange={(e) => setGlobalMinOrderAmount(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                disabled={!globalDeliveryEnabled}
+                className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-taja-secondary disabled:bg-gray-100 disabled:text-gray-400"
+              />
+              <p className="mt-1 text-[10px] text-gray-400">
+                Orders below this amount cannot use delivery for this shop.
+              </p>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-2">Default delivery fee (₦)</label>
@@ -351,6 +476,194 @@ export default function SellerLogisticsPage() {
             >
               <Plus className="h-4 w-4" /> Add pickup point
             </button>
+          </div>
+          <div className="pt-4 border-t border-white/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-gray-500">Delivery fee tiers (by total order weight)</p>
+            </div>
+            {deliveryFeeTiers.map((tier, idx) => (
+              <div key={idx} className="grid grid-cols-12 gap-2 items-center mb-2">
+                <div className="col-span-4">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    Min weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={tier.minWeightKg}
+                    onChange={(e) => {
+                      const next = [...deliveryFeeTiers];
+                      next[idx] = { ...next[idx], minWeightKg: parseFloat(e.target.value) || 0 };
+                      setDeliveryFeeTiers(next);
+                    }}
+                    className="w-full h-9 px-3 rounded border border-gray-200 text-sm"
+                  />
+                </div>
+                <div className="col-span-4">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    Max weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={tier.maxWeightKg}
+                    onChange={(e) => {
+                      const next = [...deliveryFeeTiers];
+                      next[idx] = { ...next[idx], maxWeightKg: parseFloat(e.target.value) || 0 };
+                      setDeliveryFeeTiers(next);
+                    }}
+                    className="w-full h-9 px-3 rounded border border-gray-200 text-sm"
+                  />
+                </div>
+                <div className="col-span-3">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    Fee (₦)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={tier.priceNaira}
+                    onChange={(e) => {
+                      const next = [...deliveryFeeTiers];
+                      next[idx] = { ...next[idx], priceNaira: Math.max(0, parseInt(e.target.value, 10) || 0) };
+                      setDeliveryFeeTiers(next);
+                    }}
+                    className="w-full h-9 px-3 rounded border border-gray-200 text-sm"
+                  />
+                </div>
+                <div className="col-span-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryFeeTiers((tiers) => tiers.filter((_, i) => i !== idx))}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() =>
+                setDeliveryFeeTiers((tiers) => [...tiers, { minWeightKg: 0, maxWeightKg: 0, priceNaira: 0 }])
+              }
+              className="text-sm text-taja-primary font-medium flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" /> Add weight tier
+            </button>
+            <p className="text-[10px] text-gray-400">
+              These tiers are applied using the total order weight when products don&apos;t specify their own shipping cost.
+            </p>
+          </div>
+          <div className="pt-4 border-t border-white/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-gray-500">Delivery slots (daily capacity)</p>
+            </div>
+            {deliverySlots.map((slot, idx) => (
+              <div key={slot.id} className="flex flex-wrap items-center gap-2 mb-2 p-2 rounded-lg bg-white/60">
+                <input
+                  type="date"
+                  value={slot.date}
+                  onChange={(e) => {
+                    const next = [...deliverySlots];
+                    next[idx] = { ...next[idx], date: e.target.value };
+                    setDeliverySlots(next);
+                  }}
+                  className="h-9 px-2 rounded border border-gray-200 text-sm"
+                />
+                <input
+                  type="time"
+                  value={slot.startTime}
+                  onChange={(e) => {
+                    const next = [...deliverySlots];
+                    next[idx] = { ...next[idx], startTime: e.target.value };
+                    setDeliverySlots(next);
+                  }}
+                  className="h-9 px-2 rounded border border-gray-200 text-sm"
+                />
+                <input
+                  type="time"
+                  value={slot.endTime}
+                  onChange={(e) => {
+                    const next = [...deliverySlots];
+                    next[idx] = { ...next[idx], endTime: e.target.value };
+                    setDeliverySlots(next);
+                  }}
+                  className="h-9 px-2 rounded border border-gray-200 text-sm"
+                />
+                <input
+                  type="number"
+                  min={1}
+                  value={slot.maxOrders}
+                  onChange={(e) => {
+                    const next = [...deliverySlots];
+                    next[idx] = { ...next[idx], maxOrders: Math.max(1, parseInt(e.target.value, 10) || 1) };
+                    setDeliverySlots(next);
+                  }}
+                  placeholder="Max orders"
+                  className="w-24 h-9 px-2 rounded border border-gray-200 text-sm"
+                />
+                <input
+                  type="text"
+                  value={slot.notes || ""}
+                  onChange={(e) => {
+                    const next = [...deliverySlots];
+                    next[idx] = { ...next[idx], notes: e.target.value };
+                    setDeliverySlots(next);
+                  }}
+                  placeholder="Notes (optional)"
+                  className="flex-1 min-w-[120px] h-9 px-2 rounded border border-gray-200 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = [...deliverySlots];
+                    next[idx] = { ...next[idx], active: !slot.active };
+                    setDeliverySlots(next);
+                  }}
+                  className={`px-3 h-9 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                    slot.active
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                      : "bg-gray-50 text-gray-500 border-gray-200"
+                  }`}
+                >
+                  {slot.active ? "Active" : "Paused"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeliverySlots((slots) => slots.filter((s) => s.id !== slot.id))}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() =>
+                setDeliverySlots((slots) => [
+                  ...slots,
+                  {
+                    id: Math.random().toString(36).slice(2, 10),
+                    date: "",
+                    startTime: "",
+                    endTime: "",
+                    maxOrders: 1,
+                    notes: "",
+                    active: true,
+                  },
+                ])
+              }
+              className="text-sm text-taja-primary font-medium flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" /> Add delivery slot
+            </button>
+            <p className="text-[10px] text-gray-400">
+              Slots are used to plan how many orders you can comfortably handle per day and time window.
+            </p>
           </div>
         </motion.div>
       )}

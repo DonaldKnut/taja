@@ -71,28 +71,37 @@ export const setupSocketIO = (io: SocketIOServer) => {
           await connectDB();
           const chat = await Chat.findById(data.chatId);
 
-          if (chat && chat.participants.includes(socket.userId)) {
+          const isParticipant = chat.participants.some(
+            (p: any) => p.toString() === socket.userId
+          );
+          if (chat && isParticipant) {
             chat.messages.push({
               sender: socket.userId,
               content: data.content,
-              type: data.type || 'text',
+              type: (data.type || 'text') as 'text' | 'image' | 'product' | 'order',
               attachments: data.attachments || [],
               read: false,
+              readBy: [],
               createdAt: new Date(),
             });
+            chat.lastMessage = data.content;
             chat.lastMessageAt = new Date();
             await chat.save();
 
-            // Broadcast message to other participants
-            socket.to(`chat_${data.chatId}`).emit('new_message', {
+            const lastMsg = chat.messages[chat.messages.length - 1];
+            const payload = {
               chatId: data.chatId,
               message: {
+                _id: (lastMsg as any)._id?.toString(),
                 sender: socket.userId,
                 content: data.content,
                 type: data.type || 'text',
-                timestamp: new Date(),
+                attachments: data.attachments || [],
+                timestamp: (lastMsg as any).createdAt,
               },
-            });
+            };
+            socket.to(`chat_${data.chatId}`).emit('new_message', payload);
+            socket.emit('new_message', payload);
           }
         } catch (error) {
           socket.emit('error', { message: 'Failed to send message' });

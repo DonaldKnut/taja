@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -20,7 +20,13 @@ import {
   Zap,
   Sparkles,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  User,
+  DollarSign,
+  ShoppingBag,
+  ExternalLink,
+  MapPin,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -36,22 +42,29 @@ interface Shop {
   shopName: string;
   shopSlug: string;
   description?: string;
+  about?: string;
   logo?: string;
   banner?: string;
   categories?: string[];
   verification?: {
     isVerified: boolean;
+    status?: string;
   };
   stats?: {
     averageRating: number;
-    totalReviews: number;
+    totalReviews?: number;
+    reviewCount?: number;
     totalProducts: number;
+    totalOrders?: number;
+    totalRevenue?: number;
     followerCount?: number;
   };
   owner?: {
+    _id?: string;
     fullName: string;
     avatar?: string;
-    isVerified: boolean;
+    email?: string;
+    isVerified?: boolean;
     createdAt?: string;
   };
   settings?: {
@@ -60,13 +73,30 @@ interface Shop {
   };
   socialLinks?: {
     instagram?: string;
+    tiktok?: string;
     whatsapp?: string;
     twitter?: string;
     facebook?: string;
+    website?: string;
+    youtube?: string;
+    linkedin?: string;
   };
+  instagram?: string;
+  tiktok?: string;
+  whatsapp?: string;
+  twitter?: string;
+  facebook?: string;
+  website?: string;
+  youtube?: string;
+  linkedin?: string;
   products?: any[];
   createdAt?: string;
 }
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
+};
 
 export default function ShopPage() {
   const params = useParams();
@@ -97,10 +127,28 @@ export default function ShopPage() {
   // Format Instagram URL
   const getInstagramUrl = (instagram: string) => {
     if (!instagram) return null;
-    const username = instagram.replace(/^@/, "");
+    const username = instagram.replace(/^@/, "").split("/").pop()?.split("?")[0] || "";
     if (instagram.startsWith("http")) return instagram;
     return `https://instagram.com/${username}`;
   };
+
+  // Format TikTok URL
+  const getTikTokUrl = (tiktok: string) => {
+    if (!tiktok) return null;
+    const username = tiktok.replace(/^@/, "").split("/").pop()?.split("?")[0] || "";
+    if (tiktok.startsWith("http")) return tiktok;
+    return `https://tiktok.com/@${username}`;
+  };
+
+  // Tenure badge
+  const tenureBadge = useMemo(() => {
+    if (!shop) return { label: "Merchant", isNew: true };
+    const createdAt = shop.createdAt ? new Date(shop.createdAt).getTime() : 0;
+    const monthsActive = (Date.now() - createdAt) / (30 * 24 * 60 * 60 * 1000);
+    const orders = shop.stats?.totalOrders ?? 0;
+    const isNew = monthsActive < 3 || orders < 10;
+    return { label: isNew ? "New Seller" : "Trusted Seller", isNew };
+  }, [shop]);
 
   useEffect(() => {
     const fetchShop = async () => {
@@ -190,18 +238,20 @@ export default function ShopPage() {
     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
+  // ─── Loading State ───
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="absolute inset-0 motif-blanc opacity-40" />
         <div className="relative text-center space-y-4">
           <div className="h-12 w-12 border-4 border-taja-primary/20 border-t-taja-primary rounded-full animate-spin mx-auto" />
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Synchronizing Shop Hub...</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Loading shop…</p>
         </div>
       </div>
     );
   }
 
+  // ─── Error / Not Found ───
   if (error || !shop) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white p-6">
@@ -211,156 +261,211 @@ export default function ShopPage() {
             <Package className="h-10 w-10 text-taja-primary" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">Shop Offline</h2>
-            <p className="text-sm font-medium text-gray-500">{error || "The requested commerce portal is currently unavailable."}</p>
+            <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">Shop Not Found</h2>
+            <p className="text-sm font-medium text-gray-500">{error || "This shop doesn't seem to exist or may have been removed."}</p>
           </div>
           <Button onClick={() => router.push("/shops")} className="w-full rounded-full">
-            Return to Marketplace
+            Browse Other Shops
           </Button>
         </div>
       </div>
     );
   }
 
+  // ─── Social links helper ───
+  const socialLinks = [
+    { key: "instagram", label: "Instagram", url: shop.socialLinks?.instagram ? getInstagramUrl(shop.socialLinks.instagram) : null, icon: Instagram },
+    { key: "tiktok", label: "TikTok", url: shop.socialLinks?.tiktok ? getTikTokUrl(shop.socialLinks.tiktok) : null, icon: ExternalLink },
+    { key: "whatsapp", label: "WhatsApp", url: shop.socialLinks?.whatsapp ? getWhatsAppUrl(shop.socialLinks.whatsapp) : null, icon: Phone },
+    { key: "twitter", label: "Twitter / X", url: shop.socialLinks?.twitter?.startsWith("http") ? shop.socialLinks.twitter : (shop.socialLinks?.twitter ? `https://twitter.com/${shop.socialLinks.twitter.replace(/^@/, "")}` : null), icon: ExternalLink },
+    { key: "facebook", label: "Facebook", url: shop.socialLinks?.facebook || null, icon: ExternalLink },
+    { key: "website", label: "Website", url: shop.socialLinks?.website || null, icon: ExternalLink },
+    { key: "youtube", label: "YouTube", url: shop.socialLinks?.youtube || null, icon: ExternalLink },
+    { key: "linkedin", label: "LinkedIn", url: shop.socialLinks?.linkedin || null, icon: ExternalLink },
+  ].filter((x) => x.url);
+
+  const hasSocialLinks = socialLinks.length > 0;
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Background Decorative Glows */}
+      {/* Background Ambient Glows */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-taja-primary/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-emerald-100/10 blur-[100px] rounded-full" />
+        <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-gradient-to-bl from-taja-primary/[0.04] via-emerald-500/[0.03] to-transparent blur-[120px] rounded-full" />
+        <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-gradient-to-tr from-blue-500/[0.02] via-taja-primary/[0.02] to-transparent blur-[100px] rounded-full" />
         <div className="absolute inset-0 motif-blanc opacity-30" />
       </div>
 
       <div className="relative z-10">
-        {/* Cinematic Header Section */}
-        <section className="relative h-[400px] md:h-[500px] overflow-hidden">
-          {/* Banner Image with Parallax-like effect */}
+
+        {/* ═══════════════════════════════════════════════
+            HERO BANNER — Full-bleed cinematic header
+        ═══════════════════════════════════════════════ */}
+        <section className="relative h-[280px] sm:h-[340px] md:h-[400px]">
+          {/* Banner Image */}
           <div className="absolute inset-0">
             {shop.banner ? (
               <Image
                 src={shop.banner}
                 alt={shop.shopName}
                 fill
-                className="object-cover scale-105"
+                className="object-cover"
                 sizes="100vw"
                 priority
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-taja-secondary to-black" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-80" />
-            <div className="absolute inset-0 bg-black/10" />
+            {/* Dark cinematic overlay — keeps banner vivid, no white wash */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-black/10" />
           </div>
+        </section>
 
-          <Container size="lg" className="h-full flex flex-col justify-end pb-12">
+        {/* ═══════════════════════════════════════════════
+            SHOP IDENTITY — Clean section below banner
+        ═══════════════════════════════════════════════ */}
+        <section className="relative z-20 bg-white border-b border-gray-100">
+          <Container size="lg">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="glass-card p-8 md:p-10 rounded-[2.5rem] border-white/60 bg-white/60 backdrop-blur-2xl shadow-premium relative -mb-20 md:-mb-24 z-20 flex flex-col md:flex-row gap-8 items-start md:items-center"
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="py-8 md:py-10"
             >
-              {/* Profile Logo Card */}
-              <div className="relative group">
-                <div className="w-28 h-28 md:w-36 md:h-36 rounded-[2rem] border-4 border-white shadow-premium overflow-hidden bg-white ring-4 ring-taja-primary/5 group-hover:scale-105 transition-transform duration-500">
-                  {shop.logo ? (
-                    <Image
-                      src={shop.logo}
-                      alt={shop.shopName}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 112px, 144px"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-taja-light flex items-center justify-center text-taja-primary font-black text-4xl">
-                      {shop.shopName.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                {shop.verification?.isVerified && (
-                  <div className="absolute -bottom-2 -right-2 bg-taja-primary text-white p-2 rounded-xl shadow-emerald border-2 border-white">
-                    <CheckCircle className="h-4 w-4" />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 space-y-4">
-                <div className="space-y-1">
-                  <h1 className="text-3xl md:text-5xl font-black text-taja-secondary tracking-tighter leading-none">
-                    {shop.shopName}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    {shop.stats?.averageRating && shop.stats.averageRating > 0 && (
-                      <div className="flex items-center gap-1.5 text-taja-primary bg-taja-primary/5 px-3 py-1 rounded-full border border-taja-primary/10">
-                        <Star className="h-3 w-3 fill-taja-primary" />
-                        <span>{shop.stats.averageRating.toFixed(1)} Intel</span>
+              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center">
+                {/* Logo — pulls up into the banner */}
+                <div className="relative -mt-20 md:-mt-24 group shrink-0">
+                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-[1.8rem] border-4 border-white shadow-[0_8px_30px_-6px_rgba(0,0,0,0.15)] overflow-hidden bg-white group-hover:scale-[1.03] transition-transform duration-500">
+                    {shop.logo ? (
+                      <Image
+                        src={shop.logo}
+                        alt={shop.shopName}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 112px, 128px"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-taja-primary/10 to-emerald-500/10 flex items-center justify-center text-taja-primary font-black text-4xl italic">
+                        {shop.shopName.charAt(0)}
                       </div>
                     )}
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 border border-gray-100">
-                      <Clock className="h-3 w-3" />
-                      <span>Since {formatDate(shop.owner?.createdAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 border border-gray-100">
-                      <Heart className="h-3 w-3" />
-                      <span>{followers.toLocaleString()} Loyalists</span>
-                    </div>
                   </div>
+                  {shop.verification?.isVerified && (
+                    <div className="absolute -bottom-1 -right-1 bg-taja-primary text-white p-2 rounded-lg shadow-lg border-2 border-white">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                    </div>
+                  )}
                 </div>
 
-                <p className="text-sm font-medium text-gray-500 leading-relaxed max-w-2xl line-clamp-2">
-                  {shop.description || "Architecting a premium commerce experience in the heart of Nigeria."}
-                </p>
-              </div>
+                {/* Shop Info */}
+                <div className="flex-1 min-w-0 space-y-3">
+                  <div className="space-y-2">
+                    <h1 className="text-3xl md:text-4xl font-black text-taja-secondary tracking-tighter leading-none">
+                      {shop.shopName}
+                    </h1>
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                      <div className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border",
+                        tenureBadge.isNew ? "bg-amber-50 border-amber-200/60 text-amber-700" : "bg-emerald-50 border-emerald-200/60 text-emerald-700"
+                      )}>
+                        <Sparkles className="h-3 w-3" />
+                        <span>{tenureBadge.label}</span>
+                      </div>
+                      {shop.stats?.averageRating != null && shop.stats.averageRating > 0 && (
+                        <div className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200/60">
+                          <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                          <span>{Number(shop.stats.averageRating).toFixed(1)} rating</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100 text-gray-500">
+                        <Clock className="h-3 w-3" />
+                        <span>Since {formatDate(shop.owner?.createdAt || shop.createdAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100 text-gray-500">
+                        <Heart className="h-3 w-3" />
+                        <span>{followers.toLocaleString()} {followers === 1 ? "follower" : "followers"}</span>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="flex flex-wrap gap-3 pt-2 md:pt-0">
-                <Button
-                  onClick={toggleFollow}
-                  className={cn(
-                    "rounded-full px-8 h-12 shadow-premium transition-all font-black uppercase tracking-widest text-[10px]",
-                    isFollowing ? "bg-white text-taja-secondary border border-gray-100 placeholder:hover:bg-gray-50" : "bg-taja-primary text-white hover:shadow-emerald-hover"
-                  )}
-                >
-                  <Heart className={cn("h-4 w-4 mr-2", isFollowing ? "fill-current" : "")} />
-                  {isFollowing ? "Connected" : "Connect"}
-                </Button>
+                  <p className="text-sm font-medium text-gray-500 leading-relaxed max-w-2xl line-clamp-2">
+                    {shop.description || "Welcome to our shop — explore quality products and enjoy a trusted shopping experience."}
+                  </p>
+                </div>
 
-                {shop.socialLinks?.whatsapp && (
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3 shrink-0">
                   <Button
-                    variant="outline"
-                    className="rounded-full px-8 h-12 glass-card border-gray-100 text-taja-primary font-black uppercase tracking-widest text-[10px] hover:bg-green-50/50"
-                    onClick={() => {
-                      const url = getWhatsAppUrl(shop.socialLinks!.whatsapp!);
-                      if (url) window.open(url, "_blank");
-                    }}
+                    onClick={toggleFollow}
+                    className={cn(
+                      "rounded-full px-8 h-12 shadow-sm transition-all font-black uppercase tracking-widest text-[10px]",
+                      isFollowing
+                        ? "bg-white text-taja-secondary border border-gray-200 hover:bg-gray-50"
+                        : "bg-taja-primary text-white hover:bg-emerald-600 hover:shadow-lg"
+                    )}
                   >
-                    <Phone className="h-4 w-4 mr-2" />
-                    Secure Line
+                    <Heart className={cn("h-4 w-4 mr-2", isFollowing ? "fill-current text-red-500" : "")} />
+                    {isFollowing ? "Following" : "Follow"}
                   </Button>
-                )}
+
+                  {(shop.owner as any)?._id && (
+                    <Link href={`/chat?seller=${(shop.owner as any)._id}&shopId=${shop._id}`}>
+                      <Button
+                        variant="outline"
+                        className="rounded-full px-8 h-12 border-gray-200 text-taja-secondary font-black uppercase tracking-widest text-[10px] hover:bg-taja-primary/10 hover:border-taja-primary/30 hover:text-taja-primary"
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Message shop
+                      </Button>
+                    </Link>
+                  )}
+
+                  {shop.socialLinks?.whatsapp && (
+                    <Button
+                      variant="outline"
+                      className="rounded-full px-8 h-12 border-gray-200 text-taja-secondary font-black uppercase tracking-widest text-[10px] hover:bg-green-50"
+                      onClick={() => {
+                        const url = getWhatsAppUrl(shop.socialLinks!.whatsapp!);
+                        if (url) window.open(url, "_blank");
+                      }}
+                    >
+                      <Phone className="h-4 w-4 mr-2 text-green-600" />
+                      WhatsApp
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </Container>
         </section>
 
-        {/* Navigation & Content Area */}
-        <div className="pt-32 md:pt-40">
+        {/* ═══════════════════════════════════════════════
+            CONTENT AREA — Tabs + Products + Sidebar
+        ═══════════════════════════════════════════════ */}
+        <div className="pt-0">
           <Container size="lg">
-            {/* Action Tabs Bar - Premium Glass Sticky */}
-            <div className="sticky top-24 z-30 mb-12">
-              <div className="glass-card p-2 rounded-full border-white/60 bg-white/40 backdrop-blur-xl shadow-premium flex items-center justify-between">
-                <div className="flex gap-2">
+
+            {/* Tab Navigation Bar */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="sticky top-24 z-30 mb-12"
+            >
+              <div className="glass-card p-2 rounded-full border-white/60 bg-white/50 backdrop-blur-xl shadow-[0_4px_30px_-4px_rgba(0,0,0,0.06)] flex items-center justify-between">
+                <div className="flex gap-1.5">
                   {[
-                    { id: "products", label: "Inventory", icon: Package },
-                    { id: "about", label: "Brand Story", icon: Shield },
-                    { id: "reviews", label: "Intel", icon: MessageCircle },
+                    { id: "products", label: "Products", icon: Package },
+                    { id: "about", label: "About", icon: Shield },
+                    { id: "reviews", label: "Reviews", icon: MessageCircle },
                   ].map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
                       className={cn(
-                        "flex items-center gap-2 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                        "flex items-center gap-2 px-5 sm:px-7 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
                         activeTab === tab.id
-                          ? "bg-taja-primary text-white shadow-emerald"
-                          : "text-gray-400 hover:text-taja-secondary hover:bg-white/40"
+                          ? "bg-taja-secondary text-white shadow-lg"
+                          : "text-gray-400 hover:text-taja-secondary hover:bg-white/60"
                       )}
                     >
                       <tab.icon className="h-3.5 w-3.5" />
@@ -369,96 +474,175 @@ export default function ShopPage() {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-4 pr-4">
-                  <div className="h-8 w-px bg-gray-100 hidden sm:block" />
-                  <div className="flex border border-gray-100 rounded-full overflow-hidden p-1 bg-white/40">
+                <div className="flex items-center gap-3 pr-3">
+                  <div className="h-7 w-px bg-gray-200/60 hidden sm:block" />
+                  <div className="flex border border-gray-100 rounded-full overflow-hidden p-0.5 bg-white/60">
                     <button
                       onClick={() => setViewMode("grid")}
                       className={cn(
                         "p-2 rounded-full transition-all",
-                        viewMode === "grid" ? "bg-taja-secondary text-white shadow-sm" : "text-gray-400 hover:bg-white/50"
+                        viewMode === "grid" ? "bg-taja-secondary text-white" : "text-gray-400 hover:bg-gray-50"
                       )}
                     >
-                      <Grid className="h-4 w-4" />
+                      <Grid className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => setViewMode("list")}
                       className={cn(
                         "p-2 rounded-full transition-all",
-                        viewMode === "list" ? "bg-taja-secondary text-white shadow-sm" : "text-gray-400 hover:bg-white/50"
+                        viewMode === "list" ? "bg-taja-secondary text-white" : "text-gray-400 hover:bg-gray-50"
                       )}
                     >
-                      <List className="h-4 w-4" />
+                      <List className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             <div className="grid lg:grid-cols-4 gap-12">
-              {/* Sidebar: Intelligence Panel */}
-              <aside className="lg:col-span-1 space-y-10">
+
+              {/* ─── Sidebar ─── */}
+              <aside className="lg:col-span-1 space-y-8 order-2 lg:order-1">
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="space-y-10"
+                  transition={{ delay: 0.4 }}
+                  className="space-y-8"
                 >
-                  {/* Shop Protocol Details */}
-                  <div className="glass-card p-10 rounded-[2.5rem] border-white/80 bg-white/20 space-y-8">
+                  {/* Seller Card */}
+                  <div className="glass-card p-8 rounded-[2rem] border-white/80 bg-white/30 space-y-6">
                     <div className="space-y-1">
-                      <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Operational Metrics</h3>
-                      <div className="h-1 w-12 bg-taja-primary rounded-full"></div>
+                      <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em] flex items-center gap-2">
+                        <User className="h-3.5 w-3.5" /> Seller
+                      </h3>
+                      <div className="h-0.5 w-10 bg-taja-primary/30 rounded-full" />
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-taja-primary/10 to-emerald-500/10 overflow-hidden border-2 border-white shadow-sm flex-shrink-0">
+                        {shop.owner?.avatar ? (
+                          <Image src={shop.owner.avatar} alt={shop.owner.fullName} width={56} height={56} className="object-cover w-full h-full" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xl font-black text-taja-primary">
+                            {shop.owner?.fullName?.charAt(0) || shop.shopName?.charAt(0) || "?"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-taja-secondary truncate">{shop.owner?.fullName || "Shop Owner"}</p>
+                        <p className="text-[10px] font-bold text-gray-400 truncate">{shop.shopName}</p>
+                      </div>
                     </div>
 
-                    <div className="space-y-6">
+                    {(shop.owner as any)?._id && (
+                      <Link href={`/chat?seller=${(shop.owner as any)._id}&shopId=${shop._id}`} className="block">
+                        <Button className="w-full rounded-xl h-12 font-black uppercase tracking-widest text-[10px] gap-2">
+                          <MessageCircle className="h-4 w-4" />
+                          Message seller
+                        </Button>
+                      </Link>
+                    )}
+
+                    {/* Social Links */}
+                    {hasSocialLinks && (
+                      <div className="space-y-2 pt-2">
+                        {socialLinks.map(({ label, url, icon: Icon }) => (
+                          <a
+                            key={label}
+                            href={url!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between group p-3 rounded-xl border border-gray-100/80 bg-white/50 hover:bg-taja-primary hover:text-white hover:border-taja-primary/20 transition-all duration-300"
+                          >
+                            <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+                            <Icon className="h-3.5 w-3.5 opacity-50 group-hover:opacity-100" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                    {!hasSocialLinks && (
+                      <p className="text-[10px] font-bold text-gray-400 italic">No social links added yet.</p>
+                    )}
+                  </div>
+
+                  {/* Shop Stats */}
+                  <div className="glass-card p-8 rounded-[2rem] border-white/80 bg-white/30 space-y-6">
+                    <div className="space-y-1">
+                      <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Shop Details</h3>
+                      <div className="h-0.5 w-10 bg-taja-primary/30 rounded-full" />
+                    </div>
+
+                    <div className="space-y-5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 text-gray-500 font-bold text-xs">
-                          <Package className="h-4 w-4 text-taja-primary/60" />
-                          <span>SKUs</span>
+                          <Package className="h-4 w-4 text-taja-primary/50" />
+                          <span>Products</span>
                         </div>
                         <span className="font-black text-taja-secondary">{products.length}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 text-gray-500 font-bold text-xs">
-                          <CheckCircle className="h-4 w-4 text-taja-primary/60" />
-                          <span>Trust Score</span>
+                          <ShoppingBag className="h-4 w-4 text-taja-primary/50" />
+                          <span>Orders</span>
                         </div>
-                        <span className="font-black text-taja-secondary">A+ Elite</span>
+                        <span className="font-black text-taja-secondary">{shop.stats?.totalOrders ?? 0}</span>
+                      </div>
+                      {(shop.stats?.totalRevenue ?? 0) > 0 && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 text-gray-500 font-bold text-xs">
+                            <TrendingUp className="h-4 w-4 text-taja-primary/50" />
+                            <span>Revenue</span>
+                          </div>
+                          <span className="font-black text-taja-secondary">₦{(shop.stats!.totalRevenue! / 1000).toFixed(0)}k+</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-gray-500 font-bold text-xs">
+                          <CheckCircle className="h-4 w-4 text-taja-primary/50" />
+                          <span>Verification</span>
+                        </div>
+                        <span className={cn(
+                          "px-3 py-1 rounded-lg font-black text-[9px] uppercase tracking-widest border",
+                          shop.verification?.isVerified
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200/60"
+                            : "bg-gray-50 text-gray-500 border-gray-200/60"
+                        )}>
+                          {shop.verification?.isVerified ? "Verified" : "Pending"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 text-gray-500 font-bold text-xs">
-                          <Shield className="h-4 w-4 text-taja-primary/60" />
+                          <Shield className="h-4 w-4 text-taja-primary/50" />
                           <span>Status</span>
                         </div>
-                        <span className="px-3 py-1 rounded-lg bg-emerald-50 text-taja-primary font-black text-[9px] uppercase tracking-widest border border-taja-primary/10">Active</span>
+                        <span className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-black text-[9px] uppercase tracking-widest border border-emerald-200/60">Active</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Policies / Protocols */}
+                  {/* Policies */}
                   {shop.settings?.returnPolicy && (
-                    <div className="glass-card p-10 rounded-[2.5rem] border-white/80 bg-white/20 space-y-8">
+                    <div className="glass-card p-8 rounded-[2rem] border-white/80 bg-white/30 space-y-6">
                       <div className="space-y-1">
-                        <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Brand Protocols</h3>
-                        <div className="h-1 w-12 bg-taja-primary rounded-full"></div>
+                        <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Shop Policies</h3>
+                        <div className="h-0.5 w-10 bg-taja-primary/30 rounded-full" />
                       </div>
 
-                      <div className="space-y-6">
-                        <div className="space-y-3">
+                      <div className="space-y-5">
+                        <div className="space-y-2">
                           <div className="flex items-center gap-2 text-taja-secondary">
                             <Shield className="h-4 w-4" />
                             <span className="text-[10px] font-black uppercase tracking-widest">Return Policy</span>
                           </div>
-                          <p className="text-xs font-medium text-gray-500 leading-relaxed border-l-2 border-emerald-100 pl-4 py-1">
+                          <p className="text-xs font-medium text-gray-500 leading-relaxed border-l-2 border-emerald-200 pl-4 py-1">
                             {shop.settings.returnPolicy}
                           </p>
                         </div>
 
                         {shop.settings.responseTime && (
-                          <div className="space-y-3">
+                          <div className="space-y-2">
                             <div className="flex items-center gap-2 text-taja-secondary">
-                              <Star className="h-4 w-4" />
+                              <Clock className="h-4 w-4" />
                               <span className="text-[10px] font-black uppercase tracking-widest">Response Time</span>
                             </div>
                             <p className="text-xs font-black text-taja-primary uppercase tracking-widest bg-taja-primary/5 px-4 py-2 rounded-xl border border-taja-primary/10">
@@ -469,57 +653,14 @@ export default function ShopPage() {
                       </div>
                     </div>
                   )}
-
-                  {/* Social Integration */}
-                  {(shop.socialLinks?.instagram || shop.socialLinks?.whatsapp) && (
-                    <div className="glass-card p-10 rounded-[2.5rem] border-white/80 bg-white/20 space-y-8">
-                      <div className="space-y-1">
-                        <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Neural Links</h3>
-                        <div className="h-1 w-12 bg-taja-primary rounded-full"></div>
-                      </div>
-
-                      <div className="flex flex-col gap-3">
-                        {shop.socialLinks?.instagram && (
-                          <a
-                            href={getInstagramUrl(shop.socialLinks.instagram!)!}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between group p-4 rounded-2xl border border-gray-100 bg-white/40 hover:bg-taja-primary hover:text-white transition-all duration-500"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 group-hover:bg-white/20 group-hover:text-white transition-colors">
-                                <Instagram className="h-4 w-4" />
-                              </div>
-                              <span className="text-[10px] font-black uppercase tracking-widest">Instagram</span>
-                            </div>
-                            <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                          </a>
-                        )}
-                        {shop.socialLinks?.whatsapp && (
-                          <a
-                            href={getWhatsAppUrl(shop.socialLinks.whatsapp!)!}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between group p-4 rounded-2xl border border-gray-100 bg-white/40 hover:bg-green-500 hover:text-white transition-all duration-500"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-xl bg-green-50 flex items-center justify-center text-green-500 group-hover:bg-white/20 group-hover:text-white transition-colors">
-                                <Phone className="h-4 w-4" />
-                              </div>
-                              <span className="text-[10px] font-black uppercase tracking-widest">WhatsApp</span>
-                            </div>
-                            <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </motion.div>
               </aside>
 
-              {/* Main Display: Intelligence Feed */}
-              <main className="lg:col-span-3 pb-24">
+              {/* ─── Main Content ─── */}
+              <main className="lg:col-span-3 pb-24 order-1 lg:order-2">
                 <AnimatePresence mode="wait">
+
+                  {/* Products Tab */}
                   {activeTab === "products" && (
                     <motion.div
                       key="products"
@@ -527,23 +668,23 @@ export default function ShopPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.5 }}
-                      className="space-y-12"
+                      className="space-y-10"
                     >
-                      <div className="flex items-end justify-between border-b border-gray-100 pb-8">
+                      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-100 pb-8">
                         <div className="space-y-1">
-                          <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">Current Inventory</h2>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Architecture: Total {products.length} Units</p>
+                          <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">Products</h2>
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{products.length} {products.length === 1 ? "item" : "items"} available</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort Protocol:</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:inline">Sort by:</span>
                           <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
-                            className="bg-transparent text-[10px] font-black uppercase tracking-[0.2em] text-taja-primary focus:outline-none cursor-pointer"
+                            className="bg-white/60 backdrop-blur-sm border border-gray-100 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-taja-secondary focus:outline-none focus:ring-2 focus:ring-taja-primary/20 cursor-pointer"
                           >
-                            <option value="recent">Recent Sync</option>
-                            <option value="price-low">Value Ascending</option>
-                            <option value="price-high">Value Descending</option>
+                            <option value="recent">Newest first</option>
+                            <option value="price-low">Price: low to high</option>
+                            <option value="price-high">Price: high to low</option>
                           </select>
                         </div>
                       </div>
@@ -561,26 +702,27 @@ export default function ShopPage() {
                               key={product._id}
                               initial={{ opacity: 0, y: 30 }}
                               animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: idx * 0.05 }}
+                              transition={{ delay: idx * 0.04, duration: 0.5 }}
                             >
                               <ProductCard product={product} />
                             </motion.div>
                           ))}
                         </div>
                       ) : (
-                        <div className="glass-card p-32 rounded-[3rem] border-white/80 bg-white/20 text-center space-y-8">
-                          <div className="h-24 w-24 rounded-full bg-gray-50 flex items-center justify-center mx-auto opacity-50">
-                            <Package className="h-10 w-10 text-gray-300" />
+                        <div className="glass-card p-20 sm:p-28 rounded-[2.5rem] border-white/80 bg-white/30 text-center space-y-6">
+                          <div className="h-20 w-20 rounded-[1.5rem] bg-gray-50 flex items-center justify-center mx-auto">
+                            <Package className="h-9 w-9 text-gray-300" />
                           </div>
                           <div className="space-y-2">
-                            <h3 className="text-2xl font-black text-taja-secondary tracking-tighter">Inventory Depleted</h3>
-                            <p className="text-sm font-medium text-gray-400">The intelligence hub has no current items to display.</p>
+                            <h3 className="text-2xl font-black text-taja-secondary tracking-tighter">No Products Yet</h3>
+                            <p className="text-sm font-medium text-gray-400 max-w-sm mx-auto">This shop hasn't added any products yet. Check back soon!</p>
                           </div>
                         </div>
                       )}
                     </motion.div>
                   )}
 
+                  {/* About Tab */}
                   {activeTab === "about" && (
                     <motion.div
                       key="about"
@@ -588,43 +730,58 @@ export default function ShopPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.5 }}
-                      className="space-y-12"
+                      className="space-y-10"
                     >
                       <div className="space-y-1 border-b border-gray-100 pb-8">
-                        <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">Brand Story</h2>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Architecture: Founders Intent</p>
+                        <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">About This Shop</h2>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">The story behind {shop.shopName}</p>
                       </div>
 
-                      <div className="glass-card p-12 md:p-16 rounded-[3rem] border-white/80 bg-white/20 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-taja-primary/5 blur-3xl -z-10 group-hover:scale-110 transition-transform duration-1000" />
+                      <div className="glass-card p-10 md:p-14 rounded-[2.5rem] border-white/80 bg-white/30 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-taja-primary/[0.03] blur-[80px] -z-10 group-hover:scale-110 transition-transform duration-1000" />
 
                         <div className="relative z-10 space-y-10">
-                          <div className="flex items-center gap-6">
-                            <div className="h-1 w-20 bg-taja-primary rounded-full"></div>
-                            <span className="text-[10px] font-black text-taja-primary uppercase tracking-[0.4em]">The Vision</span>
+                          <div className="flex items-center gap-5">
+                            <div className="h-0.5 w-16 bg-taja-primary/30 rounded-full" />
+                            <span className="text-[10px] font-black text-taja-primary uppercase tracking-[0.4em]">Our Story</span>
                           </div>
 
-                          <div className="space-y-12 max-w-3xl">
-                            {shop.description ? (
-                              <p className="text-2xl font-black text-taja-secondary tracking-tight leading-relaxed italic border-l-4 border-taja-primary/20 pl-10">
-                                "{shop.description}"
-                              </p>
+                          <div className="space-y-10 max-w-3xl">
+                            {(shop.about || shop.description) ? (
+                              <>
+                                {shop.about && (
+                                  <div className="prose prose-lg max-w-none">
+                                    <p className="text-base font-medium text-gray-600 leading-[1.8] whitespace-pre-line border-l-[3px] border-taja-primary/20 pl-8">
+                                      {shop.about}
+                                    </p>
+                                  </div>
+                                )}
+                                {shop.description && (
+                                  <p className="text-xl md:text-2xl font-black text-taja-secondary tracking-tight leading-relaxed italic border-l-[3px] border-taja-primary/20 pl-8">
+                                    "{shop.description}"
+                                  </p>
+                                )}
+                              </>
                             ) : (
-                              <p className="text-xl font-medium text-gray-500 leading-relaxed italic border-l-4 border-taja-primary/20 pl-10">
-                                This elite brand is currently crafting its narrative. Stay synchronized for incoming data.
+                              <p className="text-lg font-medium text-gray-400 leading-relaxed italic border-l-[3px] border-gray-200 pl-8">
+                                This shop hasn't shared their story yet. Browse their products to discover what makes them special.
                               </p>
                             )}
 
-                            <div className="grid md:grid-cols-2 gap-8">
-                              <div className="p-8 rounded-3xl bg-white/40 border border-white/60 space-y-4">
-                                <Shield className="h-8 w-8 text-taja-primary" />
-                                <h4 className="text-lg font-black text-taja-secondary">Security Protocol</h4>
-                                <p className="text-sm font-medium text-gray-500">Every transaction within this shop is governed by Taja's elite escrow infrastructure.</p>
+                            <div className="grid md:grid-cols-2 gap-6">
+                              <div className="p-7 rounded-2xl bg-white/50 border border-white/70 space-y-3 hover:shadow-sm transition-shadow">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                                  <Shield className="h-5 w-5 text-emerald-600" />
+                                </div>
+                                <h4 className="text-sm font-black text-taja-secondary">Secure Transactions</h4>
+                                <p className="text-xs font-medium text-gray-500 leading-relaxed">Every purchase is protected by Taja's escrow system — your money is safe until you confirm delivery.</p>
                               </div>
-                              <div className="p-8 rounded-3xl bg-white/40 border border-white/60 space-y-4">
-                                <Zap className="h-8 w-8 text-taja-primary" />
-                                <h4 className="text-lg font-black text-taja-secondary">Rapid Dispatch</h4>
-                                <p className="text-sm font-medium text-gray-500">Logistics are unified across all major Nigerian hubs for world-class delivery speeds.</p>
+                              <div className="p-7 rounded-2xl bg-white/50 border border-white/70 space-y-3 hover:shadow-sm transition-shadow">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                                  <Zap className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <h4 className="text-sm font-black text-taja-secondary">Fast Delivery</h4>
+                                <p className="text-xs font-medium text-gray-500 leading-relaxed">Reliable shipping across major cities in Nigeria with real-time tracking on every order.</p>
                               </div>
                             </div>
                           </div>
@@ -633,6 +790,7 @@ export default function ShopPage() {
                     </motion.div>
                   )}
 
+                  {/* Reviews Tab */}
                   {activeTab === "reviews" && (
                     <motion.div
                       key="reviews"
@@ -640,28 +798,28 @@ export default function ShopPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.5 }}
-                      className="space-y-12"
+                      className="space-y-10"
                     >
                       <div className="space-y-1 border-b border-gray-100 pb-8">
-                        <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">Verified Feedback</h2>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Intelligence: Global Network Intel</p>
+                        <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">Customer Reviews</h2>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">What buyers are saying</p>
                       </div>
 
-                      <div className="glass-card p-32 rounded-[3rem] border-white/80 bg-white/20 text-center space-y-10 relative overflow-hidden">
-                        <div className="absolute inset-0 motif-blanc opacity-20" />
+                      <div className="glass-card p-16 sm:p-24 rounded-[2.5rem] border-white/80 bg-white/30 text-center space-y-8 relative overflow-hidden">
+                        <div className="absolute inset-0 motif-blanc opacity-10" />
                         <div className="relative z-10 space-y-8">
-                          <div className="h-24 w-24 rounded-[2rem] bg-taja-light/30 flex items-center justify-center mx-auto ring-4 ring-taja-primary/5">
-                            <Star className="h-10 w-10 text-taja-primary" />
+                          <div className="h-20 w-20 rounded-[1.5rem] bg-amber-50 flex items-center justify-center mx-auto ring-4 ring-amber-100/50">
+                            <Star className="h-9 w-9 text-amber-400" />
                           </div>
-                          <div className="space-y-4 max-w-md mx-auto">
-                            <h3 className="text-3xl font-black text-taja-secondary tracking-tighter leading-none">Intelligence Gathering in Progress</h3>
-                            <p className="text-sm font-medium text-gray-400 leading-relaxed">Wait for more verified transactions to populate this field. Current trust rating is based on owner credentials.</p>
+                          <div className="space-y-3 max-w-md mx-auto">
+                            <h3 className="text-2xl font-black text-taja-secondary tracking-tighter">No Reviews Yet</h3>
+                            <p className="text-sm font-medium text-gray-400 leading-relaxed">Reviews will appear here once customers start sharing their experience. Be the first to buy and leave a review!</p>
                           </div>
                           <Button
-                            className="rounded-full px-10 h-14 font-black uppercase tracking-widest text-[10px] shadow-premium"
+                            className="rounded-full px-10 h-13 font-black uppercase tracking-widest text-[10px] shadow-lg"
                             onClick={() => setActiveTab("products")}
                           >
-                            Explore Inventory First
+                            Browse Products
                           </Button>
                         </div>
                       </div>

@@ -14,6 +14,9 @@ import {
   Type,
   FileText,
   Upload,
+  Instagram,
+  MessageCircle,
+  Link2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api, uploadShopImage } from "@/lib/api";
@@ -37,9 +40,18 @@ export default function AdminShopsNewPage() {
     shopName: "",
     shopSlug: "",
     description: "",
+    about: "",
     tagline: "",
     coverImage: "",
     logo: "",
+    instagram: "",
+    tiktok: "",
+    whatsapp: "",
+    twitter: "",
+    facebook: "",
+    website: "",
+    youtube: "",
+    linkedin: "",
   });
 
   const handleImageFile = async (file: File, type: "logo" | "banner") => {
@@ -94,11 +106,22 @@ export default function AdminShopsNewPage() {
           shopName: form.shopName.trim(),
           shopSlug: slug,
           description: form.description.trim() || undefined,
+          about: form.about.trim() || undefined,
           tagline: form.tagline.trim() || undefined,
           coverImage: form.coverImage.trim() || undefined,
           banner: form.coverImage.trim() || undefined,
           logo: form.logo.trim() || undefined,
           avatar: form.logo.trim() || undefined,
+          socialLinks: {
+            instagram: form.instagram.trim() || undefined,
+            tiktok: form.tiktok.trim() || undefined,
+            whatsapp: form.whatsapp.trim() || undefined,
+            twitter: form.twitter.trim() || undefined,
+            facebook: form.facebook.trim() || undefined,
+            website: form.website.trim() || undefined,
+            youtube: form.youtube.trim() || undefined,
+            linkedin: form.linkedin.trim() || undefined,
+          },
         }),
       });
       if (res?.success) {
@@ -214,6 +237,19 @@ export default function AdminShopsNewPage() {
 
                 <div className="group space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                    About (longer story for showroom)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={form.about}
+                    onChange={(e) => setForm((f) => ({ ...f, about: e.target.value }))}
+                    className="w-full p-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-3xl text-sm font-medium text-taja-secondary placeholder:text-gray-300 resize-none leading-relaxed"
+                    placeholder="Full brand story, merchant bio, what they sell, why buyers should trust them…"
+                  />
+                </div>
+
+                <div className="group space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
                     Tagline
                   </label>
                   <input
@@ -224,6 +260,40 @@ export default function AdminShopsNewPage() {
                     placeholder="One-line motto or tagline"
                   />
                 </div>
+              </div>
+            </motion.section>
+
+            {/* Social & contact – for full showroom */}
+            <motion.section variants={item} className="glass-panel p-10 border-white/60 rounded-[40px] relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-violet-500/5 blur-[80px] rounded-full -z-10" />
+              <div className="space-y-1 mb-10">
+                <h3 className="text-[10px] font-black text-violet-600 uppercase tracking-[0.3em] flex items-center gap-2">
+                  <Link2 className="h-3 w-3" /> Social & contact
+                </h3>
+                <p className="text-3xl font-black text-taja-secondary tracking-tighter italic">Showroom links</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {[
+                  { key: "instagram", label: "Instagram", placeholder: "@username or full URL" },
+                  { key: "tiktok", label: "TikTok", placeholder: "@username or full URL" },
+                  { key: "whatsapp", label: "WhatsApp", placeholder: "Phone e.g. 2348012345678" },
+                  { key: "twitter", label: "Twitter / X", placeholder: "@handle or URL" },
+                  { key: "facebook", label: "Facebook", placeholder: "Page URL" },
+                  { key: "website", label: "Website", placeholder: "https://..." },
+                  { key: "youtube", label: "YouTube", placeholder: "Channel or video URL" },
+                  { key: "linkedin", label: "LinkedIn", placeholder: "Profile or company URL" },
+                ].map(({ key, label, placeholder }) => (
+                  <div key={key} className="group space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{label}</label>
+                    <input
+                      type="text"
+                      value={form[key as keyof typeof form] as string}
+                      onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                      className="w-full h-12 px-4 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 rounded-xl text-sm font-medium text-taja-secondary placeholder:text-gray-300"
+                      placeholder={placeholder}
+                    />
+                  </div>
+                ))}
               </div>
             </motion.section>
 

@@ -397,7 +397,7 @@ export const cartApi = {
 
 // Checkout API helpers
 export const checkoutApi = {
-  createOrder: (data: any) => api("/api/checkout", { method: "POST", body: JSON.stringify(data) }),
+  createOrder: (data: any) => api("/api/orders", { method: "POST", body: JSON.stringify(data) }),
   getOrder: (orderId: string) => api(`/api/orders/${orderId}`),
   getOrders: (params?: { page?: number; limit?: number; status?: string; role?: "buyer" | "seller" }) => {
     const query = new URLSearchParams();

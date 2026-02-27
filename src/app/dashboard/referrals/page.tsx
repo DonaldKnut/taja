@@ -44,6 +44,7 @@ export default function ReferralsPage() {
   const [referredList, setReferredList] = useState<ReferredUser[]>([]);
   const [applyCode, setApplyCode] = useState("");
   const [applying, setApplying] = useState(false);
+  const [referralDisabled, setReferralDisabled] = useState(false);
 
   const referralLink = useMemo(() => {
     const code = data?.referralCode;
@@ -54,15 +55,31 @@ export default function ReferralsPage() {
 
   const load = async () => {
     setLoading(true);
+    setReferralDisabled(false);
     try {
       const [res, listRes] = await Promise.all([
         api("/api/referrals/me") as Promise<{ success?: boolean; data?: ReferralMe }>,
-        api("/api/referrals/referred-users").catch(() => ({ success: false, data: [] })),
+        api("/api/referrals/referred-users").catch((err: any) => {
+          if (err?.data?.code === "REFERRALS_DISABLED" || err?.message?.toLowerCase?.().includes("disabled")) {
+            setReferralDisabled(true);
+          }
+          return { success: false, data: [] };
+        }),
       ]);
-      if (res?.success) setData(res.data ?? null);
+      if (res?.success) {
+        setData(res.data ?? null);
+      } else {
+        setData(null);
+      }
       if ((listRes as any)?.success && Array.isArray((listRes as any).data)) setReferredList((listRes as any).data);
     } catch (e: any) {
-      toast.error(e?.message || "Failed to load referrals");
+      const isDisabled = e?.data?.code === "REFERRALS_DISABLED" || e?.message?.toLowerCase?.().includes("disabled");
+      if (isDisabled) {
+        setReferralDisabled(true);
+        setData(null);
+      } else {
+        toast.error(e?.message || "Failed to load referrals");
+      }
     } finally {
       setLoading(false);
     }
@@ -107,6 +124,14 @@ export default function ReferralsPage() {
   return (
     <ProtectedRoute>
       <div className="space-y-10">
+        {referralDisabled && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 text-amber-800">
+            <p className="font-bold">Referral program is currently disabled</p>
+            <p className="text-sm mt-1 text-amber-700">
+              The platform has temporarily disabled the referral program. You can still see your existing referral link and stats once it is enabled again.
+            </p>
+          </div>
+        )}
         {/* Cinematic Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">

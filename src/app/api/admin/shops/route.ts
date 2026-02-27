@@ -50,11 +50,15 @@ export async function POST(request: NextRequest) {
         shopName,
         shopSlug,
         description,
+        about,
         tagline,
         logo,
         banner,
         avatar,
         coverImage,
+        address,
+        socialLinks,
+        settings,
       } = body;
 
       if (!shopName || !shopSlug) {
@@ -82,22 +86,49 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const cleanSocial = socialLinks && typeof socialLinks === 'object' ? {
+        instagram: socialLinks.instagram?.trim() || undefined,
+        tiktok: socialLinks.tiktok?.trim() || undefined,
+        whatsapp: socialLinks.whatsapp?.trim() || undefined,
+        twitter: socialLinks.twitter?.trim() || undefined,
+        facebook: socialLinks.facebook?.trim() || undefined,
+        website: socialLinks.website?.trim() || undefined,
+        youtube: socialLinks.youtube?.trim() || undefined,
+        linkedin: socialLinks.linkedin?.trim() || undefined,
+      } : undefined;
+
       const shop = await Shop.create({
         owner: user.userId,
         shopName: shopName.trim(),
         shopSlug: slug,
         description: description?.trim() || undefined,
+        about: about?.trim() || undefined,
         tagline: tagline?.trim() || undefined,
         logo: logo?.trim() || undefined,
         banner: banner?.trim() || undefined,
         avatar: (avatar?.trim() || logo?.trim()) || undefined,
         coverImage: (coverImage?.trim() || banner?.trim()) || undefined,
-        address: {
-          addressLine1: 'Platform',
-          city: 'Lagos',
-          state: 'Lagos',
-          country: 'Nigeria',
-        },
+        address: address && typeof address === 'object' && address.addressLine1
+          ? {
+              addressLine1: address.addressLine1.trim(),
+              addressLine2: address.addressLine2?.trim(),
+              city: (address.city || 'Lagos').trim(),
+              state: (address.state || 'Lagos').trim(),
+              postalCode: address.postalCode?.trim(),
+              country: (address.country || 'Nigeria').trim(),
+            }
+          : {
+              addressLine1: 'Platform',
+              city: 'Lagos',
+              state: 'Lagos',
+              country: 'Nigeria',
+            },
+        socialLinks: cleanSocial,
+        settings: settings && typeof settings === 'object' ? {
+          responseTime: settings.responseTime?.trim(),
+          returnPolicy: settings.returnPolicy?.trim(),
+          defaultDeliveryFee: settings.defaultDeliveryFee != null ? Number(settings.defaultDeliveryFee) : undefined,
+        } : undefined,
         verification: {
           status: 'verified',
           verifiedAt: new Date(),

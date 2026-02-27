@@ -54,6 +54,15 @@ export interface IOrder extends Document {
     provider?: string;
     trackingNumber?: string;
     estimatedDelivery?: Date;
+    /**
+     * Optional seller-defined delivery slot selection.
+     * Used for capacity planning; validated at order creation when provided.
+     */
+    slotId?: string;
+    slotDate?: Date;
+    slotStartTime?: string;
+    slotEndTime?: string;
+    slotMaxOrders?: number;
     deliveredAt?: Date;
     confirmedAt?: Date; // buyer confirmation (escrow release gate)
   };
@@ -169,6 +178,11 @@ const OrderSchema = new Schema<IOrder>(
       provider: String,
       trackingNumber: String,
       estimatedDelivery: Date,
+      slotId: String,
+      slotDate: Date,
+      slotStartTime: String,
+      slotEndTime: String,
+      slotMaxOrders: Number,
       deliveredAt: Date,
       confirmedAt: Date,
     },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { connectDB, User } from '@/modules/db';
+import PlatformSettings from '@/models/PlatformSettings';
 import { generateToken, generateRefreshToken } from '@/lib/auth';
 import { sendWelcomeEmail } from '@/modules/email';
 
@@ -152,8 +153,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Apply referral if present (only if not already set)
-    if (referralCodeFromState && !user.referredBy) {
+    // Apply referral if present (only when referral program is enabled and not already set)
+    const refDoc = await PlatformSettings.findOne().select('referral').lean();
+    const refEnabled = (refDoc as any)?.referral?.enabled !== false;
+    if (refEnabled && referralCodeFromState && !user.referredBy) {
       const referrer = await User.findOne({ referralCode: referralCodeFromState }).select('_id').lean();
       if (referrer?._id && referrer._id.toString() !== user._id.toString()) {
         (user as any).referredBy = referrer._id;

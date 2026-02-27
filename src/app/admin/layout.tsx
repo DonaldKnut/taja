@@ -27,6 +27,8 @@ import {
   Plus,
   Sparkles,
   Store,
+  Mail,
+  Tag,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -56,7 +58,14 @@ const adminNavGroups = [
     items: [
       { name: "Global Orders", href: "/admin/orders", icon: ShoppingCart },
       { name: "Shops", href: "/admin/shops", icon: Store },
+      { name: "Categories", href: "/admin/categories", icon: Tag },
       { name: "Product Catalog", href: "/admin/products", icon: Package },
+    ],
+  },
+  {
+    label: "Communications",
+    items: [
+      { name: "Broadcast message", href: "/admin/broadcast", icon: Mail },
     ],
   },
   {

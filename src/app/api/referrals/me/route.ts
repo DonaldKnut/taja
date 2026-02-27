@@ -3,15 +3,35 @@ import { requireAuth } from "@/lib/middleware";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import WalletTransaction from "@/models/WalletTransaction";
+import PlatformSettings from "@/models/PlatformSettings";
 import mongoose from "mongoose";
 
 export const dynamic = "force-dynamic";
+
+async function isReferralEnabled() {
+  const envDefault = process.env.REFERRAL_ENABLED === "false" ? false : true;
+  const doc = await PlatformSettings.findOne().select("referral").lean();
+  const referral = (doc as any)?.referral || {};
+  if (typeof referral.enabled === "boolean") return referral.enabled;
+  return envDefault;
+}
 
 // GET /api/referrals/me - Get referral code + stats
 export async function GET(request: NextRequest) {
   return requireAuth(async (req, jwtUser) => {
     try {
       await connectDB();
+
+      if (!(await isReferralEnabled())) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "REFERRALS_DISABLED",
+            message: "Referral program is currently disabled.",
+          },
+          { status: 403 }
+        );
+      }
 
       let userDoc: any = await User.findById(jwtUser.userId).select("referralCode");
       if (userDoc && !userDoc.referralCode) {

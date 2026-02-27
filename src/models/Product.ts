@@ -20,6 +20,29 @@ export interface IProduct extends Document {
     duration?: number;
     type: 'video';
   }>;
+  /**
+   * Optional structured variants (e.g. size/color combinations).
+   * When present, price/stock can be overridden per-variant instead of using the base product values alone.
+   */
+  variants?: Array<{
+    name: string;
+    sku?: string;
+    /**
+     * Variant-specific price (falls back to product.price when omitted).
+     */
+    price?: number;
+    compareAtPrice?: number;
+    /**
+     * Variant-specific stock quantity (falls back to inventory.quantity when omitted).
+     */
+    stock?: number;
+    image?: string;
+    /**
+     * Arbitrary option key/values like { size: "M", color: "Red" }.
+     */
+    options?: Record<string, string>;
+    active?: boolean;
+  }>;
   inventory: {
     quantity: number;
     sku?: string;
@@ -134,6 +157,22 @@ const ProductSchema = new Schema<IProduct>(
       trackQuantity: { type: Boolean, default: true },
       moq: { type: Number, default: 1, min: [1, 'MOQ must be at least 1'] },
     },
+    variants: [
+      {
+        name: { type: String, required: true },
+        sku: String,
+        price: { type: Number, min: 0 },
+        compareAtPrice: { type: Number, min: 0 },
+        stock: { type: Number, min: 0 },
+        image: String,
+        options: {
+          type: Map,
+          of: String,
+          default: {},
+        },
+        active: { type: Boolean, default: true },
+      },
+    ],
     shipping: {
       weight: { type: Number, default: 0 },
       dimensions: {

@@ -13,6 +13,7 @@ import {
   Package,
   LogIn,
   UserPlus,
+  ShoppingCart,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -54,7 +55,7 @@ export function MobileBottomNav() {
   const buyerItems: NavItem[] = [
     { label: "Explore", href: "/marketplace", icon: Compass },
     { label: "Orders", href: "/dashboard/orders", icon: Package },
-    { label: "Wallet", href: "/dashboard/wallet", icon: Wallet },
+    { label: "Cart", href: "/dashboard/cart", icon: ShoppingCart },
     { label: "Wishlist", href: "/dashboard/wishlist", icon: ShoppingBag },
     { label: "Profile", href: "/dashboard/profile", icon: User },
   ];

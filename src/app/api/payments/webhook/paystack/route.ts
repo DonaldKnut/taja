@@ -4,10 +4,25 @@ import { verifyPayment, escrow } from "@/lib/payments";
 import Order from "@/models/Order";
 import WalletTransaction from "@/models/WalletTransaction";
 import User from "@/models/User";
+import PlatformSettings from "@/models/PlatformSettings";
 import { notifyPaymentUpdate, notifyAdminsPaymentReceived } from "@/lib/notifications";
 import crypto from "crypto";
 
-const REFERRAL_BONUS_PERCENTAGE = parseFloat(process.env.REFERRAL_BONUS_PERCENTAGE || "2"); // default 2%
+async function getReferralSettings() {
+  const envPct = parseFloat(process.env.REFERRAL_BONUS_PERCENTAGE || "2");
+  const enabledEnv = process.env.REFERRAL_ENABLED === "false" ? false : true;
+
+  const doc = await PlatformSettings.findOne().select("referral").lean();
+  const referral = (doc as any)?.referral || {};
+
+  const enabled = typeof referral.enabled === "boolean" ? referral.enabled : enabledEnv;
+  const bonusPercentage =
+    typeof referral.bonusPercentage === "number" && referral.bonusPercentage >= 0
+      ? referral.bonusPercentage
+      : envPct;
+
+  return { enabled, bonusPercentage };
+}
 
 async function createReferralBonusHold(params: {
   buyerId: string;
@@ -17,7 +32,8 @@ async function createReferralBonusHold(params: {
   paymentReference: string;
 }) {
   try {
-    if (!REFERRAL_BONUS_PERCENTAGE || REFERRAL_BONUS_PERCENTAGE <= 0) return;
+    const { enabled, bonusPercentage } = await getReferralSettings();
+    if (!enabled || !bonusPercentage || bonusPercentage <= 0) return;
     const buyer = await User.findById(params.buyerId).select("referredBy").lean();
     const referrerId = (buyer as any)?.referredBy?.toString();
     if (!referrerId || referrerId === params.buyerId) return;
@@ -26,10 +42,7 @@ async function createReferralBonusHold(params: {
     const exists = await WalletTransaction.findOne({ reference }).select("_id").lean();
     if (exists?._id) return;
 
-    const rewardKobo = Math.max(
-      0,
-      Math.round((params.totalNaira * 100 * REFERRAL_BONUS_PERCENTAGE) / 100)
-    );
+    const rewardKobo = Math.max(0, Math.round((params.totalNaira * 100 * bonusPercentage) / 100));
     if (!rewardKobo) return;
 
     await WalletTransaction.create({
@@ -47,7 +60,7 @@ async function createReferralBonusHold(params: {
         orderNumber: params.orderNumber,
         buyerId: params.buyerId,
         paymentReference: params.paymentReference,
-        percentage: REFERRAL_BONUS_PERCENTAGE,
+        percentage: bonusPercentage,
       },
     });
   } catch (e) {

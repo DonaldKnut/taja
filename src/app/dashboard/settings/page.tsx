@@ -353,7 +353,7 @@ export default function SettingsPage() {
                 <User className="h-5 w-5 text-taja-primary" />
               </div>
               <h2 className="text-2xl font-black text-taja-secondary tracking-tighter uppercase italic">
-                Identity <span className="text-taja-primary/40">•</span> Profile
+                Your Profile
               </h2>
             </div>
 
@@ -437,7 +437,7 @@ export default function SettingsPage() {
                 variant="gradient"
                 className="h-14 px-10 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-emerald group-hover:scale-[1.02] transition-transform"
               >
-                {savingProfile ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Save Profile Changes'}
+                {savingProfile ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Save Changes'}
               </Button>
             </div>
           </section>
@@ -449,7 +449,7 @@ export default function SettingsPage() {
                 <Lock className="h-5 w-5 text-emerald-600" />
               </div>
               <h2 className="text-2xl font-black text-taja-secondary tracking-tighter uppercase italic">
-                Security <span className="text-emerald-500/40">•</span> Password
+                Password & Security
               </h2>
             </div>
 
@@ -543,7 +543,7 @@ export default function SettingsPage() {
                 <Bell className="h-5 w-5 text-taja-primary" />
               </div>
               <h2 className="text-2xl font-black text-taja-secondary tracking-tighter uppercase italic">
-                Alerts <span className="text-taja-primary/40">•</span> Notifications
+                Notifications
               </h2>
             </div>
 
@@ -570,7 +570,7 @@ export default function SettingsPage() {
                 variant="gradient"
                 className="h-14 px-10 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-emerald group-hover:scale-[1.02] transition-transform"
               >
-                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Save Alert Rules'}
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Save Preferences'}
               </Button>
             </div>
           </section>
@@ -581,10 +581,10 @@ export default function SettingsPage() {
               <div className="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center">
                 <Shield className="h-5 w-5" />
               </div>
-              <h2 className="text-2xl font-black tracking-tighter uppercase italic">Terminal <span className="text-red-500/40">•</span> Danger Zone</h2>
+              <h2 className="text-2xl font-black tracking-tighter uppercase italic">Account Removal</h2>
             </div>
             <p className="text-[11px] font-black uppercase tracking-[0.1em] text-red-500/70 mb-8 ml-1 leading-relaxed">
-              Permanent process termination. Deleting your account will purge all associated neural data and storefront credentials.
+              This is permanent and cannot be undone. Your profile, order history, and any associated shops will be permanently removed.
             </p>
             <Button
               onClick={deleteAccount}
@@ -592,7 +592,7 @@ export default function SettingsPage() {
               variant="outline"
               className="h-14 px-8 rounded-2xl border-red-500/20 text-red-600 font-black uppercase tracking-[0.2em] text-[10px] hover:bg-red-600 hover:text-white hover:border-red-600 transition-all active:scale-[0.98] shadow-sm"
             >
-              <Trash2 className="h-4 w-4 mr-2" /> Self-Destruct Account
+              <Trash2 className="h-4 w-4 mr-2" /> Delete My Account
             </Button>
           </section>
         </motion.div>

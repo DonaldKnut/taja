@@ -66,6 +66,7 @@ const buyerNavigation = [
 
 const managementNavigation = [
   { name: "Setup", href: "/seller/setup", icon: Store },
+  { name: "Shop profile", href: "/seller/shop/edit", icon: Store },
   { name: "Verification", href: "/seller/verification", icon: ShieldCheck },
   { name: "Profile", href: "/seller/profile", icon: User },
   { name: "Settings", href: "/seller/settings", icon: Settings },

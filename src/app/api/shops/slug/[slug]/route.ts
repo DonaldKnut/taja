@@ -13,7 +13,7 @@ export async function GET(
     await connectDB();
 
     const shop = await Shop.findOne({ shopSlug: params.slug.toLowerCase() })
-      .populate('owner', 'fullName avatar email')
+      .populate('owner', 'fullName avatar email createdAt')
       .lean();
 
     if (!shop) {
@@ -28,44 +28,61 @@ export async function GET(
       $inc: { 'stats.viewCount': 1 },
     });
 
-    // Calculate dynamic stats
+    // Calculate dynamic stats and fetch products for showroom
     const Product = (await import('@/models/Product')).default;
     const Order = (await import('@/models/Order')).default;
     const Review = (await import('@/models/Review')).default;
     const ShopFollow = (await import('@/models/ShopFollow')).default;
 
-    const [totalProducts, totalOrders, reviews, followerCount] = await Promise.all([
+    const [productCount, ordersResult, reviews, followerCount, products] = await Promise.all([
       Product.countDocuments({ shop: shop._id, status: { $ne: 'deleted' } }),
-      Order.countDocuments({ shop: shop._id }),
+      Order.aggregate([
+        { $match: { shop: shop._id } },
+        { $group: { _id: null, count: { $sum: 1 }, totalRevenue: { $sum: '$totals.total' } } },
+      ]),
       Review.aggregate([
         { $match: { shop: shop._id } },
-        {
-          $group: {
-            _id: null,
-            averageRating: { $avg: '$rating' },
-            reviewCount: { $sum: 1 },
-          },
-        },
+        { $group: { _id: null, averageRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
       ]),
       ShopFollow.countDocuments({ shop: shop._id }),
+      Product.find({ shop: shop._id, status: 'active' })
+        .select('title slug price images condition category status createdAt')
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean(),
     ]);
 
+    const orderData = ordersResult[0] || { count: 0, totalRevenue: 0 };
     const reviewData = reviews[0] || { averageRating: 0, reviewCount: 0 };
 
-    // Return shop with dynamic stats
+    // Normalise product shape for ProductCard (id, _id, shopSlug, etc.)
+    const productsForFeed = (products as any[]).map((p) => ({
+      ...p,
+      _id: p._id.toString(),
+      id: p._id.toString(),
+      shopSlug: (shop as any).shopSlug,
+      category: typeof p.category === 'object' ? (p.category as any)?.name : p.category,
+    }));
+
+    // Return shop with dynamic stats and products for full showroom
     const updatedShop = {
       ...shop,
-      // Normalise avatar / cover fields for the frontend
       avatar: (shop as any).avatar || shop.logo,
       coverImage: (shop as any).coverImage || shop.banner,
+      verification: {
+        ...(shop as any).verification,
+        isVerified: (shop as any).verification?.status === 'verified',
+      },
       stats: {
-        ...shop.stats,
-        totalProducts,
-        totalOrders,
-        averageRating: Math.round(reviewData.averageRating * 10) / 10,
-        reviewCount: reviewData.reviewCount,
+        ...(shop as any).stats,
+        totalProducts: productCount,
+        totalOrders: orderData.count,
+        totalRevenue: orderData.totalRevenue || 0,
+        averageRating: Math.round((reviewData.averageRating || 0) * 10) / 10,
+        reviewCount: reviewData.reviewCount || 0,
         followerCount,
       },
+      products: productsForFeed,
     };
 
     return NextResponse.json({

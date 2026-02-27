@@ -21,6 +21,7 @@ import {
   Instagram,
   Sparkles,
   Zap,
+  MessageCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -178,6 +179,7 @@ export default function ProductDetailPage() {
         const transformedProduct = {
           id: productData._id || productData.id,
           slug: productData.slug || params.slug,
+          sellerId: productData.seller?._id || productData.seller?.id,
           title: productData.name || productData.title || "Product",
           description: productData.description || "",
           longDescription: productData.longDescription || productData.description || "",
@@ -193,13 +195,14 @@ export default function ProductDetailPage() {
           views: productData.views || 0,
           shop: {
             shopName: productData.shop?.shopName || productData.shop?.name || "Shop",
-            shopSlug: productData.shop?.slug || productData.shopSlug || "",
+            shopSlug: productData.shop?.shopSlug || productData.shop?.slug || productData.shopSlug || "",
+            shopId: productData.shop?._id || productData.shop?.id,
             averageRating: productData.shop?.averageRating || 0,
             verified: productData.shop?.verified || false,
             isVerified: productData.shop?.verified || productData.shop?.isVerified || false,
             totalProducts: productData.shop?.totalProducts || 0,
-            followers: productData.shop?.followers || 0,
-            since: productData.shop?.since || new Date().toISOString(),
+            followers: productData.shop?.followers || productData.shop?.followerCount || 0,
+            since: productData.shop?.since || productData.shop?.createdAt || new Date().toISOString(),
             socialLinks: productData.shop?.socialLinks || {
               instagram: "",
               whatsapp: "",
@@ -408,12 +411,21 @@ export default function ProductDetailPage() {
                 {/* Product Metadata */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Link href={`/shop/${product.shop.shopSlug}`} className="group flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-black text-white">
-                        {product.shop.shopName.charAt(0)}
+                    {product.shop.shopSlug ? (
+                      <Link href={`/shop/${product.shop.shopSlug}`} className="group flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-black text-white">
+                          {product.shop.shopName.charAt(0)}
+                        </div>
+                        <span className="text-xs font-bold text-slate-900 group-hover:text-emerald-600 transition-colors uppercase tracking-widest">{product.shop.shopName}</span>
+                      </Link>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-black text-white">
+                          {product.shop.shopName.charAt(0)}
+                        </div>
+                        <span className="text-xs font-bold text-slate-900 uppercase tracking-widest">{product.shop.shopName}</span>
                       </div>
-                      <span className="text-xs font-bold text-slate-900 group-hover:text-emerald-600 transition-colors uppercase tracking-widest">{product.shop.shopName}</span>
-                    </Link>
+                    )}
                     {product.shop.isVerified && <ShieldCheck className="h-4 w-4 text-emerald-500" />}
                   </div>
 
@@ -500,6 +512,17 @@ export default function ProductDetailPage() {
                     </div>
                   )}
 
+                  {product.sellerId && (
+                    <Link href={`/chat?seller=${product.sellerId}&product=${product.id}`}>
+                      <Button
+                        variant="outline"
+                        className="w-full h-16 rounded-2xl border-2 border-taja-primary text-taja-primary font-black uppercase tracking-widest hover:bg-taja-primary/10 gap-2"
+                      >
+                        <MessageCircle className="h-5 w-5" />
+                        Message seller
+                      </Button>
+                    </Link>
+                  )}
                   {product.shop.socialLinks?.whatsapp && (
                     <a
                       href={getWhatsAppUrl(product.shop.socialLinks.whatsapp, product) || "#"}
@@ -508,7 +531,7 @@ export default function ProductDetailPage() {
                       className="flex items-center justify-center gap-3 w-full h-16 rounded-2xl bg-[#25D366] text-white font-black uppercase tracking-widest hover:bg-[#128C7E] transition-all shadow-lg"
                     >
                       <Phone className="h-5 w-5" />
-                      Chat with Seller
+                      WhatsApp
                     </a>
                   )}
 
@@ -623,34 +646,44 @@ export default function ProductDetailPage() {
                         </div>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-taja-primary uppercase tracking-[0.3em]">Authorized Store</span>
-                        <h3 className="text-3xl font-black tracking-tighter italic leading-tight mt-1">{product.shop.shopName}</h3>
-                        <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mt-2">
+                        <span className="text-[9px] font-black text-emerald-300 uppercase tracking-[0.3em]">Authorized Store</span>
+                        <h3 className="text-3xl font-black tracking-tighter italic leading-tight mt-1 text-white">{product.shop.shopName}</h3>
+                        <p className="text-[9px] font-black text-emerald-200/90 uppercase tracking-widest mt-2">
                           Active Since {product.shop.since ? new Date(product.shop.since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently'}
                         </p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/5 backdrop-blur-md">
-                        <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-2">Store Collection</p>
-                        <p className="text-2xl font-black tracking-tighter italic">{product.shop.totalProducts}</p>
-                        <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Total Items</span>
+                      <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/10 backdrop-blur-md">
+                        <p className="text-[8px] font-black text-emerald-200/80 uppercase tracking-widest mb-2">Store Collection</p>
+                        <p className="text-2xl font-black tracking-tighter italic text-white">{product.shop.totalProducts}</p>
+                        <span className="text-[8px] font-bold text-emerald-200/70 uppercase tracking-widest">Total Items</span>
                       </div>
-                      <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/5 backdrop-blur-md">
-                        <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-2">Community</p>
-                        <p className="text-2xl font-black tracking-tighter italic">{product.shop.followers}</p>
-                        <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Followers</span>
+                      <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/10 backdrop-blur-md">
+                        <p className="text-[8px] font-black text-emerald-200/80 uppercase tracking-widest mb-2">Community</p>
+                        <p className="text-2xl font-black tracking-tighter italic text-white">{product.shop.followers}</p>
+                        <span className="text-[8px] font-bold text-emerald-200/70 uppercase tracking-widest">Followers</span>
                       </div>
                     </div>
 
                     <div className="space-y-4 pt-4">
-                      <Button
-                        className="w-full h-16 rounded-[2rem] bg-white text-taja-secondary hover:bg-taja-primary hover:text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-premium transition-all duration-500 italic"
-                        onClick={() => router.push(`/shop/${product.shop.shopSlug}`)}
-                      >
-                        Enter Merchant Showroom
-                      </Button>
+                      {product.shop.shopSlug ? (
+                        <Button
+                          className="w-full h-16 rounded-[2rem] bg-white text-taja-secondary hover:bg-taja-primary hover:text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-premium transition-all duration-500 italic"
+                          onClick={() => router.push(`/shop/${product.shop.shopSlug}`)}
+                        >
+                          Enter Merchant Showroom
+                        </Button>
+                      ) : (
+                        <Button
+                          className="w-full h-16 rounded-[2rem] bg-white/50 text-gray-400 font-black text-[10px] uppercase tracking-[0.3em] cursor-not-allowed italic"
+                          disabled
+                          title="Shop page link unavailable"
+                        >
+                          Enter Merchant Showroom (unavailable)
+                        </Button>
+                      )}
 
                       {product.shop.socialLinks?.instagram && (
                         <a

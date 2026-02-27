@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get('category');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10) || 50, 100);
     const userId = searchParams.get('userId');
     const includeMine = searchParams.get('includeMine') === 'true';
 
@@ -48,10 +48,8 @@ export async function GET(request: NextRequest) {
 
       if (categoryDoc) {
         query.category = categoryDoc._id;
-      } else {
-        // Fallback: try to match by name directly (for backward compatibility)
-        query.category = category;
       }
+      // If no category doc found, do not set query.category (show all active products)
     }
 
     // Get products

@@ -158,7 +158,7 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
         // Otherwise use the marketplace feed endpoint
         const params = new URLSearchParams();
         if (category) params.append("category", category);
-        if (limit) params.append("limit", `${limit}`);
+        params.append("limit", `${limit ?? 50}`);
         if (isAuthenticated && user?._id) params.append("userId", user._id);
         if (isAuthenticated && (user as any)?.role === "seller") params.append("includeMine", "true");
 

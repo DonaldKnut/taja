@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Store, Plus, Loader2, Trash2, Pause, Play } from "lucide-react";
+import { Store, Plus, Loader2, Trash2, Pause, Play, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { api } from "@/lib/api";
@@ -132,6 +132,11 @@ export default function AdminShopsPage() {
                     <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${shop.status === "active" ? "bg-emerald-400/10 text-emerald-600" : shop.status === "banned" ? "bg-rose-400/10 text-rose-600" : "bg-amber-400/10 text-amber-600"}`}>
                       {shop.status}
                     </span>
+                    <Link href={`/admin/shops/${shop._id}/edit`}>
+                      <Button variant="outline" size="sm" className="rounded-xl text-[10px] font-bold gap-1.5">
+                        <Pencil className="h-3.5 w-3.5" /> Edit
+                      </Button>
+                    </Link>
                     {shop.status !== "banned" && (
                       <>
                         <Link href={`/admin/products/new?shopId=${shop._id}`}>

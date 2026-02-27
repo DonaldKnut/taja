@@ -42,10 +42,13 @@ export interface IShop extends Document {
    */
   socialLinks?: {
     instagram?: string;
+    tiktok?: string;
     whatsapp?: string;
     twitter?: string;
     facebook?: string;
     website?: string;
+    youtube?: string;
+    linkedin?: string;
   };
   /**
    * Shop settings used for response time, shipping options, policies, delivery, etc.
@@ -63,6 +66,35 @@ export interface IShop extends Document {
       city: string;
       state: string;
       phone?: string;
+    }>;
+    /**
+     * Global delivery configuration & minimum order quantity (shop-level).
+     * Used when there is no product-level shipping override.
+     */
+    globalDeliveryEnabled?: boolean;
+    /** Minimum order amount in Naira required for delivery (0 = no minimum). */
+    globalMinOrderAmount?: number;
+    /**
+     * Delivery fee tiers based on total order weight (in kg) for this shop.
+     * Evaluated against the summed product.weight * quantity for the order.
+     */
+    deliveryFeeTiers?: Array<{
+      minWeightKg: number;
+      maxWeightKg: number;
+      priceNaira: number;
+    }>;
+    /**
+     * Seller-defined delivery slots for capacity planning.
+     * Currently used for configuration and display; order assignment can build on this.
+     */
+    deliverySlots?: Array<{
+      id: string;
+      date: Date;
+      startTime: string;
+      endTime?: string;
+      maxOrders: number;
+      notes?: string;
+      active?: boolean;
     }>;
   };
   /**
@@ -144,13 +176,35 @@ const ShopSchema = new Schema<IShop>(
       shippingMethods: [String],
       returnPolicy: String,
       defaultDeliveryFee: { type: Number, default: 0 },
-      pickupPoints: [{
-        name: String,
-        address: String,
-        city: String,
-        state: String,
-        phone: String,
-      }],
+      pickupPoints: [
+        {
+          name: String,
+          address: String,
+          city: String,
+          state: String,
+          phone: String,
+        },
+      ],
+      globalDeliveryEnabled: { type: Boolean, default: true },
+      globalMinOrderAmount: { type: Number, default: 0 },
+      deliveryFeeTiers: [
+        {
+          minWeightKg: { type: Number, default: 0 },
+          maxWeightKg: { type: Number, required: true },
+          priceNaira: { type: Number, required: true },
+        },
+      ],
+      deliverySlots: [
+        {
+          id: { type: String, required: true },
+          date: { type: Date, required: true },
+          startTime: { type: String, required: true },
+          endTime: String,
+          maxOrders: { type: Number, required: true },
+          notes: String,
+          active: { type: Boolean, default: true },
+        },
+      ],
     },
     policies: {
       returns: String,

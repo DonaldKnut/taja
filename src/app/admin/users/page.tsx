@@ -29,19 +29,23 @@ export default function UserManagementPage() {
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
-  }, [page, roleFilter, statusFilter]);
+  }, [page, limit, roleFilter, statusFilter]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setFetchError(null);
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: "20",
+        limit: limit.toString(),
       });
 
       if (search.trim()) {
@@ -57,12 +61,22 @@ export default function UserManagementPage() {
       const response = await api(`/api/admin/users?${params.toString()}`);
       if (response?.success) {
         setUsers(response.data.users || []);
-        setTotalPages(response.data.pagination?.totalPages || 1);
+        const pagination = response.data.pagination;
+        setTotal(pagination?.total ?? 0);
+        setTotalPages(pagination?.totalPages ?? 1);
       } else {
+        setUsers([]);
+        setTotal(0);
+        setTotalPages(1);
+        setFetchError(response?.message || "Failed to fetch users");
         toast.error(response?.message || "Failed to fetch users");
       }
     } catch (error: any) {
       console.error("Fetch users error:", error);
+      setUsers([]);
+      setTotal(0);
+      setTotalPages(1);
+      setFetchError("Failed to load users. Ensure MongoDB is running and MONGODB_URI is set in .env.");
       toast.error("Failed to load users");
     } finally {
       setLoading(false);
@@ -212,15 +226,43 @@ export default function UserManagementPage() {
       {/* Users Table */}
       <Card className="border-slate-100 rounded-[2.5rem] shadow-huge overflow-hidden">
         <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-10 py-8">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-black text-slate-900 tracking-tight">Unified Directory</CardTitle>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Community</span>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-xl font-black text-slate-900 tracking-tight">Unified Directory</CardTitle>
+              <p className="text-sm font-bold text-slate-500 mt-1">
+                Showing {total === 0 ? 0 : (page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total} users
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                Per page
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 font-black text-[10px] uppercase tracking-widest cursor-pointer"
+                >
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={500}>500</option>
+                </select>
+              </label>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Community</span>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-gray-500">Loading users...</div>
+            </div>
+          ) : fetchError ? (
+            <div className="flex flex-col items-center justify-center py-12 px-6">
+              <p className="text-rose-600 font-bold text-center">{fetchError}</p>
+              <p className="text-sm text-slate-500 mt-2 text-center">If you expect more users, ensure MongoDB is running and MONGODB_URI is set in .env or .env.local.</p>
             </div>
           ) : users.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">

@@ -17,10 +17,11 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
-import { wishlistApi } from "@/lib/api";
+import { wishlistApi, cartApi } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { EmptyState, LoadingSkeleton, PageHeader, SearchFilterBar } from "@/components/common";
 import { normalizeApiResponse } from "@/lib/utils/apiResponse";
+import { useCartStore } from "@/stores/cartStore";
 
 interface WishlistItem {
   id: string;
@@ -46,6 +47,7 @@ export default function WishlistPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filteredItems, setFilteredItems] = useState<WishlistItem[]>([]);
+  const { addItem, updateQuantity } = useCartStore();
 
   useEffect(() => {
     const fetchWishlist = async () => {
@@ -124,14 +126,35 @@ export default function WishlistPage() {
   const handleAddToCart = async (item: WishlistItem) => {
     setLoading(true);
     try {
-      // TODO: Add to cart via API
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Add to local cart store
+      addItem({
+        _id: item.productId,
+        title: item.name,
+        price: item.price,
+        images: [item.image],
+        seller: item.seller.shop,
+        shopSlug: undefined,
+      });
+
+      // Ensure at least quantity 1
+      updateQuantity(item.productId, 1);
+
+      // Sync with server cart
+      try {
+        await cartApi.addToCart(item.productId, 1);
+      } catch (apiError) {
+        console.error("Failed to sync cart from wishlist:", apiError);
+      }
+
       // Remove from wishlist after adding to cart
       setWishlistItems((prev) =>
         prev.filter((wishlistItem) => wishlistItem.id !== item.id)
       );
-    } catch (error) {
+
+      toast.success("Moved to cart");
+    } catch (error: any) {
       console.error("Failed to add to cart:", error);
+      toast.error(error?.message || "Failed to add to cart");
     } finally {
       setLoading(false);
     }

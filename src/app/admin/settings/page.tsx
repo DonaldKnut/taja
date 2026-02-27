@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Settings,
     Shield,
@@ -13,7 +13,8 @@ import {
     AlertCircle,
     Smartphone,
     Mail,
-    Zap
+    Zap,
+    Gift
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -24,6 +25,10 @@ import { toast } from "react-hot-toast";
 export default function AdminSettingsPage() {
     const [activeTab, setActiveTab] = useState("platform");
     const [loading, setLoading] = useState(false);
+    const [referralLoading, setReferralLoading] = useState(false);
+    const [referralSaving, setReferralSaving] = useState(false);
+    const [referralEnabled, setReferralEnabled] = useState(true);
+    const [referralBonusPercentage, setReferralBonusPercentage] = useState(2);
 
     const handleSave = () => {
         setLoading(true);
@@ -33,11 +38,60 @@ export default function AdminSettingsPage() {
         }, 1500);
     };
 
+    useEffect(() => {
+        const loadReferralSettings = async () => {
+            try {
+                setReferralLoading(true);
+                const res = await fetch("/api/admin/settings/referral");
+                const json = await res.json();
+                if (json?.success && json?.data?.referral) {
+                    setReferralEnabled(!!json.data.referral.enabled);
+                    setReferralBonusPercentage(Number(json.data.referral.bonusPercentage) || 0);
+                }
+            } catch (e) {
+                console.error("Failed to load referral settings", e);
+            } finally {
+                setReferralLoading(false);
+            }
+        };
+        loadReferralSettings();
+    }, []);
+
+    const handleSaveReferral = async () => {
+        try {
+            setReferralSaving(true);
+            const res = await fetch("/api/admin/settings/referral", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    referral: {
+                        enabled: referralEnabled,
+                        bonusPercentage: referralBonusPercentage,
+                    },
+                }),
+            });
+            const json = await res.json();
+            if (json?.success) {
+                toast.success("Referral settings updated");
+            } else {
+                toast.error(json?.message || "Failed to update referral settings");
+            }
+        } catch (e: any) {
+            console.error("Failed to update referral settings", e);
+            toast.error(e?.message || "Failed to update referral settings");
+        } finally {
+            setReferralSaving(false);
+        }
+    };
+
     const tabs = [
         { id: "platform", label: "Core Identities", icon: Globe },
         { id: "escrow", label: "Capital Logistics", icon: CreditCard },
         { id: "security", label: "Registry Guard", icon: Shield },
         { id: "notifications", label: "Platform Signals", icon: Bell },
+        { id: "referrals", label: "Referral Program", icon: Gift },
     ];
 
     return (
@@ -221,6 +275,80 @@ export default function AdminSettingsPage() {
                                             <Switch checked={i < 2} className="data-[state=checked]:bg-emerald-600" />
                                         </div>
                                     ))}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+
+                    {activeTab === "referrals" && (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                            <Card className="rounded-[2.5rem] border-slate-100 shadow-huge overflow-hidden">
+                                <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-10 py-8">
+                                    <CardTitle className="text-xl font-black text-slate-900 tracking-tight uppercase">Referral Program</CardTitle>
+                                    <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                        Control referral rewards and toggle the program on or off
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="px-10 py-10 space-y-8">
+                                    <div className="flex items-center justify-between p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                                        <div>
+                                            <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Enable Referral Program</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                                When off, referral links and codes will be rejected
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setReferralEnabled((v) => !v)}
+                                            className={`relative inline-flex h-8 w-14 items-center rounded-full border transition-all ${
+                                                referralEnabled ? "bg-emerald-500 border-emerald-500" : "bg-gray-200 border-gray-300"
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
+                                                    referralEnabled ? "translate-x-6" : "translate-x-1"
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                            Referral Bonus Percentage
+                                        </label>
+                                        <div className="flex items-center gap-3 w-40 bg-white p-2 rounded-xl border border-slate-100 shadow-inner">
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                max={100}
+                                                step={0.1}
+                                                value={referralBonusPercentage}
+                                                onChange={(e) => setReferralBonusPercentage(parseFloat(e.target.value) || 0)}
+                                                disabled={!referralEnabled || referralLoading || referralSaving}
+                                                className="bg-transparent border-none text-right font-black text-slate-950 focus:ring-0 p-0 text-lg"
+                                            />
+                                            <span className="text-[10px] font-black text-slate-300 uppercase">%</span>
+                                        </div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            Applied to order total and held in escrow as referral bonus until delivery is confirmed.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <Button
+                                            onClick={handleSaveReferral}
+                                            disabled={referralSaving || referralLoading}
+                                            className="h-11 px-8 rounded-2xl bg-slate-950 text-white font-black uppercase tracking-widest text-[10px] shadow-huge hover:bg-emerald-600 transition-all flex items-center gap-2"
+                                        >
+                                            {referralSaving ? (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white" />
+                                            ) : (
+                                                <Save className="h-4 w-4" />
+                                            )}
+                                            Save Referral Settings
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>

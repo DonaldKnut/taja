@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
+import PlatformSettings from '@/models/PlatformSettings';
 import { hashPassword, generateOTP, getOTPExpiry } from '@/lib/auth';
 import { authRateLimit } from '@/lib/rateLimit';
 import { handleDbError } from '@/lib/error-handler';
@@ -73,9 +74,11 @@ export async function POST(request: NextRequest) {
     const emailVerificationCode = generateOTP();
     const emailVerificationExpiry = getOTPExpiry(10);
 
-    // Optional referral
+    // Optional referral (only when referral program is enabled)
     let referredBy: any = undefined;
-    if (referralCode && typeof referralCode === 'string') {
+    const refSettings = await PlatformSettings.findOne().select('referral').lean();
+    const refEnabled = (refSettings as any)?.referral?.enabled !== false;
+    if (refEnabled && referralCode && typeof referralCode === 'string') {
       const referrer = await User.findOne({ referralCode: referralCode.trim().toUpperCase() }).select('_id').lean();
       if (referrer?._id) {
         referredBy = referrer._id;

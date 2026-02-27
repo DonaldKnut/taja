@@ -346,3 +346,45 @@ export async function sendPasswordResetEmail(email: string, name: string, resetT
   }
 }
 
+/**
+ * Send a broadcast / platform update email to a single recipient.
+ * Used by admin to send bulk messages (platform updates, announcements).
+ */
+export async function sendBroadcastEmail(
+  email: string,
+  subject: string,
+  htmlMessage: string,
+  recipientName?: string
+) {
+  if (!resend) {
+    console.warn('RESEND_API_KEY not set. Broadcast email skipped.');
+    return { success: false, error: 'Email service not configured' };
+  }
+  try {
+    const logoUrl = process.env.LOGO_URL || 'https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png';
+    const html = `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+        <img src="${logoUrl}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:24px;" />
+        <div style="color:#333;line-height:1.6;">${htmlMessage}</div>
+        <p style="margin-top:32px;font-size:12px;color:#888;">© ${new Date().getFullYear()} Taja.Shop. You received this because you are registered on our platform.</p>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: email,
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error('Resend broadcast error:', error);
+      throw error;
+    }
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send broadcast email error:', error);
+    throw error;
+  }
+}
+
