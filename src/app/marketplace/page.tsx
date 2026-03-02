@@ -10,6 +10,8 @@ import { ProductCard } from "@/components/product";
 import { Container } from "@/components/layout";
 import { useMarketplaceFeed } from "@/hooks/useMarketplaceFeed";
 import { useAuth } from "@/contexts/AuthContext";
+import { CartIcon, CartDrawer, useCartStore } from "@/components/cart";
+import { FloatingCart } from "@/components/ui/FloatingCart";
 import { AuthEntryModal } from "@/components/auth/AuthEntryModal";
 import { trackPageView, trackEvent } from "@/lib/analytics";
 import { motion, AnimatePresence } from "framer-motion";
@@ -64,6 +66,7 @@ function MarketplaceContent() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const { user, isAuthenticated } = useAuth();
+  const { isOpen, toggleCart } = useCartStore();
   const feed = useMarketplaceFeed({
     category: selectedCategory || undefined,
   });
@@ -120,15 +123,29 @@ function MarketplaceContent() {
 
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
-              <Link href={user?.role === "seller" ? "/seller/dashboard" : "/dashboard"}>
-                <Button variant="outline" className="rounded-full px-6 text-[10px] font-black uppercase tracking-widest h-10">Terminal</Button>
-              </Link>
-            ) : (
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" onClick={() => setAuthModalOpen(true)} className="text-[10px] font-black uppercase tracking-widest hover:bg-taja-light">Sign In</Button>
-                <Link href="/register">
-                  <Button className="rounded-full px-6 text-[10px] font-black uppercase tracking-widest h-10 shadow-premium">Start Selling</Button>
+              <div className="flex items-center gap-2">
+                <Link href={user?.role === "seller" ? "/seller/dashboard" : "/dashboard"}>
+                  <Button variant="outline" className="rounded-full px-6 text-[10px] font-black uppercase tracking-widest h-10">Terminal</Button>
                 </Link>
+                <CartIcon
+                  className="p-2 text-taja-secondary hover:text-taja-primary transition-colors hover:bg-taja-light/30 rounded-full"
+                  iconSize="h-5 w-5"
+                  badgeClassName="!h-5 !w-5 !text-[10px] !-top-1 !-right-1 bg-taja-primary text-white border-2 border-white"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" onClick={() => setAuthModalOpen(true)} className="text-[10px] font-black uppercase tracking-widest hover:bg-taja-light">Sign In</Button>
+                  <Link href="/register">
+                    <Button className="rounded-full px-6 text-[10px] font-black uppercase tracking-widest h-10 shadow-premium">Start Selling</Button>
+                  </Link>
+                </div>
+                <CartIcon
+                  className="p-2 text-taja-secondary hover:text-taja-primary transition-colors hover:bg-taja-light/30 rounded-full"
+                  iconSize="h-5 w-5"
+                  badgeClassName="!h-5 !w-5 !text-[10px] !-top-1 !-right-1 bg-taja-primary text-white border-2 border-white"
+                />
               </div>
             )}
             <button
@@ -431,6 +448,8 @@ function MarketplaceContent() {
       </AnimatePresence>
 
       <AuthEntryModal open={authModalOpen && !isAuthenticated} onClose={() => setAuthModalOpen(false)} source="marketplace" />
+      <CartDrawer isOpen={isOpen} onClose={toggleCart} />
+      <FloatingCart />
     </div>
   );
 }

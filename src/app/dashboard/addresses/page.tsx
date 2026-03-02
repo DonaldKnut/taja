@@ -225,152 +225,154 @@ export default function AddressesPage() {
 
       {/* Premium Drawer Form */}
       {showForm && editing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 lg:p-8">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-taja-secondary/60 backdrop-blur-md"
+            className="fixed inset-0 bg-taja-primary/20 backdrop-blur-[120px] z-0"
             onClick={cancelForm}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-huge p-8 md:p-12 overflow-y-auto max-h-[90vh] border border-white/40"
+            className="relative z-10 w-full max-w-2xl px-4 md:px-6 lg:px-8 max-h-[95vh] flex flex-col items-center justify-center"
           >
-            <div className="flex items-center justify-between mb-10">
-              <div className="space-y-1">
-                <h2 className="text-3xl font-black text-taja-secondary tracking-tight">
-                  {addresses.some(x => x.id === editing.id) ? "Edit" : "Add"} <span className="text-taja-primary">Address</span>
-                </h2>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Enter your delivery details below</p>
+            <div className="w-full bg-white rounded-[3.5rem] shadow-huge p-8 md:p-12 overflow-y-auto border border-white/60">
+              <div className="flex items-center justify-between mb-10">
+                <div className="space-y-1">
+                  <h2 className="text-3xl font-black text-taja-secondary tracking-tight">
+                    {addresses.some(x => x.id === editing.id) ? "Edit" : "Add"} <span className="text-taja-primary">Address</span>
+                  </h2>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Enter your delivery details below</p>
+                </div>
+                <button onClick={cancelForm} className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-taja-secondary hover:text-white transition-all shadow-sm">
+                  <X className="h-6 w-6" />
+                </button>
               </div>
-              <button onClick={cancelForm} className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-taja-secondary hover:text-white transition-all shadow-sm">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
 
-            <div className="grid gap-10">
-              <div className="space-y-8">
-                {/* Contact Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="group">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Full Name</label>
-                    <Input
-                      className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
-                      placeholder="e.g. John Doe"
-                      value={editing.fullName}
-                      onChange={(e) => setEditing({ ...editing, fullName: e.target.value })}
-                    />
-                  </div>
-                  <div className="group">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Phone Number</label>
-                    <Input
-                      className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
-                      placeholder="e.g. +234 800 000 0000"
-                      value={editing.phone}
-                      onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Location Details */}
+              <div className="grid gap-10">
                 <div className="space-y-8">
-                  <div className="group">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Street Address</label>
-                    <Input
-                      className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
-                      placeholder="Enter your street address"
-                      value={editing.line1}
-                      onChange={(e) => setEditing({ ...editing, line1: e.target.value })}
-                    />
+                  {/* Contact Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="group">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Full Name</label>
+                      <Input
+                        className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
+                        placeholder="e.g. John Doe"
+                        value={editing.fullName}
+                        onChange={(e) => setEditing({ ...editing, fullName: e.target.value })}
+                      />
+                    </div>
+                    <div className="group">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Phone Number</label>
+                      <Input
+                        className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
+                        placeholder="e.g. +234 800 000 0000"
+                        value={editing.phone}
+                        onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                      />
+                    </div>
                   </div>
 
-                  <div className="group">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Apartment, suite, etc. (optional)</label>
-                    <Input
-                      className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
-                      placeholder="Apt, Suite, Building, etc."
-                      value={editing.line2 || ""}
-                      onChange={(e) => setEditing({ ...editing, line2: e.target.value })}
-                    />
-                  </div>
-                </div>
+                  {/* Location Details */}
+                  <div className="space-y-8">
+                    <div className="group">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Street Address</label>
+                      <Input
+                        className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
+                        placeholder="Enter your street address"
+                        value={editing.line1}
+                        onChange={(e) => setEditing({ ...editing, line1: e.target.value })}
+                      />
+                    </div>
 
-                {/* Region */}
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="group">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">City</label>
-                    <Input
-                      className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
-                      placeholder="City Name"
-                      value={editing.city}
-                      onChange={(e) => setEditing({ ...editing, city: e.target.value })}
-                    />
+                    <div className="group">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Apartment, suite, etc. (optional)</label>
+                      <Input
+                        className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
+                        placeholder="Apt, Suite, Building, etc."
+                        value={editing.line2 || ""}
+                        onChange={(e) => setEditing({ ...editing, line2: e.target.value })}
+                      />
+                    </div>
                   </div>
-                  <div className="group">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">State</label>
-                    <Input
-                      className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
-                      placeholder="State Name"
-                      value={editing.state}
-                      onChange={(e) => setEditing({ ...editing, state: e.target.value })}
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-                  <div className="group">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Postal Code</label>
-                    <Input
-                      className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
-                      placeholder="Optional"
-                      value={editing.postalCode || ""}
-                      onChange={(e) => setEditing({ ...editing, postalCode: e.target.value })}
-                    />
+                  {/* Region */}
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="group">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">City</label>
+                      <Input
+                        className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
+                        placeholder="City Name"
+                        value={editing.city}
+                        onChange={(e) => setEditing({ ...editing, city: e.target.value })}
+                      />
+                    </div>
+                    <div className="group">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">State</label>
+                      <Input
+                        className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
+                        placeholder="State Name"
+                        value={editing.state}
+                        onChange={(e) => setEditing({ ...editing, state: e.target.value })}
+                      />
+                    </div>
                   </div>
-                  <div className="group col-span-2">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Address Type & Priority</label>
-                    <div className="flex gap-4">
-                      <select
-                        className="flex-1 h-14 bg-gray-50/50 border-gray-100 rounded-2xl px-6 text-[10px] font-black uppercase tracking-widest focus:bg-white transition-all appearance-none cursor-pointer shadow-sm"
-                        value={editing.type}
-                        onChange={(e) => setEditing({ ...editing, type: e.target.value as any })}
-                      >
-                        <option value="shipping">Shipping</option>
-                        <option value="billing">Billing</option>
-                      </select>
-                      <label className="flex items-center gap-4 h-14 bg-gray-50/50 border-gray-100 rounded-2xl px-6 cursor-pointer hover:bg-white transition-all group/check shadow-sm min-w-[180px]">
-                        <input
-                          type="checkbox"
-                          checked={!!editing.isDefault}
-                          onChange={(e) => setEditing({ ...editing, isDefault: e.target.checked })}
-                          className="w-5 h-5 rounded-md border-gray-200 text-taja-primary focus:ring-taja-primary transition-all cursor-pointer"
-                        />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary group-hover/check:text-taja-primary transition-colors">Set as Default</span>
-                      </label>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+                    <div className="group">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Postal Code</label>
+                      <Input
+                        className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
+                        placeholder="Optional"
+                        value={editing.postalCode || ""}
+                        onChange={(e) => setEditing({ ...editing, postalCode: e.target.value })}
+                      />
+                    </div>
+                    <div className="group col-span-2">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">Address Type & Priority</label>
+                      <div className="flex gap-4">
+                        <select
+                          className="flex-1 h-14 bg-gray-50/50 border-gray-100 rounded-2xl px-6 text-[10px] font-black uppercase tracking-widest focus:bg-white transition-all appearance-none cursor-pointer shadow-sm"
+                          value={editing.type}
+                          onChange={(e) => setEditing({ ...editing, type: e.target.value as any })}
+                        >
+                          <option value="shipping">Shipping</option>
+                          <option value="billing">Billing</option>
+                        </select>
+                        <label className="flex items-center gap-4 h-14 bg-gray-50/50 border-gray-100 rounded-2xl px-6 cursor-pointer hover:bg-white transition-all group/check shadow-sm min-w-[180px]">
+                          <input
+                            type="checkbox"
+                            checked={!!editing.isDefault}
+                            onChange={(e) => setEditing({ ...editing, isDefault: e.target.checked })}
+                            className="w-5 h-5 rounded-md border-gray-200 text-taja-primary focus:ring-taja-primary transition-all cursor-pointer"
+                          />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary group-hover/check:text-taja-primary transition-colors">Set as Default</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-10 border-t border-gray-50">
-                <Button
-                  onClick={saveAddress}
-                  disabled={saving}
-                  size="lg"
-                  className="flex-1 h-16 rounded-2xl shadow-premium text-[11px] font-black uppercase tracking-[0.2em]"
-                >
-                  {saving ? "Saving Changes..." : "Save Address"}
-                </Button>
-                <Button
-                  onClick={cancelForm}
-                  variant="outline"
-                  size="lg"
-                  className="h-16 rounded-2xl px-12 text-[10px] font-black uppercase tracking-widest border-gray-100 hover:bg-gray-50 transition-all"
-                >
-                  Cancel
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-4 pt-10 border-t border-gray-50">
+                  <Button
+                    onClick={saveAddress}
+                    disabled={saving}
+                    size="lg"
+                    className="flex-1 h-16 rounded-2xl shadow-premium text-[11px] font-black uppercase tracking-[0.2em]"
+                  >
+                    {saving ? "Saving Changes..." : "Save Address"}
+                  </Button>
+                  <Button
+                    onClick={cancelForm}
+                    variant="outline"
+                    size="lg"
+                    className="h-16 rounded-2xl px-12 text-[10px] font-black uppercase tracking-widest border-gray-100 hover:bg-gray-50 transition-all"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             </div>
           </motion.div>

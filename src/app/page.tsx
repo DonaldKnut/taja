@@ -18,6 +18,7 @@ import { BrandShowcase } from "@/components/ui/BrandShowcase";
 import { AdvancedFooter } from "@/components/ui/AdvancedFooter";
 import { Logo } from "@/components/ui/Logo";
 import { DashboardPreview } from "@/components/ui/DashboardPreview";
+import { HomepageRecommendations } from "@/components/homepage/HomepageRecommendations";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { StructuredData } from "@/components/StructuredData";
@@ -378,6 +379,9 @@ export default function HomePage() {
 
         {/* Newsletter Section - Premium Sign-up */}
         <NewsletterSection />
+
+        {/* AI-Powered Recommendations */}
+        <HomepageRecommendations />
 
         {/* Brand Showcase Section */}
         <BrandShowcase />

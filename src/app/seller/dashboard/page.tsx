@@ -30,6 +30,7 @@ import { Badge } from "@/components/ui/Badge";
 import { sellerApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
+import { InventoryAlerts } from "@/components/seller/InventoryAlerts";
 
 interface DashboardStats {
   totalRevenue: number;
@@ -359,6 +360,11 @@ export default function SellerDashboardPage() {
               </Link>
             </div>
           </div>
+        </motion.div>
+
+        {/* AI Inventory Alerts */}
+        <motion.div variants={item}>
+          <InventoryAlerts maxAlerts={5} />
         </motion.div>
       </div>
 

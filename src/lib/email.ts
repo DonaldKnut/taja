@@ -388,3 +388,144 @@ export async function sendBroadcastEmail(
   }
 }
 
+/**
+ * Send order confirmation email to buyer
+ */
+export async function sendOrderConfirmationEmail(
+  email: string,
+  customerName: string,
+  orderNumber: string,
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+    image: string;
+  }>,
+  subtotal: number,
+  shipping: number,
+  discount: number,
+  total: number,
+  shippingAddress: {
+    fullName: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    phone: string;
+  },
+  orderId: string
+) {
+  if (!resend) {
+    console.warn('RESEND_API_KEY not set. Order confirmation email skipped.');
+    return { success: false, error: 'Email service not configured' };
+  }
+  try {
+    const baseUrl = process.env.FRONTEND_URL || process.env.NEXTAUTH_URL || 'https://tajaapp.shop';
+    const orderUrl = `${baseUrl}/dashboard/orders/${orderId}`;
+    
+    const template = loadTemplate('order-confirmation');
+    const html = renderTemplate(template, {
+      customerName,
+      orderNumber,
+      items,
+      subtotal,
+      shipping,
+      discount,
+      total,
+      shippingAddress,
+      orderUrl,
+      year: new Date().getFullYear(),
+      logoUrl: process.env.LOGO_URL || 'https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png',
+    });
+
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: email,
+      subject: `Order Confirmed - #${orderNumber}`,
+      html,
+    });
+
+    if (error) {
+      console.error('Resend error:', error);
+      throw error;
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send order confirmation email error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send order shipped email with tracking information
+ */
+export async function sendOrderShippedEmail(
+  email: string,
+  customerName: string,
+  orderNumber: string,
+  trackingNumber: string,
+  provider: 'gokada' | 'kwik',
+  estimatedDelivery: string,
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+  }>,
+  shippingAddress: {
+    city: string;
+    state: string;
+  },
+  driver?: {
+    name: string;
+    phone: string;
+    vehicleType: string;
+    vehicleNumber: string;
+    rating?: number;
+  },
+  orderId: string
+) {
+  if (!resend) {
+    console.warn('RESEND_API_KEY not set. Order shipped email skipped.');
+    return { success: false, error: 'Email service not configured' };
+  }
+  try {
+    const baseUrl = process.env.FRONTEND_URL || process.env.NEXTAUTH_URL || 'https://tajaapp.shop';
+    const orderUrl = `${baseUrl}/dashboard/orders/${orderId}`;
+    const trackingUrl = `${baseUrl}/track/${trackingNumber}`;
+    
+    const template = loadTemplate('order-shipped');
+    const html = renderTemplate(template, {
+      customerName,
+      orderNumber,
+      trackingNumber,
+      provider,
+      estimatedDelivery,
+      items,
+      shippingAddress,
+      driver,
+      orderUrl,
+      trackingUrl,
+      year: new Date().getFullYear(),
+      logoUrl: process.env.LOGO_URL || 'https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png',
+    });
+
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: email,
+      subject: `Your Order is On Its Way! - #${orderNumber}`,
+      html,
+    });
+
+    if (error) {
+      console.error('Resend error:', error);
+      throw error;
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send order shipped email error:', error);
+    throw error;
+  }
+}
+

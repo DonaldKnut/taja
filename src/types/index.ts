@@ -80,6 +80,7 @@ export interface Product {
   subcategory?: string;
   condition: "new" | "like-new" | "good" | "fair";
   stock: number;
+  moq?: number;
   seller: string | User;
   shop?: string | Shop;
   shopSlug?: string;
@@ -169,6 +170,8 @@ export interface CartItem {
   images: string[];
   seller: string;
   shopSlug?: string;
+  moq: number;
+  stock: number;
 }
 
 // Review Types

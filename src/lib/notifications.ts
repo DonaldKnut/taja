@@ -85,9 +85,17 @@ export async function notifyOrderUpdate(
       title: 'Order Delivered',
       message: `Your order ${orderNumber} has been delivered. Enjoy your purchase!`,
     },
+    completed: {
+      title: 'Order Completed',
+      message: `Your order ${orderNumber} has been completed. Thank you for shopping!`,
+    },
     cancelled: {
       title: 'Order Cancelled',
       message: `Your order ${orderNumber} has been cancelled.`,
+    },
+    disputed: {
+      title: 'Order Disputed',
+      message: `A dispute has been opened for order ${orderNumber}. Our team will review it.`,
     },
   };
 
@@ -171,7 +179,7 @@ export async function notifyAdminsNewOrder(params: {
         link: actionUrl,
         actionUrl,
         priority: 'high',
-        metadata: { orderId, orderNumber, ...params },
+        metadata: { ...params },
       });
     }
   } catch (err: any) {
@@ -270,6 +278,55 @@ export async function notifyPaymentUpdate(
     message: statusInfo.message,
     link: orderId ? `/dashboard/orders/${orderId}` : '/dashboard/orders',
     priority: status === 'failed' ? 'urgent' : 'normal',
+  });
+}
+
+/**
+ * Create notification for delivery updates
+ */
+export async function notifyDeliveryUpdate(
+  userId: string,
+  orderNumber: string,
+  status: string,
+  trackingNumber?: string,
+  orderId?: string
+) {
+  const statusMessages: Record<string, { title: string; message: string }> = {
+    processing: {
+      title: 'Delivery Initiated',
+      message: `Your order ${orderNumber} is being prepared for delivery.${trackingNumber ? ` Track: ${trackingNumber}` : ''}`,
+    },
+    shipped: {
+      title: 'Order Shipped',
+      message: `Your order ${orderNumber} has been shipped and is on its way!${trackingNumber ? ` Track: ${trackingNumber}` : ''}`,
+    },
+    out_for_delivery: {
+      title: 'Out for Delivery',
+      message: `Your order ${orderNumber} is out for delivery and will arrive soon!`,
+    },
+    delivered: {
+      title: 'Order Delivered',
+      message: `Your order ${orderNumber} has been delivered. Please confirm receipt.`,
+    },
+    delivery_failed: {
+      title: 'Delivery Failed',
+      message: `We couldn't deliver your order ${orderNumber}. Our team will contact you.`,
+    },
+  };
+
+  const statusInfo = statusMessages[status] || {
+    title: 'Delivery Update',
+    message: `Your order ${orderNumber} delivery status has been updated to ${status}.`,
+  };
+
+  return createNotification({
+    userId,
+    type: 'order',
+    title: statusInfo.title,
+    message: statusInfo.message,
+    link: orderId ? `/dashboard/orders/${orderId}` : `/dashboard/orders`,
+    priority: status === 'delivered' || status === 'delivery_failed' ? 'high' : 'normal',
+    metadata: trackingNumber ? { trackingNumber } : undefined,
   });
 }
 

@@ -9,6 +9,8 @@ export interface CartItem {
   images: string[];
   seller: string;
   shopSlug?: string;
+  moq: number;
+  stock: number;
 }
 
 interface CartStore {
@@ -30,8 +32,8 @@ const createSafeStorage = () => {
   if (typeof window === "undefined") {
     return {
       getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {},
+      setItem: () => { },
+      removeItem: () => { },
     };
   }
   return localStorage;
@@ -51,15 +53,24 @@ export const useCartStore = create<CartStore>()(
         const existingItem = get().items.find((i) => i._id === item._id);
 
         if (existingItem) {
+          const newQuantity = Math.min(existingItem.quantity + 1, item.stock);
           set({
             items: get().items.map((i) =>
-              i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
+              i._id === item._id ? { ...i, quantity: newQuantity } : i
             ),
           });
         } else {
-          set({
-            items: [...get().items, { ...item, quantity: 1 }],
-          });
+          // New item starts at MOQ
+          const initialQuantity = Math.min(item.moq, item.stock);
+          if (initialQuantity > 0) {
+            set({
+              items: [...get().items, { ...item, quantity: initialQuantity }],
+            });
+            // Open cart when adding first item
+            set({ isOpen: true });
+          } else {
+            // If stock is 0, we shouldn't be able to add
+          }
         }
       },
 
@@ -70,14 +81,25 @@ export const useCartStore = create<CartStore>()(
       },
 
       updateQuantity: (id, quantity) => {
-        if (quantity <= 0) {
-          get().removeItem(id);
-          return;
+        const item = get().items.find(i => i._id === id);
+        if (!item) return;
+
+        if (quantity < item.moq) {
+          // We'll handle warnings in the UI, but store-wise we allow it 
+          // to let the user type, but we might cap it at stock.
+          // However, if quantity is 0, we remove.
+          if (quantity <= 0) {
+            get().removeItem(id);
+            return;
+          }
         }
+
+        // Always cap at stock
+        const finalQuantity = Math.min(quantity, item.stock);
 
         set({
           items: get().items.map((i) =>
-            i._id === id ? { ...i, quantity } : i
+            i._id === id ? { ...i, quantity: finalQuantity } : i
           ),
         });
       },

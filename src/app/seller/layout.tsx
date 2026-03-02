@@ -59,7 +59,7 @@ const buyerNavigation = [
   { name: "Wallet", href: "/seller/wallet", icon: Wallet },
   { name: "Orders", href: "/seller/purchases", icon: Package },
   { name: "Addresses", href: "/seller/addresses", icon: MapPin },
-  { name: "Virtual Try-On", href: "/seller/try-on", icon: Sparkles },
+  // { name: "Virtual Try-On", href: "/seller/try-on", icon: Sparkles }, // Temporarily disabled - manual overlay not AI-powered
   { name: "Referrals", href: "/seller/referrals", icon: Users },
   { name: "Wishlist", href: "/seller/wishlist", icon: Heart },
 ];

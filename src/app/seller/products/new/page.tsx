@@ -299,6 +299,120 @@ export default function NewProductPage() {
     }));
   };
 
+  // AI: Generate product description
+  const handleGenerateDescription = async () => {
+    if (!formData.title.trim()) {
+      toast.error("Please enter a product title first");
+      return;
+    }
+
+    setGeneratingDescription(true);
+    try {
+      const response = await api("/api/ai/generate-description", {
+        method: "POST",
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+        }),
+      });
+
+      if (response?.description) {
+        setFormData((prev) => ({
+          ...prev,
+          description: response.description,
+        }));
+        toast.success("Description generated with AI");
+      }
+    } catch (error: any) {
+      console.error("AI description error:", error);
+      toast.error(error?.message || "Failed to generate description");
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
+
+  // AI: Suggest product tags
+  const handleSuggestTags = async () => {
+    if (!formData.title.trim()) {
+      toast.error("Please enter a product title first");
+      return;
+    }
+
+    setSuggestingTags(true);
+    try {
+      const response = await api("/api/ai/suggest-tags", {
+        method: "POST",
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+          count: 10,
+        }),
+      });
+
+      if (response?.tags && Array.isArray(response.tags)) {
+        setFormData((prev) => ({
+          ...prev,
+          seo: {
+            ...prev.seo,
+            tags: [...new Set([...prev.seo.tags, ...response.tags])].slice(0, 15),
+          },
+        }));
+        toast.success(`${response.tags.length} tags suggested by AI`);
+      }
+    } catch (error: any) {
+      console.error("AI tags error:", error);
+      toast.error(error?.message || "Failed to suggest tags");
+    } finally {
+      setSuggestingTags(false);
+    }
+  };
+
+  // AI: Analyze product image
+  const handleAnalyzeImage = async (imageUrl: string) => {
+    try {
+      const response = await api("/api/ai/analyze-image", {
+        method: "POST",
+        body: JSON.stringify({ imageUrl }),
+      });
+
+      if (response?.analysis) {
+        const { analysis } = response;
+        
+        // Auto-fill category if empty
+        if (!formData.category && analysis.category) {
+          setFormData((prev) => ({
+            ...prev,
+            category: analysis.category,
+          }));
+        }
+
+        // Auto-fill specifications
+        setFormData((prev) => ({
+          ...prev,
+          specifications: {
+            ...prev.specifications,
+            color: analysis.attributes?.colors?.[0] || prev.specifications.color,
+            material: analysis.attributes?.materials?.[0] || prev.specifications.material,
+            gender: analysis.attributes?.gender || prev.specifications.gender,
+          },
+          seo: {
+            ...prev.seo,
+            tags: [...new Set([...prev.seo.tags, ...analysis.tags])].slice(0, 15),
+            metaTitle: analysis.seoTitle || prev.seo.metaTitle,
+            metaDescription: analysis.seoDescription || prev.seo.metaDescription,
+          },
+        }));
+
+        toast.success("Image analyzed - fields auto-filled");
+      }
+    } catch (error: any) {
+      console.error("AI image analysis error:", error);
+      toast.error(error?.message || "Failed to analyze image");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
     e.preventDefault();
 
@@ -467,7 +581,7 @@ export default function NewProductPage() {
                   <button
                     type="button"
                     disabled={!formData.title.trim() || generatingDescription}
-                    onClick={async () => { /* Logic remains same */ }}
+                    onClick={handleGenerateDescription}
                     className="flex items-center gap-2 px-4 py-2.5 glass-card border-white bg-white/20 hover:bg-white hover:shadow-premium-hover transition-all rounded-xl text-[10px] font-black uppercase tracking-widest text-taja-primary disabled:opacity-50"
                   >
                     {generatingDescription ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
@@ -476,7 +590,7 @@ export default function NewProductPage() {
                   <button
                     type="button"
                     disabled={!formData.title.trim() || suggestingTags}
-                    onClick={async () => { /* Logic remains same */ }}
+                    onClick={handleSuggestTags}
                     className="flex items-center gap-2 px-4 py-2.5 glass-card border-white bg-white/20 hover:bg-white hover:shadow-premium-hover transition-all rounded-xl text-[10px] font-black uppercase tracking-widest text-taja-primary disabled:opacity-50"
                   >
                     {suggestingTags ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tag className="h-3 w-3" />}
@@ -585,6 +699,16 @@ export default function NewProductPage() {
                         className="object-cover rounded-[28px]"
                       />
                       <div className="absolute inset-0 bg-taja-secondary/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
+                        {index === 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleAnalyzeImage(image)}
+                            className="w-full py-2 glass-card bg-taja-primary text-[9px] font-black uppercase tracking-widest text-white hover:bg-taja-primary/80 transition-all rounded-xl flex items-center justify-center gap-1"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            Analyze with AI
+                          </button>
+                        )}
                         {index !== 0 && (
                           <button
                             type="button"

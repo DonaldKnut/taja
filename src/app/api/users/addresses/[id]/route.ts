@@ -37,7 +37,14 @@ export async function PUT(
       // Update address fields
       Object.keys(body).forEach((key) => {
         if (key !== 'isDefault' && body[key] !== undefined) {
-          (address as any)[key] = body[key];
+          // Handle field name mapping for consistency
+          if (key === 'line1') {
+            (address as any).addressLine1 = body[key];
+          } else if (key === 'line2') {
+            (address as any).addressLine2 = body[key];
+          } else {
+            (address as any)[key] = body[key];
+          }
         }
       });
 

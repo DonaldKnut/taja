@@ -87,6 +87,7 @@ export default function EditProductPage() {
       quantity: 1,
       sku: "",
       trackQuantity: true,
+      moq: 1,
     },
     shipping: {
       weight: "",
@@ -107,11 +108,11 @@ export default function EditProductPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       if (!productId) return;
-      
+
       try {
         setFetching(true);
         const response = await sellerApi.getProduct(productId);
-        
+
         // Handle different response structures
         let productData;
         if (response?.data?.product) {
@@ -146,6 +147,7 @@ export default function EditProductPage() {
             quantity: productData.stock || productData.inventory?.quantity || 1,
             sku: productData.inventory?.sku || productData.sku || "",
             trackQuantity: productData.inventory?.trackQuantity !== false,
+            moq: productData.moq || productData.inventory?.moq || 1,
           },
           shipping: {
             weight: productData.shipping?.weight ? String(productData.shipping.weight) : "",
@@ -204,7 +206,7 @@ export default function EditProductPage() {
         const url = await uploadProductImage(file);
         return url;
       });
-      
+
       const uploadedUrls = await Promise.all(uploadPromises);
       setFormData((prev) => ({
         ...prev,
@@ -314,6 +316,7 @@ export default function EditProductPage() {
           quantity: formData.inventory.quantity,
           sku: formData.inventory.sku || undefined,
           trackQuantity: formData.inventory.trackQuantity,
+          moq: formData.inventory.moq || 1,
         },
         shipping: {
           weight: formData.shipping.weight
@@ -538,7 +541,7 @@ export default function EditProductPage() {
                           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         />
                       </div>
-                      
+
                       {/* Main Image Badge */}
                       {index === 0 && (
                         <div className="absolute top-2 left-2 bg-emerald-600 text-white px-2 py-1 rounded-md flex items-center gap-1 text-xs font-medium">
@@ -692,6 +695,19 @@ export default function EditProductPage() {
                     placeholder="Optional"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Minimum Order Quantity (MOQ) *
+                </label>
+                <Input
+                  name="inventory.moq"
+                  type="number"
+                  value={formData.inventory.moq}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                />
               </div>
             </CardContent>
           </Card>

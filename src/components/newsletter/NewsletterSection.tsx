@@ -62,7 +62,7 @@ export function NewsletterSection() {
                             </div>
 
                             <h2 className="text-4xl md:text-5xl font-black text-taja-secondary tracking-tighter leading-tight">
-                                Join our <span className="text-taja-primary">Newsletters</span>
+                                Join our <span className="text-taja-primary">Newsletter</span>
                             </h2>
 
                             <p className="text-lg text-gray-500 leading-relaxed font-medium">

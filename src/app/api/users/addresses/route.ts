@@ -38,9 +38,13 @@ export async function POST(request: NextRequest) {
   return requireAuth(async (req, user) => {
     try {
       const body = await request.json();
-      const { fullName, phone, addressLine1, addressLine2, city, state, postalCode, country, isDefault } = body;
+      const { fullName, phone, addressLine1, addressLine2, city, state, postalCode, country, isDefault, line1, line2 } = body;
 
-      if (!fullName || !phone || !addressLine1 || !city || !state || !country) {
+      // Map line1/line2 to addressLine1/addressLine2 if provided (compatibility with frontend)
+      const finalAddressLine1 = addressLine1 || line1;
+      const finalAddressLine2 = addressLine2 || line2;
+
+      if (!fullName || !phone || !finalAddressLine1 || !city || !state || !country) {
         return NextResponse.json(
           { success: false, message: 'Missing required fields' },
           { status: 400 }
@@ -67,8 +71,8 @@ export async function POST(request: NextRequest) {
       userDoc.addresses.push({
         fullName,
         phone,
-        addressLine1,
-        addressLine2,
+        addressLine1: finalAddressLine1,
+        addressLine2: finalAddressLine2,
         city,
         state,
         postalCode,

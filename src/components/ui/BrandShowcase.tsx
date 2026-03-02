@@ -204,61 +204,41 @@ const features = [
 ];
 
 const stats = [
-  { number: "1K+", label: "Active Sellers", icon: Users },
-  { number: "5K+", label: "Products Listed", icon: ShoppingBag },
-  { number: "2K+", label: "Happy Customers", icon: Heart },
-  { number: "100%", label: "Reliability", icon: Activity },
+  { number: "Verified", label: "Merchant Network", icon: Users },
+  { number: "Secure", label: "Escrow Payments", icon: Shield },
+  { number: "Express", label: "Nationwide Shipping", icon: Truck },
+  { number: "24/7", label: "Seller Support", icon: Activity },
 ];
 
 const testimonials = [
   {
     name: "Elizabeth Christopher",
-    role: "CTO, Ailitic",
+    role: "Boutique Owner, Eli's Thrift",
     location: "Lagos, Nigeria",
     avatar: "/assets/Black Skin Care Basics, What You Need to Know (1).jpeg",
-    company: "Ailitic",
+    company: "Eli's Thrift",
     companyLogo: "/images/logos/ailitic.svg",
-    content: "They tailor their solutions to our specific needs and goals.",
+    content: "Taja made it so easy to move my Instagram business to a professional storefront. No more 'check DM' stress.",
   },
   {
     name: "Jonathan Oluniyi",
-    role: "Project Manager, Buildwave",
+    role: "Vintage Curator, Old Soul Finds",
     location: "Abuja, Nigeria",
     avatar: "/assets/Michael Neuenhaus.jpeg",
-    company: "Buildwave",
+    company: "Old Soul Finds",
     companyLogo: "/images/logos/buildwave.svg",
     content:
-      "They organized their work and internal management was outstanding.",
+      "The escrow system built trust with my customers instantly. My sales have been much smoother since I joined.",
   },
   {
     name: "Quadri Abdul Salam",
-    role: "Lead Engineering, InHive Space",
+    role: "Sneaker Reseller, KickHive",
     location: "Port Harcourt, Nigeria",
     avatar:
       "/assets/corporate headshot, professional headshot, profile photo, Linkedin photo, sns profile.jpeg",
-    company: "InHive",
+    company: "KickHive",
     companyLogo: "/images/logos/inhive.svg",
-    content: "Working with them was a great experience.",
-  },
-  {
-    name: "Sarah Abasi",
-    role: "Marketing Director, TechFlow",
-    location: "Ibadan, Nigeria",
-    avatar: "/assets/sarah.jpeg",
-    company: "TechFlow",
-    companyLogo: "/images/logos/ailitic.svg",
-    content:
-      "Their platform has transformed how we manage our online store. Highly recommended!",
-  },
-  {
-    name: "Jolade",
-    role: "Business Owner, Jolade's Store",
-    location: "Lagos, Nigeria",
-    avatar: "/assets/jolade.jpeg",
-    company: "Jolade's Store",
-    companyLogo: "/images/logos/ailitic.svg",
-    content:
-      "Amazing platform that helped me grow my business exponentially. Customer service is top-notch!",
+    content: "Finally, a platform that understands the Nigerian market. The dashboard gives me all the insights I need.",
   },
 ];
 
@@ -352,7 +332,7 @@ export function BrandShowcase() {
             transition={{ delay: 0.1 }}
             className="text-5xl md:text-7xl lg:text-8xl font-black text-taja-secondary mb-10 tracking-tighter leading-tight"
           >
-            DM to <span className="text-transparent bg-clip-text bg-gradient-to-r from-taja-secondary via-taja-primary to-emerald-600">Digital Dominance</span>
+            DM to <span className="text-transparent bg-clip-text bg-gradient-to-r from-taja-secondary via-taja-primary to-emerald-600">Digital Growth</span>
           </motion.h2>
 
           <motion.p
@@ -362,8 +342,8 @@ export function BrandShowcase() {
             transition={{ delay: 0.2 }}
             className="text-xl md:text-2xl text-gray-500 max-w-3xl mx-auto leading-relaxed font-medium"
           >
-            Join the elite network of Nigerian entrepreneurs who've transformed their
-            craft with Taja's clinical commerce infrastructure.
+            Join a growing network of Nigerian entrepreneurs who've transformed their
+            craft with Taja's reliable commerce tools.
           </motion.p>
         </div>
 
@@ -596,7 +576,7 @@ export function BrandShowcase() {
                 Partner Intel
               </span>
               <h3 className="text-4xl md:text-6xl font-black text-taja-secondary leading-[1.1] tracking-tighter">
-                Feedback from our <span className="text-transparent bg-clip-text bg-gradient-to-r from-taja-secondary via-taja-primary to-emerald-600">Global Network</span>
+                Feedback from our <span className="text-transparent bg-clip-text bg-gradient-to-r from-taja-secondary via-taja-primary to-emerald-600">Merchant Network</span>
               </h3>
             </div>
 
@@ -661,7 +641,7 @@ export function BrandShowcase() {
 
                     <div className="mt-10 flex items-center gap-4">
                       <div className="h-px flex-1 bg-gray-100" />
-                      <div className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Validated Partner</div>
+                      <div className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Verified Merchant</div>
                     </div>
                   </div>
                 </div>
@@ -676,12 +656,12 @@ export function BrandShowcase() {
 
           <div className="relative z-10 space-y-12">
             <h3 className="text-4xl md:text-6xl font-black text-taja-secondary tracking-tighter max-w-3xl mx-auto leading-tight">
-              Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-taja-secondary via-taja-primary to-emerald-600">Architect</span> Your Future?
+              Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-taja-secondary via-taja-primary to-emerald-600">Build</span> Your Brand?
             </h3>
 
             <p className="text-xl text-gray-500 font-medium max-w-2xl mx-auto leading-relaxed">
-              Nigeria's most sophisticated commerce engine is waiting for your brand.
-              Deploy your shop instantly.
+              Nigeria's most intuitive commerce engine is waiting for your brand.
+              Launch your shop instantly.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">

@@ -34,6 +34,7 @@ import { StructuredData } from "@/components/StructuredData";
 import { generateProductStructuredData, generateBreadcrumbs } from "@/lib/seo";
 import { Container } from "@/components/layout";
 import { cn } from "@/lib/utils";
+import { AIRecommendations } from "@/components/product/AIRecommendations";
 
 // Mock product data - replace with API call
 const mockProduct = {
@@ -716,6 +717,20 @@ export default function ProductDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* AI-Powered Recommendations */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AIRecommendations 
+            productId={product.id} 
+            type="similar" 
+            limit={4}
+          />
+          <AIRecommendations 
+            productId={product.id} 
+            type="frequently_bought" 
+            limit={4}
+          />
         </div>
       </div>
     </>

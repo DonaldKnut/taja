@@ -29,7 +29,7 @@ export interface IOrder extends Document {
     discount: number;
     total: number;
   };
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'refunded' | 'disputed';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   paymentMethod: 'flutterwave' | 'paystack' | 'bank_transfer' | 'cod' | 'crypto';
   paymentReference?: string;
@@ -50,21 +50,48 @@ export interface IOrder extends Document {
   payoutStatus?: 'pending' | 'processing' | 'completed' | 'failed';
   payoutCompletedAt?: Date;
   refundReason?: string;
+  // Seller-managed delivery
   delivery: {
-    provider?: string;
+    // Tracking information provided by seller
     trackingNumber?: string;
+    carrier?: string; // e.g., "Gokada", "DHL", "FedEx", "Self"
+    trackingUrl?: string; // External tracking URL
+    shippingLabel?: string; // URL to shipping label if generated
+    // Timestamps
+    shippedAt?: Date;
     estimatedDelivery?: Date;
-    /**
-     * Optional seller-defined delivery slot selection.
-     * Used for capacity planning; validated at order creation when provided.
-     */
-    slotId?: string;
-    slotDate?: Date;
-    slotStartTime?: string;
-    slotEndTime?: string;
-    slotMaxOrders?: number;
     deliveredAt?: Date;
-    confirmedAt?: Date; // buyer confirmation (escrow release gate)
+    // Buyer confirmation (escrow release gate)
+    buyerConfirmedAt?: Date;
+    autoConfirmAt?: Date; // 7 days after marked delivered
+    // Seller notes
+    sellerNotes?: string; // e.g., "Call before delivery", "Fragile items"
+  };
+  // Buyer confirmation workflow
+  buyerConfirmation: {
+    status: 'pending' | 'confirmed' | 'auto_confirmed' | 'disputed';
+    confirmedAt?: Date;
+    disputedAt?: Date;
+    disputeReason?: 'not_received' | 'damaged' | 'wrong_item' | 'not_as_described' | 'other';
+    disputeDescription?: string;
+    disputeEvidence?: string[]; // URLs to images/evidence
+  };
+  // Dispute resolution (if applicable)
+  dispute?: {
+    openedAt: Date;
+    openedBy: mongoose.Types.ObjectId;
+    reason: string;
+    description: string;
+    evidence: string[];
+    status: 'open' | 'under_review' | 'resolved_buyer' | 'resolved_seller' | 'resolved_split';
+    adminId?: mongoose.Types.ObjectId;
+    adminNotes?: string;
+    resolution?: {
+      decision: 'full_refund' | 'partial_refund' | 'no_refund' | 'reship';
+      refundAmount?: number;
+      notes: string;
+      resolvedAt: Date;
+    };
   };
   coupon?: {
     code: string;
@@ -135,7 +162,7 @@ const OrderSchema = new Schema<IOrder>(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'],
+      enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'completed', 'cancelled', 'refunded', 'disputed'],
       default: 'pending',
     },
     paymentStatus: {
@@ -175,16 +202,54 @@ const OrderSchema = new Schema<IOrder>(
     payoutCompletedAt: Date,
     refundReason: String,
     delivery: {
-      provider: String,
       trackingNumber: String,
+      carrier: String,
+      trackingUrl: String,
+      shippingLabel: String,
+      shippedAt: Date,
       estimatedDelivery: Date,
-      slotId: String,
-      slotDate: Date,
-      slotStartTime: String,
-      slotEndTime: String,
-      slotMaxOrders: Number,
       deliveredAt: Date,
+      buyerConfirmedAt: Date,
+      autoConfirmAt: Date,
+      sellerNotes: String,
+    },
+    buyerConfirmation: {
+      status: {
+        type: String,
+        enum: ['pending', 'confirmed', 'auto_confirmed', 'disputed'],
+        default: 'pending',
+      },
       confirmedAt: Date,
+      disputedAt: Date,
+      disputeReason: {
+        type: String,
+        enum: ['not_received', 'damaged', 'wrong_item', 'not_as_described', 'other'],
+      },
+      disputeDescription: String,
+      disputeEvidence: [String],
+    },
+    dispute: {
+      openedAt: Date,
+      openedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+      reason: String,
+      description: String,
+      evidence: [String],
+      status: {
+        type: String,
+        enum: ['open', 'under_review', 'resolved_buyer', 'resolved_seller', 'resolved_split'],
+        default: 'open',
+      },
+      adminId: { type: Schema.Types.ObjectId, ref: 'User' },
+      adminNotes: String,
+      resolution: {
+        decision: {
+          type: String,
+          enum: ['full_refund', 'partial_refund', 'no_refund', 'reship'],
+        },
+        refundAmount: Number,
+        notes: String,
+        resolvedAt: Date,
+      },
     },
     coupon: {
       code: String,
