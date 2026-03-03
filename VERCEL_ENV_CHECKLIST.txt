@@ -1,0 +1,107 @@
+╔══════════════════════════════════════════════════════════════╗
+║               VERCEL ENVIRONMENT VARIABLES                   ║
+║                 CRITICAL CHECKLIST                           ║
+╚══════════════════════════════════════════════════════════════╝
+
+🚨 ACTION REQUIRED: Fix NEXTAUTH_URL on Vercel
+
+CURRENT ISSUE:
+  Your password reset emails show: localhost:3000/reset-password/...
+  This happens because NEXTAUTH_URL on Vercel might be wrong.
+
+═══════════════════════════════════════════════════════════════
+
+✅ LOCAL ENVIRONMENT - FIXED:
+  NEXTAUTH_URL=http://localhost:3000  ✓ Correct!
+
+❌ VERCEL PRODUCTION - NEEDS FIX:
+  Go to: https://vercel.com/[your-project]/settings/environment-variables
+  
+  Find: NEXTAUTH_URL
+  
+  Current value might be:
+    ❌ localhost:3000        (WRONG - will break emails)
+    ❌ tajaapp.shop          (WRONG - missing https://)
+    ❌ http://tajaapp.shop   (WRONG - should be https)
+  
+  Correct value MUST be:
+    ✅ https://tajaapp.shop  (THIS IS CORRECT!)
+
+═══════════════════════════════════════════════════════════════
+
+🎯 STEP-BY-STEP FIX:
+
+1. Go to Vercel Dashboard:
+   https://vercel.com/[your-username]/[project-name]/settings/environment-variables
+
+2. Find NEXTAUTH_URL in the list
+
+3. Click "Edit" (pencil icon)
+
+4. Change value to:
+   https://tajaapp.shop
+
+5. Make sure it's checked for:
+   ✓ Production
+   ✓ Preview (optional)
+
+6. Click "Save"
+
+7. IMPORTANT: Redeploy your app
+   - Go to Deployments tab
+   - Click "Redeploy" on latest deployment
+   - OR just push a new commit to trigger deploy
+
+═══════════════════════════════════════════════════════════════
+
+📋 ALL REQUIRED VERCEL ENV VARS:
+
+RESEND_API_KEY=re_24QHS6Au_EJr1NPhc9f5CxeMfY17g69sn
+EMAIL_FROM=teams@tajaapp.shop
+NEXTAUTH_URL=https://tajaapp.shop
+MONGODB_URI=mongodb+srv://...
+JWT_SECRET=your-jwt-secret
+NEXTAUTH_SECRET=your-nextauth-secret
+
+Optional but recommended:
+LOGO_URL=https://res.cloudinary.com/.../logo.png
+FRONTEND_URL=https://tajaapp.shop
+
+═══════════════════════════════════════════════════════════════
+
+🧪 HOW TO VERIFY IT WORKS:
+
+After redeploying:
+
+1. Trigger password reset on production
+2. Check the email you receive
+3. The link should be:
+   ✅ https://tajaapp.shop/reset-password/[token]
+   NOT localhost:3000
+
+═══════════════════════════════════════════════════════════════
+
+⚡ QUICK VERIFICATION SCRIPT:
+
+Run this locally to check your env files:
+  npx tsx src/scripts/verify-env-urls.ts
+
+═══════════════════════════════════════════════════════════════
+
+❓ WHY THIS MATTERS:
+
+- Password reset emails use NEXTAUTH_URL to build the reset link
+- If it's localhost:3000, production users get broken links
+- If it's missing https://, the link won't work
+- This affects ALL emails that contain links:
+  ✉️ Email verification
+  🔑 Password reset
+  📦 Order tracking
+  🔗 Any other app links
+
+═══════════════════════════════════════════════════════════════
+
+Last Updated: January 2024
+Status: Local ✅ Fixed | Vercel ⚠️ Needs Manual Fix
+Priority: CRITICAL - Affects all email links
+

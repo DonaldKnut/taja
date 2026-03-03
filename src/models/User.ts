@@ -22,6 +22,8 @@ export interface IUser extends Document {
   emailVerificationExpiry?: Date;
   phoneVerificationCode?: string;
   phoneVerificationExpiry?: Date;
+  passwordResetToken?: string;
+  passwordResetExpiry?: Date;
   oauthProviders: {
     google?: {
       id: string;
@@ -169,6 +171,8 @@ const UserSchema = new Schema<IUser>(
     emailVerificationExpiry: Date,
     phoneVerificationCode: String,
     phoneVerificationExpiry: Date,
+    passwordResetToken: String,
+    passwordResetExpiry: Date,
     oauthProviders: {
       google: {
         id: String,

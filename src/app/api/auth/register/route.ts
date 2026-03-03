@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import User from '@/models/User';
-import PlatformSettings from '@/models/PlatformSettings';
-import { hashPassword, generateOTP, getOTPExpiry } from '@/lib/auth';
-import { authRateLimit } from '@/lib/rateLimit';
-import { handleDbError } from '@/lib/error-handler';
+import { NextRequest, NextResponse } from "next/server";
+import connectDB from "@/lib/db";
+import User from "@/models/User";
+import PlatformSettings from "@/models/PlatformSettings";
+import { hashPassword, generateOTP, getOTPExpiry } from "@/lib/auth";
+import { authRateLimit } from "@/lib/rateLimit";
+import { handleDbError } from "@/lib/error-handler";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,50 +17,73 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { fullName, email, phone, password, role = 'buyer', referralCode } = body;
+    const {
+      fullName,
+      email,
+      phone,
+      password,
+      role = "buyer",
+      referralCode,
+    } = body;
 
     // Validation
     if (!fullName || !email || !phone || !password) {
       return NextResponse.json(
-        { success: false, message: 'All fields are required' },
-        { status: 400 }
+        { success: false, message: "All fields are required" },
+        { status: 400 },
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        { success: false, message: 'Password must be at least 6 characters' },
-        { status: 400 }
+        { success: false, message: "Password must be at least 6 characters" },
+        { status: 400 },
       );
     }
 
     await connectDB();
 
     const emailNorm = email.toLowerCase().trim();
-    const phoneNorm = (phone && typeof phone === 'string') ? phone.trim() : '';
+    const phoneNorm = phone && typeof phone === "string" ? phone.trim() : "";
 
     // Check which one is already used so we can tell the user
     const [existingByEmail, existingByPhone] = await Promise.all([
-      emailNorm ? User.findOne({ email: emailNorm }).select('_id').lean() : Promise.resolve(null),
-      phoneNorm ? User.findOne({ phone: phoneNorm }).select('_id').lean() : Promise.resolve(null),
+      emailNorm
+        ? User.findOne({ email: emailNorm }).select("_id").lean()
+        : Promise.resolve(null),
+      phoneNorm
+        ? User.findOne({ phone: phoneNorm }).select("_id").lean()
+        : Promise.resolve(null),
     ]);
 
     if (existingByEmail && existingByPhone) {
       return NextResponse.json(
-        { success: false, message: 'An account with this email and phone number already exists.' },
-        { status: 400 }
+        {
+          success: false,
+          message:
+            "An account with this email and phone number already exists.",
+        },
+        { status: 400 },
       );
     }
     if (existingByEmail) {
       return NextResponse.json(
-        { success: false, message: 'An account with this email address already exists. Try logging in or use a different email.' },
-        { status: 400 }
+        {
+          success: false,
+          message:
+            "An account with this email address already exists. Try logging in or use a different email.",
+        },
+        { status: 400 },
       );
     }
     if (existingByPhone) {
       return NextResponse.json(
-        { success: false, message: 'An account with this phone number already exists. Try logging in or use a different phone number.' },
-        { status: 400 }
+        {
+          success: false,
+          message:
+            "An account with this phone number already exists. Try logging in or use a different phone number.",
+        },
+        { status: 400 },
       );
     }
 
@@ -76,10 +99,16 @@ export async function POST(request: NextRequest) {
 
     // Optional referral (only when referral program is enabled)
     let referredBy: any = undefined;
-    const refSettings = await PlatformSettings.findOne().select('referral').lean();
+    const refSettings = await PlatformSettings.findOne()
+      .select("referral")
+      .lean();
     const refEnabled = (refSettings as any)?.referral?.enabled !== false;
-    if (refEnabled && referralCode && typeof referralCode === 'string') {
-      const referrer = await User.findOne({ referralCode: referralCode.trim().toUpperCase() }).select('_id').lean();
+    if (refEnabled && referralCode && typeof referralCode === "string") {
+      const referrer = await User.findOne({
+        referralCode: referralCode.trim().toUpperCase(),
+      })
+        .select("_id")
+        .lean();
       if (referrer?._id) {
         referredBy = referrer._id;
       }
@@ -98,54 +127,116 @@ export async function POST(request: NextRequest) {
       emailVerificationCode,
       emailVerificationExpiry,
       fraudFlags,
-      accountStatus: fraudFlags.duplicatePhone ? 'under_review' : 'active',
+      accountStatus: fraudFlags.duplicatePhone ? "under_review" : "active",
     });
 
     // Increment referrer stats (best-effort)
     if (referredBy) {
-      User.findByIdAndUpdate(referredBy, { $inc: { 'referralStats.totalReferred': 1 } }).catch(() => { });
+      User.findByIdAndUpdate(referredBy, {
+        $inc: { "referralStats.totalReferred": 1 },
+      }).catch(() => {});
     }
 
     // Send verification code email (required for email signup)
     let emailSent = false;
+    let emailError: any = null;
+
     try {
-      const { sendVerificationEmail, sendWelcomeEmail } = await import('@/lib/email');
-      await sendVerificationEmail(user.email, user.fullName, emailVerificationCode);
-      emailSent = true;
-      // Also send welcome email so they get both: "Welcome to Taja.Shop" and the verification code
-      sendWelcomeEmail(user.email, user.fullName).catch((err) =>
-        console.error('Failed to send welcome email:', err)
+      const { sendVerificationEmail, sendWelcomeEmail } =
+        await import("@/lib/email");
+
+      console.log(
+        "[REGISTER] Attempting to send verification email to:",
+        user.email,
       );
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Continue - will return OTP in development
+      console.log(
+        "[REGISTER] RESEND_API_KEY exists:",
+        !!process.env.RESEND_API_KEY,
+      );
+      console.log(
+        "[REGISTER] EMAIL_FROM:",
+        process.env.EMAIL_FROM || process.env.RESEND_FROM,
+      );
+
+      const result = await sendVerificationEmail(
+        user.email,
+        user.fullName,
+        emailVerificationCode,
+      );
+
+      if (result?.success) {
+        emailSent = true;
+        console.log(
+          "[REGISTER] ✅ Verification email sent successfully to:",
+          user.email,
+        );
+
+        // Send welcome email (non-blocking)
+        sendWelcomeEmail(user.email, user.fullName).catch((err) =>
+          console.error("[REGISTER] ⚠️ Failed to send welcome email:", err),
+        );
+      } else {
+        emailError = result?.error || "Unknown error";
+        console.error(
+          "[REGISTER] ❌ Failed to send verification email:",
+          emailError,
+        );
+      }
+    } catch (error: any) {
+      emailError = error;
+      console.error("[REGISTER] ❌ Exception sending verification email:", {
+        error: error.message,
+        stack: error.stack,
+        email: user.email,
+      });
+    }
+
+    // Log critical error in production
+    if (process.env.NODE_ENV === "production" && !emailSent) {
+      console.error("[REGISTER] 🚨 CRITICAL: Email failed in production!", {
+        email: user.email,
+        error: emailError?.message || emailError,
+        hasApiKey: !!process.env.RESEND_API_KEY,
+        hasEmailFrom: !!(process.env.EMAIL_FROM || process.env.RESEND_FROM),
+        timestamp: new Date().toISOString(),
+      });
     }
 
     // Return response with OTP in development mode
     const responseData: any = {
       userId: user._id,
       email: user.email,
+      emailSent, // Tell frontend if email was sent
     };
 
-    // Only include OTP in development
-    if (process.env.NODE_ENV === 'development' && !emailSent) {
+    // Include OTP if email failed OR in development
+    if (!emailSent || process.env.NODE_ENV === "development") {
       responseData.otpCode = emailVerificationCode;
+    }
+
+    // Different message based on email status
+    let message = "Registration successful. Please verify your email.";
+    if (!emailSent) {
+      message =
+        process.env.NODE_ENV === "production"
+          ? 'Registration successful. If you don\'t receive an email within 2 minutes, use the "Resend Code" button.'
+          : `Registration successful. Verification code: ${emailVerificationCode}`;
     }
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Registration successful. Please verify your email.',
+        message,
         data: responseData,
+        emailSent, // Frontend can show different UI based on this
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     const humanized = handleDbError(error);
     return NextResponse.json(
       { success: false, message: humanized.message },
-      { status: humanized.status }
+      { status: humanized.status },
     );
   }
 }
-
