@@ -19,7 +19,7 @@
     "@google/generative-ai": "^0.2.1",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-slot": "^1.2.3",
-    "algoliasearch": "^5.49.1",
+    "algoliasearch": "^4.22.1",
     "axios": "^1.5.0",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",

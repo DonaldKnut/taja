@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       if (mode === 'overlay') {
         // Generate overlay image
         const landmarks = await detectBodyLandmarks(optimizedUserPhoto);
-        
+
         // Determine position based on product category
         let position = { x: 0, y: 0, width: 0, height: 0 };
         const metadata = await sharp(optimizedUserPhoto).metadata();
@@ -87,8 +87,8 @@ export async function POST(request: NextRequest) {
         const userHeight = metadata.height || 0;
 
         // Simple positioning logic (can be improved with ML)
-        if (product.category?.toString().toLowerCase().includes('shirt') || 
-            product.category?.toString().toLowerCase().includes('top')) {
+        if (product.category?.toString().toLowerCase().includes('shirt') ||
+          product.category?.toString().toLowerCase().includes('top')) {
           position = {
             x: Math.floor(userWidth * 0.2),
             y: landmarks.shoulders?.y || Math.floor(userHeight * 0.3),
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
             height: Math.floor(userHeight * 0.4),
           };
         } else if (product.category?.toString().toLowerCase().includes('pant') ||
-                   product.category?.toString().toLowerCase().includes('bottom')) {
+          product.category?.toString().toLowerCase().includes('bottom')) {
           position = {
             x: Math.floor(userWidth * 0.25),
             y: landmarks.waist?.y || Math.floor(userHeight * 0.5),
@@ -186,13 +186,13 @@ export async function POST(request: NextRequest) {
       }
     } catch (error: any) {
       console.error('Virtual try-on error:', error);
-      
+
       // Check if it's a Gemini API key error
       if (error.message?.includes('Gemini API key')) {
         return NextResponse.json(
-          { 
-            success: false, 
-            message: 'AI service not configured. Please set GOOGLE_GEMINI_API_KEY in environment variables.',
+          {
+            success: false,
+            message: 'AI service not configured. Please set GEMINI_API_KEY in environment variables.',
             error: 'MISSING_API_KEY'
           },
           { status: 503 }

@@ -8,61 +8,71 @@ export const dynamic = 'force-dynamic';
 
 // GET /api/admin/products - Get all products with filters
 export async function GET(request: NextRequest) {
-    return requireRole(['admin'])(async (req, user) => {
-        try {
-            await connectDB();
+  return requireRole(['admin'])(async (req, user) => {
+    try {
+      await connectDB();
 
-            const { searchParams } = new URL(request.url);
-            const status = searchParams.get('status');
-            const category = searchParams.get('category');
-            const page = parseInt(searchParams.get('page') || '1');
-            const limit = parseInt(searchParams.get('limit') || '20');
-            const search = searchParams.get('search');
+      const { searchParams } = new URL(request.url);
+      const status = searchParams.get('status');
+      const category = searchParams.get('category');
+      const page = parseInt(searchParams.get('page') || '1');
+      const limit = parseInt(searchParams.get('limit') || '20');
+      const search = searchParams.get('search');
 
-            // Build query
-            const query: any = {};
+      // Build query
+      const query: any = {};
 
-            if (status) {
-                query.status = status;
-            }
+      if (status) {
+        query.status = status;
+      }
 
-            if (category) {
-                query.category = category;
-            }
+      if (category) {
+        query.category = category;
+      }
 
-            if (search) {
-                query.$or = [
-                    { title: { $regex: search, $options: 'i' } },
-                    { description: { $regex: search, $options: 'i' } },
-                    { 'seller.fullName': { $regex: search, $options: 'i' } },
-                ];
-            }
+      if (search) {
+        // To search by seller or shop name, we first find matching users/shops
+        const [matchingUsers, matchingShops] = await Promise.all([
+          import('@/models/User').then(m => m.default.find({ fullName: { $regex: search, $options: 'i' } }).select('_id').lean()),
+          import('@/models/Shop').then(m => m.default.find({ shopName: { $regex: search, $options: 'i' } }).select('_id').lean())
+        ]);
 
-            const skip = (page - 1) * limit;
+        const userIds = matchingUsers.map(u => u._id);
+        const shopIds = matchingShops.map(s => s._id);
 
-            const [products, total] = await Promise.all([
-                Product.find(query)
-                    .populate('seller', 'fullName email')
-                    .populate('shop', 'shopName shopSlug')
-                    .sort({ createdAt: -1 })
-                    .skip(skip)
-                    .limit(limit)
-                    .lean(),
-                Product.countDocuments(query),
-            ]);
+        query.$or = [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          ...(userIds.length ? [{ seller: { $in: userIds } }] : []),
+          ...(shopIds.length ? [{ shop: { $in: shopIds } }] : [])
+        ];
+      }
 
-            return NextResponse.json({
-                success: true,
-                data: {
-                    products,
-                    pagination: {
-                        page,
-                        limit,
-                        total,
-                        totalPages: Math.ceil(total / limit),
-                    },
-                },
-        });
+      const skip = (page - 1) * limit;
+
+      const [products, total] = await Promise.all([
+        Product.find(query)
+          .populate('seller', 'fullName email')
+          .populate('shop', 'shopName shopSlug')
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Product.countDocuments(query),
+      ]);
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          products,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        },
+      });
     } catch (error: any) {
       console.error('Get admin products error:', error);
       return NextResponse.json(

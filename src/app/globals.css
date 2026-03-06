@@ -126,6 +126,33 @@
   @apply bg-emerald-500/30 hover:bg-emerald-500/50;
 }
 
+/* Custom Scrollbar Utilities */
+.custom-scrollbar-visible::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar-visible::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.custom-scrollbar-visible::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.4);
+}
+
+.custom-scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;

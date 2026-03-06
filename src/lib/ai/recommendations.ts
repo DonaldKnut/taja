@@ -13,6 +13,7 @@
 import Order from '@/models/Order';
 import Product from '@/models/Product';
 import { connectDB } from '@/lib/db';
+import mongoose from 'mongoose';
 
 // Types
 interface RecommendationOptions {
@@ -38,6 +39,13 @@ export async function getRecommendations(
   await connectDB();
 
   const { type, limit = 8, excludeIds = [], userId } = options;
+
+  // Validate productId if required for the strategy
+  const needsProductId = ['similar', 'frequently_bought', 'cross_sell', 'upsell'].includes(type);
+  if (needsProductId && (!productId || !mongoose.Types.ObjectId.isValid(productId))) {
+    // If we need a productId but didn't get a valid one, fallback to trending
+    return getTrendingProducts(limit, excludeIds);
+  }
 
   switch (type) {
     case 'similar':
@@ -99,7 +107,7 @@ async function getSimilarProducts(
     }
 
     // Shared tags
-    const sharedTags = (p.tags || []).filter((tag: string) => 
+    const sharedTags = (p.tags || []).filter((tag: string) =>
       (product.tags || []).includes(tag)
     );
     if (sharedTags.length > 0) {
@@ -307,7 +315,7 @@ async function getPersonalizedRecommendations(
     }
 
     // Tag matches
-    const matchingTags = (p.tags || []).filter((tag: string) => 
+    const matchingTags = (p.tags || []).filter((tag: string) =>
       topTags.includes(tag)
     );
     score += matchingTags.length * 15;
@@ -321,7 +329,7 @@ async function getPersonalizedRecommendations(
     return {
       productId: p._id.toString(),
       score,
-      reason: matchingTags.length > 0 
+      reason: matchingTags.length > 0
         ? `Based on your interest in ${matchingTags[0]}`
         : 'Recommended for you',
     };
@@ -427,7 +435,7 @@ export async function getHomepageRecommendations(
 
   const [trending, personalized, newArrivals] = await Promise.all([
     getTrendingProducts(limit, excludeIds),
-    userId 
+    userId
       ? getPersonalizedRecommendations(userId, limit, excludeIds)
       : getTrendingProducts(limit, excludeIds),
     getNewArrivals(limit, excludeIds),

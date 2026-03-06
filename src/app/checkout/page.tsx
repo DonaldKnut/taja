@@ -13,6 +13,13 @@ import {
   Package,
   Truck,
   Lock,
+  ShieldCheck,
+  ChevronRight,
+  Zap,
+  Tag,
+  AlertCircle,
+  Clock,
+  Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -22,16 +29,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { checkoutApi, usersApi, cartApi } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { useCartStore } from "@/stores/cartStore";
-
-interface CartItem {
-  _id: string;
-  title: string;
-  price: number;
-  quantity: number;
-  images: string[];
-  seller?: string;
-  shopSlug?: string;
-}
+import { Container } from "@/components/layout";
+import { cn, formatCurrency } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function CheckoutPage() {
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const [couponCode, setCouponCode] = useState("");
-  const [shippingCost, setShippingCost] = useState(0);
+  const [shippingCost, setShippingCost] = useState(2500); // Base premium shipping
   const [subtotal, setSubtotal] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [shopId, setShopId] = useState<string | null>(null);
@@ -110,7 +111,6 @@ export default function CheckoutPage() {
   }, [user]);
 
   useEffect(() => {
-    // Calculate subtotal
     const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     setSubtotal(total);
   }, [cartItems]);
@@ -118,41 +118,26 @@ export default function CheckoutPage() {
   useEffect(() => {
     const loadDeliverySlots = async () => {
       try {
-        if (!cartItems.length) {
-          setShopId(null);
-          setDeliverySlots([]);
-          setSelectedDeliverySlotId("");
-          return;
-        }
+        if (!cartItems.length) return;
 
         // Determine shop from the first product in cart
         const productRes: any = await fetch(`/api/products/${encodeURIComponent(cartItems[0]._id)}`).then((r) => r.json());
-        const resolvedShopId = productRes?.data?.shop?._id || null;
-        if (!resolvedShopId) {
-          setShopId(null);
-          setDeliverySlots([]);
-          setSelectedDeliverySlotId("");
-          return;
-        }
+        const resolvedShopId = productRes?.data?.shop?._id || productRes?.data?.shop?.id || null;
+        if (!resolvedShopId) return;
 
         setShopId(resolvedShopId);
         const slotsRes: any = await fetch(`/api/shops/${encodeURIComponent(resolvedShopId)}/delivery-slots`).then((r) => r.json());
         if (slotsRes?.success && Array.isArray(slotsRes?.data)) {
           setDeliverySlots(slotsRes.data);
-          // Reset selection if slot no longer exists
           if (selectedDeliverySlotId && !slotsRes.data.find((s: any) => s.id === selectedDeliverySlotId)) {
             setSelectedDeliverySlotId("");
           }
-        } else {
-          setDeliverySlots([]);
         }
       } catch (e) {
         console.error("Failed to load delivery slots", e);
-        setDeliverySlots([]);
       }
     };
     loadDeliverySlots();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartItems.length]);
 
   const handlePlaceOrder = async () => {
@@ -163,7 +148,6 @@ export default function CheckoutPage() {
 
     if (cartItems.length === 0) {
       toast.error("Your cart is empty");
-      router.push("/marketplace");
       return;
     }
 
@@ -175,7 +159,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })),
         shippingAddress: selectedAddress,
-        paymentMethod: selectedPaymentMethod || undefined,
+        paymentMethod: selectedPaymentMethod || "paystack",
         couponCode: couponCode || undefined,
         deliverySlotId: selectedDeliverySlotId || undefined,
       };
@@ -186,60 +170,43 @@ export default function CheckoutPage() {
         const orderId = response?.data?.order?._id || response?.order?._id || response?.data?._id || response?._id;
 
         if (orderId) {
-          // If payment method is not COD, initialize payment
-          const isOnlinePayment = !selectedPaymentMethod || selectedPaymentMethod === "paystack" || selectedPaymentMethod === "";
+          const isOnlinePayment = !selectedPaymentMethod || selectedPaymentMethod === "paystack" || selectedPaymentMethod === "card";
 
           if (isOnlinePayment) {
             try {
-              // Initialize payment
               const paymentResponse = await fetch("/api/payments/initialize", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   orderId,
-                  provider: selectedPaymentMethod === "paystack" ? "paystack" : "flutterwave",
+                  provider: "paystack",
                 }),
               });
 
               const paymentData = await paymentResponse.json();
 
               if (paymentData?.success && paymentData?.data?.paymentUrl) {
-                // Clear cart before redirecting to payment
                 clearCart();
                 await cartApi.clearCart();
-
-                // Redirect to payment gateway
                 window.location.href = paymentData.data.paymentUrl;
                 return;
-              } else {
-                // Payment initialization failed, but order was created
-                toast.error("Order created but payment initialization failed. Please try paying from order details.");
               }
-            } catch (paymentError: any) {
+            } catch (paymentError) {
               console.error("Payment initialization error:", paymentError);
-              toast.error("Order created but payment initialization failed. Please try paying from order details.");
             }
-          } else {
-            // COD - just clear cart and redirect
-            clearCart();
-            await cartApi.clearCart();
-            toast.success("Order placed successfully!");
           }
 
-          if (user?.role === "seller") {
-            router.push("/seller/purchases");
-          } else {
-            router.push(orderId ? `/dashboard/orders/${orderId}` : "/dashboard/orders");
-          }
-        } else {
-          router.push(user?.role === "seller" ? "/seller/purchases" : "/dashboard/orders");
+          clearCart();
+          await cartApi.clearCart();
+          toast.success("Order placed successfully!");
+          router.push(user?.role === "seller" ? "/seller/purchases" : `/dashboard/orders/${orderId}`);
         }
       } else {
-        toast.error(response?.message || response?.error || "Failed to place order");
+        toast.error(response?.message || "Failed to place order");
       }
     } catch (error: any) {
       console.error("Order creation error:", error);
-      toast.error(error?.message || "Failed to place order. Please try again.");
+      toast.error("Failed to place order. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -250,26 +217,23 @@ export default function CheckoutPage() {
   if (cartItems.length === 0) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gray-50">
-          <header className="bg-white border-b">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-              <Logo size="md" variant="header" />
+        <div className="min-h-screen bg-white">
+          <AppHeader />
+          <Container size="sm" className="pt-20 text-center space-y-8">
+            <div className="mx-auto w-24 h-24 rounded-full bg-taja-light flex items-center justify-center animate-bounce">
+              <ShoppingCart className="h-10 w-10 text-taja-primary" />
             </div>
-          </header>
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mb-6">
-                <ShoppingCart className="h-12 w-12 text-gray-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-              <p className="text-gray-600 mb-8">Add some items to your cart to proceed with checkout.</p>
-              <Link href="/marketplace">
-                <Button size="lg" variant="gradient">
-                  Continue Shopping
-                </Button>
-              </Link>
+            <div className="space-y-4">
+              <h2 className="text-4xl font-black text-taja-secondary tracking-tighter leading-none">Your Cart is Pristine.</h2>
+              <p className="text-gray-400 font-medium max-w-xs mx-auto">No items found for acquisition. Explore our elite marketplace to begin.</p>
             </div>
-          </div>
+            <Link href="/marketplace" className="inline-block">
+              <Button size="lg" className="rounded-full px-12 h-16 shadow-premium group">
+                <span className="font-black uppercase tracking-widest text-xs">Explore Hub</span>
+                <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          </Container>
         </div>
       </ProtectedRoute>
     );
@@ -277,311 +241,255 @@ export default function CheckoutPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white border-b sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <Logo size="md" variant="header" />
-              <Link href="/marketplace">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Continue Shopping
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </header>
+      <div className="min-h-screen bg-[#FDFDFD]">
+        <AppHeader />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
-            <p className="mt-2 text-gray-600">Review your order and complete your purchase</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Order Details */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Shipping Address */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="h-5 w-5 text-emerald-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">Shipping Address</h2>
+        <main className="relative z-10 pt-8 pb-32">
+          <Container size="lg">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 px-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-1 w-8 bg-taja-primary rounded-full"></div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-taja-primary">Secure Checkout</span>
                 </div>
-                {addresses.length > 0 ? (
-                  <div className="space-y-3">
-                    {addresses.map((address: any) => (
-                      <label
-                        key={address._id || address.id}
-                        className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${selectedAddress === (address._id || address.id)
-                          ? "border-emerald-500 bg-emerald-50"
-                          : "border-gray-200 hover:border-gray-300"
-                          }`}
-                      >
-                        <input
-                          type="radio"
-                          name="address"
-                          value={address._id || address.id}
-                          checked={selectedAddress === (address._id || address.id)}
-                          onChange={(e) => setSelectedAddress(e.target.value)}
-                          className="mt-1"
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">
-                            {address.fullName || address.full_name}
-                          </div>
-                          <div className="text-sm text-gray-600 mt-1">
-                            {address.line1 || address.street || address.addressLine1}
-                            {address.line2 && `, ${address.line2}`}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {address.city}, {address.state} {address.postalCode || address.postal_code || ""}
-                          </div>
-                          <div className="text-sm text-gray-600">{address.country}</div>
-                        </div>
-                      </label>
-                    ))}
-                    <Link href={user?.role === "seller" ? "/seller/addresses" : "/dashboard/addresses"}>
-                      <Button variant="outline" size="sm" className="w-full">
-                        Add New Address
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600 mb-4">No addresses found</p>
-                    <Link href={user?.role === "seller" ? "/seller/addresses" : "/dashboard/addresses"}>
-                      <Button variant="outline">Add Address</Button>
-                    </Link>
-                  </div>
-                )}
+                <h1 className="text-3xl md:text-5xl font-black text-taja-secondary tracking-tighter leading-none">
+                  Finalizing Acquisition
+                </h1>
+                <p className="text-gray-400 font-medium text-sm">Review your curated selection and finalize secure payment.</p>
               </div>
-
-              {/* Delivery Slot (optional) */}
-              {deliverySlots.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Truck className="h-5 w-5 text-emerald-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Delivery Slot</h2>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Pick a delivery time window (optional). Slots can fill up based on the seller’s daily capacity.
-                  </p>
-                  <select
-                    value={selectedDeliverySlotId}
-                    onChange={(e) => setSelectedDeliverySlotId(e.target.value)}
-                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900"
-                  >
-                    <option value="">No slot selected</option>
-                    {deliverySlots.map((s: any) => {
-                      const dateLabel = s?.date ? new Date(s.date).toLocaleDateString() : "";
-                      const timeLabel = s?.endTime ? `${s.startTime}–${s.endTime}` : s.startTime;
-                      const remaining = typeof s.remaining === "number" ? s.remaining : undefined;
-                      const disabled = remaining === 0;
-                      const suffix = typeof remaining === "number" ? ` • ${remaining} left` : "";
-                      return (
-                        <option key={s.id} value={s.id} disabled={disabled}>
-                          {dateLabel} • {timeLabel}
-                          {suffix}
-                          {disabled ? " (Full)" : ""}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  {selectedDeliverySlotId && (
-                    <p className="mt-3 text-sm text-emerald-700 font-medium">
-                      Slot selected. Your order will be reserved for this time window (subject to capacity).
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Payment Method */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                    <CreditCard className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <h2 className="text-lg font-bold text-gray-900 tracking-tight">Payment Method</h2>
-                </div>
-
-                <div className="space-y-4">
-                  <div
-                    className={`flex items-center justify-between p-4 border-2 rounded-2xl transition-all cursor-pointer ${selectedPaymentMethod === "paystack" || !selectedPaymentMethod || selectedPaymentMethod === ""
-                      ? "border-emerald-500 bg-emerald-50/50"
-                      : "border-gray-100 opacity-60"
-                      }`}
-                    onClick={() => setSelectedPaymentMethod("paystack")}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                        <CreditCard className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm">Online Payment</p>
-                        <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Paystack • Secure Transfer</p>
-                      </div>
-                    </div>
-                    {(selectedPaymentMethod === "paystack" || !selectedPaymentMethod || selectedPaymentMethod === "") && (
-                      <CheckCircle className="h-5 w-5 text-emerald-500 fill-emerald-50" />
-                    )}
-                  </div>
-
-                  <div
-                    className={`flex items-center justify-between p-4 border-2 rounded-2xl transition-all cursor-pointer ${selectedPaymentMethod === "cod"
-                      ? "border-emerald-500 bg-emerald-50/50"
-                      : "border-gray-100 opacity-60"
-                      }`}
-                    onClick={() => setSelectedPaymentMethod("cod")}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                        <Truck className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm">Cash on Delivery</p>
-                        <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Pay upon receipt</p>
-                      </div>
-                    </div>
-                    {selectedPaymentMethod === "cod" && (
-                      <CheckCircle className="h-5 w-5 text-emerald-500 fill-emerald-50" />
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-6 p-4 rounded-xl bg-gray-50 border border-gray-100">
-                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-[0.1em] leading-relaxed">
-                    Premium encrypted transactions. Your data is never stored on our servers.
-                    Redirecting to secure gateway upon confirmation.
-                  </p>
-                </div>
-              </div>
-
-              {/* Order Items */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Package className="h-5 w-5 text-emerald-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">Order Items</h2>
-                </div>
-                <div className="space-y-4">
-                  {cartItems.map((item) => (
-                    <div key={item._id} className="flex items-center gap-4">
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
-                        {item.images?.[0] ? (
-                          <Image
-                            src={item.images[0]}
-                            alt={item.title}
-                            fill
-                            className="object-cover"
-                            sizes="64px"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Package className="h-6 w-6 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{item.title}</h3>
-                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">
-                          ₦{(item.price * item.quantity).toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-600">₦{item.price.toLocaleString()} each</p>
-                      </div>
-                    </div>
-                  ))}
+              <div className="flex items-center gap-4 bg-emerald-50 px-6 py-4 rounded-[2rem] border border-emerald-100">
+                <ShieldCheck className="w-6 h-6 text-taja-primary" />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-taja-primary">Escrow Protection</p>
+                  <p className="text-[9px] font-bold text-emerald-800/60 uppercase">Funds held securely until delivery</p>
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Order Summary */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-24">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
-
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="text-gray-900">₦{subtotal.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="text-gray-900">
-                      {shippingCost === 0 ? "Free" : `₦${shippingCost.toLocaleString()}`}
-                    </span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-sm text-emerald-600">
-                      <span>Discount</span>
-                      <span>-₦{discount.toLocaleString()}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 px-4">
+              {/* Left Column - Checkout Steps */}
+              <div className="lg:col-span-8 space-y-8">
+                {/* 1. Shipping Address */}
+                <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-taja-primary/10 rounded-2xl">
+                        <MapPin className="w-5 h-5 text-taja-primary" />
+                      </div>
+                      <h2 className="text-xl font-black text-taja-secondary tracking-tight">Delivery Hub</h2>
                     </div>
-                  )}
-                  <div className="border-t pt-3 flex justify-between font-semibold">
-                    <span className="text-gray-900">Total</span>
-                    <span className="text-gray-900">₦{total.toLocaleString()}</span>
+                    <Link href="/dashboard/settings" className="text-[10px] font-black text-taja-primary uppercase tracking-widest hover:underline">+ New Address</Link>
                   </div>
-                </div>
 
-                {/* Coupon Code */}
-                <div className="mb-6">
-                  <Input
-                    placeholder="Coupon code"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="mb-2"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={async () => {
-                      if (!couponCode) return;
-                      try {
-                        const response = await checkoutApi.applyCoupon(couponCode);
-                        if (response?.success !== false) {
-                          const discountAmount = response?.data?.discount || response?.discount || 0;
-                          setDiscount(discountAmount);
-                          toast.success("Coupon applied successfully!");
-                        } else {
-                          toast.error(response?.message || "Invalid coupon code");
-                        }
-                      } catch (error: any) {
-                        toast.error(error?.message || "Failed to apply coupon");
-                      }
-                    }}
-                  >
-                    Apply Coupon
-                  </Button>
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {addresses.length > 0 ? (
+                      addresses.map((addr) => (
+                        <button
+                          key={addr._id}
+                          onClick={() => setSelectedAddress(addr._id)}
+                          className={cn(
+                            "text-left p-6 rounded-3xl border-2 transition-all duration-300 relative group",
+                            selectedAddress === addr._id
+                              ? "border-taja-primary bg-taja-primary/5 ring-4 ring-taja-primary/5"
+                              : "border-gray-100 hover:border-gray-200"
+                          )}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{addr.label || "Residency"}</span>
+                            {selectedAddress === addr._id && <CheckCircle className="w-4 h-4 text-taja-primary" />}
+                          </div>
+                          <p className="font-bold text-taja-secondary leading-tight truncate">{addr.street || addr.address}</p>
+                          <p className="text-xs text-gray-400 font-medium mt-1">{addr.city}, {addr.state}</p>
+                          {addr.isDefault && (
+                            <span className="inline-block mt-3 px-2 py-0.5 rounded-full bg-gray-100 text-[8px] font-black uppercase text-gray-400">Primary</span>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="col-span-2 p-10 border-2 border-dashed border-gray-100 rounded-[2.5rem] text-center">
+                        <AlertCircle className="w-8 h-8 text-gray-200 mx-auto mb-4" />
+                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No addresses registered</p>
+                        <Button variant="outline" size="sm" className="mt-4 rounded-full" onClick={() => router.push("/dashboard/settings")}>Configure Residency</Button>
+                      </div>
+                    )}
+                  </div>
+                </section>
 
-                {/* Place Order Button */}
-                <Button
-                  onClick={handlePlaceOrder}
-                  disabled={loading || !selectedAddress || cartItems.length === 0}
-                  variant="gradient"
-                  className="w-full"
-                  size="lg"
-                >
-                  {loading ? (
-                    "Processing..."
+                {/* 2. Delivery Options */}
+                <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="p-2.5 bg-amber-500/10 rounded-2xl">
+                      <Clock className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <h2 className="text-xl font-black text-taja-secondary tracking-tight">Delivery Logistics</h2>
+                  </div>
+
+                  {deliverySlots.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {deliverySlots.map((slot) => (
+                        <button
+                          key={slot._id}
+                          onClick={() => setSelectedDeliverySlotId(slot._id)}
+                          className={cn(
+                            "flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all duration-300",
+                            selectedDeliverySlotId === slot._id
+                              ? "border-taja-primary bg-taja-primary/5 shadow-lg"
+                              : "border-gray-100 hover:border-gray-200"
+                          )}
+                        >
+                          <Truck className={cn("w-6 h-6 mb-3", selectedDeliverySlotId === slot._id ? "text-taja-primary" : "text-gray-200")} />
+                          <span className="text-xs font-black text-taja-secondary uppercase tracking-tight">{slot.day || "Flexible"}</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase mt-1">{slot.time || "standard"}</span>
+                        </button>
+                      ))}
+                    </div>
                   ) : (
-                    <>
-                      <Lock className="mr-2 h-5 w-5" />
-                      Place Order
-                    </>
+                    <div className="p-6 bg-taja-light/30 rounded-3xl border border-taja-primary/5 flex items-center gap-4">
+                      <Zap className="w-5 h-5 text-taja-primary" />
+                      <p className="text-[10px] font-black uppercase text-taja-secondary tracking-widest">Priority Dispatch Scheduled within 24-48 Hours</p>
+                    </div>
                   )}
-                </Button>
+                </section>
 
-                <p className="text-xs text-gray-500 text-center mt-4">
-                  Your payment is secure and encrypted
-                </p>
+                {/* 3. Payment Model */}
+                <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="p-2.5 bg-blue-500/10 rounded-2xl">
+                      <Wallet className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <h2 className="text-xl font-black text-taja-secondary tracking-tight">Secure Payment</h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    {[
+                      { id: "paystack", name: "Card / Transfer", provider: "Paystack", secure: true },
+                      { id: "cod", name: "Payment on Arrival", provider: "Escrow", secure: false }
+                    ].map((method) => (
+                      <button
+                        key={method.id}
+                        onClick={() => setSelectedPaymentMethod(method.id)}
+                        className={cn(
+                          "w-full flex items-center justify-between p-6 rounded-3xl border-2 transition-all duration-300",
+                          selectedPaymentMethod === method.id
+                            ? "border-taja-primary bg-taja-primary/5 shadow-lg"
+                            : "border-gray-100 hover:border-gray-200"
+                        )}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "h-12 w-12 rounded-2xl flex items-center justify-center",
+                            selectedPaymentMethod === method.id ? "bg-taja-primary text-white" : "bg-gray-100 text-gray-400"
+                          )}>
+                            <CreditCard className="w-6 h-6" />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-black text-taja-secondary uppercase tracking-widest text-xs">{method.name}</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">via {method.provider} Security</p>
+                          </div>
+                        </div>
+                        {method.secure && <Lock className="w-4 h-4 text-emerald-500" />}
+                        {selectedPaymentMethod === method.id && <CheckCircle className="w-5 h-5 text-taja-primary" />}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </div>
+
+              {/* Right Column - Summary */}
+              <div className="lg:col-span-4 space-y-8">
+                {/* Order Summary */}
+                <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium sticky top-28">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="p-2.5 bg-gray-50 rounded-2xl">
+                      <Package className="w-5 h-5 text-taja-secondary" />
+                    </div>
+                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Order Insight</h2>
+                  </div>
+
+                  <div className="space-y-6 mb-8 max-h-[300px] overflow-y-auto no-scrollbar">
+                    {cartItems.map((item) => (
+                      <div key={item._id} className="flex gap-4">
+                        <div className="h-16 w-16 rounded-2xl overflow-hidden relative shrink-0 border border-gray-100">
+                          <Image src={item.images[0] || "/placeholder.jpg"} alt={item.title} fill className="object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-taja-secondary text-sm truncate">{item.title}</h4>
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                            {item.quantity} × {formatCurrency(item.price)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black text-taja-secondary text-xs">{formatCurrency(item.price * item.quantity)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-4 pt-6 border-t border-gray-100">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Subtotal</span>
+                      <span className="font-bold text-taja-secondary">{formatCurrency(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Logistics</span>
+                      <span className="font-bold text-taja-secondary">{formatCurrency(shippingCost)}</span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between items-center text-taja-primary">
+                        <span className="text-[10px] font-black uppercase tracking-widest">Redemption</span>
+                        <span className="font-bold">-{formatCurrency(discount)}</span>
+                      </div>
+                    )}
+
+                    <div className="relative pt-4">
+                      <Input
+                        placeholder="COUPON CODE"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        className="rounded-2xl h-12 bg-gray-50 border-transparent text-[10px] font-black uppercase tracking-widest"
+                      />
+                      <button className="absolute right-3 top-[calc(50%+8px)] -translate-y-1/2 p-2 text-taja-primary">
+                        <Tag className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="pt-6 mt-4 border-t-2 border-dashed border-gray-100">
+                      <div className="flex justify-between items-end mb-8">
+                        <div>
+                          <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-1">Total Amount</p>
+                          <p className="text-3xl font-black text-taja-secondary tracking-tighter">
+                            {formatCurrency(total)}
+                          </p>
+                        </div>
+                        <Zap className="w-6 h-6 text-taja-primary mb-2 animate-pulse" />
+                      </div>
+
+                      <Button
+                        onClick={handlePlaceOrder}
+                        disabled={loading}
+                        className="w-full rounded-[2rem] h-16 font-black uppercase tracking-widest text-xs shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700 hover:scale-[1.02] transition-transform"
+                      >
+                        {loading ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                        ) : (
+                          <>
+                            <Lock className="w-4 h-4 mr-2" />
+                            Secure Order Completion
+                          </>
+                        )}
+                      </Button>
+
+                      <div className="flex items-center justify-center gap-2 mt-6">
+                        <ShieldCheck className="w-3.h-3 text-gray-300" />
+                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em]">Verified Hub Merchant</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
             </div>
-          </div>
-        </div>
+          </Container>
+        </main>
       </div>
     </ProtectedRoute>
   );

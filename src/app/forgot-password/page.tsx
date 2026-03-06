@@ -12,6 +12,9 @@ import {
   Smartphone,
   ChevronRight,
   Info,
+  Shield,
+  Truck,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -151,11 +154,11 @@ export default function ForgotPasswordPage() {
                       Restore <span className="text-taja-primary">Access</span>
                     </h2>
                     <p className="text-sm font-medium text-gray-500 tracking-wide">
-                      Locked out? Enter your credentials for recovery.
+                      Forgot your password? No worries. Enter your email and we'll help you get back to your shop.
                     </p>
                   </div>
 
-                  <div className="glass-card p-10 border-white/60 bg-white/20 backdrop-blur-xl space-y-8 shadow-2xl">
+                  <div className="glass-card p-10 border-white/60 bg-white/80 backdrop-blur-xl space-y-8 shadow-2xl rounded-[2.5rem]">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                       <div className="space-y-2">
                         <label
@@ -178,7 +181,7 @@ export default function ForgotPasswordPage() {
                               if (error) setError(null);
                             }}
                             className="pl-12 py-6 bg-white/30 backdrop-blur-md border border-white/40 focus:bg-white/50 focus:border-taja-primary/40 focus:ring-taja-primary/10 rounded-2xl shadow-inner text-sm font-bold transition-all"
-                            placeholder="agent@taja.shop"
+                            placeholder="sola@gmail.com"
                           />
                         </div>
                         {error && (
@@ -363,126 +366,48 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Right Panel: Informational Section */}
-        <div className="hidden md:flex relative flex-col items-center justify-center p-12 overflow-hidden bg-white border-l border-gray-50">
+        <div className="relative hidden md:flex flex-col items-center justify-center p-12 overflow-hidden bg-white border-l border-gray-50">
           <div className="absolute inset-0 motif-blanc opacity-60"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-emerald-50/50 via-transparent to-transparent pointer-events-none rotate-12" />
-
-          <div className="relative z-10 w-full max-w-sm space-y-12">
-            <div className="space-y-4 text-center lg:text-left">
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4, duration: 0.8 }}
-              >
-                <h3 className="text-4xl font-black text-taja-secondary tracking-tighter leading-none">
-                  Account Recovery <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-taja">
-                    Made Simple.
-                  </span>
-                </h3>
-              </motion.div>
-              <motion.p
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="text-gray-400 font-medium leading-relaxed"
-              >
-                We'll help you get back to your shop in no time. Your security
-                is our top priority, but the process shouldn't be a headache.
-              </motion.p>
+          <div className="relative w-full max-w-sm space-y-6">
+            <div className="space-y-4 mb-12 text-center lg:text-left pt-20">
+              <h3 className="text-4xl font-black text-taja-secondary tracking-tighter leading-none">
+                Elite Commerce <br />
+                <span className="text-transparent bg-clip-text bg-gradient-taja">Perfected.</span>
+              </h3>
+              <p className="text-gray-400 font-medium">Join top Nigerian sellers setting the new standard and get our newsletters.</p>
             </div>
-
-            {/* Recovery Features Grid */}
             <div className="space-y-4">
               {[
-                {
-                  icon: ShieldCheck,
-                  title: "Smart Validation",
-                  desc: "Proving it's you, without the friction.",
-                },
-                {
-                  icon: Zap,
-                  title: "Instant Sync",
-                  desc: "Get back to selling immediately once verified.",
-                },
-                {
-                  icon: Smartphone,
-                  title: "Recognized Hubs",
-                  desc: "We remember your trusted, verified devices.",
-                },
-                {
-                  icon: Sparkles,
-                  title: "Neural Lock",
-                  desc: "AI-monitored recovery for elite security.",
-                },
-              ].map((feature, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + i * 0.1 }}
-                  className="glass-card p-5 rounded-2xl border-gray-100 flex items-start gap-4 hover:-translate-y-1 transition-all"
-                >
+                { title: "Escrow Protection", desc: "Bank-level security for every transaction.", icon: Shield },
+                { title: "Smart Logistics", desc: "Unified shipping across all major cities.", icon: Truck },
+                { title: "Premium Tools", desc: "Advanced analytics for modern growth.", icon: Activity },
+              ].map((item, i) => (
+                <div key={i} className="glass-card p-5 rounded-2xl border-gray-100 flex items-start gap-4 hover:-translate-y-1 transition-all">
                   <div className="h-10 w-10 rounded-xl bg-taja-light flex items-center justify-center shrink-0">
-                    <feature.icon className="h-5 w-5 text-taja-primary" />
+                    <item.icon className="h-5 w-5 text-taja-primary" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-taja-secondary tracking-tight mb-0.5">
-                      {feature.title}
-                    </h4>
-                    <p className="text-xs text-gray-400 font-medium">
-                      {feature.desc}
-                    </p>
+                    <p className="text-sm font-black text-taja-secondary tracking-tight">{item.title}</p>
+                    <p className="text-xs text-gray-400 font-medium">{item.desc}</p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
-
-            {/* Quick Support Link */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.1 }}
-            >
-              <Link href="/help">
-                <div className="glass-card bg-white/50 border-gray-100 p-6 flex items-center justify-between group hover:border-taja-primary/40 transition-all duration-500 rounded-[2rem]">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-taja-primary/10 flex items-center justify-center text-taja-primary">
-                      <Mail className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-[10px] font-black text-taja-secondary uppercase tracking-widest">
-                        Still restricted?
-                      </h4>
-                      <p className="text-[10px] text-gray-400 font-medium">
-                        Connect with our security task force.
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-taja-primary group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
-            </motion.div>
           </div>
-
           <div className="absolute bottom-8 left-12 flex items-center gap-3">
             <div className="flex -space-x-2">
-              {[1, 2, 3].map((n) => (
-                <div
-                  key={n}
-                  className="h-8 w-8 rounded-full border-2 border-white bg-gray-100 shadow-sm overflow-hidden"
-                >
-                  <img
-                    src={`https://i.pravatar.cc/100?img=${n + 25}`}
-                    alt="User"
-                    className="h-full w-full object-cover opacity-80"
-                  />
-                </div>
-              ))}
+              <div className="h-8 w-8 rounded-full border-2 border-white bg-gray-100 shadow-sm overflow-hidden">
+                <img src="https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/dele_mup0gl.png" alt="User" className="h-full w-full object-cover" />
+              </div>
+              <div className="h-8 w-8 rounded-full border-2 border-white bg-gray-100 shadow-sm overflow-hidden">
+                <img src="https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/LYNNPINNEDIT___mv5yne.jpg" alt="User" className="h-full w-full object-cover" />
+              </div>
+              <div className="h-8 w-8 rounded-full border-2 border-white bg-gray-100 shadow-sm overflow-hidden">
+                <img src="https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/Portrait____Cooperate_headshot_qfzmsr.jpg" alt="User" className="h-full w-full object-cover" />
+              </div>
             </div>
-            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
-              Securing Top Shops
-            </p>
+            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Trusted by Nigerians</p>
           </div>
         </div>
       </div>

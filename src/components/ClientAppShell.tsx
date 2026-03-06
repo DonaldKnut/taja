@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import { Providers } from "@/components/Providers";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
+import { CartDrawer, useCartStore } from "@/components/cart";
+import { WishlistDrawer } from "@/components/wishlist/WishlistDrawer";
 
 interface ClientAppShellProps {
   children: React.ReactNode;
@@ -59,10 +61,22 @@ export function ClientAppShell({ children }: ClientAppShellProps) {
   // Full shell for all other routes (including /login which needs AuthProvider)
   return (
     <Providers>
+      <CartShell children={children} />
+    </Providers>
+  );
+}
+
+function CartShell({ children }: { children: React.ReactNode }) {
+  const { isOpen, toggleCart } = useCartStore();
+
+  return (
+    <>
       <div className="min-h-screen bg-gradient-to-br from-taja-light to-white pb-24 md:pb-0">
         {children}
       </div>
       <MobileBottomNav />
+      <CartDrawer isOpen={isOpen} onClose={toggleCart} />
+      <WishlistDrawer />
       <Toaster
         position="top-center"
         containerClassName="toast-glass-container"
@@ -74,7 +88,7 @@ export function ClientAppShell({ children }: ClientAppShellProps) {
           duration: 4000,
         }}
       />
-    </Providers>
+    </>
   );
 }
 

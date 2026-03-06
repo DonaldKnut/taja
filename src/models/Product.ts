@@ -11,6 +11,7 @@ export interface IProduct extends Document {
   subcategory?: string;
   condition: 'new' | 'like-new' | 'good' | 'fair' | 'poor';
   price: number;
+  maxPrice?: number;
   compareAtPrice?: number;
   currency: string;
   images: string[];
@@ -62,7 +63,7 @@ export interface IProduct extends Document {
     /** Optional: cost per kg for weight-based pricing (logistics-style) */
     costPerKg?: number;
     /** Optional: tiered delivery by max weight (kg) => cost in Naira */
-    weightTiers?: Array< { maxWeightKg: number; costNaira: number } >;
+    weightTiers?: Array<{ maxWeightKg: number; costNaira: number }>;
     processingTime: '1-2-days' | '3-5-days' | '1-week' | '2-weeks';
   };
   specifications: Record<string, any>;
@@ -124,6 +125,10 @@ const ProductSchema = new Schema<IProduct>(
       type: Number,
       required: [true, 'Product price is required'],
       min: [0, 'Price must be positive'],
+    },
+    maxPrice: {
+      type: Number,
+      min: [0, 'Max price must be positive'],
     },
     compareAtPrice: {
       type: Number,

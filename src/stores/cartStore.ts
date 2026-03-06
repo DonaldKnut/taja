@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { toast } from "react-hot-toast";
 
 export interface CartItem {
   _id: string;
@@ -50,10 +51,15 @@ export const useCartStore = create<CartStore>()(
       },
 
       addItem: (item) => {
+        const itemStock = item.stock ?? 999;
         const existingItem = get().items.find((i) => i._id === item._id);
 
         if (existingItem) {
-          const newQuantity = Math.min(existingItem.quantity + 1, item.stock);
+          if (existingItem.quantity >= itemStock) {
+            toast.error("Maximum stock reached");
+            return;
+          }
+          const newQuantity = Math.min(existingItem.quantity + 1, itemStock);
           set({
             items: get().items.map((i) =>
               i._id === item._id ? { ...i, quantity: newQuantity } : i
@@ -61,15 +67,15 @@ export const useCartStore = create<CartStore>()(
           });
         } else {
           // New item starts at MOQ
-          const initialQuantity = Math.min(item.moq, item.stock);
-          if (initialQuantity > 0) {
+          const initialQuantity = Math.min(item.moq || 1, itemStock);
+          if (initialQuantity > 0 && itemStock > 0) {
             set({
-              items: [...get().items, { ...item, quantity: initialQuantity }],
+              items: [...get().items, { ...item, stock: itemStock, quantity: initialQuantity }],
             });
             // Open cart when adding first item
             set({ isOpen: true });
           } else {
-            // If stock is 0, we shouldn't be able to add
+            toast.error("Item out of stock");
           }
         }
       },

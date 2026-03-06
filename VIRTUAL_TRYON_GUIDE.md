@@ -17,7 +17,7 @@ The virtual try-on feature uses Google Gemini AI to analyze products and user ph
 3. Add it to your `.env.local`:
 
 ```bash
-GOOGLE_GEMINI_API_KEY=your-api-key-here
+GEMINI_API_KEY=your-api-key-here
 ```
 
 ### 2. Install Dependencies

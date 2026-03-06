@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
       });
     } catch (error: any) {
       console.error('Analyze image error:', error);
-      
+
       if (error.message?.includes('Gemini API')) {
         return NextResponse.json(
-          { 
-            success: false, 
-            message: 'AI service not configured. Please set GOOGLE_GEMINI_API_KEY.',
+          {
+            success: false,
+            message: 'AI service not configured. Please set GEMINI_API_KEY.',
             error: 'MISSING_API_KEY'
           },
           { status: 503 }

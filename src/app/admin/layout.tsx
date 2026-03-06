@@ -29,6 +29,7 @@ import {
   Store,
   Mail,
   Tag,
+  ChevronDown,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -37,6 +38,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationsModal } from "@/components/NotificationsModal";
 import { SearchModal } from "@/components/SearchModal";
 import { motion, AnimatePresence } from "framer-motion";
+import { CartIcon, useCartStore } from "@/components/cart";
 
 const adminNavGroups = [
   {
@@ -83,10 +85,12 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileExpanded, setProfileExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
+  const { toggleCart } = useCartStore();
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
 
@@ -116,56 +120,79 @@ export default function AdminLayout({
         </div>
       )}
 
-      {/* Admin profile section */}
+      {/* Admin profile section - Collapsible */}
       <div className="mb-6">
-        <div className="flex items-center gap-4 p-4 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-3xl shadow-huge">
-          <div className="relative h-12 w-12 rounded-2xl bg-emerald-500 p-0.5 flex-shrink-0">
-            <div className="h-full w-full rounded-[14px] bg-slate-950 flex items-center justify-center text-sm font-black text-white overflow-hidden relative">
-              {user?.avatar ? (
-                <Image src={user.avatar} alt={user?.fullName || "Admin"} fill className="object-cover" unoptimized={user.avatar.startsWith("http")} />
-              ) : (
-                <span>{getUserInitials()}</span>
-              )}
+        <button
+          onClick={() => setProfileExpanded(!profileExpanded)}
+          className="w-full flex items-center justify-between p-4 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-3xl shadow-huge hover:bg-white/10 transition-colors"
+        >
+          <div className="flex items-center gap-4 text-left">
+            <div className="relative h-12 w-12 rounded-2xl bg-emerald-500 p-0.5 flex-shrink-0">
+              <div className="h-full w-full rounded-[14px] bg-slate-950 flex items-center justify-center text-sm font-black text-white overflow-hidden relative">
+                {user?.avatar ? (
+                  <Image src={user.avatar} alt={user?.fullName || "Admin"} fill className="object-cover" unoptimized={user.avatar.startsWith("http")} />
+                ) : (
+                  <span>{getUserInitials()}</span>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-black text-white tracking-tight truncate leading-none mb-1">
-              {user?.fullName || "Administrative Operator"}
-            </p>
-            <p className="text-[10px] text-white/40 truncate mb-2">
-              {user?.email}
-            </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400/80">
-                Primary Overseer
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-black text-white tracking-tight truncate leading-none mb-1">
+                {user?.fullName || "Administrative Operator"}
               </p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400/80">
+                  Primary Overseer
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+          <motion.div
+            animate={{ rotate: profileExpanded ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="h-5 w-5 text-white/40" />
+          </motion.div>
+        </button>
 
-      {/* Admin Quick Actions */}
-      <div className="mb-6 px-2 space-y-2">
-        <Link
-          href="/admin/shops/new"
-          className="group flex items-center justify-center gap-3 w-full px-6 py-3.5 bg-white/10 text-white border border-white/20 rounded-2xl font-black uppercase tracking-[0.15em] hover:bg-white/20 transition-all text-[10px]"
-        >
-          <Store className="h-4 w-4" />
-          New shop
-        </Link>
-        <Link
-          href="/admin/products/new"
-          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-white text-emerald-950 rounded-2xl font-black uppercase tracking-[0.15em] shadow-premium hover:shadow-premium-hover hover:-translate-y-0.5 transition-all text-[11px]"
-        >
-          <Plus className="h-4 w-4" />
-          New Product
-          <Sparkles className="h-4 w-4 text-emerald-500 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-        </Link>
+        <AnimatePresence>
+          {profileExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="pt-4 px-2 space-y-2">
+                <div className="mb-4 px-2">
+                  <p className="text-[10px] text-white/40 truncate text-center">
+                    {user?.email}
+                  </p>
+                </div>
+                <Link
+                  href="/admin/shops/new"
+                  className="group flex items-center justify-center gap-3 w-full px-6 py-3.5 bg-white/10 text-white border border-white/20 rounded-2xl font-black uppercase tracking-[0.15em] hover:bg-white/20 transition-all text-[10px]"
+                >
+                  <Store className="h-4 w-4" />
+                  New shop
+                </Link>
+                <Link
+                  href="/admin/products/new"
+                  className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-white text-emerald-950 rounded-2xl font-black uppercase tracking-[0.15em] shadow-premium hover:shadow-premium-hover hover:-translate-y-0.5 transition-all text-[11px]"
+                >
+                  <Plus className="h-4 w-4" />
+                  New Product
+                  <Sparkles className="h-4 w-4 text-emerald-500 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Navigation Groups */}
-      <nav className="flex-1 space-y-8 overflow-y-auto custom-scrollbar-hidden pb-10">
+      <nav className="flex-1 space-y-8 overflow-y-auto custom-scrollbar-visible pb-10">
         {adminNavGroups.map((group) => (
           <div key={group.label}>
             <p className="px-4 mb-4 text-[9px] font-black uppercase tracking-[0.3em] text-white/30">{group.label}</p>
@@ -262,6 +289,14 @@ export default function AdminLayout({
                   </span>
                 )}
               </button>
+
+              <div className="hidden md:flex relative">
+                <CartIcon
+                  className="p-3 text-gray-400 hover:text-emerald-500 bg-white border border-gray-100 hover:border-emerald-100 transition-all rounded-2xl shadow-sm"
+                  iconSize="h-5 w-5"
+                  badgeClassName="!h-5 !w-5 !text-[10px] !-top-1 !-right-1 bg-emerald-500 text-white border-2 border-white shadow-sm"
+                />
+              </div>
 
               <div className="h-8 w-px bg-gray-100 mx-2 hidden sm:block" />
 

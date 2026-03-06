@@ -128,6 +128,31 @@ export async function POST(request: NextRequest) {
 
       await connectDB();
 
+      // Resolve Category ID if name is provided instead of ObjectId
+      let finalCategoryId = category;
+      const { default: Category } = await import('@/models/Category');
+      const mongoose = (await import('mongoose')).default;
+
+      if (!mongoose.Types.ObjectId.isValid(category)) {
+        const foundCategory = await Category.findOne({
+          $or: [
+            { name: { $regex: new RegExp(`^${category}$`, 'i') } },
+            { slug: category.toLowerCase().replace(/[^a-z0-9]+/g, '-') }
+          ]
+        });
+
+        if (foundCategory) {
+          finalCategoryId = foundCategory._id;
+        } else {
+          // Fallback: If category doesn't exist, we might want to create a general one or return error
+          // For now, let's return error to keep it clean, but we could also use a "General" fallback
+          return NextResponse.json(
+            { success: false, message: `Category '${category}' not found.` },
+            { status: 400 }
+          );
+        }
+      }
+
       // Enforce Shop Existence
       const Shop = (await import('@/models/Shop')).default;
       const userShop = await Shop.findOne({ owner: user.userId });
@@ -163,7 +188,7 @@ export async function POST(request: NextRequest) {
         slug: existingProduct ? `${slug}-${Date.now()}` : slug,
         description,
         longDescription,
-        category,
+        category: finalCategoryId,
         subcategory,
         condition: condition || 'new',
         price,

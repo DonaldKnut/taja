@@ -11,7 +11,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY || '';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 /**
@@ -48,6 +48,7 @@ export async function analyzeProductImage(
   tags: string[];
   seoTitle: string;
   seoDescription: string;
+  suggestedPriceRange: string;
 }> {
   if (!genAI) {
     throw new Error('Gemini API not configured');
@@ -74,7 +75,8 @@ Return a JSON object with this exact structure:
   "description": "A compelling 2-3 sentence product description",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8"],
   "seoTitle": "SEO-optimized title (50-60 characters)",
-  "seoDescription": "SEO meta description (150-160 characters)"
+  "seoDescription": "SEO meta description (150-160 characters)",
+  "suggestedPriceRange": "Suggested price range in Nigerian Naira (e.g., ₦25,000 - ₦30,000)"
 }
 
 Guidelines:
@@ -120,6 +122,7 @@ Return ONLY valid JSON, no markdown formatting.`;
       tags: analysis.tags || [],
       seoTitle: analysis.seoTitle || '',
       seoDescription: analysis.seoDescription || '',
+      suggestedPriceRange: analysis.suggestedPriceRange || '',
     };
   } catch (error: any) {
     console.error('Image analysis error:', error);
@@ -323,7 +326,7 @@ export function mapToSystemCategory(
   // Try exact match first
   const exactMatch = systemCategories.find(
     cat => cat.name.toLowerCase() === normalizedAiCategory ||
-           cat.name.toLowerCase() === normalizedAiSubcategory
+      cat.name.toLowerCase() === normalizedAiSubcategory
   );
 
   if (exactMatch) {
@@ -334,9 +337,9 @@ export function mapToSystemCategory(
   const partialMatch = systemCategories.find(cat => {
     const catName = cat.name.toLowerCase();
     return normalizedAiCategory.includes(catName) ||
-           catName.includes(normalizedAiCategory) ||
-           normalizedAiSubcategory.includes(catName) ||
-           catName.includes(normalizedAiSubcategory);
+      catName.includes(normalizedAiCategory) ||
+      normalizedAiSubcategory.includes(catName) ||
+      catName.includes(normalizedAiSubcategory);
   });
 
   if (partialMatch) {

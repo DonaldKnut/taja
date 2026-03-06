@@ -16,7 +16,7 @@ export async function GET(
 
     // Check if productId is a valid ObjectId, otherwise search by slug
     const isObjectId = mongoose.Types.ObjectId.isValid(params.productId);
-    
+
     let product;
     if (isObjectId) {
       product = await Product.findById(params.productId)
@@ -92,6 +92,7 @@ export async function PUT(
         'subcategory',
         'condition',
         'price',
+        'maxPrice',
         'compareAtPrice',
         'images',
         'videos',
@@ -104,8 +105,18 @@ export async function PUT(
 
       allowedFields.forEach((field) => {
         if (body[field] !== undefined) {
-          if (field === 'inventory' || field === 'shipping' || field === 'specifications' || field === 'seo') {
-            (product as any)[field] = { ...(product as any)[field], ...body[field] };
+          if (field === 'inventory' || field === 'shipping' || field === 'seo') {
+            // For nested objects, we want to merge but prevent learking Mongoose internals
+            // Best way is to convert the existing Mongoose document to a plain object first if it exists
+            const existingValue = product[field] && typeof (product[field] as any).toObject === 'function'
+              ? (product[field] as any).toObject()
+              : (product as any)[field];
+
+            (product as any)[field] = { ...existingValue, ...body[field] };
+          } else if (field === 'specifications') {
+            // Specifications is a Map, should be replaced entirely or merged carefully
+            // Replacing entirely is safer if the user sends the full set
+            product.specifications = body[field];
           } else {
             (product as any)[field] = body[field];
           }

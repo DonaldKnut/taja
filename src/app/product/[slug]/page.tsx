@@ -22,6 +22,7 @@ import {
   Sparkles,
   Zap,
   MessageCircle,
+  ArrowRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -32,102 +33,55 @@ import { cartApi, productsApi } from "@/lib/api";
 import toast from "react-hot-toast";
 import { StructuredData } from "@/components/StructuredData";
 import { generateProductStructuredData, generateBreadcrumbs } from "@/lib/seo";
-import { Container } from "@/components/layout";
-import { cn } from "@/lib/utils";
 import { AIRecommendations } from "@/components/product/AIRecommendations";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { cn } from "@/lib/utils";
+import { Container } from "@/components/layout";
 
-// Mock product data - replace with API call
-const mockProduct = {
-  id: "1",
-  slug: "vintage-denim-jacket",
-  title: "Vintage Denim Jacket",
-  description:
-    "A stunning vintage denim jacket in excellent condition. Perfect for casual wear and fashion-forward looks. Made from high-quality denim that has been carefully maintained. This piece features a classic fit and timeless style that never goes out of fashion.",
-  longDescription: `This beautiful vintage denim jacket is a must-have for any fashion enthusiast. Crafted from premium denim fabric, it offers both comfort and style.
+const fallbackImage = "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png";
 
-Features:
-• Classic fit with adjustable cuffs
-• Multiple pockets for functionality
-• Durable construction
-• Vintage wash finish
-• Authentic vintage styling
-
-This jacket has been carefully maintained and is in excellent condition. It's perfect for layering in colder months or as a statement piece in warmer weather. The timeless design makes it versatile for various occasions.`,
-  price: 15000,
-  compareAtPrice: 25000,
-  stock: 5,
-  images: [
-    "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
-    "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=800",
-    "https://images.unsplash.com/photo-1525450824786-227cbef70703?w=800",
-    "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=800",
-  ],
-  condition: "like-new",
-  category: "Clothing",
-  location: "Lagos",
-  createdAt: new Date(),
-  views: 1245,
+// Initial loading state or empty product
+const emptyProduct = {
+  id: "",
+  slug: "",
+  title: "Loading...",
+  description: "",
+  longDescription: "",
+  price: 0,
+  compareAtPrice: 0,
+  maxPrice: 0,
+  stock: 0,
+  images: [],
+  condition: "good",
+  category: "",
+  location: "",
+  createdAt: new Date().toISOString(),
+  views: 0,
   shop: {
-    shopName: "Amina Thrift",
-    shopSlug: "amina-thrift",
-    isVerified: true,
-    averageRating: 4.8,
-    totalProducts: 45,
-    followers: 1234,
-    since: "2023",
+    shopName: "Loading...",
+    shopSlug: "",
+    isVerified: false,
+    averageRating: 0,
+    totalProducts: 0,
+    followers: 0,
+    since: "",
     socialLinks: {
-      instagram: "aminathrift_ng",
-      whatsapp: "2348123456789",
+      instagram: "",
+      whatsapp: "",
     },
   },
-  reviews: [
-    {
-      id: "1",
-      userName: "Sarah M.",
-      rating: 5,
-      comment: "Love this jacket! Perfect fit and condition is amazing.",
-      date: "2024-01-15",
-      images: [],
-    },
-    {
-      id: "2",
-      userName: "Michael T.",
-      rating: 4,
-      comment: "Great quality for the price. Fast shipping too!",
-      date: "2024-01-10",
-      images: [],
-    },
-  ],
-  relatedProducts: [
-    {
-      id: "2",
-      slug: "handmade-ankara-bag",
-      title: "Handmade Ankara Bag",
-      price: 8000,
-      images: [
-        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
-      ],
-    },
-    {
-      id: "3",
-      slug: "designer-sneakers",
-      title: "Designer Sneakers",
-      price: 45000,
-      images: [
-        "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400",
-      ],
-    },
-  ],
+  reviews: [],
+  relatedProducts: [],
 };
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
-  const [product, setProduct] = useState(mockProduct);
-  const [loading, setLoading] = useState(false);
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const { addItem, updateQuantity } = useCartStore();
+  const { addItem, updateQuantity, toggleCart, isOpen } = useCartStore();
 
   // Format WhatsApp URL with optional product context message
   const getWhatsAppUrl = (whatsapp: string, product?: any) => {
@@ -185,11 +139,13 @@ export default function ProductDetailPage() {
           description: productData.description || "",
           longDescription: productData.longDescription || productData.description || "",
           price: productData.price || 0,
+          maxPrice: productData.maxPrice || 0,
           compareAtPrice: productData.compareAtPrice || productData.originalPrice,
-          stock: productData.stock || productData.inventory?.quantity || 0,
+          stock: productData.inventory?.quantity ?? productData.stock ?? 0,
+          moq: productData.inventory?.moq ?? 1,
           images: productData.images || [],
           condition: productData.condition || "good",
-          category: productData.category || "",
+          category: productData.category?.name || productData.category || "",
           specifications: productData.specifications || {},
           location: productData.location || "",
           createdAt: productData.createdAt || new Date().toISOString(),
@@ -237,6 +193,8 @@ export default function ProductDetailPage() {
         images: product.images,
         seller: product.shop.shopName,
         shopSlug: product.shop.shopSlug,
+        moq: product.moq,
+        stock: product.stock,
       });
 
       // Update quantity if needed
@@ -253,6 +211,11 @@ export default function ProductDetailPage() {
       }
 
       toast.success("Added to cart!");
+
+      // Ensure drawer is open to show the item
+      if (!isOpen) {
+        toggleCart();
+      }
     } catch (error: any) {
       console.error("Error adding to cart:", error);
       toast.error(error?.message || "Failed to add to cart");
@@ -265,21 +228,27 @@ export default function ProductDetailPage() {
   };
 
 
-  const discountPercentage = product.compareAtPrice
+  const discountPercentage = (product && product.compareAtPrice)
     ? Math.round(
       ((product.compareAtPrice - product.price) / product.compareAtPrice) *
       100
     )
     : 0;
 
-  if (loading) {
+  if (loading || !product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-taja-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading product...</p>
+      <>
+        <AppHeader />
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="text-center">
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="absolute inset-0 border-t-2 border-emerald-500 rounded-full animate-spin"></div>
+              <div className="absolute inset-4 border-r-2 border-taja-primary rounded-full animate-spin-reverse"></div>
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 animate-pulse">Initializing Luxury...</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -312,49 +281,38 @@ export default function ProductDetailPage() {
     <>
       <StructuredData data={productStructuredData} />
       <StructuredData data={breadcrumbs} />
-      <div className="min-h-screen bg-motif-blanc text-taja-secondary selection:bg-taja-primary/30 selection:text-taja-secondary">
-        {/* Cinematic Background Elements */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-taja-primary/5 blur-[140px] rounded-full" />
-          <div className="absolute top-[30%] -right-[10%] w-[40%] h-[40%] bg-emerald-500/5 blur-[120px] rounded-full" />
+      <div className="min-h-screen bg-white text-taja-secondary selection:bg-taja-primary/30 selection:text-taja-secondary">
+        <AppHeader />
+
+        {/* Product Carousel / Full-Bleed Gallery for Mobile */}
+        <div className="lg:hidden w-full relative aspect-square bg-slate-50 overflow-hidden">
+          <ImageSlider
+            images={product.images}
+            className="w-full h-full"
+            showDots
+          />
+          <div className="absolute top-4 left-4 flex flex-col gap-2">
+            {discountPercentage > 0 && (
+              <div className="bg-emerald-500 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                <Zap className="h-3 w-3 text-white fill-white" />
+                <span className="text-[9px] font-black tracking-widest text-white uppercase">{discountPercentage}% OFF</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Dynamic Navigation Bar - Premium Glass */}
-        <nav className="sticky top-0 z-60 border-b border-slate-100 bg-white/70 backdrop-blur-xl px-4 sm:px-10 h-16 sm:h-20 transition-all duration-500">
-          <div className="max-w-[1400px] mx-auto h-full flex items-center justify-between">
-            <button
-              onClick={() => router.back()}
-              className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-900"
-            >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white border border-slate-100 flex items-center justify-center group-hover:bg-slate-50 transition-all shadow-sm">
-                <ChevronLeft className="h-4 w-4" />
-              </div>
-              <span className="hidden sm:inline">Back</span>
-            </button>
-
-            <div className="flex items-center gap-3">
-              <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-900 shadow-sm">
-                <Share2 className="h-4 w-4 sm:h-5 sm:h-5" />
-              </button>
-              <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-900 shadow-sm">
-                <Heart className="h-4 w-4 sm:h-5 sm:h-5" />
-              </button>
-            </div>
-          </div>
-        </nav>
-
         {/* Main Product Showcase */}
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-10 pt-10 pb-24 relative z-10">
-          <div className="grid lg:grid-cols-12 gap-16">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10">
+          <div className="grid lg:grid-cols-12 gap-10 lg:gap-20">
 
-            {/* Left Column: Visuals */}
-            <div className="lg:col-span-7 space-y-6">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="group relative aspect-square sm:aspect-[4/5] bg-slate-50 rounded-none sm:rounded-[2.5rem] overflow-hidden sm:shadow-lg"
-              >
-                <div className="relative w-full h-full">
+            {/* Left Column: Desktop Visuals */}
+            <div className="hidden lg:block lg:col-span-7 space-y-8">
+              <div className="sticky top-32">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="group relative aspect-[4/5] bg-slate-50 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-emerald-900/5"
+                >
                   <Image
                     src={product.images[selectedImageIndex]}
                     alt={product.title}
@@ -364,373 +322,283 @@ export default function ProductDetailPage() {
                     sizes="(max-width: 1024px) 100vw, 60vw"
                   />
 
-                  {/* Badges on Gallery */}
-                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  {/* Gallery Overlays */}
+                  <div className="absolute top-8 left-8 flex flex-col gap-3">
                     {discountPercentage > 0 && (
-                      <div className="bg-emerald-500 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 ring-1 ring-white/20">
-                        <Zap className="h-3 w-3 text-white fill-white" />
-                        <span className="text-[9px] font-black tracking-widest text-white uppercase">{discountPercentage}% OFF</span>
+                      <div className="bg-emerald-500 px-4 py-2 rounded-full shadow-xl flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-white fill-white animate-pulse" />
+                        <span className="text-[10px] font-black tracking-widest text-white uppercase">{discountPercentage}% OFF</span>
                       </div>
                     )}
-                    <div className="bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-[9px] font-black tracking-widest text-white uppercase">
+                    <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full border border-white/50 text-[10px] font-black tracking-widest text-taja-secondary uppercase shadow-lg">
                       {product.condition}
                     </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
 
-              {/* Thumbnails Mosaic */}
-              {product.images.length > 1 && (
-                <div className="flex gap-3 px-4 sm:px-0 overflow-x-auto no-scrollbar">
-                  {product.images.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={cn(
-                        "relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all",
-                        selectedImageIndex === index
-                          ? "border-emerald-500 scale-105 shadow-md"
-                          : "border-transparent opacity-60"
-                      )}
-                    >
-                      <Image
-                        src={image}
-                        alt={`${product.title} ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="80px"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Right Column: Interaction & Data */}
-            <div className="lg:col-span-5 flex flex-col h-full lg:sticky lg:top-24">
-              <div className="space-y-10">
-                {/* Product Metadata */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    {product.shop.shopSlug ? (
-                      <Link href={`/shop/${product.shop.shopSlug}`} className="group flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-black text-white">
-                          {product.shop.shopName.charAt(0)}
-                        </div>
-                        <span className="text-xs font-bold text-slate-900 group-hover:text-emerald-600 transition-colors uppercase tracking-widest">{product.shop.shopName}</span>
-                      </Link>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-black text-white">
-                          {product.shop.shopName.charAt(0)}
-                        </div>
-                        <span className="text-xs font-bold text-slate-900 uppercase tracking-widest">{product.shop.shopName}</span>
-                      </div>
-                    )}
-                    {product.shop.isVerified && <ShieldCheck className="h-4 w-4 text-emerald-500" />}
-                  </div>
-
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-                    {product.title}
-                  </h1>
-
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1 text-amber-500">
-                      <Star className="h-4 w-4 fill-current" />
-                      <span className="text-sm font-bold text-slate-900">{product.shop.averageRating}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <MapPin className="h-4 w-4" />
-                      <span className="text-xs font-bold uppercase tracking-widest">{product.location}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pricing & Stock Panel */}
-                <div className="p-8 rounded-[2rem] bg-white border border-slate-100 shadow-xl overflow-hidden relative">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest uppercase">Price</p>
-                    <div className="flex items-baseline gap-3">
-                      <span className="text-5xl font-black text-slate-900 tracking-tight">
-                        ₦{product.price.toLocaleString()}
-                      </span>
-                      {product.compareAtPrice && (
-                        <span className="text-xl text-slate-300 line-through">
-                          ₦{product.compareAtPrice.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {product.stock > 0 && (
-                    <div className="mt-8 flex items-center gap-4">
-                      <div className="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
-                        <button
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-lg transition-all"
-                          disabled={quantity <= 1}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-12 text-center font-bold text-lg">{quantity}</span>
-                        <button
-                          onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                          className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-lg transition-all"
-                          disabled={quantity >= product.stock}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{product.stock} in stock</span>
-                        <span className="text-[9px] text-slate-400 font-medium">Ready for immediate delivery</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-4">
-                  {product.stock > 0 ? (
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Button
-                        onClick={handleBuyNow}
-                        className="flex-1 h-16 sm:h-20 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest shadow-2xl hover:bg-emerald-600 transition-all duration-500"
+                {/* Thumbnails Mosaic */}
+                {product.images.length > 1 && (
+                  <div className="flex gap-4 mt-8 overflow-x-auto no-scrollbar pb-2">
+                    {product.images.map((image: string, index: number) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImageIndex(index)}
+                        className={cn(
+                          "relative flex-shrink-0 w-24 h-24 rounded-3xl overflow-hidden border-2 transition-all duration-500",
+                          selectedImageIndex === index
+                            ? "border-emerald-500 scale-105 shadow-xl rotate-0"
+                            : "border-transparent opacity-60 hover:opacity-100 -rotate-2"
+                        )}
                       >
-                        Buy Now
-                      </Button>
-                      <Button
-                        onClick={handleAddToCart}
-                        variant="outline"
-                        className="flex-1 h-16 sm:h-20 rounded-2xl border-2 border-slate-900 text-slate-900 font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
-                      >
-                        Add to Cart
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="h-16 sm:h-20 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black uppercase tracking-widest">
-                      Out of Stock
-                    </div>
-                  )}
-
-                  {product.sellerId && (
-                    <Link href={`/chat?seller=${product.sellerId}&product=${product.id}`}>
-                      <Button
-                        variant="outline"
-                        className="w-full h-16 rounded-2xl border-2 border-taja-primary text-taja-primary font-black uppercase tracking-widest hover:bg-taja-primary/10 gap-2"
-                      >
-                        <MessageCircle className="h-5 w-5" />
-                        Message seller
-                      </Button>
-                    </Link>
-                  )}
-                  {product.shop.socialLinks?.whatsapp && (
-                    <a
-                      href={getWhatsAppUrl(product.shop.socialLinks.whatsapp, product) || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-3 w-full h-16 rounded-2xl bg-[#25D366] text-white font-black uppercase tracking-widest hover:bg-[#128C7E] transition-all shadow-lg"
-                    >
-                      <Phone className="h-5 w-5" />
-                      WhatsApp
-                    </a>
-                  )}
-
-                </div>
-
-                {/* Ecosystem Verification */}
-                <div className="grid grid-cols-2 gap-5 pt-4">
-                  <div className="p-5 rounded-[2.5rem] bg-white border border-black/5 flex items-center gap-4 transition-all hover:border-taja-primary/20 hover:shadow-premium">
-                    <div className="w-12 h-12 rounded-2xl bg-taja-primary/10 flex items-center justify-center shrink-0">
-                      <Shield className="h-6 w-6 text-taja-primary" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-taja-secondary uppercase tracking-tight">Escrow System</span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Global Protection</span>
-                    </div>
+                        <Image src={image} alt="" fill className="object-cover" />
+                      </button>
+                    ))}
                   </div>
-                  <div className="p-5 rounded-[2.5rem] bg-white border border-black/5 flex items-center gap-4 transition-all hover:border-emerald-500/20 hover:shadow-premium">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                      <Truck className="h-6 w-6 text-emerald-500" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-taja-secondary uppercase tracking-tight">Secure Logistics</span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Priority Transit</span>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Detailed Specifications & Reviews */}
-          <div className="mt-32 grid lg:grid-cols-12 gap-16">
-            <div className="lg:col-span-8 space-y-20">
-              {/* Description Section */}
-              <section className="space-y-10">
-                <div className="flex items-center gap-6">
-                  <h2 className="text-3xl font-black text-taja-secondary uppercase tracking-[0.2em] italic">The Narrative</h2>
-                  <div className="flex-1 h-px bg-taja-primary/10" />
+            {/* Right Column: Details */}
+            <div className="lg:col-span-5 space-y-10">
+              <div className="space-y-6">
+                {/* Meta Actions */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1 text-emerald-500">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={cn("h-3 w-3 fill-emerald-500")} />
+                      ))}
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Verified Elite Choice
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                      <Share2 className="w-5 h-5 text-gray-400" />
+                    </button>
+                    <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                      <Heart className="w-5 h-5 text-gray-400" />
+                    </button>
+                  </div>
                 </div>
-                <div className="prose prose-xl max-w-none">
-                  <p className="text-gray-500 leading-relaxed font-medium text-lg leading-[1.8]">
-                    {product.longDescription}
+
+                <div className="space-y-2">
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-taja-secondary tracking-tighter leading-tight italic">
+                    {product.title}
+                  </h1>
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-gradient-to-r from-emerald-100 to-transparent"></div>
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em]">Authentic Quality</span>
+                  </div>
+                </div>
+
+                {/* Pricing & Offer */}
+                <div className="space-y-2">
+                  <div className="flex items-baseline gap-4">
+                    <span className="text-4xl sm:text-5xl font-black text-taja-primary tracking-tighter">
+                      ₦{product.price.toLocaleString()}
+                      {product.maxPrice > product.price && (
+                        <span className="text-3xl font-bold ml-1"> - ₦{product.maxPrice.toLocaleString()}</span>
+                      )}
+                    </span>
+                    {product.compareAtPrice > product.price && (
+                      <span className="text-xl text-gray-300 line-through decoration-emerald-500/30 decoration-2">
+                        ₦{product.compareAtPrice.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                    <Truck className="w-3 h-3" />
+                    {product.shipping?.freeShipping ? "Complementary Elite Shipping" : "Priority Dispatch in 24h"}
                   </p>
                 </div>
-              </section>
+              </div>
 
-              {/* Reviews Section */}
-              <section className="space-y-12">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                  <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-taja-secondary uppercase tracking-[0.2em] italic">Verified Vouches</h2>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">{product.reviews.length} authenticated transcripts</p>
-                  </div>
-                  <div className="px-6 py-4 bg-white rounded-[2rem] border border-black/5 text-xs font-black shadow-premium flex items-center gap-3">
-                    <Star className="h-5 w-5 fill-amber-500 text-amber-500" />
-                    <span className="text-xl tracking-tighter italic">{product.shop.averageRating} <span className="text-gray-200 ml-1">/ 5.0</span></span>
-                  </div>
-                </div>
-
-                <div className="grid gap-8">
-                  {product.reviews.map((review, idx) => (
-                    <motion.div
-                      key={review.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      viewport={{ once: true }}
-                      className="p-10 rounded-[3rem] bg-white border border-black/5 shadow-premium group/review transition-all hover:bg-gray-50/50"
+              {/* Action Stack - Only visible on Desktop */}
+              <div className="hidden lg:flex flex-col gap-4">
+                <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-3xl border border-slate-100">
+                  <div className="flex items-center bg-white rounded-2xl border border-slate-100 p-1">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-taja-primary transition-colors"
                     >
-                      <div className="flex items-start justify-between mb-8">
-                        <div className="flex items-center gap-5">
-                          <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-taja-primary/5 to-transparent flex items-center justify-center text-2xl font-black text-taja-primary border border-black/5 ring-1 ring-white/60">
-                            {review.userName.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-black text-taja-secondary uppercase text-sm tracking-[0.1em]">{review.userName}</p>
-                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
-                              <CheckCircle className="h-3 w-3 text-emerald-500" /> Authorized Buyer
-                            </p>
-                            <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest mt-1 tracking-[0.1em]">{review.date}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-1.5">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${i < review.rating ? "fill-amber-500 text-amber-500" : "text-gray-100"}`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <p className="text-gray-600 leading-relaxed font-medium text-lg italic pl-1 border-l-4 border-taja-primary/10">"{review.comment}"</p>
-                    </motion.div>
-                  ))}
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="w-12 text-sm font-black text-center">{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-taja-primary transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <Button
+                    onClick={handleAddToCart}
+                    disabled={product.stock <= 0}
+                    variant="outline"
+                    className={cn(
+                      "flex-1 h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] border-emerald-500/20 hover:bg-emerald-50",
+                      product.stock <= 0 && "opacity-50 cursor-not-allowed border-gray-100"
+                    )}
+                  >
+                    {product.stock > 0 ? "Reserving Space" : "Unavailable"}
+                  </Button>
                 </div>
-              </section>
-            </div>
+                <Button
+                  onClick={handleBuyNow}
+                  disabled={product.stock <= 0}
+                  className={cn(
+                    "w-full h-16 rounded-[1.25rem] text-xs font-black uppercase tracking-[0.3em] shadow-premium bg-gradient-to-r from-taja-secondary to-slate-800",
+                    product.stock <= 0 && "opacity-50 cursor-not-allowed grayscale"
+                  )}
+                >
+                  {product.stock > 0 ? "Acquire Now" : "Out of Stock"}
+                </Button>
 
-            {/* Sidebar: Merchant Overview */}
-            <div className="lg:col-span-4">
-              <div className="sticky top-24 space-y-8">
-                <div className="p-10 rounded-[3rem] bg-taja-secondary text-white shadow-[0_48px_96px_-32px_rgba(15,23,42,0.3)] relative overflow-hidden group/merchant selection:bg-taja-primary/40">
-                  {/* Cinematic Elements */}
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-taja-primary/10 blur-[80px] rounded-full -mr-24 -mt-24 group-hover/merchant:bg-taja-primary/20 transition-colors duration-1000" />
+                {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className="w-full h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                  >
+                    <a
+                      href={getWhatsAppUrl(product.shop.socialLinks.whatsapp, {
+                        title: `Restock Inquiry: ${product.title}`,
+                        price: product.price
+                      }) || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      Inquire about Restock
+                    </a>
+                  </Button>
+                )}
+              </div>
 
-                  <div className="relative space-y-10">
-                    <div className="flex items-center gap-6">
-                      <div className="w-24 h-24 rounded-[2rem] bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-4xl font-black italic relative shadow-inner">
-                        {product.shop.shopName.charAt(0)}
-                        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-huge ring-4 ring-taja-secondary">
-                          <ShieldCheck className="h-5 w-5 text-emerald-500 fill-emerald-500" />
-                        </div>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-emerald-300 uppercase tracking-[0.3em]">Authorized Store</span>
-                        <h3 className="text-3xl font-black tracking-tighter italic leading-tight mt-1 text-white">{product.shop.shopName}</h3>
-                        <p className="text-[9px] font-black text-emerald-200/90 uppercase tracking-widest mt-2">
-                          Active Since {product.shop.since ? new Date(product.shop.since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently'}
-                        </p>
-                      </div>
+              {/* Shop Profile Mini */}
+              <Link
+                href={`/shop/${product.shop.shopSlug}`}
+                className="group flex items-center justify-between p-6 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white transition-all hover:shadow-xl hover:shadow-emerald-900/5"
+              >
+                <div className="flex items-center gap-5">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md">
+                    <Image
+                      src={fallbackImage}
+                      alt={product.shop.shopName}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="font-black text-taja-secondary group-hover:text-taja-primary transition-colors">{product.shop.shopName}</h4>
+                      {product.shop.isVerified && <ShieldCheck className="h-4 w-4 text-emerald-500" />}
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/10 backdrop-blur-md">
-                        <p className="text-[8px] font-black text-emerald-200/80 uppercase tracking-widest mb-2">Store Collection</p>
-                        <p className="text-2xl font-black tracking-tighter italic text-white">{product.shop.totalProducts}</p>
-                        <span className="text-[8px] font-bold text-emerald-200/70 uppercase tracking-widest">Total Items</span>
-                      </div>
-                      <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/10 backdrop-blur-md">
-                        <p className="text-[8px] font-black text-emerald-200/80 uppercase tracking-widest mb-2">Community</p>
-                        <p className="text-2xl font-black tracking-tighter italic text-white">{product.shop.followers}</p>
-                        <span className="text-[8px] font-bold text-emerald-200/70 uppercase tracking-widest">Followers</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 pt-4">
-                      {product.shop.shopSlug ? (
-                        <Button
-                          className="w-full h-16 rounded-[2rem] bg-white text-taja-secondary hover:bg-taja-primary hover:text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-premium transition-all duration-500 italic"
-                          onClick={() => router.push(`/shop/${product.shop.shopSlug}`)}
-                        >
-                          Enter Merchant Showroom
-                        </Button>
-                      ) : (
-                        <Button
-                          className="w-full h-16 rounded-[2rem] bg-white/50 text-gray-400 font-black text-[10px] uppercase tracking-[0.3em] cursor-not-allowed italic"
-                          disabled
-                          title="Shop page link unavailable"
-                        >
-                          Enter Merchant Showroom (unavailable)
-                        </Button>
-                      )}
-
-                      {product.shop.socialLinks?.instagram && (
-                        <a
-                          href={getInstagramUrl(product.shop.socialLinks.instagram) || "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-4 w-full h-16 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all"
-                        >
-                          <Instagram className="h-5 w-5" />
-                          Merchant Intel (IG)
-                        </a>
-                      )}
-                    </div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      {product.shop.followers.toLocaleString()} Collectors • Level 5 Partner
+                    </p>
                   </div>
                 </div>
+                <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center group-hover:bg-emerald-50 transition-colors">
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </Link>
 
-                {/* Taja Protocol Guarantee */}
-                <div className="p-10 rounded-[3rem] bg-white border border-black/5 shadow-premium space-y-6 relative overflow-hidden group/guarantee">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-taja-primary opacity-40" />
-                  <div className="flex items-center gap-4 relative z-10">
-                    <div className="p-3 bg-taja-primary/10 rounded-2xl">
-                      <Shield className="h-6 w-6 text-taja-primary" />
-                    </div>
-                    <h4 className="text-xs font-black text-taja-secondary uppercase tracking-widest italic">Taja Purchase Protection</h4>
-                  </div>
-                  <p className="text-[11px] font-medium text-gray-400 leading-relaxed relative z-10 italic">
-                    Your transactions are protected by our secure Escrow system. Funds are safely held in our vault until you confirm the successful delivery of your items.
+              {/* Trust Features */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-3 p-5 rounded-3xl bg-emerald-50/50 border border-emerald-100/50">
+                  <ShieldCheck className="w-6 h-6 text-emerald-600" />
+                  <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest leading-relaxed">
+                    Escrow Protected<br />Secure Payment
                   </p>
                 </div>
+                <div className="flex flex-col gap-3 p-5 rounded-3xl bg-taja-primary/5 border border-taja-primary/10">
+                  <Truck className="w-6 h-6 text-taja-primary" />
+                  <p className="text-[10px] font-black text-taja-primary uppercase tracking-widest leading-relaxed">
+                    Doorstep Delivery<br />Tracking Included
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-6 pt-6">
+                <div className="flex gap-4 border-b border-gray-100">
+                  <button className="pb-4 text-[10px] font-black uppercase tracking-widest text-taja-secondary border-b-2 border-taja-primary">The Narrative</button>
+                  <button className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Specifications</button>
+                </div>
+                <p className="text-gray-500 leading-relaxed text-sm lg:text-base italic">
+                  "{product.description}"
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* AI-Powered Recommendations */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AIRecommendations 
-            productId={product.id} 
-            type="similar" 
-            limit={4}
-          />
-          <AIRecommendations 
-            productId={product.id} 
-            type="frequently_bought" 
-            limit={4}
-          />
+        {/* Global sticky bar for actions on Mobile */}
+        <AnimatePresence>
+          <motion.div
+            initial={{ y: 100 }}
+            animate={{ y: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/80 backdrop-blur-xl border-t border-gray-100 p-4 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]"
+          >
+            <div className="max-w-7xl mx-auto flex items-center gap-3">
+              <Button
+                onClick={handleAddToCart}
+                disabled={product.stock <= 0}
+                variant="outline"
+                className={cn(
+                  "flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] border-gray-200",
+                  product.stock <= 0 && "opacity-50 cursor-not-allowed border-gray-100"
+                )}
+              >
+                {product.stock > 0 ? "Reserve" : "Sold Out"}
+              </Button>
+              <Button
+                onClick={handleBuyNow}
+                disabled={product.stock <= 0}
+                className={cn(
+                  "flex-[2] rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700",
+                  product.stock <= 0 && "opacity-50 cursor-not-allowed grayscale"
+                )}
+              >
+                {product.stock > 0 ? "Acquire Now" : "Out of Stock"}
+              </Button>
+
+              {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="w-14 h-14 rounded-2xl p-0 flex items-center justify-center border-emerald-500/20 text-emerald-600"
+                >
+                  <a
+                    href={getWhatsAppUrl(product.shop.socialLinks.whatsapp, {
+                      title: `Availability Inquiry: ${product.title}`,
+                      price: product.price
+                    }) || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="w-6 h-6" />
+                  </a>
+                </Button>
+              )}
+            </div>
+            {/* Safe Area Spacer for iOS */}
+            <div className="h-[env(safe-area-inset-bottom)]" />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Recommendations Section */}
+        <div className="bg-slate-50 border-t border-slate-200">
+          <Container size="lg" className="py-24">
+            <div className="mb-12">
+              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em] block mb-4">Curated Intelligence</span>
+              <h2 className="text-4xl font-black text-taja-secondary tracking-tighter">You Might Also Prefer</h2>
+            </div>
+            {product.id && <AIRecommendations productId={product.id} limit={4} />}
+          </Container>
         </div>
       </div>
     </>

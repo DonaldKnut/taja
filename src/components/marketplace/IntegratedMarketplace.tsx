@@ -1,181 +1,355 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Search, Filter, Grid, List } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { Search, Filter, ShoppingCart, Zap, Gift, Tag, Star, Sparkles, ChevronRight, ShoppingBag, ShieldCheck, Crown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/product";
 import { useMarketplaceFeed } from "@/hooks/useMarketplaceFeed";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { CATEGORIES } from "@/lib/constants/categories";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
+import Link from "next/link";
+import { useCartStore } from "@/stores/cartStore";
+import { CartIcon } from "@/components/cart/CartIcon";
 
-type ViewMode = "grid" | "list";
+// Sliding background images for the header
+const HEADER_IMAGES = [
+    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop",
+];
 
-export function IntegratedMarketplace() {
+export interface IntegratedMarketplaceProps {
+    isInsideDashboard?: boolean;
+}
+
+export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedMarketplaceProps) {
     const [selectedCategory, setSelectedCategory] = useState<string>("");
-    const [selectedCondition, setSelectedCondition] = useState<string>("");
-    const [viewMode, setViewMode] = useState<ViewMode>("grid");
+    const [selectedTab, setSelectedTab] = useState<string>("All");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showVerifiedIntro, setShowVerifiedIntro] = useState(true);
+    const [headerIndex, setHeaderIndex] = useState(0);
 
     const { user } = useAuth();
+    const firstName = user?.fullName?.split(" ")[0] || "Shopper";
+    const { items, toggleCart, getTotalItems } = useCartStore();
+    const cartCount = getTotalItems();
+
     const feed = useMarketplaceFeed({
         category: selectedCategory || undefined,
+        search: searchQuery || undefined,
     });
 
+    // Derived Brands from Product Feed
+    const brands = useMemo(() => {
+        const uniqueBrands = new Set<string>();
+        feed.products.forEach(p => {
+            // Check specifications for brand
+            if (p.specifications?.brand) {
+                uniqueBrands.add(p.specifications.brand);
+            } else if (p.specifications?.Brand) {
+                uniqueBrands.add(p.specifications.Brand);
+            }
+        });
+
+        // Fallback if no brands found in feed, or to supplement
+        const list = Array.from(uniqueBrands).map(b => ({
+            name: b,
+            logo: `https://ui-avatars.com/api/?name=${encodeURIComponent(b)}&background=f8fafc&color=0f172a&bold=true`
+        }));
+
+        if (list.length === 0) {
+            return [
+                { name: "Nike", logo: "https://www.nike.com/favicon.ico" },
+                { name: "Apple", logo: "https://www.apple.com/favicon.ico" },
+                { name: "Sony", logo: "https://www.sony.net/favicon.ico" },
+            ];
+        }
+        return list;
+    }, [feed.products]);
+
     const displayedProducts = useMemo(() => {
-        if (!selectedCondition) return feed.products;
-        return feed.products.filter((product) => product.condition === selectedCondition);
-    }, [feed.products, selectedCondition]);
+        let prods = feed.products;
+        if (selectedTab === "Promo") return prods.filter(p => (p.compareAtPrice ?? 0) > p.price);
+        if (selectedTab === "Best Deals") return prods.slice(0, 4);
+        return prods;
+    }, [feed.products, selectedTab]);
+
+    // Intro timer
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowVerifiedIntro(false);
+        }, 3500);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Header image slider timer
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setHeaderIndex((prev) => (prev + 1) % HEADER_IMAGES.length);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, []);
 
     return (
-        <div className="space-y-10">
-            {/* Dashboard View Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-4xl md:text-5xl font-black text-taja-secondary tracking-tighter">
-                            Marketplace <span className="text-taja-primary underline decoration-taja-primary/20 underline-offset-8">Feed</span>
-                        </h1>
-                    </div>
-                    <p className="text-sm font-medium text-gray-500 tracking-wide flex items-center gap-2">
-                        Curated feed for <span className="text-taja-secondary font-black uppercase tracking-widest text-[10px]">{user?.fullName || "Operator"}</span> • Secure Trade Enabled
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="glass-panel p-1 rounded-xl flex items-center gap-1 border-white/60 shadow-sm">
-                        <button
-                            onClick={() => setViewMode("grid")}
-                            className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-taja-primary text-white shadow-premium" : "text-gray-400 hover:text-taja-secondary"}`}
-                        >
-                            <Grid className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => setViewMode("list")}
-                            className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-taja-primary text-white shadow-premium" : "text-gray-400 hover:text-taja-secondary"}`}
-                        >
-                            <List className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Category Quick Filter */}
-            <section className="relative overflow-hidden">
-                <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2">
-                    <button
-                        onClick={() => setSelectedCategory("")}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl whitespace-nowrap border-2 font-black uppercase tracking-widest text-[10px] transition-all duration-300 ${!selectedCategory
-                            ? "bg-taja-primary border-taja-primary text-white shadow-premium scale-105"
-                            : "bg-white border-white shadow-premium hover:border-taja-primary/40"
-                            }`}
+        <div className={cn(
+            "bg-[#F8F9FB] min-h-screen overflow-hidden",
+            isInsideDashboard ? "pb-12" : "pb-24"
+        )}>
+            <AnimatePresence mode="wait">
+                {showVerifiedIntro && !isInsideDashboard ? (
+                    <motion.div
+                        key="intro"
+                        initial={{ opacity: 1 }}
+                        exit={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }}
+                        transition={{ duration: 0.8 }}
+                        className="fixed inset-0 z-[200] bg-white flex flex-col items-center justify-center p-6 text-center"
                     >
-                        All Items
-                    </button>
-                    {CATEGORIES.map((cat) => {
-                        const Icon = cat.icon;
-                        const isSelected = selectedCategory === cat.label;
-                        return (
-                            <button
-                                key={cat.label}
-                                onClick={() => setSelectedCategory(isSelected ? "" : cat.label)}
-                                className={`flex items-center gap-3 px-6 py-3 rounded-2xl whitespace-nowrap border-2 transition-all duration-300 ${isSelected
-                                    ? "bg-taja-primary border-taja-primary text-white shadow-premium scale-105"
-                                    : "bg-white border-white shadow-premium hover:border-taja-primary/40"
-                                    }`}
-                            >
-                                <Icon className={`h-4 w-4 ${isSelected ? "text-white" : "text-taja-primary"}`} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">{cat.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* Filters & Control Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="glass-panel p-1.5 rounded-2xl flex items-center gap-1 border-white/60 shadow-sm bg-white/50">
-                        <Filter className="w-3.5 h-3.5 text-taja-primary ml-3" />
-                        <select
-                            value={selectedCondition}
-                            onChange={(e) => setSelectedCondition(e.target.value)}
-                            className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-taja-secondary focus:ring-0 cursor-pointer pr-8"
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="mx-auto w-24 h-24 rounded-[2rem] bg-taja-light flex items-center justify-center mb-8 ring-8 ring-taja-primary/5 shadow-premium"
                         >
-                            <option value="">Any Condition</option>
-                            <option value="new">Pristine</option>
-                            <option value="like-new">Near Mint</option>
-                            <option value="good">Good</option>
-                        </select>
-                    </div>
-                </div>
+                            <ShieldCheck className="w-12 h-12 text-taja-primary" />
+                        </motion.div>
 
-                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    Displaying {displayedProducts.length} Premium products
-                </div>
-            </div>
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="space-y-4"
+                        >
+                            <h2 className="text-sm font-black text-taja-primary uppercase tracking-[0.4em]">Establish Trust</h2>
+                            <h1 className="text-4xl md:text-6xl font-black text-taja-secondary tracking-tighter leading-none">
+                                Refining <br /> <span className="text-transparent bg-clip-text bg-gradient-taja">The Market.</span>
+                            </h1>
+                        </motion.div>
 
-            {/* Product Feed Grid */}
-            <section className="relative min-h-[400px]">
-                <AnimatePresence mode="popLayout">
-                    {feed.loading ? (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                            transition={{ delay: 0.5 }}
+                            className="flex items-center justify-center gap-8 pt-12"
                         >
-                            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                                <div key={i} className="glass-card animate-pulse rounded-3xl p-4 border-white/60 space-y-4 shadow-premium">
-                                    <div className="aspect-square bg-gray-50 rounded-2xl"></div>
-                                    <div className="h-4 bg-gray-50 w-2/3 rounded-full"></div>
-                                    <div className="h-3 bg-gray-50 w-1/3 rounded-full"></div>
-                                </div>
-                            ))}
-                        </motion.div>
-                    ) : displayedProducts.length > 0 ? (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className={`grid gap-8 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 max-w-4xl"}`}
-                        >
-                            {displayedProducts.map((product) => (
-                                <ProductCard key={product._id} product={product} />
-                            ))}
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="glass-panel rounded-[3rem] p-20 text-center border-white/60 border-dashed"
-                        >
-                            <div className="max-w-md mx-auto space-y-6">
-                                <div className="h-20 w-20 rounded-full bg-taja-light flex items-center justify-center mx-auto mb-6">
-                                    <Search className="w-8 h-8 text-taja-primary opacity-20" />
-                                </div>
-                                <h3 className="text-2xl font-black text-taja-secondary tracking-tight">No products found</h3>
-                                <p className="text-gray-400 font-medium text-sm">Try adjusting your filters or check back later for new arrivals.</p>
-                                <Button variant="outline" onClick={() => { setSelectedCategory(""); setSelectedCondition(""); }} className="rounded-full px-8">Clear Filters</Button>
+                            <div className="flex -space-x-4">
+                                {[
+                                    "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/dele_mup0gl.png",
+                                    "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/LYNNPINNEDIT___mv5yne.jpg",
+                                    "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/Portrait____Cooperate_headshot_qfzmsr.jpg",
+                                    "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/sola_jbdewv.jpg"
+                                ].map((src, i) => (
+                                    <div key={i} className="h-12 w-12 rounded-full border-4 border-white bg-gray-100 shadow-xl overflow-hidden">
+                                        <img src={src} alt="Verified User" className="w-full h-full object-cover" />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="text-left">
+                                <p className="text-xl font-black text-taja-secondary tracking-tight">150k+</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Verified Buyers</p>
                             </div>
                         </motion.div>
-                    )}
-                </AnimatePresence>
-            </section>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="main"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full h-full"
+                    >
+                        {/* ═══ Sliding Media Header ═══ */}
+                        {!isInsideDashboard && (
+                            <section className="relative px-6 pt-12 pb-10 rounded-b-[2.5rem] overflow-hidden shadow-lg border-b border-white/20">
+                                {/* Sliding Background Images */}
+                                <div className="absolute inset-0 z-0">
+                                    <AnimatePresence mode="popLayout">
+                                        <motion.div
+                                            key={headerIndex}
+                                            initial={{ opacity: 0, x: 100 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -100 }}
+                                            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+                                            className="absolute inset-0"
+                                        >
+                                            <Image
+                                                src={HEADER_IMAGES[headerIndex]}
+                                                alt="Marketplace Background"
+                                                fill
+                                                className="object-cover brightness-[0.4] saturate-[1.2]"
+                                            />
+                                        </motion.div>
+                                    </AnimatePresence>
+                                    {/* Visual Overlays */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />
+                                    <div className="absolute inset-0 motif-blanc opacity-[0.05]" />
+                                </div>
 
-            {/* Load More */}
-            <div className="flex justify-center pt-10">
-                <Button
-                    variant="outline"
-                    size="lg"
-                    className="rounded-full px-12 h-16 shadow-premium hover:shadow-premium-hover transition-all border-white/60"
-                    onClick={() => feed.refetch()}
-                >
-                    {feed.loading ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-taja-primary border-t-transparent"></div>
-                    ) : (
-                        <span className="font-black uppercase tracking-widest text-[10px]">Load More Products</span>
-                    )}
-                </Button>
-            </div>
+                                {/* Header Content */}
+                                <div className="relative z-10">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div className="space-y-1">
+                                            <p className="text-white/60 text-xs font-medium uppercase tracking-widest">Premium Registry</p>
+                                            <h2 className="text-3xl font-black text-white tracking-tight leading-none italic">Hello, {firstName} 👋</h2>
+                                        </div>
+
+                                        {/* Mobile Cart Action - Replaces redndant header icon with synced version */}
+                                        <div className="md:hidden">
+                                            <CartIcon
+                                                className="w-14 h-14 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[1.5rem] text-white shadow-2xl active:scale-95 transition-all"
+                                                iconSize="h-6 w-6"
+                                                badgeClassName="bg-taja-primary text-white border-2 border-black !h-5 !w-5 !text-[10px] !-top-1 !-right-1"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Search Bar */}
+                                    <div className="relative mb-8 group">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 group-focus-within:text-taja-primary transition-colors">
+                                            <Search className="w-5 h-5" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            placeholder="Search artifacts & treasures..."
+                                            className="w-full h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl pl-12 pr-14 text-sm font-bold text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-taja-primary/50 transition-all shadow-2xl"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                        />
+                                        <button className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-white/80 hover:text-white transition-colors bg-white/10 rounded-xl">
+                                            <Filter className="w-4 h-4" />
+                                        </button>
+                                    </div>
+
+                                    {/* Quick Icon Links */}
+                                    <div className="flex gap-6 overflow-x-auto no-scrollbar pt-2">
+                                        {[
+                                            { label: "GreatBuy", icon: ShoppingBag, color: "bg-rose-500/20 text-rose-300 border-rose-500/30" },
+                                            { label: "Flash", icon: Zap, color: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
+                                            { label: "Gift", icon: Gift, color: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+                                            { label: "Coupon", icon: Tag, color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
+                                            { label: "VIPArea", icon: Star, color: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
+                                        ].map((item) => (
+                                            <div key={item.label} className="flex flex-col items-center gap-2 shrink-0 group">
+                                                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-active:scale-95 border backdrop-blur-md", item.color)}>
+                                                    <item.icon className="w-6 h-6" />
+                                                </div>
+                                                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest group-hover:text-white transition-colors">{item.label}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+                        )}
+
+                        {/* ═══ Stats View ═══ */}
+                        <section className="px-6 py-8 grid grid-cols-2 gap-4 -mt-6 relative z-20">
+                            <div className="bg-white/70 backdrop-blur-xl p-5 rounded-[2rem] shadow-premium flex items-center gap-4 border border-white/60">
+                                <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center text-white">
+                                    <Star className="w-4 h-4 fill-white" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    <p className="text-[9px] font-black text-gray-400 tracking-widest uppercase">Balance</p>
+                                    <p className="text-sm font-black text-gray-900 tracking-tight">₦150k+</p>
+                                </div>
+                            </div>
+                            <div className="bg-white/70 backdrop-blur-xl p-5 rounded-[2rem] shadow-premium flex items-center gap-4 border border-white/60">
+                                <div className="w-10 h-10 rounded-xl bg-taja-primary flex items-center justify-center text-white">
+                                    <Zap className="w-4 h-4 fill-white" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    <p className="text-[9px] font-black text-gray-400 tracking-widest uppercase">Points</p>
+                                    <p className="text-sm font-black text-gray-900 tracking-tight">12.4k</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* ═══ Curated Brands ═══ */}
+                        <section className="px-6 py-4">
+                            <div className="flex items-center gap-3 mb-6">
+                                <Crown className="w-5 h-5 text-taja-primary" />
+                                <h3 className="text-lg font-black text-gray-900 tracking-tighter uppercase italic">Curated Registry</h3>
+                            </div>
+                            <div className="flex gap-8 overflow-x-auto no-scrollbar pb-6 px-1">
+                                {brands.map((brand) => (
+                                    <div key={brand.name} className="flex flex-col items-center gap-3 shrink-0 group">
+                                        <div className="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center shadow-premium border border-gray-50 transition-all group-hover:shadow-xl group-hover:-translate-y-1 overflow-hidden relative p-4">
+                                            <img
+                                                src={brand.logo}
+                                                alt={brand.name}
+                                                className="w-full h-full object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                                            />
+                                        </div>
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-taja-primary transition-colors">{brand.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* ═══ Product Feed ═══ */}
+                        <section className="px-6 space-y-8 mt-4 pb-20">
+                            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                                <h3 className="text-2xl font-black text-gray-900 tracking-tighter italic">Acquisition Registry</h3>
+                                <div className="flex gap-2">
+                                    {["All", "Promo", "Best Deals"].map((tab) => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => setSelectedTab(tab)}
+                                            className={cn(
+                                                "px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all",
+                                                selectedTab === tab ? "bg-black text-white shadow-xl scale-105" : "text-gray-400 hover:text-black"
+                                            )}
+                                        >
+                                            {tab}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Grid Layout - 2 columns on mobile */}
+                            <AnimatePresence mode="popLayout">
+                                {feed.loading ? (
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 px-1">
+                                        {[1, 2, 3, 4].map((i) => (
+                                            <div key={i} className="bg-white animate-pulse rounded-[2.5rem] h-72 border border-gray-100 shadow-sm" />
+                                        ))}
+                                    </div>
+                                ) : displayedProducts.length > 0 ? (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 px-1"
+                                    >
+                                        {displayedProducts.map((product) => (
+                                            <ProductCard key={product._id} product={product} />
+                                        ))}
+                                    </motion.div>
+                                ) : (
+                                    <div className="bg-white/50 backdrop-blur-md rounded-[3rem] p-20 text-center border-dashed border-2 border-gray-200">
+                                        <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-xs">Registry Inventory Clear</p>
+                                    </div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Load More Action */}
+                            <div className="pt-10 flex justify-center">
+                                <button
+                                    onClick={() => feed.refetch()}
+                                    className="px-12 h-18 bg-white border border-gray-100 rounded-full shadow-premium flex items-center justify-center gap-4 group hover:shadow-xl transition-all active:scale-95"
+                                >
+                                    {feed.loading ? (
+                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-black border-t-transparent" />
+                                    ) : (
+                                        <>
+                                            <span className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-900">Scan Registry Arrivals</span>
+                                            <ChevronRight className="w-5 h-5 text-taja-primary group-hover:translate-x-1 transition-transform" />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </section>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

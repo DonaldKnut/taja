@@ -43,6 +43,10 @@ function LoginForm() {
           localStorage.removeItem("user");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("role");
+        } else {
+          // If a token exists and we aren't clearing it, immediately redirect
+          const role = localStorage.getItem("role");
+          router.replace(role === "seller" ? "/seller/dashboard" : "/dashboard");
         }
       }
     }

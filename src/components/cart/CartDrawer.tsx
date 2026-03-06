@@ -75,7 +75,7 @@ export function CartDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className={cn(
-              "fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[99] transition-opacity",
+              "fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] transition-opacity",
               overlayClassName
             )}
             onClick={onClose}
@@ -89,7 +89,7 @@ export function CartDrawer({
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className={cn(
-              "fixed right-0 top-0 h-full w-full max-w-[450px] bg-white shadow-2xl z-[100] flex flex-col overflow-hidden",
+              "fixed right-0 top-0 h-full w-full max-w-[450px] bg-white shadow-2xl z-[201] flex flex-col overflow-hidden",
               className
             )}
           >

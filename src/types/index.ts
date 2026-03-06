@@ -86,6 +86,11 @@ export interface Product {
   shopSlug?: string;
   location?: string;
   tags?: string[];
+  inventory?: {
+    quantity: number;
+    moq: number;
+    trackQuantity?: boolean;
+  };
   specifications?: Record<string, string>;
   averageRating?: number;
   reviewCount?: number;

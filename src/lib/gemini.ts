@@ -1,9 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY || '';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 if (!GEMINI_API_KEY) {
-  console.warn('⚠️ GOOGLE_GEMINI_API_KEY not set. Virtual try-on features will be limited.');
+  console.warn('⚠️ GEMINI_API_KEY not set. Virtual try-on features will be limited.');
 }
 
 const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
@@ -352,14 +352,14 @@ Return only the tags separated by commas, nothing else. Example format: tag1, ta
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text().trim();
-    
+
     // Parse tags from comma-separated string
     const tags = text
       .split(',')
       .map(tag => tag.trim())
       .filter(tag => tag.length > 0)
       .slice(0, count);
-    
+
     return tags;
   } catch (error: any) {
     console.error('Gemini API error:', error);

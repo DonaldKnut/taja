@@ -91,7 +91,7 @@ export default function SellerProductsPage() {
     let cancelled = false;
     (async () => {
       try {
-        const response = await api("/api/shops/my-shop");
+        const response = await api("/api/shops/my");
         if (cancelled) return;
         setHasShop(!!(response?.data || (response as any)?.shop));
       } catch {
@@ -118,7 +118,8 @@ export default function SellerProductsPage() {
         const response = await sellerApi.getProducts({ limit: 100 });
 
         if (response?.success && response?.data) {
-          const transformedProducts = response.data.map((product: any) => ({
+          const productsArray = Array.isArray(response.data) ? response.data : response.data.products || [];
+          const transformedProducts = productsArray.map((product: any) => ({
             id: product._id || product.id,
             title: product.title || product.name || "Unknown Product",
             price: product.price || 0,

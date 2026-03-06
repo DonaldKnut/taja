@@ -37,6 +37,8 @@ import { NotificationsModal } from "@/components/NotificationsModal";
 import { SearchModal } from "@/components/SearchModal";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useRouter } from "next/navigation";
+import { CartIcon, CartDrawer, useCartStore } from "@/components/cart";
+import { cn } from "@/lib/utils";
 
 const navGroups = [
   {
@@ -81,6 +83,7 @@ export default function DashboardLayout({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
+  const { isOpen, toggleCart } = useCartStore();
   const { unreadCount } = useNotifications();
   const role = user?.role;
 
@@ -204,7 +207,7 @@ export default function DashboardLayout({
       {/* Sidebar Footer */}
       <div className="p-4 border-t border-gray-100 space-y-3">
         <Link
-          href="/marketplace"
+          href="/dashboard/marketplace"
           onClick={onNavigate}
           className="flex items-center justify-center gap-2 w-full py-3 bg-taja-primary text-white rounded-xl text-xs font-bold shadow-emerald hover:shadow-emerald-hover active:scale-[0.98] transition-all"
         >
@@ -290,6 +293,14 @@ export default function DashboardLayout({
                   </span>
                 )}
               </button>
+
+              <div className="hidden md:flex relative">
+                <CartIcon
+                  className="p-2 text-gray-400 hover:text-taja-primary transition-colors hover:bg-gray-50 rounded-lg"
+                  iconSize="h-5 w-5"
+                  badgeClassName="!h-4 !w-4 !text-[8px] !-top-0.5 !-right-0.5 bg-taja-primary text-white border-2 border-white"
+                />
+              </div>
 
               <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
 
@@ -431,7 +442,10 @@ export default function DashboardLayout({
 
           {/* ═══ Main Content Area ═══ */}
           <main className="flex-1 lg:pl-[260px] overflow-y-auto relative scrollbar-hide">
-            <div className="min-h-full px-4 sm:px-8 py-8 max-w-6xl mx-auto">
+            <div className={cn(
+              "min-h-full px-4 sm:px-8 py-8 max-w-6xl mx-auto",
+              pathname.includes("/dashboard/marketplace") && "px-0 sm:px-0 py-0 max-w-none"
+            )}>
               {children}
             </div>
           </main>

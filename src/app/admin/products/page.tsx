@@ -21,6 +21,7 @@ import {
     Pause,
     Play,
     Trash2,
+    Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -67,10 +68,25 @@ export default function AdminProductsPage() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [actingId, setActingId] = useState<string | null>(null);
+    const [stats, setStats] = useState<{ totalProducts: number; activeProducts: number; pendingProducts: number; totalValue: number } | null>(null);
 
     useEffect(() => {
         fetchProducts();
     }, [page, statusFilter, categoryFilter]);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await api('/api/admin/products/stats');
+                if (res?.success) {
+                    setStats(res.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch product stats", error);
+            }
+        };
+        fetchStats();
+    }, []);
 
     const handleProductAction = async (productId: string, action: "suspend" | "activate" | "delete") => {
         if (action === "delete" && !confirm("Remove this product from the catalogue? It will be marked as deleted.")) return;
@@ -151,7 +167,9 @@ export default function AdminProductsPage() {
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Market Supply</p>
-                                <h3 className="text-3xl font-black text-slate-900 tracking-tight mt-1">{products.length > 0 ? "8,450" : "0"}</h3>
+                                <h3 className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+                                    {stats ? stats.totalProducts.toLocaleString() : <span className="animate-pulse bg-slate-200 text-transparent rounded">000</span>}
+                                </h3>
                             </div>
                             <div className="p-2.5 bg-slate-100 rounded-xl text-slate-900">
                                 <Package className="h-5 w-5" />
@@ -164,7 +182,9 @@ export default function AdminProductsPage() {
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Inventory</p>
-                                <h3 className="text-3xl font-black text-slate-900 tracking-tight mt-1">7,120</h3>
+                                <h3 className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+                                    {stats ? stats.activeProducts.toLocaleString() : <span className="animate-pulse bg-slate-200 text-transparent rounded">000</span>}
+                                </h3>
                             </div>
                             <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-600">
                                 <CheckCircle className="h-5 w-5" />
@@ -177,7 +197,9 @@ export default function AdminProductsPage() {
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Audit Queue</p>
-                                <h3 className="text-3xl font-black text-slate-900 tracking-tight mt-1">145</h3>
+                                <h3 className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+                                    {stats ? stats.pendingProducts.toLocaleString() : <span className="animate-pulse bg-slate-200 text-transparent rounded">000</span>}
+                                </h3>
                             </div>
                             <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-600">
                                 <Clock className="h-5 w-5" />
@@ -190,7 +212,9 @@ export default function AdminProductsPage() {
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Value</p>
-                                <h3 className="text-3xl font-black text-slate-900 tracking-tight mt-1">₦142.8M</h3>
+                                <h3 className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+                                    {stats ? `₦${(stats.totalValue).toLocaleString()}` : <span className="animate-pulse bg-slate-200 text-transparent rounded">000000</span>}
+                                </h3>
                             </div>
                             <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-600">
                                 <TrendingUp className="h-5 w-5" />
@@ -325,34 +349,37 @@ export default function AdminProductsPage() {
                                             </td>
                                             <td className="px-10 py-5 text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    {product.status !== "deleted" && (
-                                                        <>
-                                                            {product.status === "active" ? (
-                                                                <button
-                                                                    onClick={() => handleProductAction(product._id, "suspend")}
-                                                                    disabled={actingId === product._id}
-                                                                    className="h-9 px-3 rounded-xl border border-amber-200 text-amber-700 hover:bg-amber-50 font-bold text-[9px] uppercase disabled:opacity-50"
-                                                                >
-                                                                    <Pause className="h-3 w-3 inline mr-1" /> Suspend
-                                                                </button>
-                                                            ) : product.status === "suspended" ? (
-                                                                <button
-                                                                    onClick={() => handleProductAction(product._id, "activate")}
-                                                                    disabled={actingId === product._id}
-                                                                    className="h-9 px-3 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-bold text-[9px] uppercase disabled:opacity-50"
-                                                                >
-                                                                    <Play className="h-3 w-3 inline mr-1" /> Activate
-                                                                </button>
-                                                            ) : null}
-                                                            <button
-                                                                onClick={() => handleProductAction(product._id, "delete")}
-                                                                disabled={actingId === product._id}
-                                                                className="h-9 px-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-[9px] uppercase disabled:opacity-50"
-                                                            >
-                                                                <Trash2 className="h-3 w-3 inline mr-1" /> Delete
-                                                            </button>
-                                                        </>
-                                                    )}
+                                                    <Link href={`/admin/products/${product._id}/edit`}>
+                                                        <button
+                                                            className="h-9 px-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[9px] uppercase flex items-center gap-1.5"
+                                                        >
+                                                            <Pencil className="h-3 w-3" /> Edit
+                                                        </button>
+                                                    </Link>
+                                                    {product.status === "active" ? (
+                                                        <button
+                                                            onClick={() => handleProductAction(product._id, "suspend")}
+                                                            disabled={actingId === product._id}
+                                                            className="h-9 px-3 rounded-xl border border-amber-200 text-amber-700 hover:bg-amber-50 font-bold text-[9px] uppercase disabled:opacity-50"
+                                                        >
+                                                            <Pause className="h-3 w-3 inline mr-1" /> Suspend
+                                                        </button>
+                                                    ) : product.status === "suspended" ? (
+                                                        <button
+                                                            onClick={() => handleProductAction(product._id, "activate")}
+                                                            disabled={actingId === product._id}
+                                                            className="h-9 px-3 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-bold text-[9px] uppercase disabled:opacity-50"
+                                                        >
+                                                            <Play className="h-3 w-3 inline mr-1" /> Activate
+                                                        </button>
+                                                    ) : null}
+                                                    <button
+                                                        onClick={() => handleProductAction(product._id, "delete")}
+                                                        disabled={actingId === product._id}
+                                                        className="h-9 px-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-[9px] uppercase disabled:opacity-50"
+                                                    >
+                                                        <Trash2 className="h-3 w-3 inline mr-1" /> Delete
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>

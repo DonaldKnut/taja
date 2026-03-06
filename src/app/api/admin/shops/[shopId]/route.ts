@@ -65,14 +65,20 @@ export async function PUT(
   return requireRole(['admin'])(async () => {
     try {
       const body = await request.json();
-      const { action } = body;
-
-      if (!action || !['suspend', 'activate'].includes(action)) {
-        return NextResponse.json(
-          { success: false, message: 'Invalid action. Must be "suspend" or "activate"' },
-          { status: 400 }
-        );
-      }
+      const {
+        action,
+        shopName,
+        description,
+        about,
+        tagline,
+        logo,
+        banner,
+        avatar,
+        coverImage,
+        socialLinks,
+        address,
+        status
+      } = body;
 
       await connectDB();
 
@@ -84,25 +90,49 @@ export async function PUT(
         );
       }
 
-      const newStatus = action === 'suspend' ? 'suspended' : 'active';
-      await shop.updateOne({ $set: { status: newStatus } });
+      // Handle status/action updates (suspend/activate)
+      if (action || status) {
+        const newStatus = action === 'suspend' ? 'suspended' : action === 'activate' ? 'active' : status;
+        if (newStatus && ['active', 'suspended', 'banned', 'pending'].includes(newStatus)) {
+          await shop.updateOne({ $set: { status: newStatus } });
 
-      if (action === 'suspend') {
-        await Product.updateMany(
-          { shop: params.shopId },
-          { $set: { status: 'suspended' } }
-        );
-      } else {
-        await Product.updateMany(
-          { shop: params.shopId, status: 'suspended' },
-          { $set: { status: 'active' } }
-        );
+          if (newStatus === 'suspended') {
+            await Product.updateMany(
+              { shop: params.shopId },
+              { $set: { status: 'suspended' } }
+            );
+          } else if (newStatus === 'active') {
+            await Product.updateMany(
+              { shop: params.shopId, status: 'suspended' },
+              { $set: { status: 'active' } }
+            );
+          }
+        }
       }
+
+      // Handle metadata updates
+      const updateData: any = {};
+      if (shopName) updateData.shopName = shopName.trim();
+      if (description !== undefined) updateData.description = description;
+      if (about !== undefined) updateData.about = about;
+      if (tagline !== undefined) updateData.tagline = tagline;
+      if (logo !== undefined) updateData.logo = logo;
+      if (banner !== undefined) updateData.banner = banner;
+      if (avatar !== undefined) updateData.avatar = avatar;
+      if (coverImage !== undefined) updateData.coverImage = coverImage;
+      if (socialLinks) updateData.socialLinks = socialLinks;
+      if (address) updateData.address = address;
+
+      if (Object.keys(updateData).length > 0) {
+        await shop.updateOne({ $set: updateData });
+      }
+
+      const updatedShop = await Shop.findById(params.shopId).lean();
 
       return NextResponse.json({
         success: true,
-        message: `Shop ${action === 'suspend' ? 'suspended' : 'activated'} successfully`,
-        data: { shopId: params.shopId, status: newStatus },
+        message: `Shop updated successfully`,
+        data: updatedShop,
       });
     } catch (error: any) {
       console.error('Admin update shop error:', error);

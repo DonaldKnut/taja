@@ -16,47 +16,23 @@ import {
   Eye,
   Star,
   GripVertical,
+  ChevronRight,
+  Zap,
+  ShieldCheck,
+  TrendingUp,
+  LayoutGrid,
+  Settings,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import toast from "react-hot-toast";
-import { sellerApi, shopsApi, uploadProductImage } from "@/lib/api";
-
-const categories = [
-  "Fashion & Clothing",
-  "Electronics",
-  "Home & Living",
-  "Beauty & Personal Care",
-  "Sports & Fitness",
-  "Accessories",
-  "Books & Media",
-  "Art & Crafts",
-  "Jewelry",
-  "Shoes & Bags",
-];
-
-const conditions = [
-  { value: "new", label: "New", desc: "Brand new, unused" },
-  { value: "like-new", label: "Like New", desc: "Minimal signs of wear" },
-  { value: "good", label: "Good", desc: "Some wear but fully functional" },
-  { value: "fair", label: "Fair", desc: "Noticeable wear but works well" },
-  { value: "poor", label: "Poor", desc: "Significant wear, may have defects" },
-];
-
-const sizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
-const colors = [
-  "Black",
-  "White",
-  "Red",
-  "Blue",
-  "Green",
-  "Yellow",
-  "Pink",
-  "Purple",
-  "Gray",
-  "Brown",
-];
+import { api, sellerApi, uploadProductImage } from "@/lib/api";
+import { cn, formatCurrency } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { Container } from "@/components/layout";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -66,23 +42,21 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
     subcategory: "",
-    condition: "good",
+    condition: "new" as "new" | "like-new" | "good" | "fair" | "poor",
     price: "",
+    maxPrice: "",
+    isRange: false,
     compareAtPrice: "",
     currency: "NGN",
     images: [] as string[],
-    specifications: {
-      brand: "",
-      size: "",
-      color: "",
-      material: "",
-      gender: "",
-    },
+    specifications: {} as Record<string, any>,
     inventory: {
       quantity: 1,
       sku: "",
@@ -91,9 +65,14 @@ export default function EditProductPage() {
     },
     shipping: {
       weight: "",
+      dimensions: {
+        length: 0,
+        width: 0,
+        height: 0,
+      },
       freeShipping: false,
       shippingCost: "",
-      processingTime: "1-2-days",
+      processingTime: "1-2-days" as "1-2-days" | "3-5-days" | "1-week" | "2-weeks",
     },
     seo: {
       tags: [] as string[],
@@ -102,18 +81,26 @@ export default function EditProductPage() {
     },
     status: "active" as "active" | "draft",
   });
+
   const [tagInput, setTagInput] = useState("");
 
-  // Fetch existing product data
+  // Fetch categories and product data
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!productId) return;
-
+    const fetchInitialData = async () => {
       try {
         setFetching(true);
+
+        // Fetch Categories
+        const categoriesRes = await api("/api/categories");
+        if (categoriesRes?.data) {
+          setCategories(categoriesRes.data);
+        }
+
+        if (!productId) return;
+
+        // Fetch Product
         const response = await sellerApi.getProduct(productId);
 
-        // Handle different response structures
         let productData;
         if (response?.data?.product) {
           productData = response.data.product;
@@ -129,28 +116,25 @@ export default function EditProductPage() {
         setFormData({
           title: productData.name || productData.title || "",
           description: productData.description || "",
-          category: productData.category || "",
+          category: typeof productData.category === 'object' ? productData.category._id : productData.category || "",
           subcategory: productData.subcategory || "",
-          condition: productData.condition || "good",
+          condition: productData.condition || "new",
           price: String(productData.price || ""),
+          maxPrice: String(productData.maxPrice || ""),
+          isRange: !!productData.maxPrice,
           compareAtPrice: productData.compareAtPrice || productData.originalPrice ? String(productData.compareAtPrice || productData.originalPrice) : "",
           currency: productData.currency || "NGN",
           images: productData.images || [],
-          specifications: productData.specifications || {
-            brand: "",
-            size: "",
-            color: "",
-            material: "",
-            gender: "",
-          },
+          specifications: productData.specifications || {},
           inventory: {
-            quantity: productData.stock || productData.inventory?.quantity || 1,
+            quantity: productData.inventory?.quantity ?? productData.stock ?? 1,
             sku: productData.inventory?.sku || productData.sku || "",
             trackQuantity: productData.inventory?.trackQuantity !== false,
-            moq: productData.moq || productData.inventory?.moq || 1,
+            moq: productData.inventory?.moq || productData.moq || 1,
           },
           shipping: {
             weight: productData.shipping?.weight ? String(productData.shipping.weight) : "",
+            dimensions: productData.shipping?.dimensions || { length: 0, width: 0, height: 0 },
             freeShipping: productData.shipping?.freeShipping || false,
             shippingCost: productData.shipping?.shippingCost ? String(productData.shipping.shippingCost) : "",
             processingTime: productData.shipping?.processingTime || "1-2-days",
@@ -163,15 +147,14 @@ export default function EditProductPage() {
           status: productData.status || "active",
         });
       } catch (error: any) {
-        console.error("Failed to fetch product:", error);
-        toast.error(error?.message || "Failed to load product");
-        router.push("/seller/products");
+        console.error("Failed to fetch data:", error);
+        toast.error(error?.message || "Failed to load product information");
       } finally {
         setFetching(false);
       }
     };
 
-    fetchProduct();
+    fetchInitialData();
   }, [productId, router]);
 
   const handleChange = (
@@ -182,11 +165,29 @@ export default function EditProductPage() {
     const { name, value, type } = e.target;
 
     if (name.includes(".")) {
-      const [parent, child] = name.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: { ...(prev as any)[parent], [child]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value },
-      }));
+      const parts = name.split(".");
+      if (parts.length === 2) {
+        const [parent, child] = parts;
+        setFormData((prev) => ({
+          ...prev,
+          [parent]: {
+            ...(prev as any)[parent],
+            [child]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value
+          },
+        }));
+      } else if (parts.length === 3) {
+        const [parent, mid, child] = parts;
+        setFormData((prev) => ({
+          ...prev,
+          [parent]: {
+            ...(prev as any)[parent],
+            [mid]: {
+              ...(prev as any)[parent][mid],
+              [child]: value
+            }
+          }
+        }));
+      }
     } else if (type === "checkbox") {
       setFormData((prev) => ({
         ...prev,
@@ -210,9 +211,9 @@ export default function EditProductPage() {
       const uploadedUrls = await Promise.all(uploadPromises);
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, ...uploadedUrls].slice(0, 8), // Max 8 images
+        images: [...prev.images, ...uploadedUrls].slice(0, 8),
       }));
-      toast.success(`${uploadedUrls.length} image(s) uploaded successfully`);
+      toast.success(`${uploadedUrls.length} image(s) uploaded`);
     } catch (error: any) {
       console.error("Image upload error:", error);
       toast.error(error?.message || "Failed to upload images");
@@ -229,29 +230,14 @@ export default function EditProductPage() {
   };
 
   const setMainImage = (index: number) => {
-    if (index === 0) return; // Already main
+    if (index === 0) return;
     setFormData((prev) => {
       const newImages = [...prev.images];
       const [removed] = newImages.splice(index, 1);
       newImages.unshift(removed);
-      return {
-        ...prev,
-        images: newImages,
-      };
+      return { ...prev, images: newImages };
     });
     toast.success("Main image updated");
-  };
-
-  const moveImage = (fromIndex: number, toIndex: number) => {
-    setFormData((prev) => {
-      const newImages = [...prev.images];
-      const [removed] = newImages.splice(fromIndex, 1);
-      newImages.splice(toIndex, 0, removed);
-      return {
-        ...prev,
-        images: newImages,
-      };
-    });
   };
 
   const addTag = () => {
@@ -267,84 +253,69 @@ export default function EditProductPage() {
     }
   };
 
-  const removeTag = (tag: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      seo: {
-        ...prev.seo,
-        tags: prev.seo.tags.filter((t) => t !== tag),
-      },
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
     e.preventDefault();
 
-    if (
-      !formData.title ||
-      !formData.description ||
-      !formData.category ||
-      !formData.price
-    ) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    if (formData.images.length === 0) {
-      toast.error("Please add at least one product image");
+    if (!formData.title || !formData.category || !formData.price || formData.images.length === 0) {
+      toast.error("Please fill in title, category, price and at least one image");
       return;
     }
 
     setLoading(true);
 
     try {
-      const productData = {
-        name: formData.title,
+      // Clean data to avoid CastErrors
+      const payload = {
         title: formData.title,
         description: formData.description,
         category: formData.category,
         subcategory: formData.subcategory || undefined,
         condition: formData.condition,
         price: parseFloat(formData.price),
-        compareAtPrice: formData.compareAtPrice
-          ? parseFloat(formData.compareAtPrice)
-          : undefined,
+        maxPrice: formData.isRange && formData.maxPrice ? parseFloat(formData.maxPrice) : undefined,
+        compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : undefined,
         currency: formData.currency,
         images: formData.images,
         specifications: formData.specifications,
         inventory: {
-          quantity: formData.inventory.quantity,
+          quantity: Number(formData.inventory.quantity),
           sku: formData.inventory.sku || undefined,
           trackQuantity: formData.inventory.trackQuantity,
-          moq: formData.inventory.moq || 1,
+          moq: Number(formData.inventory.moq) || 1,
         },
         shipping: {
-          weight: formData.shipping.weight
-            ? parseFloat(formData.shipping.weight)
-            : undefined,
+          weight: formData.shipping.weight ? parseFloat(formData.shipping.weight) : 0,
+          dimensions: {
+            length: Number(formData.shipping.dimensions?.length) || 0,
+            width: Number(formData.shipping.dimensions?.width) || 0,
+            height: Number(formData.shipping.dimensions?.height) || 0,
+          },
           freeShipping: formData.shipping.freeShipping,
-          shippingCost: formData.shipping.shippingCost
-            ? parseFloat(formData.shipping.shippingCost)
-            : 0,
+          shippingCost: formData.shipping.shippingCost ? parseFloat(formData.shipping.shippingCost) : 0,
           processingTime: formData.shipping.processingTime,
         },
-        seo: formData.seo,
-        status: isDraft ? "draft" : formData.status,
+        seo: {
+          tags: formData.seo.tags,
+          metaTitle: formData.seo.metaTitle || undefined,
+          metaDescription: formData.seo.metaDescription || undefined,
+        },
+        status: isDraft ? "draft" : "active",
       };
 
-      const response = await sellerApi.updateProduct(productId, productData);
+      const response = await api(`/api/products/${productId}`, {
+        method: "PUT",
+        body: payload
+      });
 
-      if (response?.success !== false) {
-        toast.success(
-          `Product ${isDraft ? "saved as draft" : "updated"} successfully!`
-        );
+      if (response?.success) {
+        toast.success(`Product ${isDraft ? "saved as draft" : "updated"} successfully!`);
         router.push("/seller/products");
       } else {
-        toast.error(response?.message || response?.error || "Failed to update product");
+        toast.error(response?.message || "Failed to update product");
       }
     } catch (error: any) {
       console.error("Product update error:", error);
-      toast.error(error?.message || "Failed to update product. Please try again.");
+      toast.error(error?.message || "An error occurred while updating");
     } finally {
       setLoading(false);
     }
@@ -352,387 +323,498 @@ export default function EditProductPage() {
 
   if (fetching) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading product...</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="h-16 w-16 rounded-full border-4 border-taja-light animate-pulse"></div>
+            <div className="absolute inset-0 h-16 w-16 rounded-full border-t-4 border-taja-primary animate-spin"></div>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Restoring Masterpiece...</p>
         </div>
       </div>
     );
   }
 
-  // The rest of the component JSX would be the same as the new product page
-  // For brevity, I'll include the key parts
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/seller/products">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Products
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#FDFDFD] pb-32">
+      <AppHeader />
+
+      <main className="relative z-10 pt-8">
+        <Container size="lg">
+          {/* Enhanced Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 px-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Link
+                  href="/seller/products"
+                  className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5 text-gray-400" />
+                </Link>
+                <div className="h-1 w-8 bg-taja-primary rounded-full"></div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-taja-primary">Product Editor</span>
+              </div>
+              <h1 className="text-3xl md:text-5xl font-black text-taja-secondary tracking-tighter leading-none">
+                Refining {formData.title || "Your Product"}
+              </h1>
+              <p className="text-gray-400 font-medium text-sm">Perfecting the presentation for your elite customers.</p>
+            </div>
+
+            <div className="hidden md:flex items-center gap-4">
               <Button
                 variant="outline"
                 onClick={(e) => handleSubmit(e, true)}
                 disabled={loading}
+                className="rounded-2xl px-8 h-14 font-black uppercase tracking-widest text-xs border-gray-200"
               >
                 <Save className="mr-2 h-4 w-4" />
-                Save as Draft
+                Save Draft
               </Button>
               <Button
                 onClick={(e) => handleSubmit(e, false)}
                 disabled={loading}
-                variant="gradient"
+                className="rounded-2xl px-10 h-14 font-black uppercase tracking-widest text-xs shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700 hover:scale-[1.02] transition-transform"
               >
-                {loading ? "Updating..." : "Update Product"}
+                {loading ? "Updating..." : "Publish Edits"}
               </Button>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Form - Reuse the same form structure as new product page */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Product Title *
-                </label>
-                <Input
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="Enter product title"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description *
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Describe your product"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category *
-                  </label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    required
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 px-4">
+            {/* Left Column - Main Details */}
+            <div className="lg:col-span-8 space-y-10">
+              {/* Media Section */}
+              <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium overflow-hidden">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2.5 bg-taja-primary/10 rounded-2xl">
+                    <Camera className="w-5 h-5 text-taja-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Visual Identity</h2>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Main gallery & showcase</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Condition *
-                  </label>
-                  <select
-                    name="condition"
-                    value={formData.condition}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    required
-                  >
-                    {conditions.map((cond) => (
-                      <option key={cond.value} value={cond.value}>
-                        {cond.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Pricing */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pricing</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price (₦) *
-                  </label>
-                  <Input
-                    name="price"
-                    type="number"
-                    value={formData.price}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                    required
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Compare at Price (₦)
-                  </label>
-                  <Input
-                    name="compareAtPrice"
-                    type="number"
-                    value={formData.compareAtPrice}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Images */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="h-5 w-5" />
-                Product Images
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {formData.images.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                   {formData.images.map((image, index) => (
-                    <div
+                    <motion.div
+                      layout
                       key={index}
-                      className="relative group border-2 rounded-lg overflow-hidden bg-gray-50"
-                      style={{
-                        borderColor: index === 0 ? "#10b981" : "#e5e7eb",
-                      }}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={cn(
+                        "group relative aspect-square rounded-3xl overflow-hidden border-2 transition-all duration-500",
+                        index === 0 ? "border-taja-primary ring-4 ring-taja-primary/10" : "border-transparent"
+                      )}
                     >
-                      <div className="aspect-square relative">
-                        <Image
-                          src={image}
-                          alt={`Product ${index + 1}`}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        />
-                      </div>
+                      <Image src={image} alt={`Preview ${index}`} fill className="object-cover" />
 
-                      {/* Main Image Badge */}
                       {index === 0 && (
-                        <div className="absolute top-2 left-2 bg-emerald-600 text-white px-2 py-1 rounded-md flex items-center gap-1 text-xs font-medium">
-                          <Star className="h-3 w-3 fill-current" />
-                          Main
+                        <div className="absolute top-3 left-3 px-2 py-1 bg-taja-primary rounded-full flex items-center gap-1 shadow-lg">
+                          <Star className="w-2.5 h-2.5 text-white fill-white" />
+                          <span className="text-[8px] font-black text-white uppercase tracking-tighter">Main</span>
                         </div>
                       )}
 
-                      {/* Image Number */}
-                      <div className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded-md text-xs font-medium">
-                        {index + 1}
-                      </div>
-
-                      {/* Hover Overlay */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                         {index !== 0 && (
                           <button
                             type="button"
                             onClick={() => setMainImage(index)}
-                            className="bg-white text-gray-900 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-100 flex items-center gap-1"
-                            title="Set as main image"
+                            className="p-2 bg-white rounded-xl text-taja-secondary hover:text-taja-primary transition-colors"
                           >
-                            <Star className="h-3 w-3" />
-                            Set Main
+                            <Star className="w-4 h-4" />
                           </button>
                         )}
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="bg-red-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-red-600 flex items-center gap-1"
-                          title="Remove image"
+                          className="p-2 bg-red-500 rounded-xl text-white hover:bg-red-600 transition-colors"
                         >
-                          <X className="h-3 w-3" />
-                          Remove
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
-
-                      {/* Reorder buttons */}
-                      {formData.images.length > 1 && (
-                        <div className="absolute bottom-2 left-2 right-2 flex gap-1 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => moveImage(index, index - 1)}
-                              className="bg-white/90 text-gray-700 px-2 py-1 rounded text-xs hover:bg-white"
-                              title="Move left"
-                            >
-                              ←
-                            </button>
-                          )}
-                          {index < formData.images.length - 1 && (
-                            <button
-                              type="button"
-                              onClick={() => moveImage(index, index + 1)}
-                              className="bg-white/90 text-gray-700 px-2 py-1 rounded text-xs hover:bg-white"
-                              title="Move right"
-                            >
-                              →
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    </motion.div>
                   ))}
-                </div>
-              )}
 
-              {/* Upload Button */}
-              {formData.images.length < 8 && (
-                <div className="mb-4">
+                  {formData.images.length < 8 && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingImages}
+                      className="aspect-square rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center hover:bg-gray-50 transition-colors group"
+                    >
+                      {uploadingImages ? (
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-taja-primary border-t-transparent"></div>
+                      ) : (
+                        <>
+                          <div className="p-3 bg-gray-50 rounded-2xl group-hover:bg-white transition-colors">
+                            <Upload className="w-5 h-5 text-gray-400 group-hover:text-taja-primary transition-colors" />
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-3">Add More</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => e.target.files && handleImageUpload(e.target.files)}
+                  className="hidden"
+                />
+
+                <div className="p-4 bg-taja-light/30 rounded-2xl border border-taja-primary/5">
+                  <p className="text-[10px] font-bold text-taja-secondary leading-relaxed">
+                    <span className="text-taja-primary mr-1 italic">PRO TIP:</span>
+                    Premium buyers favor products with at least 5 studio-quality images. The first image serves as the cinematic hero of your listing.
+                  </p>
+                </div>
+              </section>
+
+              {/* Core Information */}
+              <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2.5 bg-emerald-500/10 rounded-2xl">
+                    <Package className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Core Details</h2>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Essential specifications</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Product Title</label>
+                    <Input
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      placeholder="e.g. Wellwoman Multivitamin Premium"
+                      className="rounded-2xl h-14 text-lg font-bold border-gray-100 focus:border-taja-primary transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Description</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      rows={6}
+                      className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all font-medium text-gray-600"
+                      placeholder="Describe the premium value of this item..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Category</label>
+                      <select
+                        name="category"
+                        value={formData.category}
+                        onChange={handleChange}
+                        className="w-full h-14 px-5 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all font-bold text-taja-secondary appearance-none"
+                      >
+                        <option value="">Select Category</option>
+                        {categories.map((cat) => (
+                          <option key={cat._id} value={cat._id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Condition</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {["new", "like-new", "good", "fair"].map((cond) => (
+                          <button
+                            key={cond}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, condition: cond as any }))}
+                            className={cn(
+                              "h-12 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                              formData.condition === cond
+                                ? "bg-taja-secondary border-taja-secondary text-white shadow-lg"
+                                : "bg-white border-gray-100 text-gray-400 hover:border-gray-200"
+                            )}
+                          >
+                            {cond.replace('-', ' ')}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Pricing Section */}
+              <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-amber-500/10 rounded-2xl">
+                      <Zap className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-black text-taja-secondary tracking-tight">Standard Pricing</h2>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Revenue model</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Price Range</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, isRange: !prev.isRange }))}
+                      className={cn(
+                        "relative h-6 w-11 rounded-full transition-colors",
+                        formData.isRange ? "bg-taja-primary" : "bg-gray-200"
+                      )}
+                    >
+                      <div className={cn(
+                        "absolute top-1 left-1 h-4 w-4 rounded-full bg-white transition-transform",
+                        formData.isRange ? "translate-x-5" : "translate-x-0"
+                      )} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">
+                        {formData.isRange ? "Minimum (₦)" : "Price (₦)"}
+                      </label>
+                      <div className="relative group">
+                        <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-gray-300">₦</span>
+                        <Input
+                          name="price"
+                          type="number"
+                          value={formData.price}
+                          onChange={handleChange}
+                          className="rounded-2xl h-16 pl-12 text-xl font-black border-gray-100 focus:border-taja-primary transition-all"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    {formData.isRange && (
+                      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Maximum (₦)</label>
+                        <div className="relative group">
+                          <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-gray-300">₦</span>
+                          <Input
+                            name="maxPrice"
+                            type="number"
+                            value={formData.maxPrice}
+                            onChange={handleChange}
+                            className="rounded-2xl h-16 pl-12 text-xl font-black border-gray-100 focus:border-taja-primary transition-all text-taja-primary"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Compare At (₦)</label>
+                    <div className="relative">
+                      <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-gray-200 text-sm">Was N</span>
+                      <Input
+                        name="compareAtPrice"
+                        type="number"
+                        value={formData.compareAtPrice}
+                        onChange={handleChange}
+                        className="rounded-2xl h-16 pl-16 text-lg font-medium text-gray-400 border-gray-100 line-through ring-0 focus:ring-0 focus:border-gray-200"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="flex gap-2 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-[10px] font-bold text-amber-800 leading-relaxed uppercase tracking-widest">
+                        Setting a "Compare At" price higher than your actual price creates an elite value perception for buyers.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            {/* Right Column - Side Panels */}
+            <div className="lg:col-span-4 space-y-8">
+              {/* Inventory Control */}
+              <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2.5 bg-blue-500/10 rounded-2xl">
+                    <ShieldCheck className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <h2 className="text-lg font-black text-taja-secondary tracking-tight">Stock Logistics</h2>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 mb-2 block">In Stock</label>
+                    <Input
+                      name="inventory.quantity"
+                      type="number"
+                      value={formData.inventory.quantity}
+                      onChange={handleChange}
+                      className="rounded-xl h-14 font-black border-gray-100"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 block">Min Order (MOQ)</label>
+                      <span className="px-2 py-0.5 rounded-full bg-taja-primary/10 text-[8px] font-black text-taja-primary uppercase">Wholesale friendly</span>
+                    </div>
+                    <Input
+                      name="inventory.moq"
+                      type="number"
+                      value={formData.inventory.moq}
+                      onChange={handleChange}
+                      className="rounded-xl h-14 font-black border-gray-100"
+                    />
+                  </div>
+
+                  <div className="pt-4 flex items-center gap-3">
+                    <div className={cn(
+                      "h-4 w-4 rounded-full",
+                      Number(formData.inventory.quantity) > 0 ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                    )}></div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">
+                      {Number(formData.inventory.quantity) > 0 ? "Actively Selling" : "Halted Listings"}
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              {/* Logistics Section */}
+              <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium bg-[#1A1A1A] text-white">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2.5 bg-white/10 rounded-2xl">
+                    <Truck className="w-5 h-5 text-taja-primary" />
+                  </div>
+                  <h2 className="text-lg font-black tracking-tight">Performance</h2>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2 block">Processing Time</label>
+                    <select
+                      name="shipping.processingTime"
+                      value={formData.shipping.processingTime}
+                      onChange={handleChange}
+                      className="w-full h-14 px-5 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary focus:border-taja-primary transition-all font-bold text-white appearance-none"
+                    >
+                      <option value="1-2-days">1-2 Business Days</option>
+                      <option value="3-5-days">3-5 Business Days</option>
+                      <option value="1-week">1 Week (Pre-order)</option>
+                    </select>
+                  </div>
+
+                  <div className="p-5 rounded-3xl bg-white/5 border border-white/5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Free Shipping</span>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          shipping: { ...prev.shipping, freeShipping: !prev.shipping.freeShipping }
+                        }))}
+                        className={cn(
+                          "relative h-5 w-10 rounded-full transition-colors",
+                          formData.shipping.freeShipping ? "bg-taja-primary" : "bg-white/10"
+                        )}
+                      >
+                        <div className={cn(
+                          "absolute top-1 left-1 h-3 w-3 rounded-full bg-white transition-transform",
+                          formData.shipping.freeShipping ? "translate-x-5" : "translate-x-0"
+                        )} />
+                      </button>
+                    </div>
+
+                    <AnimatePresence>
+                      {!formData.shipping.freeShipping && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2 block">Manual Cost (₦)</label>
+                          <Input
+                            name="shipping.shippingCost"
+                            type="number"
+                            value={formData.shipping.shippingCost}
+                            onChange={handleChange}
+                            className="rounded-xl h-12 bg-white/5 border-white/10 text-white font-black"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </section>
+
+              {/* Visibility Panel */}
+              <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">Market Visibility</h3>
+
+                <div className="space-y-4">
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingImages}
-                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center justify-center hover:border-taja-primary hover:bg-emerald-50/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {uploadingImages ? (
-                      <>
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-taja-primary mb-2"></div>
-                        <span className="text-sm font-medium text-gray-700">
-                          Uploading...
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                        <span className="text-sm font-medium text-gray-700 mb-1">
-                          {formData.images.length === 0
-                            ? "Upload Images"
-                            : "Add More Images"}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          Click to upload or drag and drop
-                        </span>
-                        <span className="text-xs text-gray-400 mt-1">
-                          {formData.images.length}/8 images uploaded
-                        </span>
-                      </>
+                    onClick={() => setFormData(p => ({ ...p, status: 'active' }))}
+                    className={cn(
+                      "w-full h-14 rounded-2xl flex items-center gap-4 px-6 border-2 transition-all",
+                      formData.status === 'active' ? "border-taja-primary bg-taja-primary/5" : "border-gray-100 hover:border-gray-200"
                     )}
+                  >
+                    <div className={cn("h-3 w-3 rounded-full", formData.status === 'active' ? "bg-taja-primary ring-4 ring-taja-primary/20" : "bg-gray-200")}></div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">Active Listing</span>
+                    <ChevronRight className="w-4 h-4 ml-auto text-gray-300" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData(p => ({ ...p, status: 'draft' }))}
+                    className={cn(
+                      "w-full h-14 rounded-2xl flex items-center gap-4 px-6 border-2 transition-all",
+                      formData.status === 'draft' ? "border-amber-500 bg-amber-50" : "border-gray-100 hover:border-gray-200"
+                    )}
+                  >
+                    <div className={cn("h-3 w-3 rounded-full", formData.status === 'draft' ? "bg-amber-500 ring-4 ring-amber-500/20" : "bg-gray-200")}></div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">Stored Draft</span>
+                    <ChevronRight className="w-4 h-4 ml-auto text-gray-300" />
                   </button>
                 </div>
-              )}
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => e.target.files && handleImageUpload(e.target.files)}
-                className="hidden"
-              />
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
-                  <strong>Tip:</strong> Upload up to 8 images. The first image
-                  will be used as the main product photo. You can reorder
-                  images by using the arrow buttons or set any image as main.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Inventory */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Inventory</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Quantity *
-                  </label>
-                  <Input
-                    name="inventory.quantity"
-                    type="number"
-                    value={formData.inventory.quantity}
-                    onChange={handleChange}
-                    required
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    SKU
-                  </label>
-                  <Input
-                    name="inventory.sku"
-                    value={formData.inventory.sku}
-                    onChange={handleChange}
-                    placeholder="Optional"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Minimum Order Quantity (MOQ) *
-                </label>
-                <Input
-                  name="inventory.moq"
-                  type="number"
-                  value={formData.inventory.moq}
-                  onChange={handleChange}
-                  required
-                  min="1"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Submit Buttons */}
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={(e) => handleSubmit(e, true)}
-              disabled={loading}
-            >
-              Save as Draft
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-gradient-to-r from-[#808080] to-[#2E6B4E] text-white"
-            >
-              {loading ? "Updating..." : "Update Product"}
-            </Button>
+              </section>
+            </div>
           </div>
-        </form>
+        </Container>
+      </main>
+
+      {/* Sticky Bottom Bar for Mobile */}
+      <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/90 backdrop-blur-xl border-t border-gray-100 p-4 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] border-gray-200"
+            onClick={(e) => handleSubmit(e, true)}
+            disabled={loading}
+          >
+            {loading ? "..." : "Hold Draft"}
+          </Button>
+          <Button
+            type="submit"
+            disabled={loading}
+            onClick={(e) => handleSubmit(e, false)}
+            className="flex-[2] rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700"
+          >
+            {loading ? "Refining..." : "Publish Edits"}
+          </Button>
+        </div>
+        <div className="h-[env(safe-area-inset-bottom)]" />
       </div>
     </div>
   );
 }
-

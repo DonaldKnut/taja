@@ -20,7 +20,7 @@ if (!appId || !apiKey) {
 }
 
 // Admin client (for indexing)
-export const algoliaClient = appId && apiKey 
+export const algoliaClient = appId && apiKey
   ? algoliasearch(appId, apiKey)
   : null;
 
@@ -157,7 +157,7 @@ export async function configureProductIndex(): Promise<void> {
   }
 
   const index = getProductIndex();
-  
+
   try {
     await index.setSettings(PRODUCT_INDEX_SETTINGS);
     console.log('Algolia product index configured successfully');
@@ -173,38 +173,38 @@ export async function configureProductIndex(): Promise<void> {
 export function transformProductForAlgolia(product: any): any {
   return {
     objectID: product._id.toString(),
-    
+
     // Basic info
     title: product.title,
     description: product.description,
     slug: product.slug,
     sku: product.sku,
-    
+
     // Pricing
     price: product.price,
     compareAtPrice: product.compareAtPrice,
     hasDiscount: product.compareAtPrice && product.compareAtPrice > product.price,
-    discountPercentage: product.compareAtPrice 
+    discountPercentage: product.compareAtPrice
       ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
       : 0,
     priceRange: getPriceRange(product.price),
-    
+
     // Inventory
     quantity: product.quantity,
     isAvailable: product.status === 'active' && product.quantity > 0,
     status: product.status,
-    
+
     // Media
     images: product.images || [],
     thumbnail: product.images?.[0]?.url || null,
-    
+
     // Category
     category: product.category ? {
       id: product.category._id?.toString() || product.category.toString(),
       name: product.category.name || '',
       slug: product.category.slug || '',
     } : null,
-    
+
     // Shop
     shop: product.shop ? {
       id: product.shop._id?.toString() || product.shop.toString(),
@@ -213,28 +213,28 @@ export function transformProductForAlgolia(product: any): any {
       logo: product.shop.logo || '',
       isVerified: product.shop.isVerified || false,
     } : null,
-    
+
     // Location
     location: product.shop?.location || {
       state: '',
       city: '',
     },
-    
+
     // Ratings
     rating: product.rating?.average || 0,
     reviewCount: product.rating?.count || 0,
-    
+
     // Stats
     soldCount: product.soldCount || 0,
     viewCount: product.viewCount || 0,
-    
+
     // Tags
     tags: product.tags || [],
-    
+
     // Timestamps
     createdAt: product.createdAt?.getTime() || Date.now(),
     updatedAt: product.updatedAt?.getTime() || Date.now(),
-    
+
     // Grouping (for variants)
     productGroupId: product.productGroupId || product._id.toString(),
   };
@@ -352,7 +352,7 @@ export async function searchProducts(
   }
 
   const index = getProductIndex();
-  
+
   const searchParams: any = {
     filters: options.filters,
     facets: options.facets,

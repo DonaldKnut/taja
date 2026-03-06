@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Ban, CheckCircle, XCircle, MoreVertical, Filter, Users } from "lucide-react";
+import { Search, Ban, CheckCircle, XCircle, MoreVertical, Filter, Users, Pencil, Save, Loader2, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -34,6 +35,9 @@ export default function UserManagementPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({ fullName: "", email: "", phone: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -48,15 +52,9 @@ export default function UserManagementPage() {
         limit: limit.toString(),
       });
 
-      if (search.trim()) {
-        params.append("search", search.trim());
-      }
-      if (roleFilter) {
-        params.append("role", roleFilter);
-      }
-      if (statusFilter) {
-        params.append("accountStatus", statusFilter);
-      }
+      if (search.trim()) params.append("search", search.trim());
+      if (roleFilter) params.append("role", roleFilter);
+      if (statusFilter) params.append("accountStatus", statusFilter);
 
       const response = await api(`/api/admin/users?${params.toString()}`);
       if (response?.success) {
@@ -76,7 +74,7 @@ export default function UserManagementPage() {
       setUsers([]);
       setTotal(0);
       setTotalPages(1);
-      setFetchError("Failed to load users. Ensure MongoDB is running and MONGODB_URI is set in .env.");
+      setFetchError("Failed to load users. Ensure MongoDB is running.");
       toast.error("Failed to load users");
     } finally {
       setLoading(false);
@@ -90,12 +88,8 @@ export default function UserManagementPage() {
   };
 
   const handleUserAction = async (userId: string, action: "ban" | "suspend" | "activate") => {
-    if (action === "ban" && !confirm("Are you sure you want to ban this user?")) {
-      return;
-    }
-    if (action === "suspend" && !confirm("Are you sure you want to suspend this user?")) {
-      return;
-    }
+    if (action === "ban" && !confirm("Are you sure you want to ban this user?")) return;
+    if (action === "suspend" && !confirm("Are you sure you want to suspend this user?")) return;
 
     try {
       setSubmitting(userId);
@@ -107,9 +101,7 @@ export default function UserManagementPage() {
       if (response?.success) {
         toast.success(`User ${action === "ban" ? "banned" : action === "suspend" ? "suspended" : "activated"} successfully`);
         await fetchUsers();
-        if (selectedUser?._id === userId) {
-          setSelectedUser(null);
-        }
+        if (selectedUser?._id === userId) setSelectedUser(null);
       } else {
         toast.error(response?.message || `Failed to ${action} user`);
       }
@@ -138,6 +130,28 @@ export default function UserManagementPage() {
       toast.error(error?.message || "Failed to update role");
     } finally {
       setSubmitting(null);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editingUser) return;
+    try {
+      setSavingProfile(true);
+      const res = await api(`/api/admin/users/${editingUser._id}`, {
+        method: "PUT",
+        body: JSON.stringify(editForm),
+      });
+      if (res?.success) {
+        toast.success("Profile updated successfully");
+        setEditingUser(null);
+        await fetchUsers();
+      } else {
+        toast.error(res?.message || "Failed to update profile");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to update profile");
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -190,10 +204,7 @@ export default function UserManagementPage() {
             <div className="flex items-center gap-0 border-t md:border-t-0 md:border-l border-slate-100">
               <select
                 value={roleFilter}
-                onChange={(e) => {
-                  setRoleFilter(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
                 className="h-16 px-8 bg-transparent border-none focus:ring-0 text-[10px] font-black uppercase tracking-widest text-slate-500 cursor-pointer hover:text-emerald-600 transition-colors"
               >
                 <option value="">All Roles</option>
@@ -203,10 +214,7 @@ export default function UserManagementPage() {
               </select>
               <select
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                 className="h-16 px-8 bg-transparent border-none focus:ring-0 text-[10px] font-black uppercase tracking-widest text-slate-500 cursor-pointer hover:text-emerald-600 transition-colors border-l border-slate-100"
               >
                 <option value="">All Statuses</option>
@@ -223,7 +231,6 @@ export default function UserManagementPage() {
         </CardContent>
       </Card>
 
-      {/* Users Table */}
       <Card className="border-slate-100 rounded-[2.5rem] shadow-huge overflow-hidden">
         <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-10 py-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -233,205 +240,137 @@ export default function UserManagementPage() {
                 Showing {total === 0 ? 0 : (page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total} users
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                Per page
-                <select
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 font-black text-[10px] uppercase tracking-widest cursor-pointer"
-                >
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value={500}>500</option>
-                </select>
-              </label>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Community</span>
-            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-gray-500">Loading users...</div>
+              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
           ) : fetchError ? (
-            <div className="flex flex-col items-center justify-center py-12 px-6">
-              <p className="text-rose-600 font-bold text-center">{fetchError}</p>
-              <p className="text-sm text-slate-500 mt-2 text-center">If you expect more users, ensure MongoDB is running and MONGODB_URI is set in .env or .env.local.</p>
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <p className="text-rose-600 font-bold">{fetchError}</p>
             </div>
           ) : users.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <p className="text-gray-500">No users found</p>
+            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+              <p>No users found</p>
             </div>
           ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50/30">
-                      <th className="py-5 px-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        Member Identity
-                      </th>
-                      <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
-                        Engagement
-                      </th>
-                      <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
-                        Citizenship
-                      </th>
-                      <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
-                        Trust Level
-                      </th>
-                      <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        Onboarded
-                      </th>
-                      <th className="py-5 px-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
-                        Authority
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user) => (
-                      <tr
-                        key={user._id}
-                        className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group"
-                      >
-                        <td className="py-5 px-10">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-slate-950 flex items-center justify-center text-emerald-400 font-black text-sm group-hover:scale-110 transition-transform">
-                              {user.fullName[0]}
-                            </div>
-                            <div>
-                              <div className="text-base font-black text-slate-900 tracking-tight">
-                                {user.fullName}
-                              </div>
-                              <div className="text-xs font-bold text-slate-400">{user.email}</div>
-                            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/30">
+                    <th className="py-5 px-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">Member Identity</th>
+                    <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Engagement</th>
+                    <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                    <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trust Level</th>
+                    <th className="py-5 px-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Authority</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user._id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
+                      <td className="py-5 px-10">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-xl bg-slate-950 flex items-center justify-center text-emerald-400 font-black text-sm group-hover:scale-110 transition-transform">
+                            {user.fullName[0]}
                           </div>
-                        </td>
-                        <td className="py-5 px-6 text-center">
-                          {user.role === "admin" ? (
-                            <span className={`text-[10px] uppercase tracking-widest ${getRoleBadge(user.role)}`}>
-                              {user.role}
-                            </span>
+                          <div>
+                            <div className="text-base font-black text-slate-900 tracking-tight">{user.fullName}</div>
+                            <div className="text-xs font-bold text-slate-400">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-5 px-6 text-center">
+                        {user.role === "admin" ? (
+                          <span className={`text-[10px] uppercase tracking-widest ${getRoleBadge(user.role)}`}>{user.role}</span>
+                        ) : (
+                          <select
+                            value={user.role}
+                            onChange={(e) => handleRoleChange(user._id, e.target.value as any)}
+                            disabled={submitting === user._id}
+                            className="text-[10px] font-black uppercase tracking-widest bg-transparent border border-slate-200 rounded-lg px-2 py-1 cursor-pointer focus:ring-2 focus:ring-emerald-500"
+                          >
+                            <option value="buyer">Buyer</option>
+                            <option value="seller">Seller</option>
+                          </select>
+                        )}
+                      </td>
+                      <td className="py-5 px-6 text-center">
+                        <span className={`inline-flex px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full ${getStatusBadge(user.accountStatus)}`}>
+                          {user.accountStatus}
+                        </span>
+                      </td>
+                      <td className="py-5 px-6 text-center">
+                        <span className={`inline-flex px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full ${user.kycStatus === "approved" ? "bg-emerald-400/10 text-emerald-600 border border-emerald-400/20" : "bg-slate-100 text-slate-400"}`}>
+                          {user.kycStatus || "Not Enrolled"}
+                        </span>
+                      </td>
+                      <td className="py-5 px-10">
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => {
+                              setEditingUser(user);
+                              setEditForm({ fullName: user.fullName, email: user.email, phone: user.phone });
+                            }}
+                            className="h-9 px-5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-black uppercase tracking-widest text-[9px] flex items-center gap-2 transition-all shadow-sm"
+                          >
+                            <Pencil className="h-3 w-3" /> Edit
+                          </button>
+                          {user.accountStatus === "active" ? (
+                            <>
+                              <button onClick={() => handleUserAction(user._id, "suspend")} disabled={submitting === user._id} className="h-9 px-5 rounded-xl border border-amber-100 text-amber-600 hover:bg-amber-50 font-black uppercase tracking-widest text-[9px]">Suspend</button>
+                              <button onClick={() => handleUserAction(user._id, "ban")} disabled={submitting === user._id} className="h-9 px-5 rounded-xl border border-rose-100 text-rose-600 hover:bg-rose-50 font-black uppercase tracking-widest text-[9px] flex items-center gap-2"><Ban className="h-3 w-3" /> Ban</button>
+                            </>
                           ) : (
-                            <select
-                              value={user.role}
-                              onChange={(e) => {
-                                const v = e.target.value as "buyer" | "seller";
-                                if (v !== user.role) handleRoleChange(user._id, v);
-                              }}
-                              disabled={submitting === user._id}
-                              className="text-[10px] font-black uppercase tracking-widest bg-transparent border border-slate-200 rounded-lg px-2 py-1 cursor-pointer focus:ring-2 focus:ring-emerald-500"
-                            >
-                              <option value="buyer">Buyer</option>
-                              <option value="seller">Seller</option>
-                            </select>
+                            <button onClick={() => handleUserAction(user._id, "activate")} disabled={submitting === user._id} className="h-10 px-6 rounded-xl bg-slate-950 text-white hover:bg-emerald-600 font-black uppercase tracking-widest text-[9px] flex items-center gap-2 shadow-huge"><CheckCircle className="h-4 w-4" /> Restore</button>
                           )}
-                        </td>
-                        <td className="py-5 px-6 text-center">
-                          <span
-                            className={`inline-flex px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full ${getStatusBadge(
-                              user.accountStatus
-                            )}`}
-                          >
-                            {user.accountStatus}
-                          </span>
-                        </td>
-                        <td className="py-5 px-6 text-center">
-                          <span
-                            className={`inline-flex px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full ${user.kycStatus === "approved"
-                              ? "bg-emerald-400/10 text-emerald-600 border border-emerald-400/20"
-                              : user.kycStatus === "pending"
-                                ? "bg-amber-400/10 text-amber-600 border border-amber-400/20"
-                                : user.kycStatus === "rejected"
-                                  ? "bg-rose-400/10 text-rose-600 border border-rose-400/20"
-                                  : "bg-slate-100 text-slate-400"
-                              }`}
-                          >
-                            {user.kycStatus || "Not Enrolled"}
-                          </span>
-                        </td>
-                        <td className="py-5 px-6">
-                          <p className="text-sm font-black text-slate-900">{new Date(user.createdAt).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Joined On</p>
-                        </td>
-                        <td className="py-5 px-10">
-                          <div className="flex items-center justify-end gap-3">
-                            {user.accountStatus === "active" ? (
-                              <>
-                                <button
-                                  onClick={() => handleUserAction(user._id, "suspend")}
-                                  disabled={submitting === user._id}
-                                  className="h-9 px-5 rounded-xl border border-amber-100 text-amber-600 hover:bg-amber-50 font-black uppercase tracking-widest text-[9px] transition-all"
-                                >
-                                  Suspend
-                                </button>
-                                <button
-                                  onClick={() => handleUserAction(user._id, "ban")}
-                                  disabled={submitting === user._id}
-                                  className="h-9 px-5 rounded-xl border border-rose-100 text-rose-600 hover:bg-rose-50 font-black uppercase tracking-widest text-[9px] flex items-center gap-2 transition-all"
-                                >
-                                  <Ban className="h-3 w-3" />
-                                  Ban
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => handleUserAction(user._id, "activate")}
-                                disabled={submitting === user._id}
-                                className="h-10 px-6 rounded-xl bg-slate-950 text-white hover:bg-emerald-600 font-black uppercase tracking-widest text-[9px] flex items-center gap-2 transition-all shadow-huge"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                                Restore
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-10 py-8 border-t border-slate-100 bg-slate-50/20">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Page {page} <span className="text-slate-200 mx-2">/</span> {totalPages}
-                  </div>
-                  <div className="flex gap-4">
-                    <button
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="h-11 px-8 rounded-2xl border border-slate-200 bg-white text-slate-900 font-black uppercase tracking-widest text-[10px] disabled:opacity-30 transition-all hover:bg-slate-50"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="h-11 px-8 rounded-2xl border border-slate-200 bg-white text-slate-900 font-black uppercase tracking-widest text-[10px] disabled:opacity-30 transition-all hover:bg-slate-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>
+
+      <AnimatePresence>
+        {editingUser && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2.5rem] w-full max-w-md shadow-huge border border-slate-100 overflow-hidden">
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Administrative Override</p>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Modify Profile</h3>
+                </div>
+                <button onClick={() => setEditingUser(null)} className="p-2 hover:bg-slate-50 rounded-full"><X className="h-5 w-5 text-slate-400" /></button>
+              </div>
+              <div className="p-8 space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Full Name</label>
+                    <Input value={editForm.fullName} onChange={(e) => setEditForm(prev => ({ ...prev, fullName: e.target.value }))} className="rounded-xl h-12 font-bold border-slate-100 bg-slate-50/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Email Address</label>
+                    <Input value={editForm.email} onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))} className="rounded-xl h-12 font-bold border-slate-100 bg-slate-50/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Phone Number</label>
+                    <Input value={editForm.phone} onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))} className="rounded-xl h-12 font-bold border-slate-100 bg-slate-50/50" />
+                  </div>
+                </div>
+                <Button onClick={handleSaveProfile} disabled={savingProfile} className="w-full h-14 rounded-2xl bg-slate-950 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-huge transition-all">
+                  {savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Synchronize Changes
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
-
-
-
-
-
-
-

@@ -1,429 +1,167 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Heart,
-  ShoppingCart,
-  Eye,
-  Trash2,
-  Search,
-  Filter,
-  Grid,
-  List,
-  Star,
-  ArrowRight,
-} from "lucide-react";
+import { Heart, Search, ArrowRight, Grid, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Badge } from "@/components/ui/Badge";
-import { wishlistApi, cartApi } from "@/lib/api";
-import { toast } from "react-hot-toast";
-import { EmptyState, LoadingSkeleton, PageHeader, SearchFilterBar } from "@/components/common";
-import { normalizeApiResponse } from "@/lib/utils/apiResponse";
-import { useCartStore } from "@/stores/cartStore";
-
-interface WishlistItem {
-  id: string;
-  productId: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  seller: {
-    name: string;
-    shop: string;
-    rating: number;
-  };
-  addedDate: string;
-  inStock: boolean;
-  category: string;
-}
+import { useWishlistStore } from "@/components/wishlist";
+import { ProductCard } from "@/components/product/ProductCard";
+import type { Product } from "@/types";
 
 export default function WishlistPage() {
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { items: wishlistItems, isLoading, hasLoaded, fetchWishlist } = useWishlistStore();
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [filteredItems, setFilteredItems] = useState<WishlistItem[]>([]);
-  const { addItem, updateQuantity } = useCartStore();
 
   useEffect(() => {
-    const fetchWishlist = async () => {
-      try {
-        setLoading(true);
-        const response = await wishlistApi.getAll({ limit: 100 });
-        
-        const normalized = normalizeApiResponse(response);
-        const transformedItems = normalized.data.map((item: any) => ({
-          id: item._id || item.id,
-          productId: item.product?._id || item.productId || item.product?.id || "",
-          name: item.product?.name || item.name || item.productName || "Unknown Product",
-          price: item.product?.price || item.price || 0,
-          originalPrice: item.product?.originalPrice || item.originalPrice || item.product?.original_price,
-          image: item.product?.images?.[0] || item.image || item.product?.image || "/placeholder-product.jpg",
-          seller: {
-            name: item.product?.seller?.name || item.seller?.name || "Unknown Seller",
-            shop: item.product?.shop?.shopName || item.shopName || item.shop?.name || "Unknown Shop",
-            rating: item.product?.rating || item.rating || item.seller?.rating || 0,
-          },
-          addedDate: item.createdAt || item.created_at || item.addedDate || new Date().toISOString(),
-          inStock: item.product?.inStock !== false && item.product?.stock > 0,
-          category: item.product?.category || item.category || "uncategorized",
-        }));
-
-        setWishlistItems(transformedItems);
-      } catch (error: any) {
-        console.error("Failed to fetch wishlist:", error);
-        // Don't show toast for 401/403 errors (handled by api.ts)
-        if (error?.status !== 401 && error?.status !== 403) {
-          toast.error(error?.message || "Failed to load wishlist");
-        }
-        setWishlistItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWishlist();
-  }, []);
-
-  useEffect(() => {
-    let filtered = wishlistItems;
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (item) =>
-          item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.seller.shop.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    if (!hasLoaded) {
+      fetchWishlist();
     }
+  }, [hasLoaded, fetchWishlist]);
 
-    // Filter by category
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter((item) => item.category === categoryFilter);
-    }
-
-    setFilteredItems(filtered);
-  }, [wishlistItems, searchTerm, categoryFilter]);
-
-  const handleRemoveFromWishlist = async (itemId: string) => {
-    setLoading(true);
-    try {
-      await wishlistApi.remove(itemId);
-      setWishlistItems((prev) => prev.filter((item) => item.id !== itemId));
-      toast.success("Item removed from wishlist");
-    } catch (error: any) {
-      console.error("Failed to remove from wishlist:", error);
-      toast.error(error?.message || "Failed to remove item from wishlist");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddToCart = async (item: WishlistItem) => {
-    setLoading(true);
-    try {
-      // Add to local cart store
-      addItem({
-        _id: item.productId,
-        title: item.name,
-        price: item.price,
-        images: [item.image],
-        seller: item.seller.shop,
-        shopSlug: undefined,
-      });
-
-      // Ensure at least quantity 1
-      updateQuantity(item.productId, 1);
-
-      // Sync with server cart
-      try {
-        await cartApi.addToCart(item.productId, 1);
-      } catch (apiError) {
-        console.error("Failed to sync cart from wishlist:", apiError);
-      }
-
-      // Remove from wishlist after adding to cart
-      setWishlistItems((prev) =>
-        prev.filter((wishlistItem) => wishlistItem.id !== item.id)
-      );
-
-      toast.success("Moved to cart");
-    } catch (error: any) {
-      console.error("Failed to add to cart:", error);
-      toast.error(error?.message || "Failed to add to cart");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`h-4 w-4 ${
-          i < Math.floor(rating)
-            ? "text-yellow-400 fill-current"
-            : "text-gray-300"
-        }`}
-      />
-    ));
-  };
+  const filteredItems = wishlistItems.filter(
+    (item) =>
+      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.shop?.shopName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <PageHeader
-        title="Wishlist"
-        description={`${wishlistItems.length} items saved for later`}
-        action={{
-          label: viewMode === "grid" ? "List View" : "Grid View",
-          onClick: () => setViewMode(viewMode === "grid" ? "list" : "grid"),
-          variant: "outline",
-        }}
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-        >
-          {viewMode === "grid" ? (
-            <List className="h-4 w-4" />
-          ) : (
-            <Grid className="h-4 w-4" />
-          )}
-        </Button>
-      </PageHeader>
-
-      {/* Filters */}
-      <SearchFilterBar
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        searchPlaceholder="Search wishlist..."
-        filters={[
-          {
-            label: "Category",
-            value: categoryFilter,
-            options: [
-              { value: "all", label: "All Categories" },
-              { value: "fashion", label: "Fashion" },
-              { value: "electronics", label: "Electronics" },
-              { value: "home", label: "Home & Garden" },
-              { value: "beauty", label: "Beauty" },
-              { value: "sports", label: "Sports" },
-            ],
-            onChange: setCategoryFilter,
-          },
-        ]}
-      />
-
-      {/* Loading State */}
-      {loading && filteredItems.length === 0 && (
-        <LoadingSkeleton variant="grid" count={4} className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" />
-      )}
-
-      {/* Wishlist Items */}
-      {!loading && filteredItems.length > 0 ? (
-        <div
-          className={
-            viewMode === "grid"
-              ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-              : "space-y-4"
-          }
-        >
-          {filteredItems.map((item) => (
-            <div
-              key={item.id}
-              className={`bg-white shadow rounded-lg ${
-                viewMode === "list" ? "flex" : ""
-              }`}
-            >
-              {viewMode === "grid" ? (
-                // Grid View
-                <>
-                  <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-lg bg-gray-200">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="h-full w-full object-cover object-center group-hover:opacity-75"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
-                        {item.name}
-                      </h3>
-                      <button
-                        onClick={() => handleRemoveFromWishlist(item.id)}
-                        className="text-gray-400 hover:text-red-500"
-                        disabled={loading}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-lg font-semibold text-gray-900">
-                        ₦{item.price.toLocaleString()}
-                      </span>
-                      {item.originalPrice && (
-                        <span className="text-sm text-gray-500 line-through">
-                          ₦{item.originalPrice.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-1 mb-2">
-                      {renderStars(item.seller.rating)}
-                      <span className="text-xs text-gray-500">
-                        ({item.seller.rating})
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mb-3">
-                      by {item.seller.shop}
-                    </p>
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/product/${item.productId}`}
-                        className="flex-1"
-                      >
-                        <Button size="sm" variant="outline" className="w-full">
-                          <Eye className="mr-2 h-4 w-4" />
-                          View
-                        </Button>
-                      </Link>
-                      <Button
-                        size="sm"
-                        disabled={!item.inStock || loading}
-                        onClick={() => handleAddToCart(item)}
-                        className="flex-1"
-                      >
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        {item.inStock ? "Add to Cart" : "Out of Stock"}
-                      </Button>
-                    </div>
-                    {!item.inStock && (
-                      <Badge className="mt-2 bg-red-100 text-red-800">
-                        Out of Stock
-                      </Badge>
-                    )}
-                  </div>
-                </>
-              ) : (
-                // List View
-                <>
-                  <div className="flex-shrink-0">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="h-24 w-24 object-cover rounded-lg"
-                    />
-                  </div>
-                  <div className="flex-1 p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {item.name}
-                        </h3>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-lg font-semibold text-gray-900">
-                            ₦{item.price.toLocaleString()}
-                          </span>
-                          {item.originalPrice && (
-                            <span className="text-sm text-gray-500 line-through">
-                              ₦{item.originalPrice.toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-1 mt-1">
-                          {renderStars(item.seller.rating)}
-                          <span className="text-sm text-gray-500">
-                            {item.seller.rating} • {item.seller.shop}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Added on{" "}
-                          {new Date(item.addedDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleRemoveFromWishlist(item.id)}
-                          className="text-gray-400 hover:text-red-500"
-                          disabled={loading}
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                        <Link href={`/product/${item.productId}`}>
-                          <Button size="sm" variant="outline">
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
-                          </Button>
-                        </Link>
-                        <Button
-                          size="sm"
-                          disabled={!item.inStock || loading}
-                          onClick={() => handleAddToCart(item)}
-                        >
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                          {item.inStock ? "Add to Cart" : "Out of Stock"}
-                        </Button>
-                      </div>
-                    </div>
-                    {!item.inStock && (
-                      <Badge className="mt-2 bg-red-100 text-red-800">
-                        Out of Stock
-                      </Badge>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+    <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Premium Cinematic Hero Header */}
+      <div className="relative pt-24 pb-16 overflow-hidden">
+        {/* Abstract Background Elements */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-black"></div>
+          <div className="absolute inset-0 bg-[url('https://res.cloudinary.com/db2fcni0k/image/upload/v1771783815/noise_hq9z5n.png')] opacity-10 mix-blend-overlay"></div>
+          {/* Animated Glowing Orbs */}
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-rose-500/20 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-taja-primary/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "2s" }}></div>
         </div>
-      ) : (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-          <div className="max-w-md mx-auto">
-            <div className="mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-pink-100 to-pink-50 flex items-center justify-center mb-6">
-              <Heart className="h-12 w-12 text-pink-600" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="max-w-2xl space-y-4">
+              <div className="inline-flex items-center rounded-full bg-white/10 backdrop-blur-md px-4 py-2 border border-white/10 shadow-xl">
+                <Heart className="h-4 w-4 text-rose-400 fill-current mr-2" />
+                <span className="text-[10px] font-black text-rose-100 uppercase tracking-[0.2em]">Your Personal Vault</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[1.1]">
+                Vision <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-200 to-rose-400">Board</span>
+              </h1>
+              <p className="text-slate-300 text-lg md:text-xl font-medium max-w-lg">
+                Your highly curated collection of elite products and exquisite finds.
+              </p>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              {searchTerm || categoryFilter !== "all"
-                ? "No items found"
-                : "Be the first to create!"}
-            </h3>
-            <p className="text-gray-600 mb-8">
-              {searchTerm || categoryFilter !== "all"
-                ? "Try adjusting your search or filter criteria."
-                : "You haven't added any items to your wishlist yet. Start saving your favorite products!"}
-            </p>
-            {!searchTerm && categoryFilter === "all" && (
-              <Link href="/marketplace">
-                <Button size="lg" variant="gradient">
-                  Browse Products
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            )}
+
+            {/* Search/Filter Bar */}
+            <div className="w-full md:w-auto md:min-w-[320px]">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-slate-400 group-focus-within:text-white transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search your collection..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-xl border border-white/20 text-white placeholder-slate-400 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-transparent transition-all shadow-xl"
+                />
+              </div>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Empty State - only show if not loading and no items */}
-      {!loading && wishlistItems.length === 0 && (
-        <EmptyState
-          icon={Heart}
-          title={searchTerm || categoryFilter !== "all" ? "No items found" : "Be the first to create!"}
-          description={searchTerm || categoryFilter !== "all"
-            ? "Try adjusting your search or filter criteria."
-            : "You haven't added any items to your wishlist yet. Start saving your favorite products!"}
-          actionLabel={!searchTerm && categoryFilter === "all" ? "Browse Products" : undefined}
-          actionHref={!searchTerm && categoryFilter === "all" ? "/marketplace" : undefined}
-          iconColor="text-pink-600"
-          iconBgColor="bg-gradient-to-br from-pink-100 to-pink-50"
-        />
-      )}
+        {/* Soft bottom fade to blend with background */}
+        <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-gray-50 to-transparent"></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20">
+
+        {/* Stats Row */}
+        {hasLoaded && wishlistItems.length > 0 && (
+          <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-900 border border-gray-100">
+                <LayoutGrid className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-gray-900 tracking-tight">{filteredItems.length} Elite Items</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{searchTerm ? "Matching search" : "Currently saved"}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Content Area */}
+        {isLoading && !hasLoaded ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="bg-white rounded-[2rem] h-[360px] animate-pulse border border-gray-100 shadow-sm" />
+            ))}
+          </div>
+        ) : filteredItems.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-6">
+            {filteredItems.map((item) => {
+              // Map WishlistItem to Product type for ProductCard
+              const mappedProduct: Product = {
+                _id: item._id,
+                title: item.title,
+                price: item.price,
+                images: item.images,
+                slug: item.slug,
+                description: "",
+                category: "General",
+                condition: (item as any).condition || "new",
+                stock: item.inventory?.quantity ?? item.stock ?? 999,
+                seller: "seller_id",
+                shop: {
+                  _id: "shop_id",
+                  shopName: item.shop?.shopName || "Elite Shop",
+                  shopSlug: item.shop?.shopSlug || item.slug,
+                  owner: "owner",
+                },
+                shopSlug: item.shop?.shopSlug || item.slug,
+              };
+
+              return (
+                <ProductCard
+                  key={mappedProduct._id}
+                  product={mappedProduct}
+                  showWishlist={true}
+                  className="shadow-sm hover:shadow-xl transition-shadow"
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-24 flex flex-col items-center justify-center max-w-md mx-auto text-center space-y-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-rose-500/20 blur-3xl rounded-full"></div>
+              <div className="h-32 w-32 bg-white rounded-[2.5rem] shadow-premium flex items-center justify-center relative rotate-3 hover:rotate-6 transition-transform">
+                <Heart className="h-12 w-12 text-rose-300 fill-current opacity-50" />
+                <Heart className="h-12 w-12 text-rose-500 fill-current absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -ml-2 -mt-2 drop-shadow-lg" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-3xl font-black tracking-tighter text-gray-900">
+                {searchTerm ? "No matches found" : "Your Vault is Empty"}
+              </h3>
+              <p className="text-gray-500 font-medium">
+                {searchTerm
+                  ? "We couldn't find any items matching your search. Try different keywords."
+                  : "Curate your own collection of elite marketplace items. Tap the heart icon on any product to save it here."}
+              </p>
+            </div>
+            {!searchTerm && (
+              <Button asChild className="h-14 px-8 rounded-2xl bg-black text-white hover:bg-slate-900 shadow-premium hover:shadow-premium-hover transition-all group mt-4">
+                <Link href="/marketplace">
+                  <span className="font-black uppercase tracking-widest text-xs">Explore Marketplace</span>
+                  <ArrowRight className="ml-3 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

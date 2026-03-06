@@ -39,8 +39,7 @@ These use `NEXT_PUBLIC_` prefix so they're accessible in the browser:
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` → Empty (needs to be filled for client-side OAuth)
 
 ### Google Gemini AI
-- `GOOGLE_GEMINI_API_KEY` → Directly copied from backend's `GEMINI_API_KEY`
-- `GEMINI_API_KEY` → Also included for compatibility
+- `GEMINI_API_KEY` → Your Google Gemini API Key
 - `GEMINI_MODEL` → `gemini-2.5-pro` (from backend)
 
 ### Cloudflare R2 Storage

@@ -74,42 +74,52 @@ export async function PUT(
           );
         }
         (user as any).role = role;
-        await user.save();
-        return NextResponse.json({
-          success: true,
-          message: `User role set to ${role}`,
-          data: { userId: user._id, role: user.role },
-        });
       }
+
+      // Metadata updates
+      const { fullName, phone, email } = body;
+      if (fullName) user.fullName = fullName.trim();
+      if (phone) user.phone = phone.trim();
+      if (email) user.email = email.trim().toLowerCase();
 
       // Account status action
-      if (!action || !['ban', 'suspend', 'activate'].includes(action)) {
-        return NextResponse.json(
-          { success: false, message: 'Provide "action" (ban, suspend, activate) or "role" (buyer, seller)' },
-          { status: 400 }
-        );
+      if (action) {
+        if (!['ban', 'suspend', 'activate'].includes(action)) {
+          return NextResponse.json(
+            { success: false, message: 'Invalid action. Must be ban, suspend, or activate' },
+            { status: 400 }
+          );
+        }
+
+        if (params.userId === adminUser.userId && action === 'ban') {
+          return NextResponse.json(
+            { success: false, message: 'You cannot ban yourself' },
+            { status: 400 }
+          );
+        }
+
+        if (action === 'ban') {
+          user.accountStatus = 'banned';
+        } else if (action === 'suspend') {
+          user.accountStatus = 'suspended';
+        } else if (action === 'activate') {
+          user.accountStatus = 'active';
+        }
       }
 
-      if (params.userId === adminUser.userId && action === 'ban') {
-        return NextResponse.json(
-          { success: false, message: 'You cannot ban yourself' },
-          { status: 400 }
-        );
-      }
-
-      if (action === 'ban') {
-        user.accountStatus = 'banned';
-      } else if (action === 'suspend') {
-        user.accountStatus = 'suspended';
-      } else if (action === 'activate') {
-        user.accountStatus = 'active';
-      }
       await user.save();
 
       return NextResponse.json({
         success: true,
-        message: `User ${action === 'ban' ? 'banned' : action === 'suspend' ? 'suspended' : 'activated'} successfully`,
-        data: { userId: user._id, accountStatus: user.accountStatus },
+        message: `User updated successfully`,
+        data: {
+          userId: user._id,
+          accountStatus: user.accountStatus,
+          role: user.role,
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone
+        },
       });
     } catch (error: any) {
       console.error('Update user error:', error);

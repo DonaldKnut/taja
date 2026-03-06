@@ -68,12 +68,12 @@ export async function POST(request: NextRequest) {
       });
     } catch (error: any) {
       console.error('Style recommendations error:', error);
-      
+
       if (error.message?.includes('Gemini API key')) {
         return NextResponse.json(
-          { 
-            success: false, 
-            message: 'AI service not configured. Please set GOOGLE_GEMINI_API_KEY in environment variables.',
+          {
+            success: false,
+            message: 'AI service not configured. Please set GEMINI_API_KEY in environment variables.',
             error: 'MISSING_API_KEY'
           },
           { status: 503 }

@@ -33,35 +33,33 @@ import { z } from "zod";
 // Zod schema for required publish fields
 const productPublishSchema = z.object({
   title: z.string().min(1, "Product Title is required"),
-  description: z.string().min(1, "Description is required"),
-  category: z.string().min(1, "Category is required"),
+  description: z.string().optional(),
+  category: z.string().optional(),
   price: z
     .string()
     .min(1, "Price is required")
     .refine(
       (val) => {
         const num = parseFloat(val);
-        return !isNaN(num) && num > 0;
+        return !isNaN(num) && num >= 0;
       },
-      { message: "Price must be greater than 0" }
+      { message: "Price must be at least 0" }
     ),
   images: z
     .array(z.string().min(1))
     .min(1, "Please add at least one product image"),
 });
 
-const categories = [
-  "Fashion & Clothing",
-  "Electronics",
-  "Home & Living",
-  "Beauty & Personal Care",
-  "Sports & Fitness",
-  "Accessories",
-  "Books & Media",
-  "Art & Crafts",
-  "Jewelry",
-  "Shoes & Bags",
-];
+const categoryFields: Record<string, string[]> = {
+  "Fashion & Clothing": ["size", "color", "gender", "material"],
+  "Fashion": ["size", "color", "gender", "material"],
+  "Electronics & Gadgets": ["brand", "model", "technicalSpecs", "warranty"],
+  "Electronics": ["brand", "model", "technicalSpecs", "warranty"],
+  "Medicines & Health": ["manufacturer", "expiryDate", "dosage", "ingredients"],
+  "Medicines": ["manufacturer", "expiryDate", "dosage", "ingredients"],
+};
+
+// Categories are now fetched from the database
 
 const conditions = [
   { value: "new", label: "New", desc: "Brand new, unused" },
@@ -111,8 +109,11 @@ export default function NewProductPage() {
   const [hasShop, setHasShop] = useState(false);
   const [isVerifiedSeller, setIsVerifiedSeller] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [analyzingImage, setAnalyzingImage] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [suggestingTags, setSuggestingTags] = useState(false);
+  const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [suggestedPrice, setSuggestedPrice] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -129,7 +130,14 @@ export default function NewProductPage() {
       color: "",
       material: "",
       gender: "",
-    },
+      model: "",
+      technicalSpecs: "",
+      warranty: "",
+      manufacturer: "",
+      expiryDate: "",
+      dosage: "",
+      ingredients: "",
+    } as Record<string, any>,
     inventory: {
       quantity: 1,
       sku: "",
@@ -173,6 +181,7 @@ export default function NewProductPage() {
           router.replace("/seller/setup");
           return;
         }
+        setHasShop(true);
         if (!verified) {
           setCheckingShop(false);
           toast.error("Complete seller verification to add products.");
@@ -180,8 +189,13 @@ export default function NewProductPage() {
           return;
         }
 
-        setHasShop(true);
         setIsVerifiedSeller(true);
+
+        // Fetch categories
+        const catRes = await api("/api/seller/categories");
+        if (catRes?.success) {
+          setAllCategories(catRes.data);
+        }
       } catch (err) {
         if (!cancelled) {
           console.error("Error checking shop/verification:", err);
@@ -230,11 +244,18 @@ export default function NewProductPage() {
       });
 
       const uploadedUrls = await Promise.all(uploadPromises);
+      const isFirstImage = formData.images.length === 0;
+
       setFormData((prev) => ({
         ...prev,
         images: [...prev.images, ...uploadedUrls].slice(0, 8), // Max 8 images
       }));
       toast.success(`${uploadedUrls.length} image(s) uploaded successfully`);
+
+      // Auto-analyze the first image to fill fields
+      if (isFirstImage && uploadedUrls.length > 0) {
+        handleAnalyzeImage(uploadedUrls[0]);
+      }
     } catch (error: any) {
       console.error("Image upload error:", error);
       toast.error(error?.message || "Failed to upload images");
@@ -371,6 +392,11 @@ export default function NewProductPage() {
 
   // AI: Analyze product image
   const handleAnalyzeImage = async (imageUrl: string) => {
+    if (analyzingImage) return;
+
+    setAnalyzingImage(true);
+    const analysisToast = toast.loading("AI is analyzing your product image...");
+
     try {
       const response = await api("/api/ai/analyze-image", {
         method: "POST",
@@ -379,37 +405,66 @@ export default function NewProductPage() {
 
       if (response?.analysis) {
         const { analysis } = response;
-        
-        // Auto-fill category if empty
-        if (!formData.category && analysis.category) {
-          setFormData((prev) => ({
-            ...prev,
-            category: analysis.category,
-          }));
+
+        // Smart Category Mapping
+        let matchedCategory = "";
+        if (analysis.category) {
+          const aiCat = analysis.category.toLowerCase();
+          const aiSub = (analysis.subcategory || "").toLowerCase();
+
+          // Try to find a match in system categories
+          const systemMatch = allCategories.find(cat =>
+            cat.name.toLowerCase() === aiCat ||
+            cat.name.toLowerCase() === aiSub ||
+            aiCat.includes(cat.name.toLowerCase()) ||
+            cat.name.toLowerCase().includes(aiCat)
+          );
+
+          if (systemMatch) {
+            matchedCategory = systemMatch._id || systemMatch.name;
+          }
         }
 
-        // Auto-fill specifications
+        // Auto-fill Title if empty
+        const newTitle = !formData.title.trim() && analysis.seoTitle ? analysis.seoTitle : formData.title;
+
+        // Auto-fill all fields
         setFormData((prev) => ({
           ...prev,
+          title: newTitle,
+          category: matchedCategory || prev.category,
+          description: analysis.description || prev.description,
           specifications: {
             ...prev.specifications,
             color: analysis.attributes?.colors?.[0] || prev.specifications.color,
             material: analysis.attributes?.materials?.[0] || prev.specifications.material,
-            gender: analysis.attributes?.gender || prev.specifications.gender,
+            gender: (analysis.attributes?.gender || "").toLowerCase() || prev.specifications.gender,
+            style: analysis.attributes?.style || prev.specifications.style,
           },
           seo: {
             ...prev.seo,
-            tags: [...new Set([...prev.seo.tags, ...analysis.tags])].slice(0, 15),
+            tags: [...new Set([...prev.seo.tags, ...(analysis.tags || [])])].slice(0, 15),
             metaTitle: analysis.seoTitle || prev.seo.metaTitle,
             metaDescription: analysis.seoDescription || prev.seo.metaDescription,
           },
         }));
 
-        toast.success("Image analyzed - fields auto-filled");
+        if (analysis.suggestedPriceRange) {
+          setSuggestedPrice(analysis.suggestedPriceRange);
+        }
+
+        toast.success("Magic! AI has auto-filled your product details.", { id: analysisToast });
+
+        // If we have a title but still no full description, trigger description generator
+        if (newTitle && (!analysis.description || analysis.description.length < 50)) {
+          handleGenerateDescription();
+        }
       }
     } catch (error: any) {
       console.error("AI image analysis error:", error);
-      toast.error(error?.message || "Failed to analyze image");
+      toast.error(error?.message || "AI was unable to analyze this image", { id: analysisToast });
+    } finally {
+      setAnalyzingImage(false);
     }
   };
 
@@ -424,10 +479,10 @@ export default function NewProductPage() {
     // Zod validation for required fields
     const validation = productPublishSchema.safeParse({
       title: formData.title.trim(),
-      description: formData.description.trim(),
-      category: formData.category.trim(),
+      description: (formData.description || "").trim(),
+      category: (formData.category || "").trim(),
       price: formData.price.trim(),
-      images: formData.images,
+      images: formData.images || [],
     });
 
     if (!validation.success) {
@@ -514,10 +569,7 @@ export default function NewProductPage() {
 
   const hasRequiredFields =
     !!formData.title.trim() &&
-    !!formData.description.trim() &&
-    !!formData.category.trim() &&
-    !!formData.price.trim() &&
-    formData.images.length > 0;
+    !!formData.price.trim();
 
   return (
     <div className="min-h-screen bg-motif-blanc selection:bg-taja-primary/30">
@@ -601,9 +653,21 @@ export default function NewProductPage() {
 
               <div className="space-y-8">
                 <div className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                    Product Title *
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                      Product Title *
+                    </label>
+                    {(analyzingImage || generatingDescription) && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex items-center gap-1 text-[8px] font-black text-taja-primary uppercase tracking-widest bg-taja-primary/10 px-2 py-0.5 rounded-full"
+                      >
+                        <Sparkles className="h-2.5 w-2.5 animate-pulse" />
+                        AI Magic
+                      </motion.div>
+                    )}
+                  </div>
                   <input
                     name="title"
                     type="text"
@@ -616,13 +680,24 @@ export default function NewProductPage() {
                 </div>
 
                 <div className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                    Description *
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                      Description *
+                    </label>
+                    {(analyzingImage || generatingDescription) && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex items-center gap-1 text-[8px] font-black text-taja-primary uppercase tracking-widest bg-taja-primary/10 px-2 py-0.5 rounded-full"
+                      >
+                        <Sparkles className="h-2.5 w-2.5 animate-pulse" />
+                        AI Magic
+                      </motion.div>
+                    )}
+                  </div>
                   <textarea
                     name="description"
                     rows={8}
-                    required
                     value={formData.description}
                     onChange={handleChange}
                     className="w-full p-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-3xl text-sm font-medium text-taja-secondary placeholder:text-gray-300 resize-none leading-relaxed"
@@ -632,19 +707,30 @@ export default function NewProductPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                   <div className="group space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                      Category *
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                        Category *
+                      </label>
+                      {analyzingImage && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="flex items-center gap-1 text-[8px] font-black text-taja-primary uppercase tracking-widest bg-taja-primary/10 px-2 py-0.5 rounded-full"
+                        >
+                          <Sparkles className="h-2.5 w-2.5 animate-pulse" />
+                          AI Magic
+                        </motion.div>
+                      )}
+                    </div>
                     <select
                       name="category"
-                      required
                       value={formData.category}
                       onChange={handleChange}
                       className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-[11px] font-black uppercase tracking-[0.1em] text-taja-secondary appearance-none"
                     >
                       <option value="">Select category</option>
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
+                      {allCategories.map((cat) => (
+                        <option key={cat._id || cat.name} value={cat._id || cat.name}>{cat.name}</option>
                       ))}
                     </select>
                   </div>
@@ -674,7 +760,7 @@ export default function NewProductPage() {
               <div className="flex items-center justify-between mb-10">
                 <div className="space-y-1">
                   <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Visual Assets</h3>
-                  <p className="text-3xl font-black text-taja-secondary tracking-tighter italic">Product Images</p>
+                  <p className="text-3xl font-black text-taja-secondary tracking-tighter italic">Product Images *</p>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{formData.images.length} / 8 Uploaded</p>
@@ -801,51 +887,146 @@ export default function NewProductPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-                <div className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Size</label>
-                  <select
-                    name="specifications.size"
-                    value={formData.specifications.size}
-                    onChange={handleChange}
-                    className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white appearance-none transition-all rounded-2xl text-[11px] font-black uppercase tracking-widest text-taja-secondary"
-                  >
-                    <option value="">Select size</option>
-                    {sizes.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+              {/* Dynamic Specifications */}
+              {formData.category && (
+                <div className="space-y-8 mt-8 pt-8 border-t border-white/20">
+                  {/* Fashion Fields */}
+                  {(categoryFields[formData.category] || categoryFields["Fashion"]).includes("size") && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Size</label>
+                        <select
+                          name="specifications.size"
+                          value={formData.specifications.size}
+                          onChange={handleChange}
+                          className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white appearance-none transition-all rounded-2xl text-[11px] font-black uppercase tracking-widest text-taja-secondary"
+                        >
+                          <option value="">Select size</option>
+                          {sizes.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Color</label>
+                        <select
+                          name="specifications.color"
+                          value={formData.specifications.color}
+                          onChange={handleChange}
+                          className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white appearance-none transition-all rounded-2xl text-[11px] font-black uppercase tracking-widest text-taja-secondary"
+                        >
+                          <option value="">Select color</option>
+                          {colors.map((c) => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Gender</label>
+                        <select
+                          name="specifications.gender"
+                          value={formData.specifications.gender}
+                          onChange={handleChange}
+                          className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white appearance-none transition-all rounded-2xl text-[11px] font-black uppercase tracking-widest text-taja-secondary"
+                        >
+                          <option value="">Select gender</option>
+                          <option value="men">Men</option>
+                          <option value="women">Women</option>
+                          <option value="unisex">Unisex</option>
+                          <option value="kids">Kids</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Electronics Fields */}
+                  {categoryFields[formData.category]?.includes("model") && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Model Name/Number</label>
+                        <input
+                          name="specifications.model"
+                          type="text"
+                          value={formData.specifications.model}
+                          onChange={handleChange}
+                          className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+                          placeholder="e.g., iPhone 15 Pro"
+                        />
+                      </div>
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Warranty Period</label>
+                        <input
+                          name="specifications.warranty"
+                          type="text"
+                          value={formData.specifications.warranty}
+                          onChange={handleChange}
+                          className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+                          placeholder="e.g., 1 Year Local Warranty"
+                        />
+                      </div>
+                      <div className="group space-y-2 sm:col-span-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Technical Specifications</label>
+                        <textarea
+                          name="specifications.technicalSpecs"
+                          rows={4}
+                          value={formData.specifications.technicalSpecs}
+                          onChange={handleChange}
+                          className="w-full p-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-medium text-taja-secondary resize-none"
+                          placeholder="e.g., 8GB RAM, 256GB SSD, OLED Display..."
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Medicines Fields */}
+                  {categoryFields[formData.category]?.includes("expiryDate") && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Manufacturer</label>
+                        <input
+                          name="specifications.manufacturer"
+                          type="text"
+                          value={formData.specifications.manufacturer}
+                          onChange={handleChange}
+                          className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+                          placeholder="e.g., Pfizer, GSK"
+                        />
+                      </div>
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Expiry Date</label>
+                        <input
+                          name="specifications.expiryDate"
+                          type="date"
+                          value={formData.specifications.expiryDate}
+                          onChange={handleChange}
+                          className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+                        />
+                      </div>
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Dosage Instructions</label>
+                        <input
+                          name="specifications.dosage"
+                          type="text"
+                          value={formData.specifications.dosage}
+                          onChange={handleChange}
+                          className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+                          placeholder="e.g., 1 tablet twice daily"
+                        />
+                      </div>
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Active Ingredients</label>
+                        <input
+                          name="specifications.ingredients"
+                          type="text"
+                          value={formData.specifications.ingredients}
+                          onChange={handleChange}
+                          className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+                          placeholder="e.g., Paracetamol 500mg"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Color</label>
-                  <select
-                    name="specifications.color"
-                    value={formData.specifications.color}
-                    onChange={handleChange}
-                    className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white appearance-none transition-all rounded-2xl text-[11px] font-black uppercase tracking-widest text-taja-secondary"
-                  >
-                    <option value="">Select color</option>
-                    {colors.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Gender</label>
-                  <select
-                    name="specifications.gender"
-                    value={formData.specifications.gender}
-                    onChange={handleChange}
-                    className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white appearance-none transition-all rounded-2xl text-[11px] font-black uppercase tracking-widest text-taja-secondary"
-                  >
-                    <option value="">Select gender</option>
-                    <option value="men">Men</option>
-                    <option value="women">Women</option>
-                    <option value="unisex">Unisex</option>
-                    <option value="kids">Kids</option>
-                  </select>
-                </div>
-              </div>
+              )}
             </motion.section>
           </div>
 
-          {/* Sidebar / Secondary Area */}
           <div className="lg:col-span-4 space-y-12">
 
             {/* Pricing Card */}
@@ -858,7 +1039,17 @@ export default function NewProductPage() {
 
               <div className="space-y-6">
                 <div className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Price (₦) *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                      Price (₦) *
+                    </label>
+                    {suggestedPrice && (
+                      <div className="text-[8px] font-bold text-taja-primary bg-taja-primary/5 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                        <Sparkles className="h-2 w-2" />
+                        AI Suggests: {suggestedPrice}
+                      </div>
+                    )}
+                  </div>
                   <input
                     name="price"
                     type="number"
@@ -911,16 +1102,16 @@ export default function NewProductPage() {
                 </label>
 
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Minimum order quantity (MOQ)</label>
-                <input
-                  name="inventory.moq"
-                  type="number"
-                  min="1"
-                  value={formData.inventory.moq}
-                  onChange={handleChange}
-                  className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
-                />
-              </motion.div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Minimum order quantity (MOQ)</label>
+                  <input
+                    name="inventory.moq"
+                    type="number"
+                    min="1"
+                    value={formData.inventory.moq}
+                    onChange={handleChange}
+                    className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+                  />
+                </motion.div>
                 {formData.inventory.trackQuantity && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Quantity Available</label>
@@ -1078,8 +1269,8 @@ export default function NewProductPage() {
             </motion.section>
 
           </div>
-        </div>
-      </motion.div>
+        </div >
+      </motion.div >
 
       <input
         ref={fileInputRef}
@@ -1091,7 +1282,7 @@ export default function NewProductPage() {
       />
 
       <ShopRequirementModal open={!checkingShop && !hasShop} />
-    </div>
+    </div >
   );
 }
 

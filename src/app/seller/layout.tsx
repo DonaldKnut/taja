@@ -43,6 +43,7 @@ import { useRouter } from "next/navigation";
 import { NotificationsModal } from "@/components/NotificationsModal";
 import { SearchModal } from "@/components/SearchModal";
 import { api } from "@/lib/api";
+import { CartIcon, CartDrawer, useCartStore } from "@/components/cart";
 
 const KYC_BANNER_SKIP_KEY = "taja_seller_kyc_banner_skipped";
 
@@ -50,6 +51,7 @@ const sellerNavigation = [
   { name: "Overview", href: "/seller/dashboard", icon: LayoutDashboard },
   { name: "Marketplace", href: "/seller/marketplace", icon: ShoppingBag },
   { name: "Products", href: "/seller/products", icon: Package },
+  { name: "Categories", href: "/seller/categories", icon: Compass },
   { name: "Orders", href: "/seller/orders", icon: ShoppingCart },
   { name: "Logistics", href: "/seller/logistics", icon: Truck },
   { name: "Analytics", href: "/seller/analytics", icon: TrendingUp },
@@ -80,6 +82,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
+  const { isOpen, toggleCart } = useCartStore();
   const [hasShop, setHasShop] = useState(false);
   const [checkingShop, setCheckingShop] = useState(true);
   const { unreadCount } = useNotifications();
@@ -97,7 +100,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     const checkShopStatus = async () => {
       if (!user) return;
       try {
-        const response = await api("/api/shops/my-shop");
+        const response = await api("/api/shops/my");
         setHasShop(!!(response?.data || response?.shop));
       } catch (error) {
         setHasShop(false);
@@ -392,6 +395,14 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                   </span>
                 )}
               </button>
+
+              <div className="hidden md:flex relative">
+                <CartIcon
+                  className="p-3 text-gray-400 hover:text-taja-primary glass-card border-white/40 hover:border-taja-primary/20 transition-all rounded-full"
+                  iconSize="h-5 w-5"
+                  badgeClassName="!h-5 !w-5 !text-[10px] !top-0 !right-0 bg-taja-primary text-white border-2 border-white"
+                />
+              </div>
 
               <div className="h-8 w-px bg-white/40 mx-2 hidden sm:block" />
 

@@ -8,20 +8,23 @@ import {
   Plus,
   ShoppingBag,
   User,
-  Wallet,
   ShieldCheck,
   Package,
   LogIn,
   UserPlus,
   ShoppingCart,
+  Heart,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCartStore } from "@/stores/cartStore";
+import { useWishlistStore } from "@/components/wishlist";
 
 type NavItem = {
   label: string;
   href: string;
   icon: ComponentType<{ className?: string }>;
   activeMatch?: (pathname: string) => boolean;
+  onClick?: (e: React.MouseEvent) => void;
 };
 
 function isActive(pathname: string, item: NavItem) {
@@ -33,6 +36,10 @@ function isActive(pathname: string, item: NavItem) {
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuth();
+  const { toggleCart, getTotalItems } = useCartStore();
+  const cartCount = getTotalItems();
+  const { toggleDrawer: toggleWishlist, items: wishlistItems } = useWishlistStore();
+  const wishlistCount = wishlistItems.length;
 
   // Hide on auth flows and payment redirects where a fixed bar is distracting.
   const hiddenPrefixes = [
@@ -52,11 +59,21 @@ export function MobileBottomNav() {
     { label: "Register", href: "/register", icon: UserPlus },
   ];
 
+  const handleCartClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toggleCart();
+  };
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toggleWishlist();
+  };
+
   const buyerItems: NavItem[] = [
     { label: "Explore", href: "/marketplace", icon: Compass },
     { label: "Orders", href: "/dashboard/orders", icon: Package },
-    { label: "Cart", href: "/dashboard/cart", icon: ShoppingCart },
-    { label: "Wishlist", href: "/dashboard/wishlist", icon: ShoppingBag },
+    { label: "Cart", href: "/dashboard/cart", icon: ShoppingCart, onClick: handleCartClick },
+    { label: "Wishlist", href: "/dashboard/wishlist", icon: Heart, onClick: handleWishlistClick },
     { label: "Profile", href: "/dashboard/profile", icon: User },
   ];
 
@@ -82,10 +99,13 @@ export function MobileBottomNav() {
             const active = isActive(pathname, item);
             const Icon = item.icon;
             const isPlus = item.label === "Plus";
+            const isCart = item.label === "Cart";
+
             return (
               <Link
                 key={item.href + item.label}
                 href={item.href}
+                onClick={item.onClick}
                 className={`flex flex-col items-center justify-center gap-1 py-3.5 rounded-xl transition-colors ${isPlus
                   ? "relative -mt-4"
                   : active
@@ -99,10 +119,25 @@ export function MobileBottomNav() {
                     <Plus className="h-6 w-6" />
                   </div>
                 ) : (
-                  <>
+                  <div className="relative">
                     <Icon className={`h-5 w-5 ${active ? "text-taja-primary" : "text-gray-400"}`} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
-                  </>
+                    {isCart && cartCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center ring-2 ring-white">
+                        {cartCount}
+                      </span>
+                    )}
+                    {item.label === "Wishlist" && wishlistCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-rose-500 text-white text-[8px] font-black rounded-full flex items-center justify-center ring-2 ring-white">
+                        {wishlistCount}
+                      </span>
+                    )}
+                    <span className="sr-only">{item.label}</span>
+                  </div>
+                )}
+                {!isPlus && (
+                  <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-1">
+                    {item.label}
+                  </span>
                 )}
               </Link>
             );
@@ -112,4 +147,3 @@ export function MobileBottomNav() {
     </nav>
   );
 }
-

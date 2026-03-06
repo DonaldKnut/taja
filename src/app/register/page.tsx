@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, LifeBuoy, Rocket, Users, Shield } from "lucide-react";
@@ -24,6 +24,17 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { register } = useAuth();
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      const token = localStorage.getItem("token");
+      if (token) {
+        const role = localStorage.getItem("role");
+        router.replace(role === "seller" ? "/seller/dashboard" : "/dashboard");
+      }
+    }
+  }, [router]);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",

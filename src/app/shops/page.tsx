@@ -20,12 +20,21 @@ import {
   Heart,
   Menu,
   X,
+  Zap,
+  ShieldCheck,
+  ArrowRight,
+  ChevronRight,
+  Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { shopsApi, api } from "@/lib/api";
 import { toast } from "react-hot-toast";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { Container } from "@/components/layout";
 
 interface Shop {
   _id: string;
@@ -62,23 +71,10 @@ export default function ShopsPage() {
   const [generatingMessage, setGeneratingMessage] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchShops();
   }, [page, searchQuery]);
-
-  // Prevent body scroll when menu is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [mobileMenuOpen]);
 
   const fetchShops = async () => {
     try {
@@ -98,7 +94,6 @@ export default function ShopsPage() {
         }
         setHasMore(response.data.pagination.page < response.data.pagination.pages);
 
-        // Generate AI message if no shops exist
         if (newShops.length === 0 && page === 1 && !searchQuery) {
           generateEmptyStateMessage();
         }
@@ -114,8 +109,8 @@ export default function ShopsPage() {
   const generateEmptyStateMessage = async () => {
     try {
       setGeneratingMessage(true);
-      const prompt = `Generate an inspiring and encouraging message for when there are no shops yet on a Nigerian e-commerce marketplace. The message should be friendly, motivational, and encourage users to be the first to create a shop. Make it warm and welcoming. Keep it under 150 words.`;
-      
+      const prompt = `Generate an inspiring and encouraging message for when there are no shops yet on a Nigerian e-commerce marketplace. The message should be friendly, motivational, and encourage users to be the first to create a shop. Keep it cinematic and elite.`;
+
       const response = await api("/api/ai/generate", {
         method: "POST",
         body: JSON.stringify({ prompt }),
@@ -126,9 +121,8 @@ export default function ShopsPage() {
       }
     } catch (error) {
       console.error("Error generating AI message:", error);
-      // Fallback message
       setEmptyStateMessage(
-        "No shops yet! Be the first to create your own shop and start selling on Taja.Shop. Join our community of sellers and showcase your unique products to buyers across Nigeria."
+        "The archive is currently pristine. Be the pioneer merchant to define the new standard of African commerce."
       );
     } finally {
       setGeneratingMessage(false);
@@ -136,343 +130,290 @@ export default function ShopsPage() {
   };
 
   const handleCreateShop = () => {
-    const token = localStorage.getItem("token");
+    const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
     if (!token) {
-      toast.error("Please login to create a shop");
+      toast.error("Authentication required to create a shop");
       router.push("/login?redirect=/shops/new");
       return;
     }
     router.push("/shops/new");
   };
 
-  const ShopCard = ({ shop }: { shop: Shop }) => (
-    <Link href={`/shop/${shop.shopSlug}`}>
-      <Card className="group hover:shadow-xl transition-all duration-300 card-hover overflow-hidden h-full flex flex-col">
-        {/* Banner */}
-        <div className="relative h-32 md:h-40 bg-gradient-taja overflow-hidden">
-          {shop.banner ? (
-            <Image
-              src={shop.banner}
-              alt={shop.shopName}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-400 via-gray-500 to-emerald-600" />
-          )}
-          <div className="absolute inset-0 bg-black/20" />
-          
-          {/* Logo */}
-          <div className="absolute -bottom-8 left-4 w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
-            {shop.logo ? (
+  const ShopCard = ({ shop, index }: { shop: Shop; index: number }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <Link href={`/shop/${shop.shopSlug}`} className="group block h-full">
+        <div className="relative glass-panel rounded-[2.5rem] overflow-hidden border-white/60 shadow-premium hover:shadow-premium-hover transition-all duration-700 hover:-translate-y-2 h-full flex flex-col">
+          {/* Banner */}
+          <div className="relative h-40 overflow-hidden">
+            {shop.banner ? (
               <Image
-                src={shop.logo}
+                src={shop.banner}
                 alt={shop.shopName}
                 fill
-                className="object-cover"
-                sizes="80px"
+                className="object-cover transition-transform duration-[2s] group-hover:scale-110"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
-                <Store className="h-8 w-8 text-gray-600" />
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-taja-secondary via-slate-800 to-black" />
             )}
-          </div>
-        </div>
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
 
-        <CardContent className="p-4 pt-10 flex-1 flex flex-col">
-          {/* Shop Name & Verification */}
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-lg text-gray-900 group-hover:text-taja-primary transition-colors line-clamp-1">
-                {shop.shopName}
-              </h3>
-            </div>
+            {/* Verification Badge Float */}
             {shop.verification?.isVerified && (
-              <div className="flex-shrink-0 ml-2">
-                <CheckCircle className="h-5 w-5 text-emerald-500" />
+              <div className="absolute top-4 right-4 px-3 py-1.5 bg-emerald-500/90 backdrop-blur-md rounded-full text-[8px] font-black text-white uppercase tracking-widest flex items-center gap-1 shadow-lg ring-1 ring-white/20">
+                <CheckCircle className="w-3 h-3" />
+                Verified Merchant
               </div>
             )}
-          </div>
 
-          {/* Description */}
-          {shop.description && (
-            <p className="text-sm text-gray-600 line-clamp-2 mb-3 flex-1">
-              {shop.description}
-            </p>
-          )}
-
-          {/* Stats */}
-          <div className="flex items-center gap-4 text-sm text-gray-600 mt-auto pt-3 border-t">
-            {shop.stats?.averageRating && shop.stats.averageRating > 0 && (
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="font-medium">{shop.stats.averageRating.toFixed(1)}</span>
-                {shop.stats.totalReviews > 0 && (
-                  <span className="text-gray-500">({shop.stats.totalReviews})</span>
+            {/* Logo - Centered Overlay Style */}
+            <div className="absolute -bottom-10 left-8">
+              <div className="w-20 h-20 rounded-3xl border-4 border-white shadow-2xl overflow-hidden bg-white ring-4 ring-black/5">
+                {shop.logo ? (
+                  <Image src={shop.logo} alt={shop.shopName} fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-taja flex items-center justify-center text-white font-black text-2xl">
+                    {shop.shopName.charAt(0)}
+                  </div>
                 )}
               </div>
-            )}
-            {shop.stats?.totalProducts !== undefined && (
-              <div className="flex items-center gap-1">
-                <Package className="h-4 w-4" />
-                <span>{shop.stats.totalProducts}</span>
-              </div>
-            )}
+            </div>
           </div>
 
-          {/* Categories */}
-          {shop.categories && shop.categories.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {shop.categories.slice(0, 3).map((cat, idx) => (
-                <span
-                  key={idx}
-                  className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full"
-                >
-                  {cat}
-                </span>
-              ))}
+          <CardContent className="pt-14 pb-8 px-8 flex-1 flex flex-col">
+            <div className="space-y-4 mb-6">
+              <h3 className="text-xl font-black text-taja-secondary tracking-tight group-hover:text-taja-primary transition-colors">
+                {shop.shopName}
+              </h3>
+
+              {shop.description && (
+                <p className="text-sm font-medium text-gray-400 line-clamp-2 leading-relaxed">
+                  {shop.description}
+                </p>
+              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </Link>
+
+            <div className="mt-auto space-y-5">
+              <div className="flex items-center justify-between border-t border-gray-50 pt-5">
+                <div className="flex gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest mb-1">Products</span>
+                    <span className="text-sm font-black text-taja-secondary">{shop.stats?.totalProducts || 0}</span>
+                  </div>
+                  {shop.stats?.averageRating ? (
+                    <div className="flex flex-col">
+                      <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest mb-1">Rating</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span className="text-sm font-black text-taja-secondary">{shop.stats.averageRating.toFixed(1)}</span>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="h-10 w-10 rounded-full bg-gray-50 flex items-center justify-center text-taja-secondary group-hover:bg-taja-primary group-hover:text-white transition-all duration-500">
+                  <ChevronRight className="w-5 h-5" />
+                </div>
+              </div>
+
+              {shop.categories && shop.categories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {shop.categories.slice(0, 2).map((cat, idx) => (
+                    <span key={idx} className="text-[8px] font-black uppercase tracking-widest px-3 py-1 bg-white border border-gray-100 rounded-full text-gray-400">
+                      {cat}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </div>
+      </Link>
+    </motion.div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between mb-4 md:mb-0">
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-                <Store className="h-6 w-6 md:h-8 md:w-8 text-taja-primary" />
-                Shops
-              </h1>
-              <p className="text-sm text-gray-600 mt-1 hidden sm:block">
-                Discover amazing shops and sellers
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleCreateShop}
-                variant="gradient"
-                className="hidden sm:flex"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Shop
-              </Button>
-              <button
-                className="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-taja-primary hover:bg-gray-100 transition-colors"
-                aria-label="Open menu"
-                onClick={() => setMobileMenuOpen(true)}
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#FDFDFD]">
+      <AppHeader />
 
-          {/* Search */}
-          <div className="mt-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                type="text"
-                placeholder="Search shops..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-10 w-full"
-              />
+      <main className="relative z-10 pt-10">
+        <Container size="lg">
+          {/* Cinematic Hero */}
+          <motion.section
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative glass-panel rounded-[3.5rem] p-12 md:p-20 overflow-hidden border-white/60 shadow-premium mb-16"
+          >
+            {/* Background Motifs */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-taja-primary/5 to-transparent"></div>
+              <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-taja-primary/10 rounded-full blur-[100px]"></div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Mobile Menu */}
-      <div
-        className={`fixed inset-0 z-50 sm:hidden transition-opacity duration-300 ${
-          mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        {/* Backdrop */}
-        <div
-          className={`absolute inset-0 bg-black transition-opacity duration-300 ${
-            mobileMenuOpen ? "opacity-40" : "opacity-0"
-          }`}
-          onClick={() => setMobileMenuOpen(false)}
-        />
-        
-        {/* Menu Panel */}
-        <div
-          className={`absolute top-0 right-0 h-full w-72 bg-white shadow-xl p-6 flex flex-col transform transition-transform duration-300 ease-in-out ${
-            mobileMenuOpen ? "translate-x-0" : "translate-x-full"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <span className="text-xl font-semibold text-gray-900">Menu</span>
-            <button
-              className="p-2 rounded-md text-gray-700 hover:text-taja-primary hover:bg-gray-100 transition-colors"
-              aria-label="Close menu"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <X className="h-6 w-6" />
-            </button>
-          </div>
-          <nav className="flex flex-col space-y-4">
-            <Link
-              href="/"
-              className="text-gray-800 hover:text-taja-primary transition-colors py-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              href="/marketplace"
-              className="text-gray-800 hover:text-taja-primary transition-colors py-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Marketplace
-            </Link>
-            <Link
-              href="/shops"
-              className="text-taja-primary font-semibold py-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Shops
-            </Link>
-            <Link
-              href="/how-it-works"
-              className="text-gray-800 hover:text-taja-primary transition-colors py-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              How it Works
-            </Link>
-            <div className="pt-4 border-t">
-              <Button
-                onClick={() => {
-                  handleCreateShop();
-                  setMobileMenuOpen(false);
-                }}
-                variant="gradient"
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Shop
-              </Button>
-            </div>
-            <div className="pt-4 border-t space-y-2">
-              <Link
-                href="/login"
-                className="block text-gray-800 hover:text-taja-primary transition-colors py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="block bg-taja-primary text-white px-4 py-2 rounded-lg hover:bg-emerald-600 text-center transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign Up
-              </Link>
-            </div>
-          </nav>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading && shops.length === 0 ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-taja-primary mx-auto mb-4" />
-              <p className="text-gray-600">Loading shops...</p>
-            </div>
-          </div>
-        ) : shops.length === 0 ? (
-          /* Empty State */
-          <div className="max-w-2xl mx-auto py-12 md:py-20">
-            <Card className="overflow-hidden">
-              <CardContent className="p-8 md:p-12 text-center">
-                <div className="mb-6">
-                  <div className="relative w-32 h-32 mx-auto mb-6">
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                      <Store className="h-16 w-16 text-gray-400" />
-                    </div>
-                    <div className="absolute -top-2 -right-2">
-                      <Sparkles className="h-8 w-8 text-yellow-400 animate-pulse" />
-                    </div>
-                  </div>
+            <div className="relative z-10 max-w-3xl">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-2 bg-taja-primary/10 rounded-xl">
+                  <Crown className="w-5 h-5 text-taja-primary" />
                 </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-taja-primary">Hub of Excellence</span>
+              </div>
 
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                  No shops yet!
-                </h2>
+              <h1 className="text-4xl md:text-7xl font-black text-taja-secondary tracking-tighter leading-[0.85] mb-8">
+                The Elite Standard of <br />
+                <span className="text-transparent bg-clip-text bg-gradient-taja">African Commerce.</span>
+              </h1>
 
-                {generatingMessage ? (
-                  <div className="flex items-center justify-center gap-2 mb-6">
-                    <Loader2 className="h-5 w-5 animate-spin text-taja-primary" />
-                    <p className="text-gray-600">Generating message...</p>
-                  </div>
-                ) : emptyStateMessage ? (
-                  <p className="text-gray-600 text-lg mb-8 leading-relaxed">
-                    {emptyStateMessage}
-                  </p>
-                ) : (
-                  <p className="text-gray-600 text-lg mb-8 leading-relaxed">
-                    Be the first to create your own shop and start selling on Taja.Shop. Join our community of sellers and showcase your unique products to buyers across Nigeria.
-                  </p>
-                )}
+              <p className="text-gray-400 font-medium text-lg md:text-xl leading-relaxed max-w-2xl mb-12">
+                Experience Nigeria&apos;s most refined digital commerce. Verified merchants. Escrow security. Cinematic performance.
+              </p>
 
+              <div className="flex flex-wrap items-center gap-6">
                 <Button
                   onClick={handleCreateShop}
-                  size="lg"
-                  variant="gradient"
+                  className="rounded-full px-12 h-16 shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700 group border-none"
                 >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Be the First to Create a Shop
+                  <span className="font-black uppercase tracking-widest text-xs">Establish Your Guild</span>
+                  <Plus className="w-4 h-4 ml-3 group-hover:rotate-90 transition-transform" />
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <>
-            {/* Shops Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {shops.map((shop) => (
-                <ShopCard key={shop._id} shop={shop} />
-              ))}
+
+                <div className="relative group flex items-center lg:w-96">
+                  <Search className="absolute left-6 h-5 w-5 text-gray-300 group-focus-within:text-taja-primary transition-colors" />
+                  <Input
+                    type="text"
+                    placeholder="Locate verified shops..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setPage(1);
+                    }}
+                    className="rounded-full h-16 pl-14 pr-8 bg-white border-transparent focus:border-taja-primary/20 shadow-sm text-sm font-bold placeholder:text-gray-300 transition-all font-inter"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Load More */}
-            {hasMore && (
-              <div className="flex justify-center mt-8">
-                <Button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={loading}
-                  variant="outline"
-                  className="min-w-[200px]"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    "Load More Shops"
-                  )}
-                </Button>
+            {/* Stats Decoration */}
+            <div className="absolute bottom-12 right-12 hidden lg:flex items-center gap-12 border-t border-gray-100 pt-8 mt-auto">
+              <div className="text-center">
+                <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-300 mb-2">Verified Hubs</p>
+                <p className="text-2xl font-black text-taja-secondary">1.2k+</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-300 mb-2">Active Trade</p>
+                <p className="text-2xl font-black text-taja-secondary">₦240M+</p>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* Feed Header */}
+          <div className="flex items-center justify-between mb-10 px-4">
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-black text-taja-secondary uppercase tracking-[0.2em]">Curated Guild Registry</span>
+              <div className="h-px w-20 bg-gray-100"></div>
+            </div>
+            {loading && shops.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-taja-primary" />
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Scanning Registry...</span>
               </div>
             )}
-          </>
-        )}
-      </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {loading && shops.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 px-4"
+              >
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="glass-panel animate-pulse rounded-[2.5rem] p-8 h-96 border-white/60 space-y-4">
+                    <div className="h-32 bg-gray-50 rounded-2xl"></div>
+                    <div className="h-6 bg-gray-50 w-2/3 rounded-full mt-10"></div>
+                    <div className="h-10 bg-gray-50 w-full rounded-2xl"></div>
+                  </div>
+                ))}
+              </motion.div>
+            ) : shops.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-2xl mx-auto py-20 px-4"
+              >
+                <div className="glass-panel p-16 rounded-[3.5rem] border-white/60 shadow-premium text-center relative overflow-hidden">
+                  <div className="relative z-10">
+                    <div className="h-24 w-24 rounded-3xl bg-taja-light flex items-center justify-center mx-auto mb-10 ring-8 ring-taja-primary/5">
+                      <Store className="h-10 w-10 text-taja-primary" />
+                    </div>
+                    <h2 className="text-3xl font-black text-taja-secondary tracking-tighter mb-6">
+                      Registry Pristine.
+                    </h2>
+
+                    {generatingMessage ? (
+                      <div className="flex flex-col items-center gap-4 mb-10">
+                        <div className="flex gap-1">
+                          <span className="w-1.5 h-1.5 bg-taja-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1.5 h-1.5 bg-taja-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1.5 h-1.5 bg-taja-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Curating Visionary Copy...</p>
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 font-medium text-lg mb-12 leading-relaxed italic">
+                        &quot;{emptyStateMessage || "No ventures have been established here yet. Be the first to define this space."}&quot;
+                      </p>
+                    )}
+
+                    <Button
+                      onClick={handleCreateShop}
+                      size="lg"
+                      className="rounded-full px-12 h-16 shadow-premium font-black uppercase tracking-widest text-[10px]"
+                    >
+                      <Plus className="h-5 w-5 mr-3" />
+                      Establish Your Hub
+                    </Button>
+                  </div>
+
+                  <div className="absolute inset-0 bg-gradient-radial from-taja-primary/5 to-transparent pointer-events-none" />
+                </div>
+              </motion.div>
+            ) : (
+              <div className="space-y-16 pb-32">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 px-4">
+                  {shops.map((shop, i) => (
+                    <ShopCard key={shop._id} shop={shop} index={i} />
+                  ))}
+                </div>
+
+                {hasMore && (
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="h-1 w-20 bg-gray-50 rounded-full"></div>
+                    <Button
+                      onClick={() => setPage((p) => p + 1)}
+                      disabled={loading}
+                      variant="outline"
+                      className="rounded-full px-12 h-14 font-black uppercase tracking-widest text-[10px] border-gray-100 hover:border-taja-primary transition-all bg-white"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-3 animate-spin" />
+                          Indexing...
+                        </>
+                      ) : (
+                        "Reveal More Partners"
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </AnimatePresence>
+        </Container>
+      </main>
     </div>
   );
 }
-

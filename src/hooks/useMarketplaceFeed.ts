@@ -141,9 +141,9 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
         // If search query is provided, use productsApi.search instead
         if (options?.search) {
           const response = await productsApi.search(options.search, undefined, options.limit);
-          
+
           const searchResults = response?.data?.products || response?.products || response?.data || [];
-          
+
           setData({
             products: searchResults,
             recommendedShops: [],
@@ -169,7 +169,7 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
         // Handle response structure: API returns { success: true, data: { products: [...] } }
         // The api() function returns the full response, so we need to extract data
         let payload: MarketplaceFeedResponse;
-        
+
         if (response?.success && response?.data) {
           // Standard API response format: { success: true, data: { products: [...] } }
           payload = response.data as MarketplaceFeedResponse;
@@ -183,7 +183,7 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
           // Fallback: treat response as payload
           payload = response as MarketplaceFeedResponse;
         }
-        
+
         const products = payload?.products || [];
 
         // Debug logging in development
@@ -212,7 +212,7 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
         if (err?.name === "AbortError") {
           return;
         }
-        
+
         // Enhanced error logging
         console.error('[useMarketplaceFeed] Error:', {
           message: err?.message,
@@ -220,7 +220,7 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
           data: err?.data,
           stack: err?.stack,
         });
-        
+
         setError(err instanceof Error ? err : new Error(err?.message ?? "Failed to load marketplace feed"));
         setData((prev) => ({
           ...prev,
@@ -236,14 +236,14 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
   useEffect(() => {
     const controller = new AbortController();
     let isMounted = true;
-    
+
     fetchFeed(controller.signal).catch((err) => {
       // Silently handle abort errors - they're expected
       if (err?.name !== "AbortError" && isMounted) {
         console.error('[useMarketplaceFeed] Unhandled error in useEffect:', err);
       }
     });
-    
+
     return () => {
       isMounted = false;
       controller.abort();

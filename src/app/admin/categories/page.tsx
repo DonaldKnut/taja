@@ -13,6 +13,7 @@ import {
   Hash,
   Search,
   FolderTree,
+  Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
@@ -94,6 +95,24 @@ export default function AdminCategoriesPage() {
       toast.error(err?.message || "Failed to create category");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+      const res = await api(`/api/categories/${id}`, {
+        method: "DELETE",
+      });
+      if (res?.success) {
+        toast.success("Category deleted successfully");
+        await fetchCategories();
+      } else {
+        toast.error(res?.message || "Failed to delete category");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete category");
     }
   };
 
@@ -302,11 +321,20 @@ export default function AdminCategoriesPage() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 glass-card border-white/60 rounded-xl shrink-0 ml-4">
-                          <Package className="h-3 w-3 text-taja-primary/60" />
-                          <span className="text-[10px] font-black text-taja-secondary uppercase tracking-widest whitespace-nowrap">
-                            {cat.productCount ?? 0}
-                          </span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 px-3 py-1.5 glass-card border-white/60 rounded-xl shrink-0">
+                            <Package className="h-3 w-3 text-taja-primary/60" />
+                            <span className="text-[10px] font-black text-taja-secondary uppercase tracking-widest whitespace-nowrap">
+                              {cat.productCount ?? 0}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleDelete(cat._id, cat.name)}
+                            className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all rounded-xl"
+                            title="Delete Category"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </motion.div>
                     ))}
