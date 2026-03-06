@@ -119,7 +119,7 @@ import {
   Activity,
   Zap as ZapIcon,
   Calendar as CalendarIcon,
-  
+
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -151,6 +151,7 @@ interface FormData {
 
   // Pricing
   price: number;
+  maxPrice?: number;
   compareAtPrice: number;
   currency: string;
 
@@ -218,6 +219,7 @@ const initialFormData: FormData = {
   subcategory: "",
   condition: "new",
   price: 0,
+  maxPrice: 0,
   compareAtPrice: 0,
   currency: "NGN",
   images: [],
@@ -987,6 +989,20 @@ export default function AdvancedProductUploadPage() {
                   className="mt-1"
                 />
               </div>
+
+              <div>
+                <Label htmlFor="maxPrice">Maximum Price (NGN)</Label>
+                <Input
+                  id="maxPrice"
+                  type="number"
+                  value={formData.maxPrice || ""}
+                  onChange={(e) =>
+                    handleInputChange("maxPrice", parseFloat(e.target.value) || 0)
+                  }
+                  placeholder="Optional max fee"
+                  className="mt-1"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1271,7 +1287,10 @@ export default function AdvancedProductUploadPage() {
                         <div className="flex justify-between">
                           <span className="font-medium">Price:</span>
                           <span className="text-lg font-bold">
-                            ₦{formData.price.toLocaleString()}
+                            ₦{(formData.price || 0).toLocaleString()}
+                            {(formData.maxPrice || 0) > (formData.price || 0) && (
+                              <span> - ₦{(formData.maxPrice || 0).toLocaleString()}</span>
+                            )}
                           </span>
                         </div>
                         {formData.compareAtPrice > formData.price && (
@@ -1403,31 +1422,28 @@ export default function AdvancedProductUploadPage() {
                 {steps.map((step) => (
                   <div
                     key={step.id}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      currentStep === step.id
-                        ? "bg-taja-primary text-white"
-                        : "hover:bg-gray-100"
-                    }`}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${currentStep === step.id
+                      ? "bg-taja-primary text-white"
+                      : "hover:bg-gray-100"
+                      }`}
                     onClick={() => setCurrentStep(step.id)}
                   >
                     <div className="flex items-center space-x-3">
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
-                          currentStep === step.id
-                            ? "bg-white text-taja-primary"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${currentStep === step.id
+                          ? "bg-white text-taja-primary"
+                          : "bg-gray-200 text-gray-600"
+                          }`}
                       >
                         {step.id}
                       </div>
                       <div>
                         <div className="font-medium">{step.title}</div>
                         <div
-                          className={`text-xs ${
-                            currentStep === step.id
-                              ? "text-white/80"
-                              : "text-gray-500"
-                          }`}
+                          className={`text-xs ${currentStep === step.id
+                            ? "text-white/80"
+                            : "text-gray-500"
+                            }`}
                         >
                           {step.description}
                         </div>

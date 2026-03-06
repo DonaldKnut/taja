@@ -196,9 +196,12 @@ export function ProductCard({
 
         <div className="mt-auto pt-3 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-lg font-black text-gray-900 leading-none">
-              ₦{(product.price ?? 0).toLocaleString()}
-            </span>
+            <ProductPrice
+              price={product.price}
+              maxPrice={product.maxPrice}
+              size="md"
+              className="leading-tight"
+            />
           </div>
 
           {/* Circular Add Button */}

@@ -74,6 +74,7 @@ export interface Product {
   description: string;
   longDescription?: string;
   price: number;
+  maxPrice?: number;
   compareAtPrice?: number;
   images: string[];
   category: string;

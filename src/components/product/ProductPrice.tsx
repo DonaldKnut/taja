@@ -8,6 +8,10 @@ export interface ProductPriceProps {
    */
   price: number;
   /**
+   * Maximum price for ranges
+   */
+  maxPrice?: number;
+  /**
    * Compare at price (original price for discounts)
    */
   compareAtPrice?: number;
@@ -41,6 +45,7 @@ export interface ProductPriceProps {
  */
 export function ProductPrice({
   price,
+  maxPrice,
   compareAtPrice,
   formatPrice = (p) => `₦${(p ?? 0).toLocaleString()}`,
   className,
@@ -53,10 +58,12 @@ export function ProductPrice({
     lg: "text-2xl",
   };
 
+  const hasRange = maxPrice && maxPrice > price;
+
   return (
     <div className={cn("flex flex-col", className)}>
       <span className={cn("font-bold text-gray-900", sizeClasses[size])}>
-        {formatPrice(price)}
+        {hasRange ? `${formatPrice(price)} - ${formatPrice(maxPrice)}` : formatPrice(price)}
       </span>
       {showCompare && compareAtPrice && compareAtPrice > price && (
         <span className="text-sm text-gray-500 line-through">

@@ -121,6 +121,7 @@ export default function NewProductPage() {
     subcategory: "",
     condition: "good",
     price: "",
+    maxPrice: "",
     compareAtPrice: "",
     currency: "NGN",
     images: [] as string[],
@@ -525,6 +526,7 @@ export default function NewProductPage() {
         subcategory: formData.subcategory || undefined,
         condition: formData.condition,
         price: parseFloat(formData.price),
+        maxPrice: formData.maxPrice ? parseFloat(formData.maxPrice) : undefined,
         compareAtPrice: formData.compareAtPrice
           ? parseFloat(formData.compareAtPrice)
           : undefined,
@@ -1060,6 +1062,23 @@ export default function NewProductPage() {
                     onChange={handleChange}
                     className="w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-2xl font-black tracking-tighter text-taja-secondary"
                     placeholder="0.00"
+                  />
+                </div>
+                <div className="group space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                      Max Price (₦)
+                    </label>
+                  </div>
+                  <input
+                    name="maxPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.maxPrice}
+                    onChange={handleChange}
+                    className="w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-2xl font-black tracking-tighter text-taja-secondary"
+                    placeholder="Optional max fee"
                   />
                 </div>
                 <div className="group space-y-2">

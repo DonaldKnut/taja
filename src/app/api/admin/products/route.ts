@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
         subcategory,
         condition,
         price,
+        maxPrice,
         compareAtPrice,
         images,
         inventory,
@@ -141,6 +142,7 @@ export async function POST(request: NextRequest) {
         subcategory: subcategory || undefined,
         condition: condition || 'new',
         price: Number(price),
+        maxPrice: maxPrice != null ? Number(maxPrice) : undefined,
         compareAtPrice: compareAtPrice != null ? Number(compareAtPrice) : undefined,
         images,
         inventory: {

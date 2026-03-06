@@ -58,6 +58,7 @@ export default function AdminProductsNewPage() {
     description: "",
     category: "",
     price: "",
+    maxPrice: "",
     compareAtPrice: "",
     imageUrls: "",
     condition: "new",
@@ -109,6 +110,7 @@ export default function AdminProductsNewPage() {
           description: form.description.trim(),
           category: form.category,
           price: parseFloat(form.price),
+          maxPrice: form.maxPrice ? parseFloat(form.maxPrice) : undefined,
           compareAtPrice: form.compareAtPrice ? parseFloat(form.compareAtPrice) : undefined,
           images,
           condition: form.condition,
@@ -430,6 +432,24 @@ export default function AdminProductsNewPage() {
                       onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                       className="w-full h-14 pl-10 pr-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-lg font-bold text-taja-secondary placeholder:text-gray-300"
                       placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div className="group space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                    Max Price (₦)
+                  </label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.maxPrice}
+                      onChange={(e) => setForm((f) => ({ ...f, maxPrice: e.target.value }))}
+                      className="w-full h-14 pl-10 pr-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-lg font-bold text-taja-secondary placeholder:text-gray-300"
+                      placeholder="Optional max fee"
                     />
                   </div>
                 </div>
