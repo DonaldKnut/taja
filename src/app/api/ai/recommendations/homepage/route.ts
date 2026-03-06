@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch full product details
     const products = await Product.find({ _id: { $in: allProductIds } })
-      .select('title slug price images rating soldCount shop')
+      .select('title slug price maxPrice images rating soldCount shop')
       .populate('shop', 'shopName shopSlug')
       .lean();
 

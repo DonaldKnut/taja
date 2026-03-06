@@ -176,86 +176,40 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         className="w-full h-full"
                     >
                         {/* ═══ Sliding Media Header ═══ */}
+                        {/* ═══ Header Registry Search ═══ */}
                         {!isInsideDashboard && (
-                            <section className="relative px-6 pt-12 pb-10 rounded-b-[2.5rem] overflow-hidden shadow-lg border-b border-white/20">
-                                {/* Sliding Background Images */}
-                                <div className="absolute inset-0 z-0">
-                                    <AnimatePresence mode="popLayout">
-                                        <motion.div
-                                            key={headerIndex}
-                                            initial={{ opacity: 0, x: 100 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -100 }}
-                                            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-                                            className="absolute inset-0"
-                                        >
-                                            <Image
-                                                src={HEADER_IMAGES[headerIndex]}
-                                                alt="Marketplace Background"
-                                                fill
-                                                className="object-cover brightness-[0.4] saturate-[1.2]"
-                                            />
-                                        </motion.div>
-                                    </AnimatePresence>
-                                    {/* Visual Overlays */}
-                                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />
-                                    <div className="absolute inset-0 motif-blanc opacity-[0.05]" />
+                            <section className="px-6 pt-12 pb-6 bg-white border-b border-gray-100">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="space-y-1">
+                                        <p className="text-gray-400 text-xs font-medium uppercase tracking-widest leading-none">Premium Registry</p>
+                                        <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-none italic">Hello, {firstName} 👋</h2>
+                                    </div>
+
+                                    {/* Mobile Cart Action */}
+                                    <div className="md:hidden">
+                                        <CartIcon
+                                            className="w-14 h-14 bg-taja-light/30 backdrop-blur-2xl border border-taja-primary/10 rounded-[1.5rem] text-taja-primary shadow-premium active:scale-95 transition-all"
+                                            iconSize="h-6 w-6"
+                                            badgeClassName="bg-taja-primary text-white border-2 border-white !h-5 !w-5 !text-[10px] !-top-1 !-right-1"
+                                        />
+                                    </div>
                                 </div>
 
-                                {/* Header Content */}
-                                <div className="relative z-10">
-                                    <div className="flex items-center justify-between mb-8">
-                                        <div className="space-y-1">
-                                            <p className="text-white/60 text-xs font-medium uppercase tracking-widest">Premium Registry</p>
-                                            <h2 className="text-3xl font-black text-white tracking-tight leading-none italic">Hello, {firstName} 👋</h2>
-                                        </div>
-
-                                        {/* Mobile Cart Action - Replaces redndant header icon with synced version */}
-                                        <div className="md:hidden">
-                                            <CartIcon
-                                                className="w-14 h-14 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[1.5rem] text-white shadow-2xl active:scale-95 transition-all"
-                                                iconSize="h-6 w-6"
-                                                badgeClassName="bg-taja-primary text-white border-2 border-black !h-5 !w-5 !text-[10px] !-top-1 !-right-1"
-                                            />
-                                        </div>
+                                {/* Search Bar - Functional at the top */}
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-taja-primary transition-colors">
+                                        <Search className="w-5 h-5" />
                                     </div>
-
-                                    {/* Search Bar */}
-                                    <div className="relative mb-8 group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 group-focus-within:text-taja-primary transition-colors">
-                                            <Search className="w-5 h-5" />
-                                        </div>
-                                        <input
-                                            type="text"
-                                            placeholder="Search artifacts & treasures..."
-                                            className="w-full h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl pl-12 pr-14 text-sm font-bold text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-taja-primary/50 transition-all shadow-2xl"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                        />
-                                        <button className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-white/80 hover:text-white transition-colors bg-white/10 rounded-xl">
-                                            <Filter className="w-4 h-4" />
-                                        </button>
-                                    </div>
-
-                                    {/* Quick Icon Links Container */}
-                                    <div className="mt-12 -mx-6 px-6 pt-10 pb-8 rounded-t-[3rem] border-t border-white/10 backdrop-blur-md">
-                                        <div className="flex gap-6 overflow-x-auto no-scrollbar">
-                                            {[
-                                                { label: "GreatBuy", icon: ShoppingBag, color: "bg-rose-500/10 text-rose-500 border-rose-100" },
-                                                { label: "Flash", icon: Zap, color: "bg-purple-500/10 text-purple-500 border-purple-100" },
-                                                { label: "Gift", icon: Gift, color: "bg-blue-500/10 text-blue-500 border-blue-100" },
-                                                { label: "Coupon", icon: Tag, color: "bg-emerald-500/10 text-emerald-500 border-emerald-100" },
-                                                { label: "VIPArea", icon: Star, color: "bg-amber-500/10 text-amber-500 border-amber-100" },
-                                            ].map((item) => (
-                                                <div key={item.label} className="flex flex-col items-center gap-2 shrink-0 group">
-                                                    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-active:scale-95 border", item.color)}>
-                                                        <item.icon className="w-6 h-6" />
-                                                    </div>
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-taja-secondary transition-colors">{item.label}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Search artifacts & treasures..."
+                                        className="w-full h-16 bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all shadow-sm"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                    <button className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black transition-colors bg-gray-50 rounded-xl">
+                                        <Filter className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </section>
                         )}
@@ -373,7 +327,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                             </AnimatePresence>
 
                             {/* Load More Action */}
-                            <div className="pt-10 flex justify-center">
+                            <div className="pt-10 flex justify-center pb-20">
                                 <button
                                     onClick={() => feed.refetch()}
                                     className="px-12 h-18 bg-white border border-gray-100 rounded-full shadow-premium flex items-center justify-center gap-4 group hover:shadow-xl transition-all active:scale-95"
@@ -389,6 +343,70 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                 </button>
                             </div>
                         </section>
+
+                        {/* ═══ Promotional Experience Section (Moved Below Products) ═══ */}
+                        {!isInsideDashboard && (
+                            <section className="relative px-6 py-20 bg-black mt-20">
+                                {/* Sliding Background Images */}
+                                <div className="absolute inset-0 z-0">
+                                    <AnimatePresence mode="popLayout">
+                                        <motion.div
+                                            key={headerIndex}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 0.4 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 2 }}
+                                            className="absolute inset-0"
+                                        >
+                                            <Image
+                                                src={HEADER_IMAGES[headerIndex]}
+                                                alt="Promo Background"
+                                                fill
+                                                className="object-cover saturate-0"
+                                            />
+                                        </motion.div>
+                                    </AnimatePresence>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
+                                    <div className="absolute inset-0 motif-blanc opacity-[0.03]" />
+                                </div>
+
+                                <div className="relative z-10 max-w-4xl mx-auto text-center space-y-12">
+                                    <div className="space-y-4">
+                                        <h3 className="text-sm font-black text-taja-primary uppercase tracking-[0.4em]">The Taja Experience</h3>
+                                        <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight italic">
+                                            Curated Artifacts <br /> & Premium Treasures.
+                                        </h2>
+                                    </div>
+
+                                    {/* Quick Icon Links - In a more prominent promotional grid */}
+                                    <div className="grid grid-cols-3 md:grid-cols-5 gap-8">
+                                        {[
+                                            { label: "GreatBuy", icon: ShoppingBag, color: "bg-rose-500/10 text-rose-500 border-rose-500/20" },
+                                            { label: "Flash", icon: Zap, color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
+                                            { label: "Gift", icon: Gift, color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+                                            { label: "Coupon", icon: Tag, color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
+                                            { label: "VIPArea", icon: Star, color: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
+                                        ].map((item) => (
+                                            <div key={item.label} className="flex flex-col items-center gap-4 group cursor-pointer">
+                                                <div className={cn("w-20 h-20 rounded-[2rem] flex items-center justify-center transition-all group-hover:scale-110 group-hover:rotate-3 border backdrop-blur-xl shadow-2xl", item.color)}>
+                                                    <item.icon className="w-8 h-8" />
+                                                </div>
+                                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest group-hover:text-taja-primary transition-colors">{item.label}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-8">
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-full px-10 border-white/20 text-white hover:bg-white hover:text-black transition-all"
+                                        >
+                                            Explore Curated Collections
+                                        </Button>
+                                    </div>
+                                </div>
+                            </section>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

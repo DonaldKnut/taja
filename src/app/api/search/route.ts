@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Parse query parameters
     const query = searchParams.get('q') || '';
     const category = searchParams.get('category');
@@ -41,34 +41,34 @@ export async function GET(request: NextRequest) {
 
     // Build filters
     const filters: string[] = [];
-    
+
     if (category) {
       filters.push(`category.slug:${category}`);
     }
-    
+
     if (shop) {
       filters.push(`shop.shopSlug:${shop}`);
     }
-    
+
     if (minPrice || maxPrice) {
       const priceFilters: string[] = [];
       if (minPrice) priceFilters.push(`price >= ${minPrice}`);
       if (maxPrice) priceFilters.push(`price <= ${maxPrice}`);
       filters.push(priceFilters.join(' AND '));
     }
-    
+
     if (rating) {
       filters.push(`rating >= ${rating}`);
     }
-    
+
     if (state) {
       filters.push(`location.state:${state}`);
     }
-    
+
     if (available) {
       filters.push('isAvailable:true');
     }
-    
+
     if (discount) {
       filters.push('hasDiscount:true');
     }
@@ -130,7 +130,7 @@ async function fallbackSearch(params: any) {
   try {
     const { default: connectDB } = await import('@/lib/db');
     const { default: Product } = await import('@/models/Product');
-    
+
     await connectDB();
 
     const query: any = { status: 'active' };
@@ -141,6 +141,7 @@ async function fallbackSearch(params: any) {
         { title: { $regex: params.query, $options: 'i' } },
         { description: { $regex: params.query, $options: 'i' } },
         { tags: { $in: [new RegExp(params.query, 'i')] } },
+        { maxPrice: { $exists: true } } // Ensure maxPrice is included in the fetch
       ];
     }
 
@@ -187,6 +188,7 @@ async function fallbackSearch(params: any) {
 
     const [products, total] = await Promise.all([
       Product.find(query)
+        .select('+maxPrice') // Explicitly select maxPrice if it's hidden or just to be safe
         .populate('category', 'name slug')
         .populate('shop', 'shopName shopSlug logo')
         .sort(sort)

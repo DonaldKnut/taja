@@ -14,6 +14,7 @@ interface Product {
   title: string;
   slug: string;
   price: number;
+  maxPrice?: number;
   images: string[];
   rating?: number;
   soldCount?: number;
@@ -40,10 +41,10 @@ export function HomepageRecommendations() {
       try {
         setLoading(true);
         const response = await api("/api/ai/recommendations/homepage");
-        
+
         if (response?.data) {
           const groups: RecommendationGroup[] = [];
-          
+
           if (response.data.personalized?.length > 0) {
             groups.push({
               type: 'personalized',
@@ -52,7 +53,7 @@ export function HomepageRecommendations() {
               products: response.data.personalized.map((r: any) => r.product).filter(Boolean),
             });
           }
-          
+
           if (response.data.trending?.length > 0) {
             groups.push({
               type: 'trending',
@@ -61,7 +62,7 @@ export function HomepageRecommendations() {
               products: response.data.trending.map((r: any) => r.product).filter(Boolean),
             });
           }
-          
+
           if (response.data.newArrivals?.length > 0) {
             groups.push({
               type: 'new',
@@ -70,7 +71,7 @@ export function HomepageRecommendations() {
               products: response.data.newArrivals.map((r: any) => r.product).filter(Boolean),
             });
           }
-          
+
           setRecommendations(groups);
         }
       } catch (err: any) {
@@ -157,7 +158,7 @@ export function HomepageRecommendations() {
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                           sizes="(max-width: 768px) 50vw, 25vw"
                         />
-                        
+
                         {/* AI Badge for personalized */}
                         {group.type === 'personalized' && (
                           <div className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-bold text-taja-primary flex items-center gap-1">
@@ -178,10 +179,13 @@ export function HomepageRecommendations() {
                         <h4 className="font-semibold text-sm text-taja-secondary line-clamp-2 group-hover:text-taja-primary transition-colors">
                           {product.title}
                         </h4>
-                        
-                        <p className="text-lg font-bold text-taja-secondary">
-                          {formatCurrency(product.price)}
-                        </p>
+
+                        <div className="text-lg font-bold text-taja-secondary">
+                          {product.maxPrice && product.maxPrice > product.price
+                            ? `${formatCurrency(product.price)} - ${formatCurrency(product.maxPrice)}`
+                            : formatCurrency(product.price)
+                          }
+                        </div>
 
                         {product.shop && (
                           <p className="text-xs text-gray-400">

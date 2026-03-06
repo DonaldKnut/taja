@@ -304,7 +304,7 @@ export default function EditProductPage() {
 
       const response = await api(`/api/products/${productId}`, {
         method: "PUT",
-        body: payload
+        body: JSON.stringify(payload)
       });
 
       if (response?.success) {

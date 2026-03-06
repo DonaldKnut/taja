@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    
+
     // Models are registered via imports above
     // User model is required for populate('seller') and populate('owner')
 
@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
       description: product.description,
       longDescription: product.longDescription,
       price: product.price,
+      maxPrice: product.maxPrice,
       compareAtPrice: product.compareAtPrice,
       images: product.images || [],
       category: product.category?.name || product.category || 'General',
@@ -101,14 +102,14 @@ export async function GET(request: NextRequest) {
       seller: product.seller?._id?.toString() || product.seller?.toString(),
       shop: product.shop
         ? {
-            _id: product.shop._id?.toString(),
-            shopName: product.shop.shopName,
-            shopSlug: product.shop.shopSlug,
-            logo: product.shop.logo || product.shop.avatar,
-            banner: product.shop.banner || product.shop.coverImage,
-            isVerified: product.shop.verification?.status === 'verified',
-            averageRating: product.shop.stats?.averageRating || 0,
-          }
+          _id: product.shop._id?.toString(),
+          shopName: product.shop.shopName,
+          shopSlug: product.shop.shopSlug,
+          logo: product.shop.logo || product.shop.avatar,
+          banner: product.shop.banner || product.shop.coverImage,
+          isVerified: product.shop.verification?.status === 'verified',
+          averageRating: product.shop.stats?.averageRating || 0,
+        }
         : undefined,
       shopSlug: product.shop?.shopSlug,
       location: product.shop?.address?.city || 'Nigeria',
@@ -149,7 +150,7 @@ export async function GET(request: NextRequest) {
       stack: error.stack,
       name: error.name,
     });
-    
+
     // Return error response but don't fail completely - return empty data
     return NextResponse.json(
       {
