@@ -30,6 +30,7 @@ import {
   Mail,
   Tag,
   ChevronDown,
+  MessageCircle,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -53,6 +54,7 @@ const adminNavGroups = [
     items: [
       { name: "User Directory", href: "/admin/users", icon: Users },
       { name: "Identity Verification", href: "/admin/kyc", icon: ShieldCheck },
+      { name: "Message Audit Logs", href: "/admin/chats", icon: MessageCircle },
     ],
   },
   {

@@ -11,10 +11,26 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   return requireAuth(async (req, user) => {
     try {
-      await connectDB();
-      const chats = await Chat.find({
+      const query: any = {
         participants: user.userId,
-      })
+        deletedBy: { $ne: user.userId }, // Hide if user has soft-deleted it
+      };
+
+      // If requested by an admin to view all chats (e.g. audit log)
+      if (request.nextUrl.searchParams.get('all') === 'true') {
+        if (user.role === 'admin') {
+          delete query.deletedBy;
+          delete query.participants;
+        } else {
+          return NextResponse.json(
+            { success: false, message: 'Admin access required to view all chats' },
+            { status: 403 }
+          );
+        }
+      }
+
+      await connectDB();
+      const chats = await Chat.find(query)
         .populate('participants', 'fullName avatar')
         .populate('product', 'title images price slug')
         .populate('shop', 'shopName shopSlug')
@@ -55,11 +71,12 @@ export async function POST(request: NextRequest) {
   return requireAuth(async (req, user) => {
     try {
       const body = await request.json();
-      const { sellerId, productId, shopId } = body;
+      const { sellerId, productId, shopId, additionalParticipants, isGroup, name } = body;
 
-      if (!sellerId) {
+      // Ensure we have at least sellerId or additionalParticipants
+      if (!sellerId && (!additionalParticipants || additionalParticipants.length === 0)) {
         return NextResponse.json(
-          { success: false, message: 'sellerId is required' },
+          { success: false, message: 'A sellerId or participantIds are required' },
           { status: 400 }
         );
       }
@@ -85,21 +102,38 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const participantIds = [user.userId, sellerId].sort();
-      let chat = await Chat.findOne({
-        participants: { $all: participantIds },
-        shop: shop._id,
-      })
-        .populate('participants', 'fullName avatar')
-        .populate('product', 'title images price slug')
-        .populate('shop', 'shopName shopSlug')
-        .lean();
+      // Determine participant IDs, making sure they are unique strings initially
+      const pIds = new Set<string>();
+      pIds.add(user.userId);
+      if (sellerId) pIds.add(sellerId);
+      if (additionalParticipants) {
+        additionalParticipants.forEach((id: string) => pIds.add(id));
+      }
+      const participantIds = Array.from(pIds).sort();
+
+      const groupMode = isGroup || participantIds.length > 2;
+
+      let chat;
+
+      // Only lookup existing 1-on-1 chats if it's not explicitly a new group chat request
+      if (!groupMode) {
+        chat = await Chat.findOne({
+          participants: { $all: participantIds, $size: participantIds.length },
+          shop: shop._id,
+        })
+          .populate('participants', 'fullName avatar')
+          .populate('product', 'title images price slug')
+          .populate('shop', 'shopName shopSlug')
+          .lean();
+      }
 
       if (!chat) {
         const newChat = await Chat.create({
           participants: participantIds,
           product: productId || undefined,
           shop: shop._id,
+          isGroup: groupMode,
+          name: name || undefined,
           messages: [],
           lastMessageAt: new Date(),
         });

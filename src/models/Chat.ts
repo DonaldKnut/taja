@@ -14,7 +14,10 @@ export interface IMessage {
 }
 
 export interface IChat extends Document {
+  name?: string;
+  isGroup?: boolean;
   participants: mongoose.Types.ObjectId[];
+  deletedBy: mongoose.Types.ObjectId[]; // Soft delete array
   product?: mongoose.Types.ObjectId;
   shop: mongoose.Types.ObjectId;
   messages: IMessage[];
@@ -78,11 +81,24 @@ const MessageSchema = new Schema<IMessage>(
 
 const ChatSchema = new Schema<IChat>(
   {
+    name: {
+      type: String,
+    },
+    isGroup: {
+      type: Boolean,
+      default: false,
+    },
     participants: [
       {
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
+      },
+    ],
+    deletedBy: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
       },
     ],
     product: {

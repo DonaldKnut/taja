@@ -18,6 +18,8 @@ import {
   X,
   Check,
   Store,
+  Trash2,
+  Users,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
@@ -109,6 +111,8 @@ interface Message {
 
 interface Chat {
   _id: string;
+  name?: string;
+  isGroup?: boolean;
   participants: User[];
   product?: {
     _id: string;
@@ -142,6 +146,11 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState("");
   // Mobile: show chat list vs conversation
   const [showChatList, setShowChatList] = useState(true);
+
+  // Group Chat Modal State
+  const [showGroupModal, setShowGroupModal] = useState(false);
+  const [groupName, setGroupName] = useState("");
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
 
   // Security features
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -438,6 +447,25 @@ export default function ChatPage() {
     setShowChatList(true);
   };
 
+  const handleDeleteChat = async (chatId: string) => {
+    if (!confirm("Are you sure you want to delete this conversation?")) return;
+    try {
+      const res = await api(`/api/chat/${chatId}`, { method: 'DELETE' }) as { success?: boolean };
+      if (res?.success) {
+        toast.success("Chat deleted successfully");
+        setChats(prev => prev.filter(c => c._id !== chatId));
+        if (selectedChat?._id === chatId) {
+          setSelectedChat(null);
+          setShowChatList(true);
+        }
+      } else {
+        toast.error("Failed to delete chat");
+      }
+    } catch (error) {
+      toast.error("Failed to delete chat");
+    }
+  };
+
   const handleTyping = () => {
     if (socket && selectedChat) {
       socket.emit("typing_start", selectedChat._id);
@@ -449,6 +477,40 @@ export default function ChatPage() {
       typingTimeoutRef.current = setTimeout(() => {
         socket.emit("typing_stop", selectedChat._id);
       }, 3000);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupName.trim() || selectedParticipants.length === 0) {
+      toast.error("Please provide a group name and select participants");
+      return;
+    }
+    try {
+      // Find a shop ID to associate with the group chat
+      const defaultShopId = chats.length > 0 ? chats[0].shop._id : currentUser?.shop;
+      const res = await api("/api/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          isGroup: true,
+          name: groupName,
+          additionalParticipants: selectedParticipants,
+          shopId: defaultShopId,
+        }),
+      }) as { success?: boolean; data?: Chat };
+
+      if (res?.success && res?.data) {
+        setChats(prev => [res.data!, ...prev]);
+        setSelectedChat(res.data!);
+        setShowGroupModal(false);
+        setGroupName("");
+        setSelectedParticipants([]);
+        setShowChatList(false);
+        toast.success("Group created successfully");
+      } else {
+        toast.error("Failed to create group");
+      }
+    } catch (e) {
+      toast.error("Failed to create group");
     }
   };
 
@@ -480,6 +542,19 @@ export default function ChatPage() {
       );
     })
     : chats;
+
+  // Extract unique previous contacts for the group chat modal
+  const uniqueContacts = Array.from(
+    new Map<string, User>(
+      chats
+        .filter(c => !c.isGroup) // Only pull from 1-on-1 chats to get clean users
+        .map(chat => {
+          const other = getOtherParticipant(chat);
+          return [other?._id, other] as [string | undefined, User | undefined];
+        })
+        .filter((entry): entry is [string, User] => !!entry[0] && !!entry[1])
+    ).values()
+  );
 
   if (loading) {
     return (
@@ -601,9 +676,9 @@ export default function ChatPage() {
           bg-white flex-col shrink-0
         `}
         >
-          {/* Search */}
-          <div className="p-3 border-b border-gray-100">
-            <div className="relative">
+          {/* Search & Actions */}
+          <div className="p-3 border-b border-gray-100 flex items-center gap-2">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 h-4 w-4" />
               <input
                 type="text"
@@ -613,7 +688,77 @@ export default function ChatPage() {
                 className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-0 rounded-xl text-sm font-medium text-taja-secondary placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:bg-white transition-all"
               />
             </div>
+            <button
+              onClick={() => setShowGroupModal(true)}
+              className="flex-none flex items-center justify-center w-10 h-10 rounded-xl bg-taja-primary text-white hover:bg-emerald-600 transition-colors shadow-sm active:scale-95"
+              title="New Group Chat"
+            >
+              <Users className="h-5 w-5" />
+            </button>
           </div>
+
+          {/* Group Chat Modal */}
+          {showGroupModal && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-black text-taja-secondary">New Group</h3>
+                  <button onClick={() => setShowGroupModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="mb-4 shrink-0">
+                  <label className="text-xs font-bold text-gray-600 block mb-1">Group Name</label>
+                  <input
+                    type="text"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    placeholder="E.g., VIP Customers"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-taja-primary/20 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex-1 overflow-y-auto min-h-0 mb-4 border border-gray-100 rounded-xl divide-y divide-gray-100">
+                  {uniqueContacts.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-gray-400">No previous contacts found.</div>
+                  ) : (
+                    uniqueContacts.map(contact => (
+                      <label key={contact._id} className="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-br from-taja-primary/20 to-emerald-500/20 rounded-full flex items-center justify-center">
+                            {contact.avatar ? (
+                              <Image src={contact.avatar} alt={contact.fullName} width={32} height={32} className="rounded-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-black text-taja-primary">{contact.fullName.charAt(0)}</span>
+                            )}
+                          </div>
+                          <span className="text-sm font-bold text-gray-700">{contact.fullName}</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-taja-primary rounded border-gray-300 focus:ring-taja-primary"
+                          checked={selectedParticipants.includes(contact._id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedParticipants(prev => [...prev, contact._id]);
+                            else setSelectedParticipants(prev => prev.filter(id => id !== contact._id));
+                          }}
+                        />
+                      </label>
+                    ))
+                  )}
+                </div>
+
+                <Button
+                  onClick={handleCreateGroup}
+                  disabled={!groupName.trim() || selectedParticipants.length === 0}
+                  className="w-full rounded-xl"
+                >
+                  Create Group
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Chat Items */}
           <div className="flex-1 overflow-y-auto overscroll-contain">
@@ -666,7 +811,7 @@ export default function ChatPage() {
                             </span>
                           )}
                         </div>
-                        {otherParticipant?.isVerified && (
+                        {(!chat.isGroup && otherParticipant?.isVerified) && (
                           <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-taja-primary rounded-full flex items-center justify-center ring-2 ring-white">
                             <Check className="h-3 w-3 text-white" />
                           </div>
@@ -677,7 +822,7 @@ export default function ChatPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-0.5">
                           <h3 className="text-sm font-black text-taja-secondary truncate">
-                            {otherParticipant?.fullName}
+                            {chat.isGroup ? chat.name : otherParticipant?.fullName}
                           </h3>
                           {chat.lastMessageAt && (
                             <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap shrink-0">
@@ -768,7 +913,7 @@ export default function ChatPage() {
                       </span>
                     )}
                   </div>
-                  {getOtherParticipant(selectedChat)?.isVerified && (
+                  {(!selectedChat.isGroup && getOtherParticipant(selectedChat)?.isVerified) && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-taja-primary rounded-full flex items-center justify-center ring-2 ring-white">
                       <Check className="h-2.5 w-2.5 text-white" />
                     </div>
@@ -776,7 +921,7 @@ export default function ChatPage() {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm font-black text-taja-secondary truncate">
-                    {getOtherParticipant(selectedChat)?.fullName}
+                    {selectedChat.isGroup ? selectedChat.name : getOtherParticipant(selectedChat)?.fullName}
                   </h3>
                   <p className="text-[10px] font-bold text-gray-400 truncate flex items-center gap-1">
                     <Store className="h-3 w-3" />
@@ -786,6 +931,13 @@ export default function ChatPage() {
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => handleDeleteChat(selectedChat._id)}
+                  className="flex items-center justify-center w-9 h-9 rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors active:scale-95"
+                  title="Delete Chat"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
                 <Link href={`/shop/${selectedChat.shop.shopSlug}`}>
                   <button className="flex items-center justify-center w-9 h-9 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-taja-primary transition-colors active:scale-95">
                     <Info className="h-4 w-4" />

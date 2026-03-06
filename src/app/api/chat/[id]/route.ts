@@ -62,3 +62,47 @@ export async function GET(
     }
   })(request);
 }
+
+// DELETE /api/chat/:id - Soft delete a chat for the current user
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  return requireAuth(async (req, user) => {
+    try {
+      await connectDB();
+      const chat = await Chat.findById(params.id);
+
+      if (!chat) {
+        return NextResponse.json(
+          { success: false, message: 'Chat not found' },
+          { status: 404 }
+        );
+      }
+
+      const isParticipant = (chat as any).participants.some(
+        (p: any) => p._id?.toString() === user.userId || p.toString() === user.userId
+      );
+      if (!isParticipant && user.role !== 'admin') {
+        return NextResponse.json(
+          { success: false, message: 'Not allowed to modify this chat' },
+          { status: 403 }
+        );
+      }
+
+      // Add user to deletedBy array if not already there
+      if (!chat.deletedBy.includes(user.userId)) {
+        chat.deletedBy.push(user.userId);
+        await chat.save();
+      }
+
+      return NextResponse.json({ success: true, message: 'Chat deleted successfully' });
+    } catch (error: any) {
+      console.error('DELETE /api/chat/[id] error:', error);
+      return NextResponse.json(
+        { success: false, message: error.message || 'Failed to delete chat' },
+        { status: 500 }
+      );
+    }
+  })(request);
+}

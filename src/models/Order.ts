@@ -269,8 +269,8 @@ OrderSchema.index({ shop: 1 });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ paymentStatus: 1 });
 
-// Generate order number before saving
-OrderSchema.pre('save', async function (next) {
+// Generate order number before saving/validation
+OrderSchema.pre('validate', async function (next) {
   if (!this.orderNumber) {
     const count = await mongoose.models.Order?.countDocuments() || 0;
     this.orderNumber = `TAJA-${Date.now()}-${(count + 1).toString().padStart(6, '0')}`;

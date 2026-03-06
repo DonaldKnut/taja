@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Product from '@/models/Product';
-
+import '@/models/Category'; // Ensure registered for populate
+import '@/models/Shop';     // Ensure registered for populate
+import '@/models/User';     // Ensure registered for populate
 export const dynamic = 'force-dynamic';
 
 // GET /api/products/slug/:slug - Get product by slug

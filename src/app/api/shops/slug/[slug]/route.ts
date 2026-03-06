@@ -46,7 +46,7 @@ export async function GET(
       ]),
       ShopFollow.countDocuments({ shop: shop._id }),
       Product.find({ shop: shop._id, status: 'active' })
-        .select('title slug price images condition category status createdAt')
+        .select('title slug price maxPrice images condition category status createdAt')
         .sort({ createdAt: -1 })
         .limit(100)
         .lean(),

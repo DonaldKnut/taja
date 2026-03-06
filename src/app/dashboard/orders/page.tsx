@@ -227,10 +227,10 @@ export default function OrdersPage() {
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-taja-primary/10 border border-taja-primary/20">
             <Package className="h-3 w-3 text-taja-primary" />
-            <span className="text-[9px] font-black text-taja-primary uppercase tracking-[0.4em]">Operational History Feed</span>
+            <span className="text-[9px] font-black text-taja-primary uppercase tracking-[0.4em]">Order History</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-taja-secondary tracking-tighter leading-none">
-            Mission <br /> <span className="text-taja-primary">Deployment Log.</span>
+            My <br /> <span className="text-taja-primary">Orders</span>
           </h1>
         </div>
 
@@ -238,7 +238,7 @@ export default function OrdersPage() {
           <div className="relative group w-full lg:w-72">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" />
             <Input
-              placeholder="Search Deployments..."
+              placeholder="Search orders..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 h-14 rounded-2xl border-white/60 bg-white/30 backdrop-blur-md focus:bg-white transition-all text-xs font-black uppercase tracking-widest placeholder:text-gray-400/50"
