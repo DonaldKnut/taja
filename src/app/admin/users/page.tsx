@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { api } from "@/lib/api";
+import { api, uploadAvatar, uploadCoverPhoto } from "@/lib/api";
 import { toast } from "react-hot-toast";
+import { Camera, Image as ImageIcon, Upload } from "lucide-react";
 
 interface User {
   _id: string;
@@ -18,6 +19,8 @@ interface User {
   accountStatus: string;
   kycStatus: string;
   kycSubmittedAt?: string;
+  avatar?: string;
+  coverPhoto?: string;
   createdAt: string;
   lastLoginAt?: string;
 }
@@ -36,7 +39,9 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [editForm, setEditForm] = useState({ fullName: "", email: "", phone: "" });
+  const [editForm, setEditForm] = useState({ fullName: "", email: "", phone: "", avatar: "", coverPhoto: "" });
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
@@ -311,7 +316,13 @@ export default function UserManagementPage() {
                           <button
                             onClick={() => {
                               setEditingUser(user);
-                              setEditForm({ fullName: user.fullName, email: user.email, phone: user.phone });
+                              setEditForm({
+                                fullName: user.fullName,
+                                email: user.email,
+                                phone: user.phone,
+                                avatar: user.avatar || "",
+                                coverPhoto: user.coverPhoto || ""
+                              });
                             }}
                             className="h-9 px-5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-black uppercase tracking-widest text-[9px] flex items-center gap-2 transition-all shadow-sm"
                           >
@@ -360,6 +371,92 @@ export default function UserManagementPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Phone Number</label>
                     <Input value={editForm.phone} onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))} className="rounded-xl h-12 font-bold border-slate-100 bg-slate-50/50" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1 flex items-center gap-2">
+                        <Camera className="h-3 w-3" /> Profile Pic
+                      </label>
+                      <div className="relative group w-24 h-24 mx-auto">
+                        <div className="w-full h-full rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden">
+                          {editForm.avatar ? (
+                            <img src={editForm.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <Users className="h-8 w-8 text-slate-200" />
+                          )}
+                          {uploadingAvatar && (
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center">
+                              <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                            </div>
+                          )}
+                        </div>
+                        <label className="absolute -bottom-2 -right-2 p-2 bg-white rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:bg-emerald-50 transition-colors">
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                setUploadingAvatar(true);
+                                const url = await uploadAvatar(file);
+                                setEditForm(prev => ({ ...prev, avatar: url }));
+                                toast.success("Avatar uploaded");
+                              } catch (err: any) {
+                                toast.error(err.message || "Upload failed");
+                              } finally {
+                                setUploadingAvatar(false);
+                              }
+                            }}
+                          />
+                          <Upload className="h-3 w-3 text-slate-600" />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1 flex items-center gap-2">
+                        <ImageIcon className="h-3 w-3" /> Cover Photo
+                      </label>
+                      <div className="relative group w-full h-24">
+                        <div className="w-full h-full rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden">
+                          {editForm.coverPhoto ? (
+                            <img src={editForm.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+                          ) : (
+                            <ImageIcon className="h-8 w-8 text-slate-200" />
+                          )}
+                          {uploadingCover && (
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center">
+                              <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                            </div>
+                          )}
+                        </div>
+                        <label className="absolute -bottom-2 -right-2 p-2 bg-white rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:bg-emerald-50 transition-colors">
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                setUploadingCover(true);
+                                const url = await uploadCoverPhoto(file);
+                                setEditForm(prev => ({ ...prev, coverPhoto: url }));
+                                toast.success("Cover photo uploaded");
+                              } catch (err: any) {
+                                toast.error(err.message || "Upload failed");
+                              } finally {
+                                setUploadingCover(false);
+                              }
+                            }}
+                          />
+                          <Upload className="h-3 w-3 text-slate-600" />
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <Button onClick={handleSaveProfile} disabled={savingProfile} className="w-full h-14 rounded-2xl bg-slate-950 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-huge transition-all">

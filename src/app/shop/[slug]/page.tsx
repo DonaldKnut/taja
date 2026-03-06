@@ -301,6 +301,21 @@ export default function ShopPage() {
             HERO BANNER — Full-bleed cinematic header
         ═══════════════════════════════════════════════ */}
         <section className="relative h-[280px] sm:h-[340px] md:h-[400px]">
+          {/* Sticky Back Button — Always available */}
+          <div className="fixed top-6 left-6 z-[100]">
+            <Link href="/marketplace">
+              <Button
+                variant="ghost"
+                className="bg-taja-secondary/40 hover:bg-taja-secondary/60 backdrop-blur-xl text-white border-white/20 px-5 h-11 rounded-2xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group shadow-huge"
+              >
+                <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                  <ChevronLeft className="h-4 w-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] drop-shadow-sm">Back to Marketplace</span>
+              </Button>
+            </Link>
+          </div>
+
           {/* Banner Image */}
           <div className="absolute inset-0">
             {shop.banner ? (

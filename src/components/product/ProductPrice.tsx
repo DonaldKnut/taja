@@ -42,7 +42,7 @@ export interface ProductPriceProps {
 export function ProductPrice({
   price,
   compareAtPrice,
-  formatPrice = (p) => `₦${p.toLocaleString()}`,
+  formatPrice = (p) => `₦${(p ?? 0).toLocaleString()}`,
   className,
   size = "md",
   showCompare = true,

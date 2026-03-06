@@ -22,7 +22,7 @@ export async function api(path: string, opts: Options = {}) {
     "Content-Type": "application/json",
     ...(opts.headers as any),
   };
-  
+
   // Auto-inject token from localStorage if not provided
   if (!opts.auth && typeof window !== "undefined") {
     const token = localStorage.getItem("token");
@@ -46,7 +46,7 @@ export async function api(path: string, opts: Options = {}) {
 
   try {
     const res = await fetch(url, { ...opts, headers, cache: "no-store" });
-    
+
     if (process.env.NODE_ENV === "development") {
       console.log("📥 API Response:", {
         url: url,
@@ -55,7 +55,7 @@ export async function api(path: string, opts: Options = {}) {
         ok: res.ok,
       });
     }
-    
+
     // Handle network errors
     if (!res.ok && res.status === 0) {
       throw new ApiError(
@@ -63,12 +63,12 @@ export async function api(path: string, opts: Options = {}) {
         0
       );
     }
-    
+
     const data = await res.json().catch((err) => {
       console.error("Failed to parse JSON response:", err);
       throw new ApiError("Invalid response from server", res.status);
     });
-    
+
     if (!res.ok) {
       const errorMessage =
         data.message ||
@@ -76,7 +76,7 @@ export async function api(path: string, opts: Options = {}) {
         data.data?.message ||
         res.statusText ||
         "Request failed";
-      
+
       // Handle 401 Unauthorized - token expired
       if (res.status === 401) {
         // Clear auth data
@@ -91,22 +91,22 @@ export async function api(path: string, opts: Options = {}) {
           window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname);
         }
       }
-      
+
       throw new ApiError(errorMessage, res.status, data);
     }
-    
+
     return data;
   } catch (error) {
     // Re-throw ApiError as-is
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     // Wrap other errors
     if (error instanceof Error) {
       throw new ApiError(error.message);
     }
-    
+
     throw new ApiError("An unexpected error occurred");
   }
 }
@@ -257,7 +257,7 @@ export async function uploadShopImage(file: File, type: "logo" | "banner"): Prom
   const formData = new FormData();
   formData.append("file", file);
   formData.append("type", type);
-  
+
   const token = getAuthToken();
   const headers: Record<string, string> = {};
   if (token) {
@@ -327,6 +327,31 @@ export async function uploadAvatar(file: File): Promise<string> {
   return data.data?.url ?? data.data;
 }
 
+// Upload API helper for user cover photo
+export async function uploadCoverPhoto(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("type", "cover");
+
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new ApiError(data.message || data.error || "Upload failed", response.status, data);
+  }
+  return data.data?.url ?? data.data;
+}
+
 // Users API helpers
 export const usersApi = {
   getProfile: () => api("/api/users/me"),
@@ -334,7 +359,7 @@ export const usersApi = {
   updateProfile: (data: any) => api("/api/users/me", { method: "PUT", body: JSON.stringify(data) }),
   updateMe: (data: any) => api("/api/users/me", { method: "PUT", body: JSON.stringify(data) }), // Alias for updateProfile
   deleteAccount: () => api("/api/users/me", { method: "DELETE" }),
-  changePassword: (currentPassword: string, newPassword: string) => 
+  changePassword: (currentPassword: string, newPassword: string) =>
     api("/api/users/password", { method: "PUT", body: JSON.stringify({ currentPassword, newPassword }) }),
   exportData: () => api("/api/users/export"),
   getAddresses: () => api("/api/users/addresses"),
@@ -357,11 +382,11 @@ export const notificationsApi = {
     if (params?.type) query.append("type", params.type);
     return api(`/api/notifications?${query.toString()}`);
   },
-  markAsRead: (notificationId: string) => 
+  markAsRead: (notificationId: string) =>
     api(`/api/notifications/${notificationId}`, { method: "PUT", body: JSON.stringify({ read: true }) }),
-  markAllAsRead: () => 
+  markAllAsRead: () =>
     api("/api/notifications/mark-all-read", { method: "PUT" }),
-  deleteNotification: (notificationId: string) => 
+  deleteNotification: (notificationId: string) =>
     api(`/api/notifications/${notificationId}`, { method: "DELETE" }),
   createNotification: (data: {
     userId?: string;

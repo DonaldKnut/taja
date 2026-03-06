@@ -23,13 +23,14 @@ import {
   UploadCloud,
   X,
   CreditCard,
-  Target
+  Target,
+  Image as ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { api, uploadAvatar } from "@/lib/api";
+import { api, uploadAvatar, uploadCoverPhoto } from "@/lib/api";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -45,6 +46,7 @@ interface UserProfile {
   phone: string;
   job?: string;
   avatar?: string;
+  coverPhoto?: string;
   addresses: Array<{
     id: string;
     type: "home" | "work" | "other";
@@ -74,6 +76,7 @@ export default function ProfilePage() {
     phone: "",
     job: "",
     avatar: "",
+    coverPhoto: "",
     addresses: [],
     preferences: {
       notifications: {
@@ -118,6 +121,7 @@ export default function ProfilePage() {
             phone: userDataAny.phone || "",
             job: userDataAny.job || userDataAny.occupation || "",
             avatar: avatarUrl,
+            coverPhoto: userDataAny.coverPhoto || userDataAny.cover_photo || "",
           }));
         }
 
@@ -172,6 +176,7 @@ export default function ProfilePage() {
         phone: profile.phone,
         job: profile.job,
         avatar: profile.avatar,
+        coverPhoto: profile.coverPhoto,
       };
 
       await api("/api/users/me", {
@@ -204,6 +209,26 @@ export default function ProfilePage() {
         },
       },
     }));
+  };
+
+  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const url = await uploadCoverPhoto(file);
+      setProfile((prev) => ({ ...prev, coverPhoto: url }));
+      toast.success("Cover photo updated");
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveCover = () => {
+    setProfile((prev) => ({ ...prev, coverPhoto: "" }));
+    toast.success("Cover photo removed");
   };
 
   const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -337,6 +362,51 @@ export default function ProfilePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          {/* Cinematic Header / Cover Photo */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative h-48 md:h-64 rounded-[3rem] overflow-hidden border border-gray-100 shadow-huge group"
+          >
+            {profile.coverPhoto ? (
+              <Image
+                src={profile.coverPhoto}
+                alt="Profile Cover"
+                fill
+                className="object-cover"
+                unoptimized={profile.coverPhoto.startsWith("http")}
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                <ImageIcon className="w-12 h-12 text-slate-200" />
+              </div>
+            )}
+
+            <AnimatePresence>
+              {editing && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center gap-4"
+                >
+                  <label className="px-6 h-12 rounded-full bg-white text-taja-secondary text-[10px] font-black uppercase tracking-widest shadow-premium hover:scale-105 transition-all flex items-center gap-2 cursor-pointer">
+                    <UploadCloud className="w-4 h-4" /> Upload Cover
+                    <input type="file" className="hidden" accept="image/*" onChange={handleCoverFileSelect} />
+                  </label>
+                  {profile.coverPhoto && (
+                    <button
+                      onClick={handleRemoveCover}
+                      className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30 flex items-center justify-center hover:bg-white/40 transition-all hover:scale-105"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
           {/* Identity Hub */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

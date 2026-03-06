@@ -233,10 +233,10 @@ export default function SellerDashboardPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full lg:w-auto">
           {[
-            { label: "Revenue", value: `₦${stats.totalRevenue.toLocaleString()}`, change: stats.revenueChange, icon: DollarSign },
+            { label: "Revenue", value: `₦${(stats.totalRevenue ?? 0).toLocaleString()}`, change: stats.revenueChange, icon: DollarSign },
             { label: "Orders", value: stats.totalOrders, change: stats.ordersChange, icon: ShoppingCart },
             { label: "Products", value: stats.totalProducts, change: stats.productsChange, icon: Package },
-            { label: "Views", value: stats.totalViews.toLocaleString(), change: stats.viewsChange, icon: Eye },
+            { label: "Views", value: (stats.totalViews ?? 0).toLocaleString(), change: stats.viewsChange, icon: Eye },
           ].map((stat, i) => (
             <div key={i} className="glass-card p-6 border-white/60 min-w-[140px] group hover:border-taja-primary/30 transition-all">
               <div className="flex items-center justify-between mb-3">
@@ -301,7 +301,7 @@ export default function SellerDashboardPage() {
                         </span>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-black text-taja-secondary tracking-tight">₦{order.total.toLocaleString()}</p>
+                        <p className="text-sm font-black text-taja-secondary tracking-tight">₦{(order.total ?? 0).toLocaleString()}</p>
                         <p className="text-[9px] font-bold text-gray-400 font-mono">{order.date}</p>
                       </div>
                       <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-taja-primary transition-all translate-x-0 group-hover:translate-x-1" />
@@ -345,7 +345,7 @@ export default function SellerDashboardPage() {
                     <p className="text-[9px] font-black text-taja-primary uppercase tracking-widest">{product.sales} Deployments</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-black text-taja-secondary tracking-tight">₦{product.revenue.toLocaleString()}</p>
+                    <p className="text-sm font-black text-taja-secondary tracking-tight">₦{(product.revenue ?? 0).toLocaleString()}</p>
                     <p className="text-[9px] font-bold text-gray-400">Yield</p>
                   </div>
                 </div>

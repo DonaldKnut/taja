@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest) {
   return requireAuth(async (req, user) => {
     try {
       const body = await request.json();
-      const { fullName, phone, avatar, preferences, role } = body;
+      const { fullName, phone, avatar, coverPhoto, preferences, role } = body;
 
       await connectDB();
 
@@ -61,6 +61,7 @@ export async function PUT(request: NextRequest) {
       if (fullName !== undefined) userDoc.fullName = fullName;
       if (phone !== undefined) userDoc.phone = phone;
       if (avatar !== undefined) userDoc.avatar = avatar;
+      if (coverPhoto !== undefined) userDoc.coverPhoto = coverPhoto;
       if (role !== undefined && ['buyer', 'seller'].includes(role)) {
         userDoc.role = role;
         userDoc.roleSelected = true;
@@ -85,6 +86,7 @@ export async function PUT(request: NextRequest) {
         phone: userDoc.phone,
         role: userDoc.role,
         avatar: userDoc.avatar,
+        coverPhoto: userDoc.coverPhoto,
         accountStatus: userDoc.accountStatus,
         emailVerified: userDoc.emailVerified,
         phoneVerified: userDoc.phoneVerified,

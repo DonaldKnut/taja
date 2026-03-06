@@ -23,7 +23,7 @@ export function FloatingCart() {
   const [chatBusy, setChatBusy] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
-    { role: "assistant", content: "Hi, I'm Ada. How can I help you today?" },
+    { role: "assistant", content: "Welcome to Taja! I'm Ada, your guide to our premium registry. How can I assist you with the marketplace today?" },
   ]);
 
   if (!mounted) return null;

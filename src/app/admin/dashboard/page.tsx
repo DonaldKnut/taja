@@ -265,13 +265,13 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
         <StatCard
           title="Storefronts"
-          value={stats?.shops.total.toLocaleString() || "0"}
+          value={(stats?.shops.total ?? 0).toLocaleString()}
           icon={Store}
           color="green"
         />
         <StatCard
           title="Inventory"
-          value={stats?.products.total.toLocaleString() || "0"}
+          value={(stats?.products.total ?? 0).toLocaleString()}
           icon={Package}
           color="purple"
         />
@@ -283,7 +283,7 @@ export default function AdminDashboard() {
         />
         <StatCard
           title="Authenticity Requests"
-          value={stats?.kyc.pending.toLocaleString() || "0"}
+          value={(stats?.kyc.pending ?? 0).toLocaleString()}
           icon={Clock}
           color="yellow"
         />
@@ -295,7 +295,7 @@ export default function AdminDashboard() {
         />
         <StatCard
           title="Safety Blocks"
-          value={stats?.users.banned.toLocaleString() || "0"}
+          value={(stats?.users.banned ?? 0).toLocaleString()}
           icon={AlertTriangle}
           color="red"
         />
@@ -307,7 +307,7 @@ export default function AdminDashboard() {
         />
         <StatCard
           title="Orders Held"
-          value={stats?.escrow?.ordersHeldCount.toLocaleString() ?? "0"}
+          value={(stats?.escrow?.ordersHeldCount ?? 0).toLocaleString()}
           icon={Clock}
           color="yellow"
         />
@@ -487,37 +487,37 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Active Citizens</span>
                   <span className="text-sm font-black text-slate-900">
-                    {stats?.users?.active?.toLocaleString() || "0"}
+                    {(stats?.users?.active ?? 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Established Merchants</span>
                   <span className="text-sm font-black text-slate-900">
-                    {stats?.users?.sellers?.toLocaleString() || "0"}
+                    {(stats?.users?.sellers ?? 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Active Patrons</span>
                   <span className="text-sm font-black text-slate-900">
-                    {stats?.users?.buyers?.toLocaleString() || "0"}
+                    {(stats?.users?.buyers ?? 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Probation</span>
                   <span className="text-sm font-black text-amber-600">
-                    {stats?.users?.suspended?.toLocaleString() || "0"}
+                    {(stats?.users?.suspended ?? 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Terminated</span>
                   <span className="text-sm font-black text-rose-600">
-                    {stats?.users?.banned?.toLocaleString() || "0"}
+                    {(stats?.users?.banned ?? 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                   <span className="text-xs font-black text-slate-900 uppercase tracking-widest">Total Orders</span>
                   <span className="text-sm font-black text-emerald-600">
-                    {stats?.orders?.total?.toLocaleString() || "0"}
+                    {(stats?.orders?.total ?? 0).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -601,7 +601,7 @@ export default function AdminDashboard() {
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{order.buyer?.fullName} · {order.shop?.shopName || "Shop"}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs font-black text-slate-900">₦{order.totals?.total?.toLocaleString()}</span>
+                        <span className="text-xs font-black text-slate-900">₦{(order.totals?.total ?? 0).toLocaleString()}</span>
                         <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${order.paymentStatus === "paid" ? "bg-emerald-400/10 text-emerald-600" : "bg-amber-400/10 text-amber-600"}`}>
                           {order.paymentStatus ?? "—"}
                         </span>

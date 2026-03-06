@@ -7,6 +7,7 @@ export interface IUser extends Document {
   password: string;
   role: 'buyer' | 'seller' | 'admin';
   avatar?: string;
+  coverPhoto?: string;
   referralCode?: string;
   referredBy?: mongoose.Types.ObjectId;
   referralStats?: {
@@ -154,6 +155,7 @@ const UserSchema = new Schema<IUser>(
       default: 'buyer',
     },
     avatar: String,
+    coverPhoto: String,
     accountStatus: {
       type: String,
       enum: ['active', 'suspended', 'banned', 'under_review'],

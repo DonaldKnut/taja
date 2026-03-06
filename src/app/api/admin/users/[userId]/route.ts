@@ -77,10 +77,12 @@ export async function PUT(
       }
 
       // Metadata updates
-      const { fullName, phone, email } = body;
+      const { fullName, phone, email, avatar, coverPhoto } = body;
       if (fullName) user.fullName = fullName.trim();
       if (phone) user.phone = phone.trim();
       if (email) user.email = email.trim().toLowerCase();
+      if (avatar !== undefined) user.avatar = avatar;
+      if (coverPhoto !== undefined) user.coverPhoto = coverPhoto;
 
       // Account status action
       if (action) {
@@ -118,7 +120,9 @@ export async function PUT(
           role: user.role,
           fullName: user.fullName,
           email: user.email,
-          phone: user.phone
+          phone: user.phone,
+          avatar: user.avatar,
+          coverPhoto: user.coverPhoto
         },
       });
     } catch (error: any) {

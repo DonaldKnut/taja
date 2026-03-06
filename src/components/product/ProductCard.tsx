@@ -197,7 +197,7 @@ export function ProductCard({
         <div className="mt-auto pt-3 flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-lg font-black text-gray-900 leading-none">
-              ₦{product.price.toLocaleString()}
+              ₦{(product.price ?? 0).toLocaleString()}
             </span>
           </div>
 

@@ -74,6 +74,7 @@ const adminNavGroups = [
     label: "System Configuration",
     items: [
       { name: "Platform Settings", href: "/admin/settings", icon: Settings },
+      { name: "System Maintenance", href: "/admin/maintenance", icon: Database },
     ],
   },
 ];

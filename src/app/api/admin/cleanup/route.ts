@@ -16,29 +16,60 @@ export async function DELETE(request: NextRequest) {
         try {
             await connectDB();
 
-            // Only delete demo data (shops/products created by demo sellers)
             const demoSellerEmails = [
                 "jane@vintagefinds.ng",
                 "chioma@handmade.ng",
                 "mike@thrifthub.ng",
-                "amina@retro.ng"
+                "amina@retro.ng",
+                "demo@taja.shop",
+                "seller@example.com"
             ];
 
-            // Find demo users
-            const demoSellers = await User.find({ email: { $in: demoSellerEmails } });
-            const demoSellerIds = demoSellers.map(s => s._id);
+            const searchParams = request.nextUrl.searchParams;
+            const forceAll = searchParams.get('force') === 'all';
 
-            if (demoSellerIds.length === 0) {
+            if (forceAll) {
+                const productsDeleted = await Product.deleteMany({});
+                const shopsDeleted = await Shop.deleteMany({});
+                // We don't delete all users for safety, just demo ones
+                const usersDeleted = await User.deleteMany({ email: { $in: demoSellerEmails } });
+
                 return NextResponse.json({
                     success: true,
-                    message: 'No demo data found to clean up',
-                    data: { productsDeleted: 0, shopsDeleted: 0, usersDeleted: 0 }
+                    message: 'Full marketplace purge completed',
+                    data: { productsDeleted: productsDeleted.deletedCount, shopsDeleted: shopsDeleted.deletedCount, usersDeleted: usersDeleted.deletedCount }
                 });
             }
 
+            // Find demo users
+            const demoSellers = await User.find({
+                $or: [
+                    { email: { $in: demoSellerEmails } },
+                    { fullName: { $in: ["Jane Smith", "Chioma Okafor", "Mike Johnson", "Amina Bello"] } }
+                ]
+            });
+            const demoSellerIds = demoSellers.map(s => s._id);
+
+            // Also find shops by demo names
+            const demoShops = await Shop.find({
+                shopSlug: { $in: ["vintage-finds-lagos", "handmade-by-chioma", "thrift-fashion-hub", "retro-collectibles"] }
+            });
+            const demoShopIds = demoShops.map(s => s._id);
+
             // Delete associated data
-            const productsDeleted = await Product.deleteMany({ seller: { $in: demoSellerIds } });
-            const shopsDeleted = await Shop.deleteMany({ owner: { $in: demoSellerIds } });
+            const productsDeleted = await Product.deleteMany({
+                $or: [
+                    { seller: { $in: demoSellerIds } },
+                    { shop: { $in: demoShopIds } },
+                    { title: { $regex: /Vintage|Retro|Ankara Jewelry Set/i } } // Identifying common demo titles
+                ]
+            });
+            const shopsDeleted = await Shop.deleteMany({
+                $or: [
+                    { owner: { $in: demoSellerIds } },
+                    { _id: { $in: demoShopIds } }
+                ]
+            });
             const usersDeleted = await User.deleteMany({ _id: { $in: demoSellerIds } });
 
             return NextResponse.json({

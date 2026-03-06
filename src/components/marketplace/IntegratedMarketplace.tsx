@@ -16,9 +16,18 @@ import { CartIcon } from "@/components/cart/CartIcon";
 
 // Sliding background images for the header
 const HEADER_IMAGES = [
-    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788747/taja_slider_two_xairfb.png",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788744/fresh-fish-lying-on-ice-displayed-at-market-stall-photo_z9hesn.jpg",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788740/jewellery-market-display-expensive-gold-W4Y9X5_njruyv.jpg",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788743/taja_slider_one_uejcaa.png",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788739/5b9b40227abe24427953fd15_1536901154609_hltbyr.jpg",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788740/close-up-japanese-street-food_23-2149287841_vlqufi.avif",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788741/cj-best-deal-nigeria_mh1xhd.webp",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788740/images_3_dwjrfw.jpg",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788739/images_2_ayogjf.jpg",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788740/Ankara-Fabric.-Photo-Jiji_drf9hb.jpg",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788741/Central_Car_Auctions_Glasgow_620-620x330_xgvcuw.jpg",
+    "https://res.cloudinary.com/db2fcni0k/image/upload/v1772788740/1742419884817_v7haqx.jpg"
 ];
 
 export interface IntegratedMarketplaceProps {
@@ -228,22 +237,24 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                         </button>
                                     </div>
 
-                                    {/* Quick Icon Links */}
-                                    <div className="flex gap-6 overflow-x-auto no-scrollbar pt-2">
-                                        {[
-                                            { label: "GreatBuy", icon: ShoppingBag, color: "bg-rose-500/20 text-rose-300 border-rose-500/30" },
-                                            { label: "Flash", icon: Zap, color: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
-                                            { label: "Gift", icon: Gift, color: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
-                                            { label: "Coupon", icon: Tag, color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
-                                            { label: "VIPArea", icon: Star, color: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
-                                        ].map((item) => (
-                                            <div key={item.label} className="flex flex-col items-center gap-2 shrink-0 group">
-                                                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-active:scale-95 border backdrop-blur-md", item.color)}>
-                                                    <item.icon className="w-6 h-6" />
+                                    {/* Quick Icon Links Container */}
+                                    <div className="mt-12 -mx-6 px-6 pt-10 pb-8 rounded-t-[3rem] border-t border-white/10 backdrop-blur-md">
+                                        <div className="flex gap-6 overflow-x-auto no-scrollbar">
+                                            {[
+                                                { label: "GreatBuy", icon: ShoppingBag, color: "bg-rose-500/10 text-rose-500 border-rose-100" },
+                                                { label: "Flash", icon: Zap, color: "bg-purple-500/10 text-purple-500 border-purple-100" },
+                                                { label: "Gift", icon: Gift, color: "bg-blue-500/10 text-blue-500 border-blue-100" },
+                                                { label: "Coupon", icon: Tag, color: "bg-emerald-500/10 text-emerald-500 border-emerald-100" },
+                                                { label: "VIPArea", icon: Star, color: "bg-amber-500/10 text-amber-500 border-amber-100" },
+                                            ].map((item) => (
+                                                <div key={item.label} className="flex flex-col items-center gap-2 shrink-0 group">
+                                                    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-active:scale-95 border", item.color)}>
+                                                        <item.icon className="w-6 h-6" />
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-taja-secondary transition-colors">{item.label}</span>
                                                 </div>
-                                                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest group-hover:text-white transition-colors">{item.label}</span>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </section>
