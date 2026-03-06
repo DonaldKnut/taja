@@ -236,50 +236,6 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                             </div>
                         </section>
 
-                        {/* ═══ Curated Brands ═══ */}
-                        <section className="px-6 py-4">
-                            <div className="flex items-center gap-3 mb-6">
-                                <Crown className="w-5 h-5 text-taja-primary" />
-                                <h3 className="text-lg font-black text-gray-900 tracking-tighter uppercase italic">Curated Registry</h3>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-1 pb-6">
-                                {(feed.recommendedShops && feed.recommendedShops.length > 0 ? feed.recommendedShops : []).map((shop) => (
-                                    <Link
-                                        key={shop._id}
-                                        href={`/shop/${shop.shopSlug}`}
-                                        className="flex flex-col items-center gap-3 group"
-                                    >
-                                        <div className="w-full aspect-square bg-white rounded-[1.5rem] flex items-center justify-center shadow-premium border border-gray-50 transition-all group-hover:shadow-xl group-hover:-translate-y-1 overflow-hidden relative p-4">
-                                            {shop.logo ? (
-                                                <img
-                                                    src={shop.logo}
-                                                    alt={shop.shopName}
-                                                    className="w-full h-full object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-xl">
-                                                    <ShoppingBag className="w-6 h-6 text-gray-200" />
-                                                </div>
-                                            )}
-                                            {shop.isVerified && (
-                                                <div className="absolute top-2 right-2 w-5 h-5 bg-taja-primary rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                                                    <ShieldCheck className="w-3 h-3 text-white" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="text-center">
-                                            <span className="block text-[10px] font-black text-gray-900 uppercase tracking-widest group-hover:text-taja-primary transition-colors truncate w-full px-2">
-                                                {shop.shopName}
-                                            </span>
-                                            <div className="flex items-center justify-center gap-1 mt-0.5">
-                                                <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
-                                                <span className="text-[8px] font-black text-gray-400">{shop.averageRating || "5.0"}</span>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        </section>
 
                         {/* ═══ Product Feed ═══ */}
                         <section className="px-6 space-y-8 mt-4 pb-20">
@@ -341,6 +297,51 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                         </>
                                     )}
                                 </button>
+                            </div>
+                        </section>
+
+                        {/* ═══ Curated Brands ═══ */}
+                        <section className="px-6 py-4 pt-10 border-t border-gray-100">
+                            <div className="flex items-center gap-3 mb-6">
+                                <Crown className="w-5 h-5 text-taja-primary" />
+                                <h3 className="text-lg font-black text-gray-900 tracking-tighter uppercase italic">Curated Registry</h3>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-1 pb-6">
+                                {(feed.recommendedShops && feed.recommendedShops.length > 0 ? feed.recommendedShops : []).map((shop) => (
+                                    <Link
+                                        key={shop._id}
+                                        href={`/shop/${shop.shopSlug}`}
+                                        className="flex flex-col items-center gap-3 group"
+                                    >
+                                        <div className="w-full aspect-square bg-white rounded-[1.5rem] flex items-center justify-center shadow-premium border border-gray-50 transition-all group-hover:shadow-xl group-hover:-translate-y-1 overflow-hidden relative p-4">
+                                            {shop.logo ? (
+                                                <img
+                                                    src={shop.logo}
+                                                    alt={shop.shopName}
+                                                    className="w-full h-full object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-xl">
+                                                    <ShoppingBag className="w-6 h-6 text-gray-200" />
+                                                </div>
+                                            )}
+                                            {shop.isVerified && (
+                                                <div className="absolute top-2 right-2 w-5 h-5 bg-taja-primary rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                                    <ShieldCheck className="w-3 h-3 text-white" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-center">
+                                            <span className="block text-[10px] font-black text-gray-900 uppercase tracking-widest group-hover:text-taja-primary transition-colors truncate w-full px-2">
+                                                {shop.shopName}
+                                            </span>
+                                            <div className="flex items-center justify-center gap-1 mt-0.5">
+                                                <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+                                                <span className="text-[8px] font-black text-gray-400">{shop.averageRating || "5.0"}</span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
                             </div>
                         </section>
 
