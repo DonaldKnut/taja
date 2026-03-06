@@ -29,7 +29,12 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [selectedTab, setSelectedTab] = useState<string>("All");
     const [searchQuery, setSearchQuery] = useState("");
-    const [showVerifiedIntro, setShowVerifiedIntro] = useState(true);
+    const [showVerifiedIntro, setShowVerifiedIntro] = useState(() => {
+        if (typeof window !== "undefined" && !isInsideDashboard) {
+            return !sessionStorage.getItem("taja_intro_played");
+        }
+        return false;
+    });
     const [headerIndex, setHeaderIndex] = useState(0);
 
     const { user } = useAuth();
@@ -79,11 +84,14 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
 
     // Intro timer
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setShowVerifiedIntro(false);
-        }, 3500);
-        return () => clearTimeout(timer);
-    }, []);
+        if (showVerifiedIntro) {
+            const timer = setTimeout(() => {
+                setShowVerifiedIntro(false);
+                sessionStorage.setItem("taja_intro_played", "true");
+            }, 3500);
+            return () => clearTimeout(timer);
+        }
+    }, [showVerifiedIntro]);
 
     // Header image slider timer
     useEffect(() => {
@@ -269,18 +277,41 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                 <Crown className="w-5 h-5 text-taja-primary" />
                                 <h3 className="text-lg font-black text-gray-900 tracking-tighter uppercase italic">Curated Registry</h3>
                             </div>
-                            <div className="flex gap-8 overflow-x-auto no-scrollbar pb-6 px-1">
-                                {brands.map((brand) => (
-                                    <div key={brand.name} className="flex flex-col items-center gap-3 shrink-0 group">
-                                        <div className="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center shadow-premium border border-gray-50 transition-all group-hover:shadow-xl group-hover:-translate-y-1 overflow-hidden relative p-4">
-                                            <img
-                                                src={brand.logo}
-                                                alt={brand.name}
-                                                className="w-full h-full object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
-                                            />
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-1 pb-6">
+                                {(feed.recommendedShops && feed.recommendedShops.length > 0 ? feed.recommendedShops : []).map((shop) => (
+                                    <Link
+                                        key={shop._id}
+                                        href={`/shop/${shop.shopSlug}`}
+                                        className="flex flex-col items-center gap-3 group"
+                                    >
+                                        <div className="w-full aspect-square bg-white rounded-[1.5rem] flex items-center justify-center shadow-premium border border-gray-50 transition-all group-hover:shadow-xl group-hover:-translate-y-1 overflow-hidden relative p-4">
+                                            {shop.logo ? (
+                                                <img
+                                                    src={shop.logo}
+                                                    alt={shop.shopName}
+                                                    className="w-full h-full object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-xl">
+                                                    <ShoppingBag className="w-6 h-6 text-gray-200" />
+                                                </div>
+                                            )}
+                                            {shop.isVerified && (
+                                                <div className="absolute top-2 right-2 w-5 h-5 bg-taja-primary rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                                    <ShieldCheck className="w-3 h-3 text-white" />
+                                                </div>
+                                            )}
                                         </div>
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-taja-primary transition-colors">{brand.name}</span>
-                                    </div>
+                                        <div className="text-center">
+                                            <span className="block text-[10px] font-black text-gray-900 uppercase tracking-widest group-hover:text-taja-primary transition-colors truncate w-full px-2">
+                                                {shop.shopName}
+                                            </span>
+                                            <div className="flex items-center justify-center gap-1 mt-0.5">
+                                                <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+                                                <span className="text-[8px] font-black text-gray-400">{shop.averageRating || "5.0"}</span>
+                                            </div>
+                                        </div>
+                                    </Link>
                                 ))}
                             </div>
                         </section>

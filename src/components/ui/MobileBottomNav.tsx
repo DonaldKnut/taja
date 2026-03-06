@@ -14,6 +14,7 @@ import {
   UserPlus,
   ShoppingCart,
   Heart,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCartStore } from "@/stores/cartStore";
@@ -54,7 +55,7 @@ export function MobileBottomNav() {
   const role = user?.role;
 
   const unauthItems: NavItem[] = [
-    { label: "Explore", href: "/marketplace", icon: Compass },
+    { label: "Marketplace", href: "/marketplace", icon: ShoppingBag },
     { label: "Login", href: "/login", icon: LogIn, activeMatch: (p) => p.startsWith("/login") || p.startsWith("/(auth)/login") },
     { label: "Register", href: "/register", icon: UserPlus },
   ];
@@ -70,18 +71,18 @@ export function MobileBottomNav() {
   };
 
   const buyerItems: NavItem[] = [
-    { label: "Explore", href: "/marketplace", icon: Compass },
+    { label: "Marketplace", href: "/dashboard/marketplace", icon: ShoppingBag },
     { label: "Orders", href: "/dashboard/orders", icon: Package },
     { label: "Cart", href: "/dashboard/cart", icon: ShoppingCart, onClick: handleCartClick },
     { label: "Wishlist", href: "/dashboard/wishlist", icon: Heart, onClick: handleWishlistClick },
-    { label: "Profile", href: "/dashboard/profile", icon: User },
+    { label: "Chat", href: "/chat", icon: MessageCircle },
   ];
 
   const sellerItems: NavItem[] = [
     { label: "Marketplace", href: "/seller/marketplace", icon: ShoppingBag },
     { label: "Orders", href: "/seller/orders", icon: Package },
     { label: "Plus", href: "/seller/products/new", icon: Plus },
-    { label: "Products", href: "/seller/products", icon: ShoppingBag, activeMatch: (p) => p.startsWith("/seller/products") },
+    { label: "Chat", href: "/chat", icon: MessageCircle },
     { label: "Verify", href: "/onboarding/kyc", icon: ShieldCheck, activeMatch: (p) => p.startsWith("/onboarding/kyc") || p.startsWith("/seller/verification") },
   ];
 

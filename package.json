@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "dev:clean": "powershell -ExecutionPolicy Bypass -File ./clean-dev.ps1; npm run dev",
+    "dev:clean": "powershell -ExecutionPolicy Bypass -File .\\clean-dev.ps1 && npm run dev",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "seed": "tsx src/scripts/seedDatabase.ts",

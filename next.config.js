@@ -43,6 +43,7 @@ if (r2PublicBaseUrl) {
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  transpilePackages: ["framer-motion"],
   // Allow production builds to complete even if lint/type-check
   // find issues. We still run `npm run lint` and `npm run type-check`
   // in CI or locally when needed.
