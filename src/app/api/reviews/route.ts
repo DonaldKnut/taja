@@ -122,6 +122,83 @@ export async function POST(request: NextRequest) {
   })(request);
 }
 
+// GET /api/reviews - Get reviews with optional filtering
+export async function GET(request: NextRequest) {
+  try {
+    await connectDB();
+
+    const searchParams = request.nextUrl.searchParams;
+    const productId = searchParams.get('productId');
+    const shopId = searchParams.get('shopId');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const skip = (page - 1) * limit;
+
+    const query: any = {};
+    if (productId) query.product = productId;
+    if (shopId) query.shop = shopId;
+
+    const [reviews, total] = await Promise.all([
+      Review.find(query)
+        .populate('reviewer', 'fullName avatar')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Review.countDocuments(query),
+    ]);
+
+    // Calculate overall average rating
+    const stats = await Review.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: "$rating" },
+          count: { $sum: 1 },
+          distribution: {
+            $push: "$rating"
+          }
+        }
+      }
+    ]);
+
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    if (stats[0]?.distribution) {
+      stats[0].distribution.forEach((r: number) => {
+        const rounded = Math.round(r);
+        if (rounded >= 1 && rounded <= 5) {
+          distribution[rounded as keyof typeof distribution]++;
+        }
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        reviews,
+        stats: {
+          averageRating: stats[0]?.averageRating || 0,
+          totalCount: total,
+          distribution
+        },
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Get reviews error:', error);
+    return NextResponse.json(
+      { success: false, message: error.message || 'Failed to fetch reviews' },
+      { status: 500 }
+    );
+  }
+}
+
 
 
 

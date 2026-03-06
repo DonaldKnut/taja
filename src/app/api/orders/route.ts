@@ -7,6 +7,8 @@ import Shop from '@/models/Shop';
 import User from '@/models/User';
 import { requireAuth } from '@/lib/middleware';
 import { notifyAdminsNewOrder } from '@/lib/notifications';
+import { sendOrderConfirmationEmail } from '@/lib/email';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -301,34 +303,110 @@ export async function POST(request: NextRequest) {
         paymentMethod: paymentMethod || 'flutterwave',
         delivery: selectedSlot
           ? {
-              slotId: String(selectedSlot.id),
-              slotDate: new Date(selectedSlot.date),
-              slotStartTime: String(selectedSlot.startTime || ''),
-              slotEndTime: selectedSlot.endTime ? String(selectedSlot.endTime) : undefined,
-              slotMaxOrders: Number(selectedSlot.maxOrders || 0),
-            }
+            slotId: String(selectedSlot.id),
+            slotDate: new Date(selectedSlot.date),
+            slotStartTime: String(selectedSlot.startTime || ''),
+            slotEndTime: selectedSlot.endTime ? String(selectedSlot.endTime) : undefined,
+            slotMaxOrders: Number(selectedSlot.maxOrders || 0),
+          }
           : undefined,
       });
 
-      // Notify admins so they can follow the process (payment → escrow → delivery → release)
+      // ── Fire post-order notifications asynchronously ─────────────────────
       (async () => {
         try {
           const [buyer, shop, seller] = await Promise.all([
             User.findById(order.buyer).select('fullName email').lean(),
             shopId ? Shop.findById(shopId).select('shopName').lean() : null,
-            User.findById(order.seller).select('fullName').lean(),
+            User.findById(order.seller).select('fullName email').lean(),
           ]);
+
+          const buyerDoc = buyer as any;
+          const sellerDoc = seller as any;
+          const shopDoc = shop as any;
+
+          // 1. Notify admins (in-app)
           await notifyAdminsNewOrder({
             orderId: order._id.toString(),
             orderNumber: order.orderNumber || `#${order._id.toString().slice(-8)}`,
-            buyerName: (buyer as any)?.fullName || 'Buyer',
-            buyerEmail: (buyer as any)?.email,
-            shopName: (shop as any)?.shopName,
-            sellerName: (seller as any)?.fullName,
+            buyerName: buyerDoc?.fullName || 'Buyer',
+            buyerEmail: buyerDoc?.email,
+            shopName: shopDoc?.shopName,
+            sellerName: sellerDoc?.fullName,
             totalNaira: total,
           });
+
+          // 2. Send buyer order confirmation email
+          if (buyerDoc?.email) {
+            await sendOrderConfirmationEmail(
+              buyerDoc.email,
+              buyerDoc.fullName || 'Customer',
+              order.orderNumber || order._id.toString().slice(-8),
+              orderItems.map(i => ({ name: i.title, quantity: i.quantity, price: i.price, image: i.image || '' })),
+              subtotal, shipping, discount, total,
+              {
+                fullName: resolvedShippingAddress.fullName || '',
+                addressLine1: resolvedShippingAddress.addressLine1 || '',
+                addressLine2: resolvedShippingAddress.addressLine2,
+                city: resolvedShippingAddress.city || '',
+                state: resolvedShippingAddress.state || '',
+                phone: resolvedShippingAddress.phone || '',
+              },
+              order._id.toString(),
+            ).catch((e: any) => console.error('Buyer confirmation email error:', e));
+          }
+
+          // 3. Send seller new-order alert email
+          if (sellerDoc?.email) {
+            const { Resend } = await import('resend');
+            const resendClient = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+            if (resendClient) {
+              const orderUrl = `${process.env.FRONTEND_URL || process.env.NEXTAUTH_URL || 'https://tajaapp.shop'}/seller/orders/${order._id}`;
+              const adminOrderUrl = `${process.env.FRONTEND_URL || process.env.NEXTAUTH_URL || 'https://tajaapp.shop'}/admin/orders/${order._id}`;
+
+              // Notify Seller
+              await resendClient.emails.send({
+                from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+                to: sellerDoc.email,
+                subject: `🛍️ New Order #${order.orderNumber || order._id.toString().slice(-8)} on Taja.Shop`,
+                html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+                  <h2 style="color:#111827;">You have a new order!</h2>
+                  <p>Hi ${sellerDoc.fullName || 'Seller'}, a new order has been placed on <strong>${shopDoc?.shopName || 'your shop'}</strong>.</p>
+                  <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                    <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Order Number</td><td style="padding:8px;font-weight:600;">${order.orderNumber || order._id.toString().slice(-8)}</td></tr>
+                    <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Items</td><td style="padding:8px;font-weight:600;">${orderItems.length} item(s)</td></tr>
+                    <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Total</td><td style="padding:8px;font-weight:600;color:#059669;">₦${total.toLocaleString()}</td></tr>
+                    <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Payment</td><td style="padding:8px;font-weight:600;">Held in Escrow — released after delivery</td></tr>
+                  </table>
+                  <p style="margin:24px 0;text-align:center;"><a href="${orderUrl}" style="background:#111827;color:#fff;padding:12px 28px;border-radius:99px;text-decoration:none;font-weight:600;font-size:14px;">View & Process Order</a></p>
+                  <p style="color:#9ca3af;font-size:11px;margin-top:24px;">© ${new Date().getFullYear()} Taja.Shop</p>
+                </div>`,
+              }).catch((e: any) => console.error('Seller new-order email error:', e));
+
+              // Notify Admins via Email
+              const admins = await User.find({ role: 'admin' }).select('email fullName').lean();
+              for (const admin of admins) {
+                if ((admin as any).email) {
+                  await resendClient.emails.send({
+                    from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+                    to: (admin as any).email,
+                    subject: `🚨 Admin Alert: New Order #${order.orderNumber || order._id.toString().slice(-8)}`,
+                    html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #fee2e2;border-radius:16px;">
+                      <h2 style="color:#b91c1c;">New Transaction Detected</h2>
+                      <p><strong>Order Number:</strong> ${order.orderNumber || order._id.toString().slice(-8)}</p>
+                      <p><strong>Buyer:</strong> ${buyerDoc?.fullName || 'N/A'} (${buyerDoc?.email || 'N/A'})</p>
+                      <p><strong>Seller/Shop:</strong> ${sellerDoc?.fullName || 'N/A'} / ${shopDoc?.shopName || 'N/A'}</p>
+                      <p><strong>Total:</strong> <span style="color:#059669;font-weight:bold;">₦${total.toLocaleString()}</span></p>
+                      <p>The payment is currently <strong>Processing/Held in Escrow</strong>.</p>
+                      <p style="margin:24px 0;text-align:center;"><a href="${adminOrderUrl}" style="background:#b91c1c;color:#fff;padding:12px 28px;border-radius:99px;text-decoration:none;font-weight:600;font-size:14px;">Audit Order</a></p>
+                    </div>`,
+                  }).catch((e: any) => console.error('Admin new-order email error:', e));
+                }
+              }
+            }
+          }
         } catch (e) {
-          console.error('Admin new-order notification error:', e);
+          console.error('Post-order notification error:', e);
         }
       })();
 

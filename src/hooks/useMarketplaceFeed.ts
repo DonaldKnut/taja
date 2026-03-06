@@ -21,92 +21,6 @@ interface MarketplaceFeedResponse {
   experimentVariant?: string;
 }
 
-const fallbackProducts: Product[] = [
-  {
-    _id: "fallback-1",
-    slug: "vintage-denim-jacket",
-    title: "Vintage Denim Jacket",
-    description: "Classic Lagos thrift find with authentic distressing.",
-    price: 15000,
-    compareAtPrice: 25000,
-    images: [
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
-      "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=800",
-    ],
-    category: "Fashion",
-    condition: "like-new",
-    stock: 4,
-    seller: "amina-thrift",
-    shop: {
-      _id: "shop-1",
-      shopName: "Amina Thrift",
-      shopSlug: "amina-thrift",
-      owner: "amina",
-      isVerified: true,
-      averageRating: 4.8,
-    },
-    shopSlug: "amina-thrift",
-    location: "Lagos",
-    averageRating: 4.8,
-    reviewCount: 126,
-  },
-  {
-    _id: "fallback-2",
-    slug: "handmade-ankara-bag",
-    title: "Handmade Ankara Bag",
-    description: "Handcrafted statement piece sourced from Abuja artisans.",
-    price: 8000,
-    images: [
-      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800",
-      "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=800",
-    ],
-    category: "Accessories",
-    condition: "new",
-    stock: 10,
-    seller: "kemi-crafts",
-    shop: {
-      _id: "shop-2",
-      shopName: "Kemi Crafts",
-      shopSlug: "kemi-crafts",
-      owner: "kemi",
-      isVerified: true,
-      averageRating: 4.9,
-    },
-    shopSlug: "kemi-crafts",
-    location: "Abuja",
-    averageRating: 4.9,
-    reviewCount: 86,
-  },
-  {
-    _id: "fallback-3",
-    slug: "designer-sneakers",
-    title: "Designer Sneakers",
-    description: "Premium kicks with authentic packaging and warranty.",
-    price: 45000,
-    compareAtPrice: 80000,
-    images: [
-      "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800",
-      "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=800",
-    ],
-    category: "Fashion",
-    condition: "good",
-    stock: 6,
-    seller: "sneakerhub",
-    shop: {
-      _id: "shop-3",
-      shopName: "SneakerHub",
-      shopSlug: "sneakerhub",
-      owner: "tayo",
-      isVerified: false,
-      averageRating: 4.2,
-    },
-    shopSlug: "sneakerhub",
-    location: "Lagos",
-    averageRating: 4.2,
-    reviewCount: 64,
-  },
-];
-
 const fallbackCategories = [
   "Fashion",
   "Electronics",
@@ -122,7 +36,7 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
   const { category, limit, search } = options;
   const { user, isAuthenticated } = useAuth();
   const [data, setData] = useState<MarketplaceFeedResponse>({
-    products: [], // Start with empty array, show fallback only while loading
+    products: [],
     categories: fallbackCategories,
     recommendedShops: [],
     savedFilters: [],

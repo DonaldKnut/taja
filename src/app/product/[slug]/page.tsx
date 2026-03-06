@@ -37,6 +37,7 @@ import { AIRecommendations } from "@/components/product/AIRecommendations";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { cn } from "@/lib/utils";
 import { Container } from "@/components/layout";
+import { ProductReviews } from "@/components/product/ProductReviews";
 
 const fallbackImage = "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png";
 
@@ -288,6 +289,7 @@ export default function ProductDetailPage() {
         <div className="lg:hidden w-full relative aspect-square bg-slate-50 overflow-hidden">
           <ImageSlider
             images={product.images}
+            alt={product.title}
             className="w-full h-full"
             showDots
           />
@@ -532,8 +534,30 @@ export default function ProductDetailPage() {
                   "{product.description}"
                 </p>
               </div>
+
+              {/* Specifications Placeholder (Mobile) */}
+              <div className="lg:hidden space-y-4 pt-6 border-t border-gray-100">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">Specifications</h3>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                  {Object.entries(product.specifications || {}).map(([key, value]: [string, any]) => (
+                    <div key={key} className="flex justify-between items-center text-[10px]">
+                      <span className="text-gray-400 font-bold uppercase">{key}</span>
+                      <span className="text-taja-secondary font-black italic">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Reviews Section Implementation */}
+          <Container size="lg" className="mt-32 pt-32 border-t border-slate-100">
+            <div className="mb-12">
+              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em] block mb-4">Client Testimonials</span>
+              <h2 className="text-4xl font-black text-taja-secondary tracking-tighter italic">Verified Narratives</h2>
+            </div>
+            <ProductReviews productId={product.id} shopId={product.shop.shopId} />
+          </Container>
         </div>
 
         {/* Global sticky bar for actions on Mobile */}

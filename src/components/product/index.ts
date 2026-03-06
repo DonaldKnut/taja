@@ -7,12 +7,10 @@
 export { ProductCard } from "./ProductCard";
 export { ProductPrice } from "./ProductPrice";
 export { ProductBadge } from "./ProductBadge";
+export { ProductReviews } from "./ProductReviews";
 export type { ProductCardProps } from "./ProductCard";
 export type { ProductPriceProps } from "./ProductPrice";
 export type { ProductBadgeProps } from "./ProductBadge";
-
-
-
 
 
 

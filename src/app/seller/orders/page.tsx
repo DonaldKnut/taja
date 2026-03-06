@@ -13,20 +13,16 @@ import {
     XCircle,
     Clock,
     ChevronRight,
-    Eye,
     ArrowRight,
-    MoreVertical,
     Calendar,
-    CreditCard,
-    User,
-    ArrowUpRight,
     ShoppingBag,
+    ChevronDown,
+    Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Badge } from "@/components/ui/Badge";
-import { checkoutApi } from "@/lib/api";
+import { checkoutApi, api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "react-hot-toast";
 
@@ -64,6 +60,16 @@ const item = {
     show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
 };
 
+// Seller can move: pending→confirmed→processing→shipped
+const SELLER_STATUS_FLOW: Record<string, { next: string; label: string; color: string }[]> = {
+    pending: [{ next: "confirmed", label: "Confirm Order", color: "bg-blue-500 hover:bg-blue-600" }],
+    confirmed: [{ next: "processing", label: "Mark Processing", color: "bg-amber-500 hover:bg-amber-600" }],
+    processing: [{ next: "shipped", label: "Mark as Shipped", color: "bg-purple-500 hover:bg-purple-600" }],
+    shipped: [],
+    delivered: [],
+    cancelled: [],
+};
+
 export default function SellerOrdersPage() {
     const { user } = useAuth();
     const [orders, setOrders] = useState<Order[]>([]);
@@ -71,46 +77,60 @@ export default function SellerOrdersPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                setLoading(true);
-                const response = await checkoutApi.getOrders({
-                    role: "seller",
-                    limit: 100,
-                });
-
-                if (response?.success && response?.data?.orders) {
-                    const mappedOrders: Order[] = response.data.orders.map((order: any) => ({
-                        id: order._id,
-                        orderNumber: order.orderNumber || `ORD-${order._id.slice(-6).toUpperCase()}`,
-                        customerName: order.buyer?.fullName || order.shippingAddress?.fullName || "Customer",
-                        total: order.totals?.total || order.total || 0,
-                        status: order.status || "pending",
-                        date: order.createdAt || new Date().toISOString(),
-                        paymentStatus: order.paymentStatus || "pending",
-                        items: order.items?.map((item: any) => ({
-                            id: item.product?._id || item.product || Math.random().toString(),
-                            name: item.title || item.product?.title || "Product",
-                            quantity: item.quantity || 1,
-                            price: item.price || 0,
-                            image: item.image || item.product?.images?.[0] || "/placeholder-product.jpg",
-                        })) || [],
-                    }));
-                    setOrders(mappedOrders);
-                    setFilteredOrders(mappedOrders);
-                }
-            } catch (error) {
-                console.error("Failed to fetch seller orders:", error);
-                toast.error("Failed to load orders");
-            } finally {
-                setLoading(false);
+    const fetchOrders = async () => {
+        try {
+            setLoading(true);
+            const response = await checkoutApi.getOrders({ role: "seller", limit: 100 });
+            if (response?.success && response?.data?.orders) {
+                const mappedOrders: Order[] = response.data.orders.map((order: any) => ({
+                    id: order._id,
+                    orderNumber: order.orderNumber || `ORD-${order._id.slice(-6).toUpperCase()}`,
+                    customerName: order.buyer?.fullName || order.shippingAddress?.fullName || "Customer",
+                    total: order.totals?.total || order.total || 0,
+                    status: order.status || "pending",
+                    date: order.createdAt || new Date().toISOString(),
+                    paymentStatus: order.paymentStatus || "pending",
+                    items: order.items?.map((item: any) => ({
+                        id: item.product?._id || item.product || Math.random().toString(),
+                        name: item.title || item.product?.title || "Product",
+                        quantity: item.quantity || 1,
+                        price: item.price || 0,
+                        image: item.image || item.product?.images?.[0] || "/placeholder-product.jpg",
+                    })) || [],
+                }));
+                setOrders(mappedOrders);
             }
-        };
+        } catch (error) {
+            console.error("Failed to fetch seller orders:", error);
+            toast.error("Failed to load orders");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchOrders();
-    }, []);
+    useEffect(() => { fetchOrders(); }, []);
+
+    const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+        setUpdatingId(orderId);
+        try {
+            const res = await api(`/api/orders/${orderId}`, {
+                method: "PUT",
+                body: JSON.stringify({ status: newStatus }),
+            });
+            if (res?.success) {
+                toast.success(`Order marked as ${newStatus}`);
+                setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+            } else {
+                toast.error(res?.message || "Failed to update order status");
+            }
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to update status");
+        } finally {
+            setUpdatingId(null);
+        }
+    };
 
     useEffect(() => {
         let filtered = orders;
@@ -263,67 +283,77 @@ export default function SellerOrdersPage() {
                 ) : (
                     filteredOrders.map((order) => {
                         const status = getStatusDisplay(order.status);
+                        const nextActions = SELLER_STATUS_FLOW[order.status] || [];
+                        const isUpdating = updatingId === order.id;
                         return (
-                            <Link key={order.id} href={`/seller/orders/${order.id}`} className="group block">
-                                <div className="glass-card px-8 py-6 border-white/60 hover:shadow-premium transition-all duration-300 flex flex-col md:flex-row md:items-center gap-8 rounded-[32px] overflow-hidden relative">
-                                    {/* Background Shine */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
+                            <div key={order.id} className="group glass-card border-white/60 rounded-[32px] overflow-hidden relative">
+                                {/* Background Shine */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
+                                <div className="px-8 py-6 flex flex-col md:flex-row md:items-center gap-8">
                                     {/* Order Identity */}
                                     <div className="flex items-center gap-6 md:w-1/4">
-                                        <div className="w-14 h-14 rounded-2xl bg-taja-primary/5 flex items-center justify-center text-taja-primary border border-taja-primary/10 shrink-0 group-hover:bg-taja-primary group-hover:text-white transition-all duration-500">
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shrink-0 transition-colors ${status.className}`}>
                                             <status.icon className="h-6 w-6" />
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-[9px] font-black text-taja-primary uppercase tracking-[0.2em] mb-1">
-                                                Order {order.orderNumber}
-                                            </p>
+                                            <p className="text-[9px] font-black text-taja-primary uppercase tracking-[0.2em] mb-1">#{order.orderNumber}</p>
                                             <h4 className="text-base font-black text-taja-secondary truncate">{order.customerName}</h4>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{new Date(order.date).toLocaleDateString()}</p>
                                         </div>
                                     </div>
 
                                     {/* Order Items */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex -space-x-3 mb-2">
-                                            {order.items.slice(0, 3).map((item, i) => (
-                                                <div key={i} className="relative w-10 h-10 rounded-xl border-2 border-white bg-motif-blanc overflow-hidden shadow-sm">
+                                            {order.items.slice(0, 4).map((item, i) => (
+                                                <div key={i} className="relative w-10 h-10 rounded-xl border-2 border-white bg-slate-50 overflow-hidden shadow-sm">
                                                     <Image src={item.image} alt={item.name} fill className="object-cover" />
                                                 </div>
                                             ))}
-                                            {order.items.length > 3 && (
+                                            {order.items.length > 4 && (
                                                 <div className="relative w-10 h-10 rounded-xl border-2 border-white bg-taja-secondary flex items-center justify-center text-[10px] font-black text-white shadow-sm">
-                                                    +{order.items.length - 3}
+                                                    +{order.items.length - 4}
                                                 </div>
                                             )}
                                         </div>
                                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">
-                                            {order.items.map(i => i.name).join(", ")}
+                                            {order.items.map(i => `${i.quantity}× ${i.name}`).join(" · ")}
                                         </p>
                                     </div>
 
-                                    {/* Financial & Status */}
-                                    <div className="flex items-center justify-between md:justify-end gap-10">
-                                        <div className="text-left md:text-right">
-                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Amount</p>
+                                    {/* Financial, Status & Actions */}
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <div className="text-right">
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total</p>
                                             <p className="text-lg font-black text-taja-secondary tracking-tight">₦{order.total.toLocaleString()}</p>
                                         </div>
 
-                                        <div className="hidden lg:block min-w-[140px]">
-                                            <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-5 py-2.5 rounded-full border shadow-sm flex items-center justify-center gap-2 ${status.className}`}>
-                                                <status.icon className="h-3 w-3" />
-                                                {status.label}
-                                            </span>
-                                        </div>
+                                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full border shadow-sm flex items-center gap-1.5 ${status.className}`}>
+                                            <status.icon className="h-3 w-3" />{status.label}
+                                        </span>
 
-                                        <div className="text-right shrink-0">
-                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{new Date(order.date).toLocaleDateString()}</p>
-                                            <div className="flex items-center text-[10px] font-black text-taja-primary uppercase tracking-widest gap-2 mt-1">
-                                                View Details <ChevronRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
-                                            </div>
-                                        </div>
+                                        {/* Status Action Buttons */}
+                                        {nextActions.map(action => (
+                                            <button
+                                                key={action.next}
+                                                disabled={isUpdating}
+                                                onClick={() => handleUpdateStatus(order.id, action.next)}
+                                                className={`text-[9px] font-black text-white uppercase tracking-widest px-4 py-2.5 rounded-full flex items-center gap-2 transition-all ${action.color} disabled:opacity-60`}
+                                            >
+                                                {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+                                                {action.label}
+                                            </button>
+                                        ))}
+
+                                        <Link href={`/seller/orders/${order.id}`}>
+                                            <button className="text-[9px] font-black text-taja-primary uppercase tracking-widest px-4 py-2.5 rounded-full border border-taja-primary/20 hover:bg-taja-primary/5 flex items-center gap-2 transition-all">
+                                                View <ChevronRight className="h-3 w-3" />
+                                            </button>
+                                        </Link>
                                     </div>
                                 </div>
-                            </Link>
+                            </div>
                         );
                     })
                 )}

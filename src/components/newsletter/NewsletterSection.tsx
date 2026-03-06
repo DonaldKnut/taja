@@ -73,22 +73,26 @@ export function NewsletterSection() {
                         <div className="relative">
                             {!isSubscribed ? (
                                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                                    <div className="relative group/input">
-                                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-taja-primary transition-colors">
-                                            <Mail className="h-5 w-5" />
+                                    <div className="group/input space-y-3">
+                                        <div className="relative">
+                                            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-taja-primary transition-colors">
+                                                <Mail className="h-5 w-5" />
+                                            </div>
+                                            <input
+                                                {...register("email")}
+                                                type="email"
+                                                placeholder="Enter your email address"
+                                                className={`w-full h-16 pl-16 pr-6 rounded-[1.5rem] bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-taja-primary focus:bg-white text-sm font-bold text-taja-secondary placeholder:text-gray-400 outline-none transition-all ${errors.email ? "ring-rose-500 ring-2" : "hover:ring-slate-300"
+                                                    }`}
+                                            />
                                         </div>
-                                        <input
-                                            {...register("email")}
-                                            type="email"
-                                            placeholder="Enter your email address"
-                                            className={`w-full h-16 pl-16 pr-6 rounded-[1.5rem] bg-slate-50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-taja-primary focus:bg-white text-sm font-bold text-taja-secondary placeholder:text-gray-400 outline-none transition-all ${errors.email ? "ring-rose-500 ring-2" : "group-hover/input:ring-slate-300"
-                                                }`}
-                                        />
-                                        {errors.email && (
-                                            <p className="absolute -bottom-6 left-2 text-[10px] font-bold text-rose-500 uppercase tracking-wider">
-                                                {errors.email.message}
-                                            </p>
-                                        )}
+                                        <div className="min-h-[1.5rem] pl-4">
+                                            {errors.email && (
+                                                <p className="text-[11px] font-black text-rose-500 uppercase tracking-widest animate-in slide-in-from-top-1 duration-300">
+                                                    {errors.email.message}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <Button

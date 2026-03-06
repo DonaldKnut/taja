@@ -329,6 +329,29 @@ export default function AdminEditProductPage() {
         <div className="min-h-screen bg-[#F8FAFC] pb-32">
             <AppHeader />
 
+            {/* ── Sticky Action Bar ── */}
+            <nav className="sticky top-[72px] lg:top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-xl shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        <Link
+                            href="/admin/products"
+                            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-slate-900 transition-all group"
+                        >
+                            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                            Back to Catalogue
+                        </Link>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className="flex items-center gap-2 px-6 h-9 rounded-xl bg-slate-900 text-white hover:bg-emerald-600 text-[10px] font-black uppercase tracking-widest transition-all shadow-sm disabled:opacity-50"
+                        >
+                            <Save className="h-3.5 w-3.5" />
+                            {loading ? "Saving…" : "Publish Corrections"}
+                        </Button>
+                    </div>
+                </div>
+            </nav>
+
             <main className="relative z-10 pt-8">
                 <Container size="lg">
                     {/* Admin Header */}

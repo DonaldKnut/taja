@@ -140,14 +140,14 @@ export async function POST(request: NextRequest) {
       for (const shopData of demoShops) {
         let shop = await Shop.findOne({ shopSlug: shopData.shopSlug });
         let seller;
-        
+
         if (!shop) {
           // Create demo seller
           seller = await User.findOne({ email: shopData.ownerEmail });
           if (!seller) {
             const bcrypt = require("bcryptjs");
             const hashedPassword = await bcrypt.hash("DemoSeller123!", 12);
-            
+
             seller = await User.create({
               fullName: shopData.ownerName,
               email: shopData.ownerEmail,
@@ -512,6 +512,82 @@ export async function POST(request: NextRequest) {
           success: false,
           message: error.message || "Failed to seed database",
         },
+        { status: 500 }
+      );
+    }
+  })(request);
+}
+
+/**
+ * DELETE /api/admin/seed
+ * Clear demo artifacts from the database
+ * 
+ * Removes:
+ * - Products matching demo slugs
+ * - Shops matching demo slugs
+ * - Users matching demo emails
+ */
+export async function DELETE(request: NextRequest) {
+  return requireAuth(async (req, user) => {
+    // Only allow admins
+    if (user.role !== "admin") {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Only admins can clear demo data." },
+        { status: 403 }
+      );
+    }
+
+    try {
+      await connectDB();
+
+      const demoEmails = [
+        "demo.vintage@taja.shop",
+        "demo.handmade@taja.shop",
+        "demo.thrift@taja.shop",
+        "jane@vintagefinds.ng",
+        "chioma@handmade.ng",
+        "mike@thrifthub.ng",
+        "amina@retro.ng"
+      ];
+
+      const demoShopSlugs = [
+        "vintage-finds-lagos",
+        "handmade-by-chioma",
+        "thrift-fashion-hub",
+        "retro-collectibles"
+      ];
+
+      // 1. Delete Products belonging to demo shops or sellers
+      const productsResult = await Product.deleteMany({
+        $or: [
+          { shopSlug: { $in: demoShopSlugs } },
+          { sellerEmail: { $in: demoEmails } }
+        ]
+      });
+
+      // 2. Delete Shops
+      const shopsResult = await Shop.deleteMany({
+        shopSlug: { $in: demoShopSlugs }
+      });
+
+      // 3. Delete Demo Users
+      const usersResult = await User.deleteMany({
+        email: { $in: demoEmails }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Demo data cleared successfully",
+        data: {
+          productsDeleted: productsResult.deletedCount,
+          shopsDeleted: shopsResult.deletedCount,
+          usersDeleted: usersResult.deletedCount,
+        }
+      });
+    } catch (error: any) {
+      console.error("Cleanup error:", error);
+      return NextResponse.json(
+        { success: false, message: error.message || "Failed to clear demo data" },
         { status: 500 }
       );
     }

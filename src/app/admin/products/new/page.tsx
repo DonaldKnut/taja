@@ -161,7 +161,7 @@ export default function AdminProductsNewPage() {
   return (
     <div className="min-h-screen bg-motif-blanc selection:bg-taja-primary/30">
       {/* ── Sticky Action Bar ── */}
-      <nav className="sticky top-0 z-40 border-b border-taja-primary/10 bg-white/10 backdrop-blur-xl">
+      <nav className="sticky top-[72px] lg:top-0 z-40 border-b border-taja-primary/10 bg-white/80 backdrop-blur-xl">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-10">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-6">

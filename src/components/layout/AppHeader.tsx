@@ -3,14 +3,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Menu, X, Zap, ShoppingBag, ShieldCheck, User } from "lucide-react";
+import { Search, Menu, X, Zap, ShoppingBag, ShieldCheck, User, Bell, Heart } from "lucide-react";
 import { Container } from "@/components/layout";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
-import { CartIcon, CartDrawer, useCartStore } from "@/components/cart";
+import { useCartStore, CartIcon } from "@/components/cart";
+import { useWishlistStore } from "@/components/wishlist";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export interface AppHeaderProps {
     transparent?: boolean;
@@ -20,9 +23,57 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { user, isAuthenticated } = useAuth();
-    const { isOpen, toggleCart } = useCartStore();
+    const { isOpen: isCartOpen, toggleCart } = useCartStore();
+    const { items: wishlistItems, openDrawer: openWishlist } = useWishlistStore();
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const wishlistCount = wishlistItems.length;
+
+    // Fetch initial notification count
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const fetchInitialCount = async () => {
+            try {
+                const res = await api('/api/notifications?status=unread');
+                if (res.success) {
+                    setUnreadCount(res.data.pagination.total || 0);
+                }
+            } catch (error) {
+                console.error("Failed to fetch notifications:", error);
+            }
+        };
+
+        fetchInitialCount();
+
+        // Setup SSE for live updates
+        const eventSource = new EventSource('/api/notifications/stream');
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'new_notifications') {
+                    setUnreadCount(prev => prev + data.count);
+                    toast.success(`You have ${data.count} new notification${data.count > 1 ? 's' : ''}`, {
+                        icon: '🔔',
+                        duration: 5000,
+                    });
+                }
+            } catch (err) {
+                console.error("SSE parse error:", err);
+            }
+        };
+
+        eventSource.onerror = (err) => {
+            console.error("SSE connection error:", err);
+            eventSource.close();
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [isAuthenticated]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -94,11 +145,23 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                         {/* Authenticated Actions */}
                         <div className="flex items-center gap-1 md:gap-2">
                             {isAuthenticated ? (
-                                <Link href={user?.role === "seller" ? "/seller/dashboard" : "/dashboard"}>
+                                <Link href={user?.role === "seller" ? "/seller/dashboard" : "/dashboard"} className="relative">
                                     <Button variant="outline" className="rounded-full px-4 md:px-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest h-10 border-taja-light/60 hover:bg-white">
                                         <User className="w-3.5 h-3.5 md:hidden" />
                                         <span className="hidden md:inline">Dashboard</span>
                                     </Button>
+                                    <AnimatePresence>
+                                        {unreadCount > 0 && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                exit={{ scale: 0 }}
+                                                className="absolute -top-1 -right-1 h-5 w-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-lg"
+                                            >
+                                                <span className="text-[8px] font-black text-white">{unreadCount > 99 ? "99+" : unreadCount}</span>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </Link>
                             ) : (
                                 <div className="hidden sm:flex items-center gap-1">
@@ -116,6 +179,29 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                     </Link>
                                 </div>
                             )}
+
+                            {/* Wishlist Icon - Desktop Only */}
+                            <div className="relative hidden md:flex">
+                                <button
+                                    onClick={() => openWishlist()}
+                                    className="p-2 text-taja-secondary hover:text-taja-primary transition-colors hover:bg-taja-light/30 rounded-full"
+                                    aria-label="Wishlist"
+                                >
+                                    <Heart className="h-5 w-5 md:h-6 md:w-6" />
+                                    <AnimatePresence>
+                                        {wishlistCount > 0 && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                exit={{ scale: 0 }}
+                                                className="absolute -top-0.5 -right-0.5 h-4 w-4 md:h-5 md:w-5 bg-rose-500 text-white border-2 border-white rounded-full flex items-center justify-center shadow-lg"
+                                            >
+                                                <span className="text-[8px] md:text-[10px] font-black">{wishlistCount > 9 ? "9+" : wishlistCount}</span>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </button>
+                            </div>
 
                             {/* Cart Icon - Responsive: Hidden on Mobile as Bottom Nav has it */}
                             <div className="relative hidden md:flex">
