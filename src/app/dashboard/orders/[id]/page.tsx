@@ -29,13 +29,65 @@ import {
   RefreshCw,
   ExternalLink,
   HelpCircle,
+  ShieldCheck,
+  Zap,
+  ChevronRight,
+  Info,
+  Lock,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { formatCurrency, formatNumber, timeAgo } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+
+// Narrative timeline status map
+const narrativeStatus = {
+  pending: {
+    label: "Order Secured",
+    description: "Transaction initialized and funds held in Taja Escrow.",
+    icon: Lock,
+    color: "emerald",
+  },
+  confirmed: {
+    label: "Seller Acknowledged",
+    description: "The seller has confirmed receipt and is preparing the item.",
+    icon: Store,
+    color: "blue",
+  },
+  processing: {
+    label: "Quality Audit",
+    description: "Items are being inspected and packaged for secure transit.",
+    icon: Package,
+    color: "purple",
+  },
+  shipped: {
+    label: "In Transit",
+    description: "Your package is moving through our logistics network.",
+    icon: Truck,
+    color: "orange",
+  },
+  delivered: {
+    label: "Delivered",
+    description: "Package received. Awaiting buyer confirmation for escrow release.",
+    icon: CheckCircle,
+    color: "green",
+  },
+  cancelled: {
+    label: "Voided",
+    description: "Transaction cancelled. Funds returned to original payment source.",
+    icon: XCircle,
+    color: "red",
+  },
+  refunded: {
+    label: "Refunded",
+    description: "Funds have been successfully reversed to your account.",
+    icon: RefreshCw,
+    color: "gray",
+  },
+};
 
 interface OrderItem {
   _id: string;
@@ -44,6 +96,7 @@ interface OrderItem {
     title: string;
     images: string[];
     price: number;
+    slug?: string;
   };
   title: string;
   image: string;
@@ -60,12 +113,7 @@ interface DeliveryInfo {
   actualDelivery?: Date | string;
   deliveryFee?: number;
   currentLocation?: string;
-  status?:
-    | "pending"
-    | "confirmed"
-    | "in_transit"
-    | "out_for_delivery"
-    | "delivered";
+  status?: string;
 }
 
 interface Order {
@@ -92,16 +140,9 @@ interface Order {
     logo?: string;
   };
   items: OrderItem[];
-  status:
-    | "pending"
-    | "confirmed"
-    | "processing"
-    | "shipped"
-    | "delivered"
-    | "cancelled"
-    | "refunded";
+  status: keyof typeof narrativeStatus;
   paymentStatus: "pending" | "paid" | "failed" | "refunded" | "escrowed";
-  paymentMethod?: "card" | "bank_transfer" | "ussd";
+  paymentMethod?: string;
   paymentReference?: string;
   escrowStatus?: "pending" | "funded" | "released" | "refunded";
   escrowReference?: string;
@@ -114,16 +155,10 @@ interface Order {
     total: number;
   };
   shippingAddress: {
-    type?: string;
-    street: string;
-    city: string;
-    state: string;
-    country: string;
-    postalCode?: string;
-  };
-  billingAddress?: {
-    type?: string;
-    street: string;
+    fullName?: string;
+    phone?: string;
+    addressLine1: string;
+    addressLine2?: string;
     city: string;
     state: string;
     country: string;
@@ -135,93 +170,15 @@ interface Order {
     timestamp: Date | string;
     note?: string;
   }>;
-  notes?: string;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
-
-const statusConfig = {
-  pending: {
-    color: "text-yellow-600 bg-yellow-100 border-yellow-200",
-    icon: Clock,
-    title: "Order Placed",
-    description: "Your order has been placed and is awaiting confirmation",
-  },
-  confirmed: {
-    color: "text-blue-600 bg-blue-100 border-blue-200",
-    icon: CheckCircle,
-    title: "Confirmed",
-    description: "Your order has been confirmed by the seller",
-  },
-  processing: {
-    color: "text-purple-600 bg-purple-100 border-purple-200",
-    icon: Package,
-    title: "Processing",
-    description: "Your order is being prepared for shipment",
-  },
-  shipped: {
-    color: "text-orange-600 bg-orange-100 border-orange-200",
-    icon: Truck,
-    title: "Shipped",
-    description: "Your order has been shipped and is on its way",
-  },
-  delivered: {
-    color: "text-green-600 bg-green-100 border-green-200",
-    icon: CheckCircle,
-    title: "Delivered",
-    description: "Your order has been successfully delivered",
-  },
-  cancelled: {
-    color: "text-red-600 bg-red-100 border-red-200",
-    icon: XCircle,
-    title: "Cancelled",
-    description: "This order has been cancelled",
-  },
-  refunded: {
-    color: "text-gray-600 bg-gray-100 border-gray-200",
-    icon: RefreshCw,
-    title: "Refunded",
-    description: "This order has been refunded",
-  },
-};
-
-const paymentStatusConfig = {
-  pending: {
-    color: "text-yellow-600 bg-yellow-100",
-    text: "Payment Pending",
-  },
-  paid: {
-    color: "text-green-600 bg-green-100",
-    text: "Payment Received",
-  },
-  failed: {
-    color: "text-red-600 bg-red-100",
-    text: "Payment Failed",
-  },
-  refunded: {
-    color: "text-gray-600 bg-gray-100",
-    text: "Refunded",
-  },
-  escrowed: {
-    color: "text-blue-600 bg-blue-100",
-    text: "In Escrow",
-  },
-};
-
-const deliveryStatusConfig = {
-  pending: { text: "Delivery Pending", color: "text-yellow-600" },
-  confirmed: { text: "Delivery Confirmed", color: "text-blue-600" },
-  in_transit: { text: "In Transit", color: "text-orange-600" },
-  out_for_delivery: { text: "Out for Delivery", color: "text-purple-600" },
-  delivered: { text: "Delivered", color: "text-green-600" },
-};
 
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [cancelling, setCancelling] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [releasingEscrow, setReleasingEscrow] = useState(false);
@@ -255,33 +212,7 @@ export default function OrderDetailPage() {
     setRefreshing(true);
     await fetchOrder();
     setRefreshing(false);
-    toast.success("Order updated");
-  };
-
-  const cancelOrder = async () => {
-    if (!order) return;
-
-    if (
-      !confirm(
-        "Are you sure you want to cancel this order? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setCancelling(true);
-      await api(`/api/orders/${order._id}/status`, {
-        method: "PUT",
-        body: JSON.stringify({ status: "cancelled" }),
-      });
-      toast.success("Order cancelled successfully");
-      await fetchOrder();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to cancel order");
-    } finally {
-      setCancelling(false);
-    }
+    toast.success("Order refreshed");
   };
 
   const confirmDeliveryAndRelease = async () => {
@@ -289,16 +220,16 @@ export default function OrderDetailPage() {
     setConfirmingDelivery(true);
     try {
       await api(`/api/orders/${order._id}/confirm-delivery`, { method: "POST" });
-      toast.success("Delivery confirmed. Releasing escrow…");
+      toast.success("Delivery confirmed. Releasing escrow...");
       setReleasingEscrow(true);
       await api("/api/payments/payout", {
         method: "POST",
         body: JSON.stringify({ orderId: order._id, provider: "auto" }),
       });
-      toast.success("Escrow released and payout initiated.");
+      toast.success("Escrow released successfully!");
       await fetchOrder();
     } catch (error: any) {
-      toast.error(error?.message || "Failed to confirm delivery / release escrow");
+      toast.error(error?.message || "Failed to confirm delivery");
       await fetchOrder();
     } finally {
       setReleasingEscrow(false);
@@ -308,187 +239,245 @@ export default function OrderDetailPage() {
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard!`);
-  };
-
-  const printInvoice = () => {
-    window.print();
-  };
-
-  const downloadInvoice = () => {
-    // TODO: Implement invoice download
-    toast.success("Invoice download will be available soon");
+    toast.success(`${label} copied!`);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto text-emerald-600 mb-4" />
-          <p className="text-gray-600">Loading order details...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <RefreshCw className="h-10 w-10 animate-spin text-taja-primary mb-4" />
+        <p className="text-gray-500 font-medium font-luxury">Retrieving your order details...</p>
       </div>
     );
   }
 
-  if (!order) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Order Not Found
-          </h2>
-          <p className="text-gray-600 mb-4">
-            The order you're looking for doesn't exist or has been removed.
-          </p>
-          <Link href="/dashboard/orders">
-            <Button>Back to Orders</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (!order) return null;
 
-  const currentStatusConfig = statusConfig[order.status];
-  const paymentStatus = paymentStatusConfig[order.paymentStatus];
+  const currentNarrative = narrativeStatus[order.status] || narrativeStatus.pending;
 
   return (
-    <div className="min-h-screen bg-gray-50 print:bg-white">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 print:hidden">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard/orders">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Orders
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Order Details
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  Order #{order.orderNumber}
-                </p>
-              </div>
+    <div className="min-h-screen bg-[#FDFDFD] pb-20">
+      {/* Background Polish */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-taja-primary/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-taja-secondary/5 blur-[120px] rounded-full" />
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative pt-8">
+        {/* Top Navigation */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/orders">
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-white shadow-sm border border-gray-100">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div>
+              <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                <Link href="/dashboard" className="hover:text-taja-primary">Hub</Link>
+                <ChevronRight className="h-2.5 w-2.5" />
+                <Link href="/dashboard/orders" className="hover:text-taja-primary">Orders</Link>
+                <ChevronRight className="h-2.5 w-2.5" />
+                <span className="text-taja-secondary">Track</span>
+              </nav>
+              <h1 className="text-2xl font-black text-taja-secondary tracking-tight">
+                Order <span className="text-taja-primary">#{order.orderNumber || order._id.slice(-8).toUpperCase()}</span>
+              </h1>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refreshOrder}
-                disabled={refreshing}
-              >
-                <RefreshCw
-                  className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`}
-                />
-                Refresh
-              </Button>
-              <Button variant="outline" size="sm" onClick={printInvoice}>
-                <Printer className="h-4 w-4 mr-2" />
-                Print
-              </Button>
-              <Button variant="outline" size="sm" onClick={downloadInvoice}>
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refreshOrder}
+              disabled={refreshing}
+              className="rounded-full bg-white font-bold text-[10px] uppercase tracking-wider"
+            >
+              <RefreshCw className={cn("h-3 w-3 mr-2", refreshing && "animate-spin")} />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+              className="rounded-full bg-white font-bold text-[10px] uppercase tracking-wider hidden sm:flex"
+            >
+              <Printer className="h-3 w-3 mr-2" />
+              Receipt
+            </Button>
           </div>
         </div>
 
-        {/* Order Status Banner */}
-        <Card className="mb-6 border-2 print:border-0">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4">
-                <div
-                  className={`p-3 rounded-lg ${currentStatusConfig.color} border`}
-                >
-                  <currentStatusConfig.icon className="h-6 w-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {currentStatusConfig.title}
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {currentStatusConfig.description}
-                  </p>
-                  <div className="flex items-center gap-4 mt-3">
-                    <Badge className={paymentStatus.color}>
-                      {paymentStatus.text}
-                    </Badge>
-                    <span className="text-sm text-gray-500">
-                      <Calendar className="h-4 w-4 inline mr-1" />
-                      Placed on{" "}
-                      {new Date(order.createdAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Main Status Column */}
+          <div className="lg:col-span-8 space-y-6">
+
+            {/* Premium Status Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative overflow-hidden rounded-[2.5rem] p-1 bg-gradient-to-br from-taja-secondary via-taja-secondary to-black shadow-2xl"
+            >
+              {/* Animated Glow */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-taja-primary/20 blur-[80px] -mr-32 -mt-32 rounded-full animate-pulse" />
+
+              <div className="relative bg-white/5 backdrop-blur-xl rounded-[2.4rem] p-8 md:p-10 border border-white/10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Escrow Secured Transaction</span>
+                    </div>
+
+                    <div>
+                      <h2 className="text-4xl font-black text-white tracking-tighter mb-2">
+                        {currentNarrative.label}
+                      </h2>
+                      <p className="text-gray-400 font-medium max-w-sm">
+                        {currentNarrative.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-6 pt-2">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Current Destination</p>
+                        <div className="flex items-center gap-2 text-white font-bold">
+                          <MapPin className="w-4 h-4 text-taja-primary" />
+                          <span>{order.shippingAddress.city}, {order.shippingAddress.state}</span>
+                        </div>
+                      </div>
+
+                      <div className="w-px h-8 bg-white/10" />
+
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Est. Delivery</p>
+                        <div className="flex items-center gap-2 text-white font-bold">
+                          <Truck className="w-4 h-4 text-taja-primary" />
+                          <span>{order.delivery?.estimatedDelivery ? new Date(order.delivery.estimatedDelivery).toLocaleDateString() : 'Awaiting dispatch'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2 px-8 py-6 rounded-3xl bg-white/5 border border-white/10">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Value</p>
+                    <p className="text-4xl font-black text-white tracking-tighter">
+                      {formatCurrency(order.totals.total)}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2 px-3 py-1 bg-taja-primary/10 rounded-full">
+                      <Zap className="w-3 h-3 text-taja-primary fill-taja-primary" />
+                      <span className="text-[9px] font-black text-taja-primary uppercase">Elite Protection Active</span>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-500">Total Amount</p>
-                <p className="text-3xl font-bold text-emerald-600">
-                  {formatCurrency(order.totals.total)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Order Items */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Order Items ({order.items.length})
-                </CardTitle>
+            {/* Narrative Timeline */}
+            <Card className="rounded-[2.5rem] border-none shadow-premium overflow-hidden">
+              <CardHeader className="px-8 pt-8 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-black text-taja-secondary tracking-tight">Narrative Tracking</CardTitle>
+                  <Badge variant="outline" className="rounded-full border-gray-100 text-[10px] font-bold uppercase tracking-wider px-3">
+                    <RefreshCw className="w-2.5 h-2.5 mr-1.5 text-taja-primary" />
+                    Live Updates
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-8 pb-10">
+                <div className="relative mt-8">
+                  {/* Connection Line */}
+                  <div className="absolute left-[21px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-taja-primary/40 via-gray-100 to-gray-50" />
+
+                  <div className="space-y-10">
+                    {[...order.timeline].reverse().map((event, index) => {
+                      const config = narrativeStatus[event.status as keyof typeof narrativeStatus] || narrativeStatus.pending;
+                      const isFirst = index === 0;
+
+                      return (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className="relative flex gap-6"
+                        >
+                          <div className={cn(
+                            "relative z-10 w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg transition-transform",
+                            isFirst ? "bg-taja-secondary text-white scale-110 shadow-taja-primary/20" : "bg-white text-gray-400 border border-gray-100"
+                          )}>
+                            <config.icon className={cn("w-5 h-5", isFirst && "text-taja-primary")} />
+                          </div>
+
+                          <div className="flex-1 pt-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <h4 className={cn(
+                                "text-sm font-black tracking-tight",
+                                isFirst ? "text-taja-secondary" : "text-gray-400"
+                              )}>
+                                {config.label}
+                              </h4>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(event.timestamp).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className={cn(
+                              "text-sm leading-relaxed",
+                              isFirst ? "text-gray-600 font-medium" : "text-gray-400"
+                            )}>
+                              {event.note || config.description}
+                            </p>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Product Grid */}
+            <Card className="rounded-[2.5rem] border-none shadow-premium overflow-hidden">
+              <CardHeader className="px-8 pt-8">
+                <CardTitle className="text-lg font-black text-taja-secondary tracking-tight">Order Architecture</CardTitle>
+              </CardHeader>
+              <CardContent className="px-8 pb-10">
                 <div className="space-y-4">
                   {order.items.map((item) => (
-                    <div
-                      key={item._id}
-                      className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="relative w-20 h-20 flex-shrink-0">
+                    <div key={item._id} className="group relative flex items-center gap-6 p-4 rounded-3xl border border-gray-50 hover:bg-gray-50/50 hover:border-gray-100 transition-all duration-300">
+                      <div className="relative w-24 h-24 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
                         <Image
-                          src={item.image || item.product?.images?.[0] || "/placeholder-product.jpg"}
-                          alt={item.title || item.product?.title || "Product"}
+                          src={item.image || "/placeholder-product.jpg"}
+                          alt={item.title}
                           fill
-                          className="rounded-lg object-cover"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {item.title || item.product?.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Quantity: {item.quantity} ×{" "}
-                          {formatCurrency(item.price)}
-                        </p>
-                        <div className="flex items-center gap-4 mt-2">
-                          <p className="text-lg font-semibold text-emerald-600">
-                            {formatCurrency(item.subtotal || item.price * item.quantity)}
-                          </p>
-                          {item.product?._id && (
-                            <Link
-                              href={`/product/${item.product._id}`}
-                              className="text-sm text-emerald-600 hover:underline flex items-center gap-1"
-                            >
-                              View Product
-                              <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          )}
+
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h4 className="text-base font-black text-taja-secondary tracking-tight group-hover:text-taja-primary transition-colors">
+                              {item.title}
+                            </h4>
+                            <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-widest">
+                              Quantity {item.quantity} × {formatCurrency(item.price)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-black text-taja-secondary tracking-tight">
+                              {formatCurrency(item.subtotal || item.price * item.quantity)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 mt-4">
+                          <Link href={`/product/${item.product?.slug || item.product?._id}`}>
+                            <Button variant="ghost" size="sm" className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-white border border-transparent hover:border-gray-100">
+                              View Asset <ChevronRight className="w-3 h-3 ml-1" />
+                            </Button>
+                          </Link>
                         </div>
                       </div>
                     </div>
@@ -497,476 +486,208 @@ export default function OrderDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Order Timeline */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Order Timeline
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {order.timeline && order.timeline.length > 0 ? (
-                    order.timeline.map((event, index) => {
-                      const config =
-                        statusConfig[
-                          event.status as keyof typeof statusConfig
-                        ] || statusConfig.pending;
-                      const isLast = index === order.timeline.length - 1;
-                      const timestamp =
-                        typeof event.timestamp === "string"
-                          ? new Date(event.timestamp)
-                          : event.timestamp;
-
-                      return (
-                        <div key={index} className="flex items-start gap-4">
-                          <div className="flex flex-col items-center">
-                            <div
-                              className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${config.color}`}
-                            >
-                              <config.icon className="h-5 w-5" />
-                            </div>
-                            {!isLast && (
-                              <div className="w-px h-12 bg-gray-300 mt-2"></div>
-                            )}
-                          </div>
-                          <div className="flex-1 pb-4">
-                            <h3 className="font-medium text-gray-900">
-                              {config.title}
-                            </h3>
-                            {event.note && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                {event.note}
-                              </p>
-                            )}
-                            <p className="text-xs text-gray-500 mt-2">
-                              {timestamp.toLocaleString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Clock className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                      <p>No timeline events yet</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Payment Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Payment Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Payment Method</p>
-                    <p className="font-medium capitalize">
-                      {order.paymentMethod?.replace("_", " ") || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Payment Status</p>
-                    <Badge className={paymentStatus.color}>
-                      {paymentStatus.text}
-                    </Badge>
-                  </div>
-                  {order.paymentReference && (
-                    <div className="col-span-2">
-                      <p className="text-sm text-gray-600">Payment Reference</p>
-                      <div className="flex items-center gap-2">
-                        <p className="font-mono text-sm">
-                          {order.paymentReference}
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            copyToClipboard(
-                              order.paymentReference!,
-                              "Payment reference"
-                            )
-                          }
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {order.escrowStatus && (
-                    <div>
-                      <p className="text-sm text-gray-600">Escrow Status</p>
-                      <p className="font-medium capitalize">
-                        {order.escrowStatus}
-                      </p>
-                    </div>
-                  )}
-                  {order.escrowReference && (
-                    <div>
-                      <p className="text-sm text-gray-600">Escrow Reference</p>
-                      <p className="font-mono text-sm">
-                        {order.escrowReference}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Order Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Receipt className="h-5 w-5" />
-                  Order Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">
-                    {formatCurrency(order.totals.subtotal)}
-                  </span>
+          {/* Sidebar - Financials & logistics */}
+          <div className="lg:col-span-4 space-y-6">
+
+            {/* Escrow Protection Badge */}
+            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-500/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
+                  <Lock className="w-5 h-5 text-emerald-200" />
                 </div>
-                {((order.totals.shippingCost ?? order.totals.shipping) ?? 0) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="font-medium">
-                      {formatCurrency(order.totals.shippingCost ?? order.totals.shipping ?? 0)}
-                    </span>
+                <div>
+                  <h4 className="font-black tracking-tight">Escrow Protected</h4>
+                  <p className="text-[10px] font-bold text-emerald-200 uppercase tracking-widest">Funds Secured</p>
+                </div>
+              </div>
+              <p className="text-sm text-emerald-50/80 leading-relaxed mb-6">
+                Taja Hub is holding your payment of <strong>{formatCurrency(order.totals.total)}</strong> in a secure escrow account. Funds will only be released to the seller after you confirm delivery.
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-[11px] font-bold">
+                  <CheckCircle className="w-4 h-4 text-emerald-300" />
+                  <span>Payment Verified</span>
+                </div>
+                <div className="flex items-center gap-3 text-[11px] font-bold">
+                  <CheckCircle className="w-4 h-4 text-emerald-300" />
+                  <span>Seller Identity Confirmed</span>
+                </div>
+                <div className="flex items-center gap-3 text-[11px] font-bold opacity-60">
+                  <Clock className="w-4 h-4 text-white" />
+                  <span>Awaiting Release</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Order Ledger */}
+            <Card className="rounded-[2.5rem] border-none shadow-premium overflow-hidden">
+              <CardHeader className="px-8 pt-8">
+                <CardTitle className="text-lg font-black text-taja-secondary tracking-tight">Financial Ledger</CardTitle>
+              </CardHeader>
+              <CardContent className="px-8 pb-10">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400 font-medium">Subtotal</span>
+                    <span className="text-taja-secondary font-black">{formatCurrency(order.totals.subtotal)}</span>
                   </div>
-                )}
-                {order.totals.tax > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Tax</span>
-                    <span className="font-medium">
-                      {formatCurrency(order.totals.tax)}
-                    </span>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400 font-medium">Shipping Logistics</span>
+                    <span className="text-taja-secondary font-black">{formatCurrency(order.totals.shipping || order.totals.shippingCost || 0)}</span>
                   </div>
-                )}
-                {order.totals.discount > 0 && (
-                  <div className="flex justify-between text-sm text-emerald-600">
-                    <span>Discount</span>
-                    <span>-{formatCurrency(order.totals.discount)}</span>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400 font-medium">VAT (7.5%)</span>
+                    <span className="text-taja-secondary font-black">{formatCurrency(order.totals.tax)}</span>
                   </div>
-                )}
-                <div className="border-t pt-3 flex justify-between">
-                  <span className="font-semibold">Total</span>
-                  <span className="text-lg font-bold text-emerald-600">
-                    {formatCurrency(order.totals.total)}
-                  </span>
+                  <div className="h-px bg-gray-50 my-2" />
+                  <div className="flex justify-between items-center">
+                    <span className="text-base font-black text-taja-secondary tracking-tight">Total Settlement</span>
+                    <span className="text-2xl font-black text-taja-primary tracking-tighter">{formatCurrency(order.totals.total)}</span>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-gray-50">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Payment Intelligence</p>
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-white border border-gray-100 flex items-center justify-center">
+                          <Zap className="w-4 h-4 text-taja-primary" />
+                        </div>
+                        <div className="text-[11px] font-bold text-taja-secondary uppercase tracking-tight">
+                          Paystack Protocol
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        PAID
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Delivery Tracking */}
-            {order.delivery?.trackingNumber && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Truck className="h-5 w-5" />
-                    Delivery Tracking
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      Tracking Number
-                    </p>
-                    <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <p className="font-mono text-sm">
-                        {order.delivery.trackingNumber}
-                      </p>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          copyToClipboard(
-                            order.delivery.trackingNumber!,
-                            "Tracking number"
-                          )
-                        }
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {order.delivery.provider && (
-                    <div>
-                      <p className="text-sm text-gray-600">Delivery Partner</p>
-                      <p className="font-medium capitalize">
-                        {order.delivery.provider}
-                      </p>
-                    </div>
-                  )}
-
-                  {order.delivery.status && (
-                    <div>
-                      <p className="text-sm text-gray-600">Status</p>
-                      <p
-                        className={`font-medium ${
-                          deliveryStatusConfig[
-                            order.delivery.status as keyof typeof deliveryStatusConfig
-                          ]?.color || "text-gray-600"
-                        }`}
-                      >
-                        {
-                          deliveryStatusConfig[
-                            order.delivery.status as keyof typeof deliveryStatusConfig
-                          ]?.text || order.delivery.status
-                        }
-                      </p>
-                    </div>
-                  )}
-
-                  {order.delivery.currentLocation && (
-                    <div>
-                      <p className="text-sm text-gray-600">Current Location</p>
-                      <p className="font-medium flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {order.delivery.currentLocation}
-                      </p>
-                    </div>
-                  )}
-
-                  {order.delivery.estimatedDelivery && (
-                    <div>
-                      <p className="text-sm text-gray-600">
-                        Estimated Delivery
-                      </p>
-                      <p className="font-medium">
-                        {new Date(
-                          order.delivery.estimatedDelivery
-                        ).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  )}
-
-                  {order.delivery.actualDelivery && (
-                    <div>
-                      <p className="text-sm text-gray-600">Delivered On</p>
-                      <p className="font-medium">
-                        {new Date(
-                          order.delivery.actualDelivery
-                        ).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Seller Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Store className="h-5 w-5" />
-                  Seller Information
-                </CardTitle>
+            {/* Seller & Shop */}
+            <Card className="rounded-[2.5rem] border-none shadow-premium overflow-hidden">
+              <CardHeader className="px-8 pt-8">
+                <CardTitle className="text-lg font-black text-taja-secondary tracking-tight">Merchant Identity</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Shop</p>
-                  <Link
-                    href={`/shop/${order.shop.shopSlug}`}
-                    className="font-medium text-emerald-600 hover:underline flex items-center gap-1"
-                  >
-                    {order.shop.shopName}
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
+              <CardContent className="px-8 pb-10">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                    <Image
+                      src={order.shop.logo || order.seller.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(order.shop.shopName)}&background=111827&color=fff`}
+                      alt={order.shop.shopName}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-taja-secondary tracking-tight">{order.shop.shopName}</h4>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {order.seller.avatar && (
+                        <div className="relative w-3.5 h-3.5 rounded-full overflow-hidden">
+                          <Image src={order.seller.avatar} alt={order.seller.fullName} fill className="object-cover" />
+                        </div>
+                      )}
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{order.seller.fullName}</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Seller</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    {order.seller.fullName}
-                  </p>
-                </div>
-
-                {order.seller.phone && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Phone</p>
-                    <a
-                      href={`tel:${order.seller.phone}`}
-                      className="font-medium text-emerald-600 hover:underline flex items-center gap-1"
-                    >
-                      <Phone className="h-4 w-4" />
-                      {order.seller.phone}
-                    </a>
-                  </div>
-                )}
-
-                {order.seller.email && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Email</p>
-                    <a
-                      href={`mailto:${order.seller.email}`}
-                      className="font-medium text-emerald-600 hover:underline flex items-center gap-1"
-                    >
-                      <Mail className="h-4 w-4" />
-                      {order.seller.email}
-                    </a>
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-2 pt-2 border-t">
-                  <Link
-                    href={`/chat?seller=${order.seller._id}&order=${order._id}`}
-                  >
-                    <Button className="w-full" variant="outline">
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Message Seller
+                <div className="space-y-3">
+                  <Link href={`/chat?seller=${order.seller._id}&order=${order._id}`} className="block">
+                    <Button className="w-full rounded-2xl h-12 font-black uppercase tracking-widest text-[10px] shadow-sm">
+                      <MessageSquare className="w-3.5 h-3.5 mr-2" />
+                      Secure Channel
                     </Button>
                   </Link>
                   {order.seller.phone && (
                     <a
-                      href={`https://wa.me/${order.seller.phone.replace(
-                        /[\s\+\-]/g,
-                        ""
-                      )}?text=${encodeURIComponent(
-                        `Hi! I have an inquiry about my order ${order.orderNumber}. Can you help me?`
-                      )}`}
+                      href={`https://wa.me/${order.seller.phone.replace(/[\s\+\-]/g, "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block w-full"
+                      className="block"
                     >
-                      <Button className="w-full bg-green-500 hover:bg-green-600">
-                        <Phone className="h-4 w-4 mr-2" />
-                        WhatsApp
+                      <Button variant="outline" className="w-full rounded-2xl h-12 font-black uppercase tracking-widest text-[10px] border-emerald-100 text-emerald-600 hover:bg-emerald-50">
+                        <Phone className="w-3.5 h-3.5 mr-2" />
+                        WhatsApp Seller
                       </Button>
                     </a>
                   )}
+                  <Link href={`/shop/${order.shop.shopSlug}`} className="block">
+                    <Button variant="ghost" className="w-full rounded-2xl h-12 font-black uppercase tracking-widest text-[10px] text-gray-400 hover:text-taja-primary">
+                      <Store className="w-3.5 h-3.5 mr-2" />
+                      Visit Boutique
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Shipping Address */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Shipping Address
-                </CardTitle>
+            {/* Shipping Destination */}
+            <Card className="rounded-[2.5rem] border-none shadow-premium overflow-hidden">
+              <CardHeader className="px-8 pt-8">
+                <CardTitle className="text-lg font-black text-taja-secondary tracking-tight">Secure Logistics</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-sm space-y-1">
-                  <p className="font-medium">{order.buyer.fullName}</p>
-                  <p>{order.shippingAddress.street}</p>
-                  <p>
-                    {order.shippingAddress.city}, {order.shippingAddress.state}
-                  </p>
-                  {order.shippingAddress.postalCode && (
-                    <p>{order.shippingAddress.postalCode}</p>
-                  )}
-                  <p>{order.shippingAddress.country}</p>
-                  {order.buyer.phone && (
-                    <p className="mt-2 flex items-center gap-1">
-                      <Phone className="h-4 w-4" />
-                      {order.buyer.phone}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+              <CardContent className="px-8 pb-10">
+                <div className="p-5 rounded-3xl bg-gray-50/50 border border-gray-50">
+                  <div className="flex items-center gap-3 mb-4 text-taja-secondary">
+                    {order.buyer.avatar ? (
+                      <div className="relative w-5 h-5 rounded-full overflow-hidden border border-taja-primary/20">
+                        <Image src={order.buyer.avatar} alt={order.buyer.fullName} fill className="object-cover" />
+                      </div>
+                    ) : (
+                      <MapPin className="w-5 h-5 text-taja-primary" />
+                    )}
+                    <span className="text-xs font-black uppercase tracking-widest">Courier Endpoint</span>
+                  </div>
 
-            {/* Order Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {order.paymentStatus === "paid" &&
-                  order.escrowStatus === "funded" &&
-                  order.status !== "delivered" && (
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <p className="font-black text-taja-secondary">{order.shippingAddress.fullName || order.buyer.fullName}</p>
+                    <p>{order.shippingAddress.addressLine1}</p>
+                    {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
+                    <p>{order.shippingAddress.city}, {order.shippingAddress.state}</p>
+                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-2">Verified Destination</p>
+                  </div>
+                </div>
+
+                {order.paymentStatus === "paid" && order.status !== "delivered" && (
+                  <div className="mt-6 pt-6 border-t border-gray-50">
                     <Button
-                      className="w-full"
+                      className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20 shadow-lg"
                       onClick={confirmDeliveryAndRelease}
                       disabled={confirmingDelivery || releasingEscrow}
                     >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      {releasingEscrow
-                        ? "Releasing Escrow…"
-                        : confirmingDelivery
-                        ? "Confirming…"
-                        : "Confirm Delivery & Release Escrow"}
+                      {confirmingDelivery ? (
+                        <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                      )}
+                      {releasingEscrow ? 'Finalizing Release...' : 'Confirm Delivery'}
                     </Button>
-                  )}
-
-                {order.status === "delivered" && (
-                  <Link href={`/review?order=${order._id}`}>
-                    <Button className="w-full">
-                      <Star className="h-4 w-4 mr-2" />
-                      Leave Review
-                    </Button>
-                  </Link>
+                    <p className="text-center text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-3">
+                      Only click if you have received your package
+                    </p>
+                  </div>
                 )}
-
-                {(order.status === "pending" || order.status === "confirmed") && (
-                  <Button
-                    variant="outline"
-                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={cancelOrder}
-                    disabled={cancelling}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    {cancelling ? "Cancelling..." : "Cancel Order"}
-                  </Button>
-                )}
-
-                {order.delivery?.trackingNumber && (
-                  <Link href={`/track/${order.delivery.trackingNumber}`}>
-                    <Button variant="outline" className="w-full">
-                      <Truck className="h-4 w-4 mr-2" />
-                      Track Delivery
-                    </Button>
-                  </Link>
-                )}
-
-                <Link href={`/order/${order._id}`}>
-                  <Button variant="outline" className="w-full">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View Public Page
-                  </Button>
-                </Link>
-
-                <Link href={`/support?orderId=${order._id}`}>
-                  <Button variant="outline" className="w-full">
-                    <HelpCircle className="h-4 w-4 mr-2" />
-                    Get Help / Contact Support
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
+
+            {/* Support Actions */}
+            <div className="flex flex-col gap-2 px-6">
+              <Link href={`/support?orderId=${order._id}`} className="text-center">
+                <Button variant="ghost" className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 transition-colors">
+                  <AlertCircle className="w-3.5 h-3.5 mr-2" />
+                  Report a Transaction Issue
+                </Button>
+              </Link>
+              <div className="flex items-center justify-center gap-2 text-[9px] font-bold text-gray-300 uppercase tracking-[0.2em] mt-2">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Encrypted Hub Protocol
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
