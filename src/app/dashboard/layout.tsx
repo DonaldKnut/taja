@@ -151,8 +151,8 @@ export default function DashboardLayout({
           >
             <Zap className="h-[18px] w-[18px] animate-pulse" />
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mb-1">Command Hub</p>
-              <p className="text-[9px] text-emerald-500/60 font-medium">Switch to Operator Mode</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mb-1">Admin Dashboard</p>
+              <p className="text-[10px] text-emerald-500/60 font-medium">Manage Platform</p>
             </div>
           </Link>
         </div>

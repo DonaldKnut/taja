@@ -82,6 +82,8 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<"description" | "specifications">("description");
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const { addItem, updateQuantity, toggleCart, isOpen } = useCartStore();
 
   // Format WhatsApp URL with optional product context message
@@ -165,12 +167,19 @@ export default function ProductDetailPage() {
               instagram: "",
               whatsapp: "",
             },
+            logo: productData.shop?.logo || productData.seller?.avatar || "",
+            ownerName: productData.seller?.fullName || productData.shop?.owner?.fullName || "",
+            sellerAvatar: productData.seller?.avatar || "",
           },
           reviews: productData.reviews || [],
           relatedProducts: productData.relatedProducts || [],
+          variants: productData.variants || [],
         };
 
         setProduct(transformedProduct);
+        if (transformedProduct.variants?.length > 0) {
+          setSelectedVariantId(transformedProduct.variants[0]._id || transformedProduct.variants[0].id);
+        }
       } catch (error: any) {
         console.error("Error fetching product:", error);
         toast.error(error?.message || "Failed to load product");
@@ -186,16 +195,21 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async () => {
     try {
+      const selectedVariant = product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId);
+      const finalPrice = selectedVariant?.price || product.price;
+
       // Add to local cart store
       addItem({
         _id: product.id,
         title: product.title,
-        price: product.price,
+        price: finalPrice,
         images: product.images,
         seller: product.shop.shopName,
         shopSlug: product.shop.shopSlug,
         moq: product.moq,
-        stock: product.stock,
+        stock: selectedVariant?.stock ?? product.stock,
+        variantId: selectedVariantId || undefined,
+        variantName: selectedVariant?.name || undefined,
       });
 
       // Update quantity if needed
@@ -352,7 +366,7 @@ export default function ProductDetailPage() {
                             : "border-transparent opacity-60 hover:opacity-100 -rotate-2"
                         )}
                       >
-                        <Image src={image} alt="" fill className="object-cover" />
+                        <Image src={image} alt="" fill className="object-cover" sizes="96px" />
                       </button>
                     ))}
                   </div>
@@ -399,14 +413,14 @@ export default function ProductDetailPage() {
                 <div className="space-y-2">
                   <div className="flex items-baseline gap-4">
                     <span className="text-4xl sm:text-5xl font-black text-taja-primary tracking-tighter">
-                      ₦{product.price.toLocaleString()}
-                      {product.maxPrice > product.price && (
+                      ₦{(product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId)?.price || product.price).toLocaleString()}
+                      {!selectedVariantId && product.variants?.length > 0 && product.maxPrice > product.price && (
                         <span className="text-3xl font-bold ml-1"> - ₦{product.maxPrice.toLocaleString()}</span>
                       )}
                     </span>
-                    {product.compareAtPrice > product.price && (
+                    {(product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId)?.compareAtPrice || product.compareAtPrice) > (product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId)?.price || product.price) && (
                       <span className="text-xl text-gray-300 line-through decoration-emerald-500/30 decoration-2">
-                        ₦{product.compareAtPrice.toLocaleString()}
+                        ₦{(product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId)?.compareAtPrice || product.compareAtPrice).toLocaleString()}
                       </span>
                     )}
                   </div>
@@ -415,6 +429,45 @@ export default function ProductDetailPage() {
                     {product.shipping?.freeShipping ? "Complementary Elite Shipping" : "Priority Dispatch in 24h"}
                   </p>
                 </div>
+
+                {/* Variant Selection */}
+                {product.variants?.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Select Option</label>
+                      <span className="text-[10px] font-bold text-taja-primary uppercase tracking-widest bg-taja-primary/5 px-2 py-0.5 rounded-full">
+                        {product.variants.length} Available
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {product.variants.map((variant: any) => (
+                        <button
+                          key={variant._id || variant.id}
+                          onClick={() => setSelectedVariantId(variant._id || variant.id)}
+                          className={cn(
+                            "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-1",
+                            selectedVariantId === (variant._id || variant.id)
+                              ? "border-taja-primary bg-taja-primary/5 shadow-premium"
+                              : "border-gray-50 bg-gray-50/30 hover:border-gray-100"
+                          )}
+                        >
+                          <span className={cn(
+                            "text-[10px] font-black uppercase tracking-tight text-center leading-tight",
+                            selectedVariantId === (variant._id || variant.id) ? "text-taja-secondary" : "text-gray-400"
+                          )}>
+                            {variant.name}
+                          </span>
+                          <span className={cn(
+                            "text-[10px] font-bold",
+                            selectedVariantId === (variant._id || variant.id) ? "text-taja-primary" : "text-gray-300"
+                          )}>
+                            ₦{(variant.price || product.price).toLocaleString()}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Action Stack - Only visible on Desktop */}
@@ -440,11 +493,11 @@ export default function ProductDetailPage() {
                     disabled={product.stock <= 0}
                     variant="outline"
                     className={cn(
-                      "flex-1 h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] border-emerald-500/20 hover:bg-emerald-50",
+                      "flex-1 h-14 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] border-emerald-500/20 hover:bg-emerald-50",
                       product.stock <= 0 && "opacity-50 cursor-not-allowed border-gray-100"
                     )}
                   >
-                    {product.stock > 0 ? "Reserving Space" : "Unavailable"}
+                    {product.stock > 0 ? "Add to Cart" : "Unavailable"}
                   </Button>
                 </div>
                 <Button
@@ -455,7 +508,7 @@ export default function ProductDetailPage() {
                     product.stock <= 0 && "opacity-50 cursor-not-allowed grayscale"
                   )}
                 >
-                  {product.stock > 0 ? "Acquire Now" : "Out of Stock"}
+                  {product.stock > 0 ? "Buy Now" : "Out of Stock"}
                 </Button>
 
                 {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
@@ -486,9 +539,9 @@ export default function ProductDetailPage() {
                 className="group flex items-center justify-between p-6 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white transition-all hover:shadow-xl hover:shadow-emerald-900/5"
               >
                 <div className="flex items-center gap-5">
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md bg-taja-light">
                     <Image
-                      src={fallbackImage}
+                      src={product.shop.logo || product.shop.sellerAvatar || fallbackImage}
                       alt={product.shop.shopName}
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -502,6 +555,9 @@ export default function ProductDetailPage() {
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                       {product.shop.followers.toLocaleString()} Collectors • Level 5 Partner
                     </p>
+                    {product.shop.ownerName && (
+                      <p className="text-[9px] font-medium text-taja-primary mt-0.5">Managed by {product.shop.ownerName}</p>
+                    )}
                   </div>
                 </div>
                 <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center group-hover:bg-emerald-50 transition-colors">
@@ -526,27 +582,57 @@ export default function ProductDetailPage() {
               </div>
 
               <div className="space-y-6 pt-6">
-                <div className="flex gap-4 border-b border-gray-100">
-                  <button className="pb-4 text-[10px] font-black uppercase tracking-widest text-taja-secondary border-b-2 border-taja-primary">The Narrative</button>
-                  <button className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Specifications</button>
+                <div className="flex gap-8 border-b border-gray-100">
+                  <button
+                    onClick={() => setActiveTab("description")}
+                    className={cn(
+                      "pb-4 text-[10px] font-black uppercase tracking-widest transition-all",
+                      activeTab === "description" ? "text-taja-secondary border-b-2 border-taja-primary" : "text-gray-400"
+                    )}
+                  >
+                    Description
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("specifications")}
+                    className={cn(
+                      "pb-4 text-[10px] font-black uppercase tracking-widest transition-all",
+                      activeTab === "specifications" ? "text-taja-secondary border-b-2 border-taja-primary" : "text-gray-400"
+                    )}
+                  >
+                    Specifications
+                  </button>
                 </div>
-                <p className="text-gray-500 leading-relaxed text-sm lg:text-base italic">
-                  "{product.description}"
-                </p>
+
+                <div className="min-h-[100px]">
+                  {activeTab === "description" ? (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-gray-500 leading-relaxed text-sm lg:text-base italic"
+                    >
+                      {product.description ? `"${product.description}"` : "No description provided."}
+                    </motion.p>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4"
+                    >
+                      {product.specifications && Object.keys(product.specifications).length > 0 ? (
+                        Object.entries(product.specifications).map(([key, value]: [string, any]) => (
+                          <div key={key} className="flex justify-between items-center py-2 border-b border-slate-50">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase">{key}</span>
+                            <span className="text-sm text-taja-secondary font-black italic">{value}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-400 text-[10px] uppercase font-bold italic">No technical specifications provided for this asset.</p>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
               </div>
 
-              {/* Specifications Placeholder (Mobile) */}
-              <div className="lg:hidden space-y-4 pt-6 border-t border-gray-100">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">Specifications</h3>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                  {Object.entries(product.specifications || {}).map(([key, value]: [string, any]) => (
-                    <div key={key} className="flex justify-between items-center text-[10px]">
-                      <span className="text-gray-400 font-bold uppercase">{key}</span>
-                      <span className="text-taja-secondary font-black italic">{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
 
@@ -577,7 +663,7 @@ export default function ProductDetailPage() {
                   product.stock <= 0 && "opacity-50 cursor-not-allowed border-gray-100"
                 )}
               >
-                {product.stock > 0 ? "Reserve" : "Sold Out"}
+                {product.stock > 0 ? "Add to Cart" : "Sold Out"}
               </Button>
               <Button
                 onClick={handleBuyNow}
@@ -587,7 +673,7 @@ export default function ProductDetailPage() {
                   product.stock <= 0 && "opacity-50 cursor-not-allowed grayscale"
                 )}
               >
-                {product.stock > 0 ? "Acquire Now" : "Out of Stock"}
+                {product.stock > 0 ? "Buy Now" : "Out of Stock"}
               </Button>
 
               {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
@@ -624,7 +710,7 @@ export default function ProductDetailPage() {
             {product.id && <AIRecommendations productId={product.id} limit={4} />}
           </Container>
         </div>
-      </div>
+      </div >
     </>
   );
 }

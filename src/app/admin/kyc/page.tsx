@@ -90,6 +90,7 @@ export default function AdminKYCPage() {
   const [shops, setShops] = useState<PendingShop[]>([]);
   const [shopsLoading, setShopsLoading] = useState(true);
   const [shopActionLoading, setShopActionLoading] = useState<string | null>(null);
+  const [editingShopSlug, setEditingShopSlug] = useState<{ [key: string]: string }>({});
 
   const fetchSubmissions = async () => {
     setLoading(true);
@@ -106,6 +107,12 @@ export default function AdminKYCPage() {
       const res = await api("/api/admin/shops/pending");
       if (res?.success && Array.isArray(res.data)) {
         setShops(res.data);
+        // Initialize editing slugs
+        const slugs: { [key: string]: string } = {};
+        res.data.forEach((s: PendingShop) => {
+          slugs[s._id] = s.shopSlug;
+        });
+        setEditingShopSlug(slugs);
       }
     } catch {
       toast.error("Failed to load shops awaiting verification");
@@ -163,8 +170,25 @@ export default function AdminKYCPage() {
   };
 
   const handleShopApprove = async (shopId: string) => {
+    const slug = editingShopSlug[shopId]?.trim();
+    if (!slug) { toast.error("Shop link cannot be empty"); return; }
+
     setShopActionLoading(shopId);
     try {
+      // First update the slug if it changed
+      const originalShop = shops.find(s => s._id === shopId);
+      if (originalShop && originalShop.shopSlug !== slug) {
+        const slugRes = await api(`/api/admin/shops/${shopId}`, {
+          method: "PUT",
+          body: JSON.stringify({ shopSlug: slug }),
+        });
+        if (!slugRes?.success) {
+          toast.error(slugRes?.message || "Failed to update shop link");
+          setShopActionLoading(null);
+          return;
+        }
+      }
+
       const res = await api(`/api/admin/shops/${shopId}/review`, {
         method: "PUT",
         body: JSON.stringify({ action: "approve" }),
@@ -424,6 +448,19 @@ export default function AdminKYCPage() {
                         • {shop.owner.email}
                       </p>
                     )}
+                    <div className="mt-3 flex items-center gap-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 shrink-0">Shop link:</p>
+                      <div className="flex-1 flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 focus-within:border-emerald-500/50 transition-all">
+                        <span className="text-[10px] font-bold text-slate-400">/shop/</span>
+                        <input
+                          type="text"
+                          value={editingShopSlug[shop._id] || ""}
+                          onChange={(e) => setEditingShopSlug(prev => ({ ...prev, [shop._id]: e.target.value.toLowerCase().replace(/[^a-z0-z0-9-]/g, "") }))}
+                          className="flex-1 bg-transparent border-none p-0 text-xs font-black text-slate-900 focus:ring-0"
+                          placeholder="shop-link"
+                        />
+                      </div>
+                    </div>
                     {shop.description && (
                       <p className="text-sm font-medium text-slate-600 mt-2 line-clamp-2 italic leading-relaxed">
                         "{shop.description}"

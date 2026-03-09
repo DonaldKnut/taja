@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { toast } from "react-hot-toast";
 import { useDebounce } from "@/hooks/useDebounce";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SearchModalProps {
   open: boolean;
@@ -22,24 +23,24 @@ interface SearchSuggestion {
 // Validation: minimum 2 characters, max 100 characters
 const validateSearchQuery = (query: string): { valid: boolean; error?: string } => {
   const trimmed = query.trim();
-  
+
   if (trimmed.length === 0) {
     return { valid: false, error: "Search query cannot be empty" };
   }
-  
+
   if (trimmed.length < 2) {
     return { valid: false, error: "Search query must be at least 2 characters" };
   }
-  
+
   if (trimmed.length > 100) {
     return { valid: false, error: "Search query must be less than 100 characters" };
   }
-  
+
   // Check for only whitespace
   if (!trimmed.replace(/\s+/g, '').length) {
     return { valid: false, error: "Search query cannot be only spaces" };
   }
-  
+
   return { valid: true };
 };
 
@@ -51,7 +52,7 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  
+
   const debouncedQuery = useDebounce(query, 200);
 
   // Load recent searches from localStorage
@@ -80,7 +81,7 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
       try {
         const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(debouncedQuery)}&limit=5`);
         const data = await response.json();
-        
+
         if (data.success) {
           setSuggestions(data.data.suggestions || []);
         }
@@ -121,7 +122,7 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
   const saveRecentSearch = (searchQuery: string) => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
-    
+
     const updated = [trimmed, ...recentSearches.filter(s => s !== trimmed)].slice(0, 5);
     setRecentSearches(updated);
     localStorage.setItem('recentSearches', JSON.stringify(updated));
@@ -129,19 +130,19 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
 
   const handleSearch = (e?: React.FormEvent, searchQuery?: string) => {
     e?.preventDefault();
-    
+
     const targetQuery = searchQuery || query;
-    
+
     const validation = validateSearchQuery(targetQuery);
     if (!validation.valid) {
       setError(validation.error || "Invalid search query");
       toast.error(validation.error || "Invalid search query");
       return;
     }
-    
+
     const trimmed = targetQuery.trim();
     saveRecentSearch(trimmed);
-    
+
     // Navigate to marketplace with search query
     router.push(`/marketplace?search=${encodeURIComponent(trimmed)}`);
     onClose();
@@ -154,11 +155,11 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const allSuggestions = [...suggestions, ...recentSearches.filter(r => !suggestions.includes(r))];
-    
+
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => 
+        setSelectedIndex(prev =>
           prev < allSuggestions.length - 1 ? prev + 1 : prev
         );
         break;
@@ -189,8 +190,8 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
   const isValid = validation.valid;
 
   // Combine suggestions and recent searches for display
-  const displaySuggestions = query.length >= 2 
-    ? suggestions 
+  const displaySuggestions = query.length >= 2
+    ? suggestions
     : recentSearches;
 
   if (!open) return null;
@@ -199,31 +200,41 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 bg-slate-950/40 backdrop-blur-md"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
-      <div className="relative w-full max-w-2xl mx-4 bg-white shadow-xl rounded-lg border border-gray-200 overflow-hidden">
+      <div className="relative w-full max-w-2xl mx-4 bg-[#020617] shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2rem] border border-slate-800 overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px]" />
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px]" />
+          <div className="absolute inset-0 motif-blanc opacity-[0.03]" />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Search Products</h2>
+        <div className="relative z-10 flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-950/40 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <div className="h-1 w-6 bg-taja-primary rounded-full" />
+            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Search</h2>
+          </div>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            className="p-2 text-slate-500 hover:text-white rounded-xl hover:bg-white/5 transition-all"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Search Form */}
-        <form onSubmit={handleSearch} className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <Input
+        <form onSubmit={handleSearch} className="relative z-10 p-6">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-taja-primary transition-colors h-5 w-5" />
+            <input
               id="search-input"
               type="text"
-              placeholder="Search products, shops, or categories..."
+              placeholder="Search for something special..."
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -231,60 +242,68 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
                 setSelectedIndex(-1);
               }}
               onKeyDown={handleKeyDown}
-              className={`pl-10 pr-4 py-3 text-base ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+              className={`w-full h-16 pl-12 pr-12 bg-slate-900/50 border-2 transition-all rounded-2xl text-base font-bold text-white placeholder:text-slate-600 focus:outline-none focus:bg-slate-900 ${error
+                ? 'border-rose-500/50 focus:border-rose-500 ring-4 ring-rose-500/5'
+                : 'border-slate-800 focus:border-taja-primary ring-4 ring-transparent focus:ring-taja-primary/10'
+                }`}
               autoFocus
               maxLength={100}
             />
             {isLoading && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-primary rounded-full" />
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin h-4 w-4 border-2 border-slate-700 border-t-taja-primary rounded-full" />
               </div>
             )}
           </div>
           {error && (
-            <p className="mt-2 text-sm text-red-600">{error}</p>
+            <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 text-xs font-bold text-rose-500 uppercase tracking-widest ml-1">
+              {error}
+            </motion.p>
           )}
           {query.trim().length > 0 && query.trim().length < 2 && !error && (
-            <p className="mt-2 text-xs text-gray-500">
-              Enter at least 2 characters to search
+            <p className="mt-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+              Minimum 2 characters required
             </p>
           )}
         </form>
 
         {/* Suggestions / Recent Searches */}
         {displaySuggestions.length > 0 && (
-          <div className="border-t border-gray-100">
-            <div className="px-4 py-2 bg-gray-50 flex items-center justify-between">
-              <p className="text-xs font-medium text-gray-500 uppercase">
-                {query.length >= 2 ? 'Suggestions' : 'Recent Searches'}
+          <div className="relative z-10 border-t border-slate-800/50">
+            <div className="px-6 py-3 bg-slate-950/40 flex items-center justify-between">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                {query.length >= 2 ? 'Search Suggestions' : 'Recent Searches'}
               </p>
               {query.length < 2 && recentSearches.length > 0 && (
                 <button
                   onClick={clearRecentSearches}
-                  className="text-xs text-red-500 hover:text-red-600"
+                  className="text-[9px] font-black text-rose-500 hover:text-rose-400 uppercase tracking-widest transition-colors"
                 >
-                  Clear
+                  Clear History
                 </button>
               )}
             </div>
-            <ul className="max-h-60 overflow-y-auto">
+            <ul className="max-h-64 overflow-y-auto scrollbar-hide py-2">
               {displaySuggestions.map((suggestion, index) => (
                 <li
                   key={`${suggestion}-${index}`}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className={`px-4 py-3 cursor-pointer flex items-center gap-3 transition-colors ${
-                    selectedIndex === index 
-                      ? 'bg-primary/5' 
-                      : 'hover:bg-gray-50'
-                  }`}
+                  className={`px-6 py-4 cursor-pointer flex items-center gap-4 transition-all group ${selectedIndex === index
+                    ? 'bg-taja-primary/10 border-l-4 border-taja-primary'
+                    : 'hover:bg-white/5 border-l-4 border-transparent'
+                    }`}
                 >
-                  {query.length >= 2 ? (
-                    <Search className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Clock className="h-4 w-4 text-gray-400" />
-                  )}
-                  <span className="flex-1 text-sm text-gray-700">{suggestion}</span>
-                  <ArrowRight className="h-4 w-4 text-gray-300" />
+                  <div className={`p-2 rounded-xl transition-colors ${selectedIndex === index ? 'bg-taja-primary text-white' : 'bg-slate-900 text-slate-500 group-hover:text-slate-300'}`}>
+                    {query.length >= 2 ? (
+                      <Search className="h-4 w-4" />
+                    ) : (
+                      <Clock className="h-4 w-4" />
+                    )}
+                  </div>
+                  <span className={`flex-1 text-sm font-bold tracking-tight transition-colors ${selectedIndex === index ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                    {suggestion}
+                  </span>
+                  <ArrowRight className={`h-4 w-4 transition-all ${selectedIndex === index ? 'text-taja-primary translate-x-0 opacity-100' : 'text-slate-700 -translate-x-2 opacity-0'}`} />
                 </li>
               ))}
             </ul>
@@ -293,17 +312,17 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
 
         {/* Popular Categories */}
         {!query && (
-          <div className="p-4 border-t border-gray-200">
-            <p className="text-xs font-medium text-gray-500 uppercase mb-3 flex items-center gap-2">
-              <TrendingUp className="h-3 w-3" />
-              Popular Categories
-            </p>
+          <div className="relative z-10 p-6 border-t border-slate-800/50">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-3 w-3 text-emerald-500" />
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Popular Categories</p>
+            </div>
             <div className="flex flex-wrap gap-2">
               {["Electronics", "Fashion", "Home & Garden", "Sports", "Beauty", "Books"].map((category) => (
                 <button
                   key={category}
                   onClick={() => handleSuggestionClick(category)}
-                  className="px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-900/50 hover:bg-taja-primary hover:text-white border border-slate-800 hover:border-taja-primary rounded-xl transition-all"
                 >
                   {category}
                 </button>
@@ -313,22 +332,26 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
         )}
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center gap-3">
-            <Button 
+        <div className="relative z-10 p-6 border-t border-slate-800/50 bg-slate-950/40 backdrop-blur-xl">
+          <div className="flex items-center gap-4">
+            <Button
               type="button"
               onClick={() => handleSearch()}
-              className="flex-1"
+              className="flex-1 h-14 bg-white text-slate-950 hover:bg-taja-primary hover:text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-premium transition-all"
               disabled={!isValid}
             >
-              Search
+              Search Now
             </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 h-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white hover:bg-white/5 transition-all"
+            >
               Cancel
-            </Button>
+            </button>
           </div>
-          <p className="mt-2 text-xs text-gray-400 text-center">
-            Press Enter to search • ↑↓ to navigate • ESC to close
+          <p className="mt-4 text-[9px] font-bold text-slate-600 text-center uppercase tracking-widest">
+            Enter to Search • ↑↓ to Navigate • ESC to Close
           </p>
         </div>
       </div>

@@ -81,6 +81,7 @@ export default function AdminEditProductPage() {
             metaDescription: "",
         },
         status: "active" as "active" | "draft" | "suspended",
+        variants: [] as any[],
     });
 
     const [productOwner, setProductOwner] = useState<any>(null);
@@ -152,6 +153,12 @@ export default function AdminEditProductPage() {
                         metaDescription: productData.seo?.metaDescription || productData.metaDescription || "",
                     },
                     status: productData.status || "active",
+                    variants: (productData.variants || []).map((v: any) => ({
+                        ...v,
+                        price: String(v.price || ""),
+                        stock: String(v.stock || ""),
+                        weight: String(v.weight || ""),
+                    })),
                 });
             } catch (error: any) {
                 console.error("Failed to fetch data:", error);
@@ -247,6 +254,37 @@ export default function AdminEditProductPage() {
         toast.success("Main image updated");
     };
 
+    const addVariant = () => {
+        setFormData((prev) => ({
+            ...prev,
+            variants: [
+                ...prev.variants,
+                {
+                    name: "",
+                    price: prev.price || "0",
+                    stock: prev.inventory.quantity || "1",
+                    sku: "",
+                    weight: prev.shipping.weight || "0",
+                },
+            ],
+        }));
+    };
+
+    const updateVariant = (index: number, field: string, value: string) => {
+        setFormData((prev) => {
+            const newVariants = [...prev.variants];
+            newVariants[index] = { ...newVariants[index], [field]: value };
+            return { ...prev, variants: newVariants };
+        });
+    };
+
+    const removeVariant = (index: number) => {
+        setFormData((prev) => ({
+            ...prev,
+            variants: prev.variants.filter((_, i) => i !== index),
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -293,6 +331,12 @@ export default function AdminEditProductPage() {
                     metaDescription: formData.seo.metaDescription || undefined,
                 },
                 status: formData.status,
+                variants: formData.variants.map((v) => ({
+                    ...v,
+                    price: parseFloat(String(v.price)),
+                    stock: parseInt(String(v.stock)) || 0,
+                    weight: parseFloat(String(v.weight)) || 0,
+                })),
             };
 
             const response = await api(`/api/products/${productId}`, {
@@ -643,6 +687,188 @@ export default function AdminEditProductPage() {
                                         </div>
                                     </div>
                                 </div>
+                            </section>
+
+                            {/* Logistics Protocol */}
+                            <section className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-100 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[80px] rounded-full -z-10" />
+                                <div className="flex items-center gap-3 mb-10">
+                                    <div className="p-3 bg-slate-900 rounded-2xl">
+                                        <Truck className="w-6 h-6 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Logistics Protocol</h2>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Weight & Fulfillment</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="group space-y-2">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                                            Product Weight (kg)
+                                        </label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            name="shipping.weight"
+                                            value={formData.shipping.weight}
+                                            onChange={handleChange}
+                                            className="rounded-2xl h-14 font-black border-slate-100 bg-slate-50/50"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+
+                                    <div className="group space-y-2">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                                            Delivery Fee (₦)
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-300">₦</span>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                name="shipping.shippingCost"
+                                                value={formData.shipping.shippingCost}
+                                                onChange={handleChange}
+                                                className="rounded-2xl h-14 pl-12 font-black border-slate-100 bg-slate-50/50"
+                                                placeholder="Flat rate"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                                        <input
+                                            type="checkbox"
+                                            id="freeShipping"
+                                            name="shipping.freeShipping"
+                                            checked={formData.shipping.freeShipping}
+                                            onChange={handleChange}
+                                            className="h-5 w-5 rounded border-slate-200 text-slate-900 focus:ring-slate-900"
+                                        />
+                                        <label htmlFor="freeShipping" className="text-[10px] font-black uppercase tracking-widest text-slate-900 cursor-pointer">
+                                            Enable Free Shipping
+                                        </label>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Product Variations */}
+                            <section className="bg-white rounded-[2.5rem] p-6 sm:p-10 shadow-sm border border-slate-100 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-48 h-48 bg-emerald-500/5 blur-[80px] rounded-full -z-10" />
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 sm:mb-10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-3 bg-slate-900 rounded-2xl hidden sm:block">
+                                            <Zap className="w-6 h-6 text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight italic">Product Options</h2>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Variations</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={addVariant}
+                                        className="flex items-center justify-center gap-2 px-6 h-12 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all font-sans w-full sm:w-auto"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        Add Option
+                                    </button>
+                                </div>
+
+                                {formData.variants.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {/* Desktop Headers - Hidden on Mobile */}
+                                        <div className="hidden sm:grid grid-cols-12 gap-4 px-4 mb-2">
+                                            <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-slate-400">Option Name (e.g. Red / XL)</div>
+                                            <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-slate-400">Price (₦)</div>
+                                            <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-slate-400">Stock</div>
+                                            <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-slate-400">Weight (kg)</div>
+                                            <div className="col-span-1"></div>
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {formData.variants.map((v, i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                    className="relative p-6 sm:p-4 bg-slate-50 border border-slate-100 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-md transition-all group"
+                                                >
+                                                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 sm:gap-4 items-end sm:items-center">
+                                                        {/* Option Name Input */}
+                                                        <div className="sm:col-span-4 space-y-2 sm:space-y-0">
+                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Option Name</label>
+                                                            <input
+                                                                type="text"
+                                                                value={v.name}
+                                                                onChange={(e) => updateVariant(i, "name", e.target.value)}
+                                                                placeholder="e.g. Red / XL"
+                                                                className="w-full h-12 sm:h-12 px-4 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-xs font-bold transition-all outline-none"
+                                                            />
+                                                        </div>
+
+                                                        {/* Price Input */}
+                                                        <div className="sm:col-span-2 space-y-2 sm:space-y-0">
+                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Price (₦)</label>
+                                                            <input
+                                                                type="number"
+                                                                value={v.price}
+                                                                onChange={(e) => updateVariant(i, "price", e.target.value)}
+                                                                placeholder="Base price"
+                                                                className="w-full h-12 sm:h-12 px-4 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-xs font-black text-emerald-600 transition-all outline-none"
+                                                            />
+                                                        </div>
+
+                                                        {/* Stock Input */}
+                                                        <div className="sm:col-span-2 space-y-2 sm:space-y-0">
+                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock</label>
+                                                            <input
+                                                                type="number"
+                                                                value={v.stock}
+                                                                onChange={(e) => updateVariant(i, "stock", e.target.value)}
+                                                                className="w-full h-12 sm:h-12 px-4 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-xs font-bold transition-all outline-none"
+                                                            />
+                                                        </div>
+
+                                                        {/* Weight Input */}
+                                                        <div className="sm:col-span-3 space-y-2 sm:space-y-0">
+                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Weight (kg)</label>
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                value={v.weight}
+                                                                onChange={(e) => updateVariant(i, "weight", e.target.value)}
+                                                                placeholder="Weight"
+                                                                className="w-full h-12 sm:h-12 px-4 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-xs font-medium text-slate-500 transition-all outline-none"
+                                                            />
+                                                        </div>
+
+                                                        {/* Remove Button */}
+                                                        <div className="sm:col-span-1 flex justify-end">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeVariant(i)}
+                                                                className="w-10 h-10 sm:w-10 sm:h-10 flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm bg-white border border-slate-200 hover:border-transparent"
+                                                            >
+                                                                <X className="h-4 w-4 sm:h-4 sm:w-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </AnimatePresence>
+                                    </div>
+                                ) : (
+                                    <div className="py-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-[2rem] sm:rounded-[2.5rem] bg-slate-50/50">
+                                        <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center mb-4">
+                                            <Zap className="w-6 h-6 text-slate-300" />
+                                        </div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center px-4">No product options defined</p>
+                                    </div>
+                                )}
                             </section>
                         </div>
 

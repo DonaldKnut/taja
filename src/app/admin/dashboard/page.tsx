@@ -257,7 +257,7 @@ export default function AdminDashboard() {
           </div>
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Overview</p>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight italic">Performance Hub</h1>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight italic">Dashboard Overview</h1>
           </div>
         </div>
       </div>
@@ -276,13 +276,13 @@ export default function AdminDashboard() {
           color="purple"
         />
         <StatCard
-          title="Economic Volume"
+          title="Total Revenue"
           value={`₦${stats?.revenue.total ? (stats.revenue.total / 1000000).toFixed(1) : "0"}M`}
           icon={DollarSign}
           color="green"
         />
         <StatCard
-          title="Authenticity Requests"
+          title="Verification Requests"
           value={(stats?.kyc.pending ?? 0).toLocaleString()}
           icon={Clock}
           color="yellow"
@@ -294,7 +294,7 @@ export default function AdminDashboard() {
           color="yellow"
         />
         <StatCard
-          title="Safety Blocks"
+          title="Banned Users"
           value={(stats?.users.banned ?? 0).toLocaleString()}
           icon={AlertTriangle}
           color="red"
@@ -324,7 +324,7 @@ export default function AdminDashboard() {
                     <Clock className="h-5 w-5 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Security Reviews</h3>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Verifications</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Profiles awaiting authenticity check</p>
                   </div>
                 </div>
@@ -402,7 +402,7 @@ export default function AdminDashboard() {
                     <Store className="h-5 w-5 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Marketplace Applications</h3>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Shop Applications</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Submissions awaiting review</p>
                   </div>
                 </div>
@@ -479,7 +479,7 @@ export default function AdminDashboard() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100">
               <CardTitle className="flex items-center gap-2 text-slate-900 font-black tracking-tight text-lg">
                 <BarChart3 className="h-5 w-5 text-emerald-500" />
-                Market Intelligence
+                Business Analytics
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
@@ -559,7 +559,7 @@ export default function AdminDashboard() {
                 onClick={() => router.push("/admin/orders")}
               >
                 <ShoppingCart className="h-4 w-4 mr-3 text-emerald-500" />
-                Transaction Ledger ({stats?.orders?.total ?? 0})
+                Order History ({stats?.orders?.total ?? 0})
               </Button>
               <Button
                 className="w-full justify-start rounded-xl border-slate-100 hover:bg-slate-50 transition-all font-black uppercase tracking-widest text-[10px] h-12"

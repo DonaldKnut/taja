@@ -62,14 +62,14 @@ export default function HowItWorksPage() {
       number: "01",
       title: "Create Your Account",
       description:
-        "Sign up in minutes with your email or phone number. Verify your identity and join our elite network.",
+        "Sign up in minutes with your email or phone number. Get verified and join our vibrant community.",
       icon: Store,
     },
     {
       number: "02",
       title: "Set Up Your Shop",
       description:
-        "Customize your digital storefront with premium branding. Make an impact from the first click.",
+        "Customize your online shop with your own branding. Make an impact from the first click.",
       icon: Sparkles,
     },
     {
@@ -83,14 +83,14 @@ export default function HowItWorksPage() {
       number: "04",
       title: "Manage Orders",
       description:
-        "Receive instant notifications and process orders through our secure, high-tech dashboard.",
+        "Receive instant notifications and process orders through our simple-to-use dashboard.",
       icon: Truck,
     },
     {
       number: "05",
       title: "Scale Your Brand",
       description:
-        "Leverage professional analytics and marketing tools to dominate the marketplace.",
+        "Leverage professional analytics and marketing tools to grow your business.",
       icon: TrendingUp,
     },
   ];
@@ -107,28 +107,28 @@ export default function HowItWorksPage() {
       number: "02",
       title: "Search & Refine",
       description:
-        "Find exactly what you need with our high-speed filtering and search infrastructure.",
+        "Find exactly what you need with our powerful search and easy filters.",
       icon: Target,
     },
     {
       number: "03",
       title: "Trusted Selection",
       description:
-        "Shop with confidence through detailed ratings and transparent seller credibility.",
+        "Shop with confidence through detailed ratings and honest seller reviews.",
       icon: Star,
     },
     {
       number: "04",
       title: "Emerald Security",
       description:
-        "Experience the peace of mind that comes with our clinical escrow and verification protocols.",
+        "Experience the peace of mind that comes with our secure payment and verified deliveries.",
       icon: Shield,
     },
     {
       number: "05",
       title: "Premium Delivery",
       description:
-        "Receive your items through our coordinated logistics network with real-time tracking.",
+        "Receive your items through our reliable shipping network with real-time tracking.",
       icon: Smartphone,
     },
   ];
@@ -138,29 +138,29 @@ export default function HowItWorksPage() {
       icon: Shield,
       title: "Secure Escrow",
       description:
-        "Clinical transaction protection with advanced encryption for every partner.",
+        "Full transaction protection with advanced encryption for every partner.",
     },
     {
       icon: Truck,
       title: "Express Logistics",
       description:
-        "Integrated delivery network covering Nigeria with precision and speed.",
+        "Reliable shipping network covering Nigeria with precision and speed.",
     },
     {
       icon: Zap,
-      title: "Neural Search",
+      title: "Smart Search",
       description:
-        "High-performance discovery engine for finding pre-loved and vintage gems instantly.",
+        "Fast and easy search for finding pre-loved and vintage gems instantly.",
     },
     {
       icon: Award,
-      title: "Verified Elite",
+      title: "Verified Sellers",
       description:
-        "Rigorous seller verification ensuring only the highest quality products.",
+        "Careful seller checks ensuring only the highest quality products.",
     },
     {
       icon: BarChart3,
-      title: "Advanced Analytics",
+      title: "Business Insights",
       description:
         "Data-driven insights to help you understand your market and grow your business.",
     },
@@ -206,7 +206,7 @@ export default function HowItWorksPage() {
                     className="text-sm font-bold text-gray-400 hover:text-red-500 transition-colors flex items-center gap-2 uppercase tracking-widest"
                   >
                     <LogOut className="h-4 w-4" />
-                    Exit
+                    Logout
                   </button>
                 </>
               ) : (
@@ -252,7 +252,7 @@ export default function HowItWorksPage() {
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-card border-white/60 text-taja-primary text-[10px] font-black uppercase tracking-[0.3em] mb-8"
             >
               <Rocket className="h-3 w-3" />
-              <span>Future of Commerce</span>
+              <span>Modern Shopping</span>
             </motion.div>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-taja-secondary mb-8 leading-[1.1] tracking-tighter">
               A New Standard in{" "}
@@ -261,7 +261,7 @@ export default function HowItWorksPage() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-500 mb-12 leading-relaxed max-w-3xl mx-auto font-medium">
-              Elevating Nigerian commerce with clinical precision, verified trust, and
+              Elevating Nigerian commerce with reliability, verified trust, and
               super-premium technology designed for the modern era.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
@@ -269,14 +269,14 @@ export default function HowItWorksPage() {
                 href="/register"
                 className="bg-taja-primary text-white px-10 py-5 rounded-full text-sm font-black uppercase tracking-[0.25em] shadow-emerald hover:shadow-emerald-hover transition-all flex items-center gap-3 active:scale-95"
               >
-                Join the Elite
+                Start Selling
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
                 href="/marketplace"
                 className="glass-card border-white/60 text-taja-secondary px-10 py-5 rounded-full text-sm font-black uppercase tracking-[0.25em] hover:bg-white/40 transition-all active:scale-95"
               >
-                Browse Curated
+                Explore Marketplace
               </Link>
             </div>
           </motion.div>
@@ -288,7 +288,7 @@ export default function HowItWorksPage() {
         <Container size="lg">
           <div className="flex flex-col items-center mb-20 text-center">
             <h2 className="text-sm font-black text-taja-primary uppercase tracking-[0.3em] mb-4">
-              Operational Protocols
+              How Taja Works
             </h2>
             <p className="text-3xl md:text-5xl font-black text-taja-secondary tracking-tight">
               Simplified for Growth
@@ -415,8 +415,8 @@ export default function HowItWorksPage() {
               Ready to Define the Future?
             </h2>
             <p className="text-xl text-white/70 mb-12 max-w-2xl mx-auto leading-relaxed">
-              Join Nigeria's most sophisticated commerce network. Deploy your shop
-              instantly and scale with world-class infrastructure.
+              Join Nigeria&apos;s most sophisticated commerce network. Start your shop
+              quickly and grow with ease.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Link

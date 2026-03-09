@@ -98,20 +98,22 @@ export function ProductCard({
     }
   };
 
-  const handleQuickAdd = (e: React.MouseEvent) => {
+  const handleQuickAdd = (e: React.MouseEvent, variant?: any) => {
     e.preventDefault();
     e.stopPropagation();
 
     const item = {
       _id: product._id,
       title: product.title,
-      price: product.price,
+      price: variant?.price ?? product.price,
       images: product.images,
       quantity: 1,
       seller: typeof product.seller === 'string' ? product.seller : product.seller?._id,
       shopSlug: shopSlug,
       moq: product.inventory?.moq || product.moq || 1,
-      stock: product.inventory?.quantity ?? product.stock ?? 999
+      stock: variant?.stock ?? (product.inventory?.quantity ?? product.stock ?? 999),
+      variantId: variant?._id,
+      variantName: variant?.name
     };
 
     addItem(item);
@@ -121,11 +123,12 @@ export function ProductCard({
       properties: {
         productId: product._id,
         title: product.title,
-        price: product.price
+        price: item.price,
+        variant: variant?.name
       }
     });
 
-    toast.success(`${product.title} added`, {
+    toast.success(`${product.title}${variant ? ` (${variant.name})` : ''} added`, {
       icon: <ShoppingBag className="w-4 h-4" />,
       style: {
         borderRadius: '1rem',
@@ -136,6 +139,8 @@ export function ProductCard({
       }
     });
   };
+
+  const hasVariants = product.variants && product.variants.length > 0;
 
   return (
     <motion.div
@@ -199,23 +204,52 @@ export function ProductCard({
             <ProductPrice
               price={product.price}
               maxPrice={product.maxPrice}
+              hasVariants={hasVariants}
               size="md"
               className="leading-tight"
             />
           </div>
 
-          {/* Circular Add Button */}
-          <button
-            onClick={handleQuickAdd}
-            disabled={product.stock <= 0}
-            className={cn(
-              "w-10 h-10 rounded-full bg-black text-white flex items-center justify-center shadow-lg hover:bg-gray-800 transition-all active:scale-90",
-              product.stock <= 0 && "bg-gray-100 text-gray-400 cursor-not-allowed"
+          {/* Variations / Quick Add */}
+          <div className="relative group/options">
+            {hasVariants ? (
+              <div className="flex flex-col items-end">
+                <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 opacity-0 translate-y-2 pointer-events-none group-hover/options:opacity-100 group-hover/options:translate-y-0 group-hover/options:pointer-events-auto transition-all duration-300 z-50">
+                  <p className="px-3 py-1.5 text-[8px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 mb-1">Select Option</p>
+                  <div className="max-h-48 overflow-y-auto no-scrollbar space-y-1">
+                    {product.variants?.map((v) => (
+                      <button
+                        key={v._id}
+                        onClick={(e) => handleQuickAdd(e, v)}
+                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group/item"
+                      >
+                        <span className="text-[10px] font-bold text-gray-900">{v.name}</span>
+                        <span className="text-[10px] font-black text-taja-primary">₦{(v.price ?? product.price).toLocaleString()}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  className="px-4 h-10 rounded-full bg-black text-white text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-gray-800 transition-all active:scale-95 flex items-center gap-2"
+                >
+                  Options
+                  <Plus className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleQuickAdd}
+                disabled={product.stock <= 0}
+                className={cn(
+                  "w-10 h-10 rounded-full bg-black text-white flex items-center justify-center shadow-lg hover:bg-gray-800 transition-all active:scale-90",
+                  product.stock <= 0 && "bg-gray-100 text-gray-400 cursor-not-allowed"
+                )}
+                aria-label={product.stock > 0 ? "Add to cart" : "Out of stock"}
+              >
+                {product.stock > 0 ? <Plus className="h-5 w-5" /> : <Plus className="h-5 w-5 opacity-20" />}
+              </button>
             )}
-            aria-label={product.stock > 0 ? "Add to cart" : "Out of stock"}
-          >
-            {product.stock > 0 ? <Plus className="h-5 w-5" /> : <Plus className="h-5 w-5 opacity-20" />}
-          </button>
+          </div>
         </div>
 
         {/* Absolute corner price optional styling for specific design if needed, but flex items-between is cleaner here */}

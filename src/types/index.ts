@@ -66,6 +66,19 @@ export interface User {
   };
 }
 
+export interface ProductVariant {
+  _id: string;
+  name: string;
+  sku?: string;
+  price?: number;
+  compareAtPrice?: number;
+  stock?: number;
+  weight?: number;
+  image?: string;
+  options?: Record<string, string>;
+  active?: boolean;
+}
+
 // Product Types
 export interface Product {
   _id: string;
@@ -93,6 +106,7 @@ export interface Product {
     trackQuantity?: boolean;
   };
   specifications?: Record<string, string>;
+  variants?: ProductVariant[];
   averageRating?: number;
   reviewCount?: number;
   createdAt?: string;
@@ -178,6 +192,7 @@ export interface CartItem {
   shopSlug?: string;
   moq: number;
   stock: number;
+  variant?: ProductVariant;
 }
 
 // Review Types

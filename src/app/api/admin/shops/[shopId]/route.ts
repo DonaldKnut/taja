@@ -77,7 +77,8 @@ export async function PUT(
         coverImage,
         socialLinks,
         address,
-        status
+        status,
+        shopSlug
       } = body;
 
       await connectDB();
@@ -88,6 +89,19 @@ export async function PUT(
           { success: false, message: 'Shop not found' },
           { status: 404 }
         );
+      }
+
+      // Handle shopSlug updates with uniqueness check
+      if (shopSlug && shopSlug !== shop.shopSlug) {
+        const existingShop = await Shop.findOne({ shopSlug: shopSlug.toLowerCase().trim() });
+        if (existingShop && existingShop._id.toString() !== params.shopId) {
+          return NextResponse.json(
+            { success: false, message: 'This shop link is already in use' },
+            { status: 400 }
+          );
+        }
+        shop.shopSlug = shopSlug.toLowerCase().trim();
+        await shop.save();
       }
 
       // Handle status/action updates (suspend/activate)

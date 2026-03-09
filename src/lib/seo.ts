@@ -165,6 +165,7 @@ export function generateProductStructuredData(product: {
   description: string;
   image: string | string[];
   price: number;
+  maxPrice?: number;
   currency?: string;
   availability?: string;
   condition?: string;
@@ -172,6 +173,7 @@ export function generateProductStructuredData(product: {
   sku?: string;
   url: string;
   rating?: { value: number; count: number };
+  shopName?: string;
 }) {
   const images = Array.isArray(product.image) ? product.image : [product.image];
   const fullImages = images.map((img) =>
@@ -195,14 +197,25 @@ export function generateProductStructuredData(product: {
     url: fullUrl,
   };
 
-  if (product.condition) {
-    structuredData.itemCondition = `https://schema.org/${product.condition}`;
+  if (product.maxPrice && product.maxPrice > product.price) {
+    structuredData.offers = {
+      "@type": "AggregateOffer",
+      lowPrice: product.price,
+      highPrice: product.maxPrice,
+      priceCurrency: product.currency || "NGN",
+      offerCount: 1,
+      availability: structuredData.offers.availability,
+    };
   }
 
-  if (product.brand) {
+  if (product.condition) {
+    structuredData.itemCondition = `https://schema.org/${product.condition === "new" ? "NewCondition" : "UsedCondition"}`;
+  }
+
+  if (product.brand || product.shopName) {
     structuredData.brand = {
       "@type": "Brand",
-      name: product.brand,
+      name: product.brand || product.shopName,
     };
   }
 
@@ -220,6 +233,60 @@ export function generateProductStructuredData(product: {
 
   return generateStructuredData({
     type: "Product",
+    data: structuredData,
+  });
+}
+
+// Generate shop (LocalBusiness) structured data
+export function generateShopStructuredData(shop: {
+  name: string;
+  description: string;
+  logo?: string;
+  url: string;
+  image?: string;
+  address?: string;
+  telephone?: string;
+  rating?: { value: number; count: number };
+  priceRange?: string;
+}) {
+  const fullUrl = shop.url.startsWith("http") ? shop.url : `${siteUrl}${shop.url}`;
+  const fullLogo = shop.logo ? (shop.logo.startsWith("http") ? shop.logo : `${siteUrl}${shop.logo}`) : undefined;
+  const fullImage = shop.image ? (shop.image.startsWith("http") ? shop.image : `${siteUrl}${shop.image}`) : fullLogo;
+
+  const structuredData: any = {
+    name: shop.name,
+    description: shop.description,
+    url: fullUrl,
+    image: fullImage,
+    priceRange: shop.priceRange || "₦₦",
+  };
+
+  if (fullLogo) {
+    structuredData.logo = fullLogo;
+  }
+
+  if (shop.address) {
+    structuredData.address = {
+      "@type": "PostalAddress",
+      streetAddress: shop.address,
+      addressCountry: "NG",
+    };
+  }
+
+  if (shop.telephone) {
+    structuredData.telephone = shop.telephone;
+  }
+
+  if (shop.rating) {
+    structuredData.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: shop.rating.value,
+      reviewCount: shop.rating.count,
+    };
+  }
+
+  return generateStructuredData({
+    type: "LocalBusiness",
     data: structuredData,
   });
 }

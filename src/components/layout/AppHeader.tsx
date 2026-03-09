@@ -288,7 +288,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                         onClick={() => { setMobileMenuOpen(false); router.push(user?.role === 'seller' ? '/seller/dashboard' : '/dashboard'); }}
                                         className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs shadow-premium"
                                     >
-                                        {user?.role === 'seller' ? 'Seller Terminal' : 'Member Portal'}
+                                        {user?.role === 'seller' ? 'Seller Dashboard' : 'My Dashboard'}
                                     </Button>
                                 ) : (
                                     <>
@@ -303,14 +303,14 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                             onClick={() => { setMobileMenuOpen(false); router.push('/register'); }}
                                             className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs shadow-premium"
                                         >
-                                            Join Hub
+                                            Sign Up
                                         </Button>
                                     </>
                                 )}
 
                                 <div className="flex items-center justify-center gap-2 mt-2">
                                     <ShieldCheck className="w-3.5 h-3.5 text-gray-300" />
-                                    <span className="text-[8px] font-bold text-gray-300 uppercase tracking-widest">Escrow Secured Commerce</span>
+                                    <span className="text-[8px] font-bold text-gray-300 uppercase tracking-widest">Secured Payments</span>
                                 </div>
                             </div>
                         </motion.div>

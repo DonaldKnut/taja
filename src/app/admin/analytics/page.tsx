@@ -75,7 +75,7 @@ export default function AdminAnalyticsPage() {
                         </div>
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Intelligence</p>
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Market Intelligence</h1>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Business Analytics</h1>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -95,7 +95,7 @@ export default function AdminAnalyticsPage() {
             {/* Primary Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <GrowthStat
-                    label="Capital Inflow"
+                    label="Total Revenue"
                     value={`₦${stats?.revenue?.total ? (stats.revenue.total / 1000).toFixed(1) + 'k' : '1.2M'}`}
                     growth={14.2}
                     icon={DollarSign}
@@ -109,14 +109,14 @@ export default function AdminAnalyticsPage() {
                     color="text-blue-600 bg-blue-600"
                 />
                 <GrowthStat
-                    label="Network Growth"
+                    label="New Users"
                     value={stats?.users?.total || "14.2k"}
                     growth={22.5}
                     icon={Users}
                     color="text-purple-600 bg-purple-600"
                 />
                 <GrowthStat
-                    label="Vitality"
+                    label="System Health"
                     value="98.2%"
                     growth={1.5}
                     icon={Activity}
@@ -133,7 +133,7 @@ export default function AdminAnalyticsPage() {
                                 <div className="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center">
                                     <TrendingUp className="h-4 w-4 text-white" />
                                 </div>
-                                Economic Velocity
+                                Revenue Trends
                             </CardTitle>
                             <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                 <div className="flex items-center gap-2.5 hover:text-emerald-600 transition-colors cursor-pointer"><div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Verified Volume</div>
@@ -173,8 +173,8 @@ export default function AdminAnalyticsPage() {
                         <CardContent className="px-8 py-8">
                             <div className="space-y-10">
                                 {[
-                                    { label: "Establishments", value: stats?.users?.sellers || 240, total: stats?.users?.total || 1000, color: "bg-emerald-600" },
-                                    { label: "Patrons", value: stats?.users?.buyers || 760, total: stats?.users?.total || 1000, color: "bg-indigo-600" },
+                                    { label: "Sellers", value: stats?.users?.sellers || 240, total: stats?.users?.total || 1000, color: "bg-emerald-600" },
+                                    { label: "Customers", value: stats?.users?.buyers || 760, total: stats?.users?.total || 1000, color: "bg-indigo-600" },
                                     { label: "Observers", value: 120, total: 1000, color: "bg-slate-300" },
                                 ].map((segment, i) => (
                                     <div key={i} className="space-y-3 group cursor-default">

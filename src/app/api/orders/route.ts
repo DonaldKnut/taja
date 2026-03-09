@@ -284,7 +284,62 @@ export async function POST(request: NextRequest) {
       const discount = 0; // TODO: Apply coupon if provided
       const total = subtotal + shipping + tax - discount;
 
-      // Create order
+      // ── MANDATORY: Payment Verification for Paystack ──
+      // In this version of the app, we only accept Paystack. No order is created without payment.
+      const paymentReference = body.paymentReference;
+
+      if (!paymentReference) {
+        return NextResponse.json(
+          { success: false, message: 'Payment reference is required to complete order' },
+          { status: 400 }
+        );
+      }
+
+      try {
+        const { verifyPayment } = await import('@/lib/payments/index');
+        const verification = await verifyPayment('paystack', paymentReference);
+
+        if (!verification?.status || verification?.data?.status !== 'success') {
+          return NextResponse.json(
+            { success: false, message: 'Payment verification failed or was declined' },
+            { status: 400 }
+          );
+        }
+
+        // Verify amount (Paystack amount is in kobo)
+        const paidAmount = verification.data.amount / 100;
+        const expectedAmount = total;
+
+        // Allow for minor rounding differences (within 1 Naira)
+        if (Math.abs(paidAmount - expectedAmount) > 2) { // Slightly wider margin for precision
+          return NextResponse.json(
+            { success: false, message: `Payment amount mismatch. Paid: ₦${paidAmount}, Expected: ₦${expectedAmount}` },
+            { status: 400 }
+          );
+        }
+      } catch (err: any) {
+        console.error('Verification error:', err);
+        return NextResponse.json(
+          { success: false, message: 'Could not verify payment with provider' },
+          { status: 500 }
+        );
+      }
+
+      // ── Payment Verified ── Now we can proceed with side effects
+
+      // 1. Update product stock (only after payment is verified)
+      for (const item of items) {
+        const product = await Product.findById(item.productId);
+        if (product && product.inventory.trackQuantity) {
+          product.inventory.quantity -= item.quantity;
+          if (product.inventory.quantity <= 0) {
+            product.status = 'out_of_stock';
+          }
+          await product.save();
+        }
+      }
+
+      // 2. Create order
       const order = await Order.create({
         buyer: user.userId,
         seller: sellerId!,
@@ -298,9 +353,10 @@ export async function POST(request: NextRequest) {
           discount,
           total,
         },
-        status: 'pending',
-        paymentStatus: 'pending',
-        paymentMethod: paymentMethod || 'flutterwave',
+        status: 'processing', // Orders are immediately processing after payment
+        paymentStatus: 'paid',
+        paymentReference,
+        paymentMethod: 'paystack',
         delivery: selectedSlot
           ? {
             slotId: String(selectedSlot.id),

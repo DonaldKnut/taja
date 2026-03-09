@@ -64,6 +64,12 @@ export default function AdminProductsNewPage() {
     condition: "new",
     stock: "1",
     status: "active",
+    variants: [] as any[],
+  });
+  const [shipping, setShipping] = useState({
+    weight: "",
+    shippingCost: "",
+    freeShipping: false,
   });
   const [imageList, setImageList] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -116,6 +122,17 @@ export default function AdminProductsNewPage() {
           condition: form.condition,
           stock: parseInt(form.stock) || 1,
           status: isDraft ? "draft" : form.status,
+          shipping: {
+            weight: shipping.weight ? parseFloat(shipping.weight) : 0,
+            shippingCost: shipping.shippingCost ? parseFloat(shipping.shippingCost) : 0,
+            freeShipping: shipping.freeShipping,
+          },
+          variants: form.variants.map((v) => ({
+            ...v,
+            price: parseFloat(String(v.price)),
+            stock: parseInt(String(v.stock)) || 0,
+            weight: parseFloat(String(v.weight)) || 0,
+          })),
         }),
       });
       if (res?.success) {
@@ -158,6 +175,37 @@ export default function AdminProductsNewPage() {
 
   const removeImage = (index: number) => {
     setImageList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addVariant = () => {
+    setForm((prev) => ({
+      ...prev,
+      variants: [
+        ...prev.variants,
+        {
+          name: "",
+          price: prev.price || "0",
+          stock: prev.stock || "1",
+          sku: "",
+          weight: shipping.weight || "0",
+        },
+      ],
+    }));
+  };
+
+  const updateVariant = (index: number, field: string, value: string) => {
+    setForm((prev) => {
+      const newVariants = [...prev.variants];
+      newVariants[index] = { ...newVariants[index], [field]: value };
+      return { ...prev, variants: newVariants };
+    });
+  };
+
+  const removeVariant = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
+    }));
   };
 
   return (
@@ -408,12 +456,12 @@ export default function AdminProductsNewPage() {
           {/* ── Sidebar ── */}
           <div className="lg:col-span-4 space-y-8">
 
-            {/* Pricing */}
+            {/* Pricing / Logistics */}
             <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[32px] relative overflow-hidden">
               <div className="absolute top-0 right-0 w-48 h-48 bg-taja-primary/5 blur-[80px] rounded-full -z-10" />
               <div className="space-y-1 mb-8">
                 <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Commerce</h3>
-                <p className="text-2xl font-black text-taja-secondary tracking-tighter italic">Pricing</p>
+                <p className="text-2xl font-black text-taja-secondary tracking-tighter italic">Pricing & Logistics</p>
               </div>
 
               <div className="space-y-6">
@@ -438,7 +486,7 @@ export default function AdminProductsNewPage() {
 
                 <div className="group space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                    Max Price (₦)
+                    Delivery Fee (₦)
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
@@ -446,29 +494,163 @@ export default function AdminProductsNewPage() {
                       type="number"
                       min="0"
                       step="0.01"
-                      value={form.maxPrice}
-                      onChange={(e) => setForm((f) => ({ ...f, maxPrice: e.target.value }))}
+                      value={shipping.shippingCost}
+                      onChange={(e) => setShipping((s) => ({ ...s, shippingCost: e.target.value }))}
                       className="w-full h-14 pl-10 pr-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-lg font-bold text-taja-secondary placeholder:text-gray-300"
-                      placeholder="Optional max fee"
+                      placeholder="Flat rate"
                     />
                   </div>
                 </div>
 
-                <div className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                    Compare at (₦)
-                  </label>
+                <div className="flex items-center gap-3 p-4 glass-card border-white/60 rounded-2xl bg-white/20">
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.compareAtPrice}
-                    onChange={(e) => setForm((f) => ({ ...f, compareAtPrice: e.target.value }))}
-                    className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-sm font-bold text-taja-secondary placeholder:text-gray-300"
-                    placeholder="Optional original price"
+                    type="checkbox"
+                    id="freeShipping"
+                    checked={shipping.freeShipping}
+                    onChange={(e) => setShipping((s) => ({ ...s, freeShipping: e.target.checked }))}
+                    className="h-5 w-5 rounded border-gray-300 text-taja-primary focus:ring-taja-primary"
                   />
+                  <label htmlFor="freeShipping" className="text-[10px] font-black uppercase tracking-widest text-taja-secondary cursor-pointer">
+                    Enable Free Shipping
+                  </label>
                 </div>
               </div>
+            </motion.section>
+
+            {/* Logistics Protocol */}
+            <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[32px] relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[80px] rounded-full -z-10" />
+              <div className="space-y-1 mb-8">
+                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Logistics</h3>
+                <p className="text-2xl font-black text-taja-secondary tracking-tighter italic">Logistics Protocol</p>
+              </div>
+
+              <div className="group space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                  Product Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={shipping.weight}
+                  onChange={(e) => setShipping((s) => ({ ...s, weight: e.target.value }))}
+                  className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+                  placeholder="0.00"
+                />
+              </div>
+            </motion.section>
+
+            {/* Product Variations */}
+            <motion.section variants={item} className="glass-panel p-6 sm:p-8 border-white/60 rounded-[32px] relative overflow-hidden bg-gradient-to-br from-white to-gray-50/30">
+              <div className="absolute top-0 left-0 w-48 h-48 bg-taja-primary/5 blur-[80px] rounded-full -z-10" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+                <div className="space-y-1">
+                  <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Product Options</h3>
+                  <p className="text-xl sm:text-2xl font-black text-taja-secondary tracking-tighter italic">Variations</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addVariant}
+                  className="flex items-center justify-center gap-2 px-6 h-12 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-taja-primary transition-all w-full sm:w-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Option
+                </button>
+              </div>
+
+              {form.variants.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Desktop Headers - Hidden on Mobile */}
+                  <div className="hidden sm:grid grid-cols-12 gap-4 px-4 mb-2">
+                    <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-gray-400">Option Name (e.g. Red / XL)</div>
+                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Price (₦)</div>
+                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Stock</div>
+                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">Weight (kg)</div>
+                    <div className="col-span-1"></div>
+                  </div>
+
+                  <AnimatePresence>
+                    {form.variants.map((v, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="relative p-6 sm:p-4 glass-card bg-white border-gray-100 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-premium transition-all group"
+                      >
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 sm:gap-4 items-end sm:items-center">
+                          {/* Option Name Input */}
+                          <div className="sm:col-span-4 space-y-2 sm:space-y-0">
+                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Option Name</label>
+                            <input
+                              type="text"
+                              value={v.name}
+                              onChange={(e) => updateVariant(i, "name", e.target.value)}
+                              placeholder="e.g. Red / XL"
+                              className="w-full h-12 sm:h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-bold transition-all"
+                            />
+                          </div>
+
+                          {/* Price Input */}
+                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
+                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
+                            <input
+                              type="number"
+                              value={v.price}
+                              onChange={(e) => updateVariant(i, "price", e.target.value)}
+                              placeholder="Same as base"
+                              className="w-full h-12 sm:h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-black text-taja-primary transition-all"
+                            />
+                          </div>
+
+                          {/* Stock Input */}
+                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
+                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
+                            <input
+                              type="number"
+                              value={v.stock}
+                              onChange={(e) => updateVariant(i, "stock", e.target.value)}
+                              className="w-full h-12 sm:h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-bold transition-all"
+                            />
+                          </div>
+
+                          {/* Weight Input */}
+                          <div className="sm:col-span-3 space-y-2 sm:space-y-0">
+                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={v.weight}
+                              onChange={(e) => updateVariant(i, "weight", e.target.value)}
+                              placeholder="Weight"
+                              className="w-full h-12 sm:h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-medium text-gray-400 transition-all"
+                            />
+                          </div>
+
+                          {/* Remove Button */}
+                          <div className="sm:col-span-1 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(i)}
+                              className="w-10 h-10 sm:w-10 sm:h-10 flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition-colors shadow-sm bg-white border border-gray-100"
+                            >
+                              <X className="h-4 w-4 sm:h-4 sm:w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="py-16 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-[2rem] bg-gray-50/30">
+                  <div className="w-14 h-14 rounded-2xl bg-white shadow-premium flex items-center justify-center mb-4">
+                    <LayoutGrid className="w-6 h-6 text-gray-200" />
+                  </div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center px-4">No product options defined yet</p>
+                </div>
+              )}
             </motion.section>
 
             {/* Inventory */}

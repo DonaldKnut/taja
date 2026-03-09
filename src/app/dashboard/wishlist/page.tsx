@@ -33,9 +33,10 @@ export default function WishlistPage() {
         title: item.title,
         price: item.price,
         images: item.images,
-        quantity: 1,
-        slug: item.slug,
-        shop: item.shop
+        seller: (item as any).seller || "unknown",
+        moq: (item as any).moq || 1,
+        stock: (item as any).stock ?? 999,
+        shopSlug: item.shop?.shopSlug || item.slug,
       });
       removeItem(item._id);
     });
@@ -99,7 +100,7 @@ export default function WishlistPage() {
                 className="inline-flex items-center rounded-full bg-white/5 backdrop-blur-2xl px-5 py-2.5 border border-white/10 shadow-2xl"
               >
                 <Heart className="h-3.5 w-3.5 text-rose-500 fill-rose-500 mr-2.5" />
-                <span className="text-[10px] font-black text-rose-100 uppercase tracking-[0.3em]">Curation Terminal</span>
+                <span className="text-[10px] font-black text-rose-100 uppercase tracking-[0.3em]">My Wishlist</span>
               </motion.div>
 
               <div className="space-y-4">
@@ -108,7 +109,7 @@ export default function WishlistPage() {
                   animate={{ opacity: 1, x: 0 }}
                   className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[0.9]"
                 >
-                  Vision <span className="text-transparent bg-clip-text bg-gradient-to-br from-rose-200 via-rose-400 to-rose-600">Vault</span>
+                  My Saved <span className="text-transparent bg-clip-text bg-gradient-to-br from-rose-200 via-rose-400 to-rose-600">Items</span>
                 </motion.h1>
                 <motion.p
                   initial={{ opacity: 0 }}
@@ -116,7 +117,7 @@ export default function WishlistPage() {
                   transition={{ delay: 0.2 }}
                   className="text-slate-400 text-lg md:text-xl font-medium max-w-xl leading-relaxed"
                 >
-                  Your highly curated safe-haven of elite artifacts and exquisite marketplace discoveries.
+                  Your personal collection of saved products and marketplace finds.
                 </motion.p>
               </div>
             </div>
@@ -134,7 +135,7 @@ export default function WishlistPage() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Filter your collection..."
+                  placeholder="Search your wishlist..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full lg:min-w-[400px] pl-14 pr-6 py-5 bg-white/5 backdrop-blur-3xl border border-white/10 text-white placeholder-slate-500 rounded-3xl focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-transparent transition-all shadow-2xl font-bold text-sm"
@@ -187,8 +188,8 @@ export default function WishlistPage() {
                   <LayoutGrid className="h-5 w-5 relative z-10" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">{filteredItems.length} Secured Items</h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Verified Selection</p>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">{filteredItems.length} Saved Items</h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Your Favorites</p>
                 </div>
               </div>
             </div>
@@ -255,19 +256,19 @@ export default function WishlistPage() {
 
             <div className="space-y-4">
               <h3 className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
-                {searchTerm ? "No Acquisitions Found" : "Your Vault is Clear"}
+                {searchTerm ? "No Items Found" : "Your Wishlist is Empty"}
               </h3>
               <p className="text-slate-500 font-medium text-lg leading-relaxed">
                 {searchTerm
-                  ? "We couldn't locate any artifacts matching your search parameters. Try broadening your criteria."
-                  : "Curate your own exclusive collection of elite discoveries. Tap the heart on artifacts to secure them here."}
+                  ? "We couldn't find any items matching your search. Try broadening your criteria."
+                  : "Save your favorite products to find them easily later. Tap the heart icon on any product to save it here."}
               </p>
             </div>
 
             {!searchTerm && (
               <Link href="/marketplace">
                 <Button className="h-16 px-12 rounded-[2rem] bg-slate-900 text-white hover:bg-black shadow-huge hover:scale-105 transition-all group overflow-hidden relative">
-                  <span className="relative z-10 font-black uppercase tracking-[0.2em] text-[10px]">Begin Acquisition</span>
+                  <span className="relative z-10 font-black uppercase tracking-[0.2em] text-[10px]">Start Shopping</span>
                   <ArrowRight className="relative z-10 ml-3 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   <div className="absolute inset-0 bg-gradient-to-r from-taja-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>

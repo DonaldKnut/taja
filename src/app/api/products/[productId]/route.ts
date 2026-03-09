@@ -101,6 +101,7 @@ export async function PUT(
         'specifications',
         'seo',
         'status',
+        'variants',
       ];
 
       allowedFields.forEach((field) => {

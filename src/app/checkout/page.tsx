@@ -110,7 +110,7 @@ function AddressModal({ onClose, onSaved, editAddress }: AddressModalProps) {
       >
         <div className="flex items-center justify-between mb-8">
           <div>
-            <p className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">{editAddress ? "Update Hub" : "New Delivery Hub"}</p>
+            <p className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">{editAddress ? "Update Address" : "New Shipping Address"}</p>
             <h3 className="text-2xl font-black text-taja-secondary tracking-tighter">{editAddress ? "Edit Address" : "Add Address"}</h3>
           </div>
           <button onClick={onClose} className="p-2 rounded-2xl hover:bg-slate-100 transition-colors">
@@ -203,7 +203,7 @@ export default function CheckoutPage() {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("paystack");
+  const [selectedPaymentMethod] = useState<string>("paystack");
   const [couponCode, setCouponCode] = useState("");
   const [subtotal, setSubtotal] = useState(0);
   const [deliverySlots, setDeliverySlots] = useState<Array<any>>([]);
@@ -227,8 +227,8 @@ export default function CheckoutPage() {
   }, [user]);
 
   useEffect(() => {
-    const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    setSubtotal(total);
+    const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    setSubtotal(cartTotal);
   }, [cartItems]);
 
   useEffect(() => {
@@ -266,6 +266,9 @@ export default function CheckoutPage() {
     }
   };
 
+  const shippingCost = 2500;
+  const orderTotal = subtotal + shippingCost;
+
   // ── Place order → Paystack ───────────────────────────────────────────────
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
@@ -276,61 +279,87 @@ export default function CheckoutPage() {
       toast.error("Your cart is empty");
       return;
     }
+
     setLoading(true);
+
     try {
-      const orderData = {
-        items: cartItems.map(item => ({ productId: item._id, quantity: item.quantity })),
+      const orderPayload = {
+        items: cartItems.map(item => ({
+          productId: item._id,
+          quantity: item.quantity,
+          variantId: item.variantId
+        })),
         shippingAddress: selectedAddress,
-        paymentMethod: selectedPaymentMethod === "cod" ? "cod" : "paystack",
+        paymentMethod: "paystack",
         couponCode: couponCode || undefined,
         deliverySlotId: selectedDeliverySlotId || undefined,
         fromCart: true,
       };
 
-      const response = await checkoutApi.createOrder(orderData);
+      // Cash on Delivery is no longer supported per user request
 
-      if (response?.success !== false) {
-        const orderId = response?.data?.order?._id || response?.order?._id || response?.data?._id || response?._id;
+      // Flow 2: Paystack (Payment FIRST)
+      // 1. Load Paystack Script
+      const loadPaystack = () => new Promise((resolve) => {
+        if ((window as any).PaystackPop) return resolve(true);
+        const script = document.createElement("script");
+        script.src = "https://js.paystack.co/v1/inline.js";
+        script.onload = () => resolve(true);
+        document.body.appendChild(script);
+      });
+      await loadPaystack();
 
-        if (orderId) {
-          if (selectedPaymentMethod !== "cod") {
-            // Paystack plug-and-play
-            const paymentRes = await fetch("/api/payments/initialize", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ orderId, provider: "paystack" }),
-            });
-            const paymentData = await paymentRes.json();
+      // 2. Get Public Key
+      const configRes = await fetch("/api/payments/config").then(r => r.json());
+      if (!configRes.success) throw new Error("Payment system configuration failed");
 
-            if (paymentData?.success && paymentData?.data?.paymentUrl) {
-              clearCart();
-              await cartApi.clearCart().catch(() => { });
-              window.location.href = paymentData.data.paymentUrl;
-              return;
-            } else {
-              // Paystack keys not yet configured — show friendly message and still create order
-              toast("Order created! Add your Paystack keys to enable online payment.", { icon: "ℹ️" });
+      // 3. Open Modal
+      const handler = (window as any).PaystackPop.setup({
+        key: configRes.publicKey,
+        email: user?.email || "customer@taja.shop",
+        amount: Math.round(orderTotal * 100), // Kobo - ensure integer
+        currency: "NGN",
+        onClose: () => {
+          setLoading(false);
+          toast("Payment cancelled", { icon: "ℹ️" });
+        },
+        callback: (response: any) => {
+          // Success! Now create order with reference
+          setLoading(true);
+          (async () => {
+            try {
+              const finalOrderResponse = await checkoutApi.createOrder({
+                ...orderPayload,
+                paymentReference: response.reference
+              });
+
+              if (finalOrderResponse?.success !== false) {
+                const orderId = finalOrderResponse?.data?._id || finalOrderResponse?._id;
+                clearCart();
+                await cartApi.clearCart().catch(() => { });
+                toast.success("Payment successful! Order placed.");
+                router.push(`/dashboard/orders/${orderId}`);
+              } else {
+                toast.error(finalOrderResponse?.message || "Payment verified but order creation failed. Please contact support.");
+              }
+            } catch (err: any) {
+              toast.error(err.message || "Finalizing order failed. Please contact support.");
+            } finally {
+              setLoading(false);
             }
-          }
-          clearCart();
-          await cartApi.clearCart().catch(() => { });
-          toast.success(selectedPaymentMethod === "cod" ? "Order placed! Pay on delivery." : "Order placed successfully!");
-          router.push(`/dashboard/orders/${orderId}`);
-        } else {
-          toast.error(response?.message || "Failed to place order");
+          })();
         }
-      } else {
-        toast.error(response?.message || "Failed to place order");
-      }
+      });
+
+      handler.openIframe();
+
     } catch (error: any) {
-      toast.error(error?.message || "Failed to place order. Please try again.");
-    } finally {
+      toast.error(error?.message || "Failed to initiate checkout. Please try again.");
       setLoading(false);
     }
   };
 
-  const shippingCost = 2500;
-  const total = subtotal + shippingCost;
+
 
   // ── Empty cart ───────────────────────────────────────────────────────────
   if (cartItems.length === 0) {
@@ -344,7 +373,7 @@ export default function CheckoutPage() {
             </div>
             <div className="space-y-4">
               <h2 className="text-4xl font-black text-taja-secondary tracking-tighter leading-none">Your Cart is Empty.</h2>
-              <p className="text-gray-400 font-medium max-w-xs mx-auto">No items found for acquisition. Explore our marketplace to begin.</p>
+              <p className="text-gray-400 font-medium max-w-xs mx-auto">It looks like you haven&apos;t added anything to your cart yet. Explore our marketplace to find something you love.</p>
             </div>
             <Link href="/marketplace">
               <Button size="lg" className="rounded-full px-12 h-16 shadow-premium group">
@@ -393,15 +422,15 @@ export default function CheckoutPage() {
                   <span className="text-[10px] font-black uppercase tracking-widest text-taja-primary">Secure Checkout</span>
                 </div>
                 <h1 className="text-3xl md:text-5xl font-black text-taja-secondary tracking-tighter leading-none">
-                  Finalizing Acquisition
+                  Complete Your Purchase
                 </h1>
-                <p className="text-gray-400 font-medium text-sm">Review your curated selection and finalize secure payment.</p>
+                <p className="text-gray-400 font-medium text-sm">Review your items and complete your secure payment.</p>
               </div>
               <div className="flex items-center gap-4 bg-emerald-50 px-6 py-4 rounded-[2rem] border border-emerald-100">
                 <ShieldCheck className="w-6 h-6 text-taja-primary" />
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-taja-primary">Escrow Protection</p>
-                  <p className="text-[9px] font-bold text-emerald-800/60 uppercase">Funds held securely until delivery</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-taja-primary">Secure Payment</p>
+                  <p className="text-[9px] font-bold text-emerald-800/60 uppercase">Protected by Escrow</p>
                 </div>
               </div>
             </div>
@@ -417,7 +446,7 @@ export default function CheckoutPage() {
                       <div className="p-2.5 bg-taja-primary/10 rounded-2xl">
                         <MapPin className="w-5 h-5 text-taja-primary" />
                       </div>
-                      <h2 className="text-xl font-black text-taja-secondary tracking-tight">Delivery Hub</h2>
+                      <h2 className="text-xl font-black text-taja-secondary tracking-tight">Shipping Address</h2>
                     </div>
                     <button
                       onClick={() => {
@@ -537,79 +566,32 @@ export default function CheckoutPage() {
                   ) : (
                     <div className="p-6 bg-taja-light/30 rounded-3xl border border-taja-primary/5 flex items-center gap-4">
                       <Zap className="w-5 h-5 text-taja-primary" />
-                      <p className="text-[10px] font-black uppercase text-taja-secondary tracking-widest">Priority Dispatch Scheduled within 24-48 Hours</p>
+                      <p className="text-[10px] font-black uppercase text-taja-secondary tracking-widest">Priority Shipping within 24-48 Hours</p>
                     </div>
                   )}
                 </section>
 
-                {/* ── 3. SECURE PAYMENT ────────────────────────────────── */}
-                <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
-                  <div className="flex items-center gap-3 mb-8">
-                    <div className="p-2.5 bg-blue-500/10 rounded-2xl">
-                      <Wallet className="w-5 h-5 text-blue-500" />
+                {/* Secure Payment Info */}
+                <div className="p-8 bg-taja-primary/5 rounded-[2.5rem] border border-taja-primary/10 mb-8">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="h-12 w-12 rounded-2xl bg-taja-primary flex items-center justify-center text-white">
+                      <CreditCard className="w-6 h-6" />
                     </div>
-                    <h2 className="text-xl font-black text-taja-secondary tracking-tight">Secure Payment</h2>
+                    <div>
+                      <p className="font-black text-taja-secondary uppercase tracking-widest text-xs">Secure Card / Bank Payment</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Protected by Secure Escrow</p>
+                    </div>
                   </div>
-
-                  <div className="space-y-4">
-                    {[
-                      {
-                        id: "paystack",
-                        name: "Card / Bank Transfer",
-                        desc: "Pay securely via Paystack",
-                        note: "Visa · Mastercard · Bank Transfer · USSD",
-                        secure: true,
-                        icon: CreditCard,
-                      },
-                      {
-                        id: "cod",
-                        name: "Payment on Arrival",
-                        desc: "Pay when your order is delivered",
-                        note: "Escrow-backed — funds verified on delivery",
-                        secure: false,
-                        icon: Wallet,
-                      },
-                    ].map((method) => {
-                      const Icon = method.icon;
-                      const isSelected = selectedPaymentMethod === method.id;
-                      return (
-                        <button
-                          key={method.id}
-                          onClick={() => setSelectedPaymentMethod(method.id)}
-                          className={cn(
-                            "w-full flex items-center justify-between p-6 rounded-3xl border-2 transition-all duration-300 text-left",
-                            isSelected ? "border-taja-primary bg-taja-primary/5 shadow-lg" : "border-gray-100 hover:border-gray-200"
-                          )}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center", isSelected ? "bg-taja-primary text-white" : "bg-gray-100 text-gray-400")}>
-                              <Icon className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <p className="font-black text-taja-secondary uppercase tracking-widest text-xs">{method.name}</p>
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{method.note}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {method.secure && <Lock className="w-4 h-4 text-emerald-500" />}
-                            {isSelected && <CheckCircle className="w-5 h-5 text-taja-primary" />}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Escrow explanation */}
-                  <div className="mt-6 p-5 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-3">
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-3">
                     <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">How Escrow Works</p>
+                      <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Escrow Protection Active</p>
                       <p className="text-xs text-emerald-700/70 font-medium mt-1 leading-relaxed">
-                        Your payment is held securely until you confirm delivery. Funds are only released to the seller after you confirm receipt. We protect every order.
+                        Your payment is held securely in escrow. Funds are only released to the seller after you confirm delivery.
                       </p>
                     </div>
                   </div>
-                </section>
+                </div>
               </div>
 
               {/* Right Column — Order Summary */}
@@ -619,7 +601,7 @@ export default function CheckoutPage() {
                     <div className="p-2.5 bg-gray-50 rounded-2xl">
                       <Package className="w-5 h-5 text-taja-secondary" />
                     </div>
-                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Order Insight</h2>
+                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Order Summary</h2>
                   </div>
 
                   {/* Items */}
@@ -631,6 +613,13 @@ export default function CheckoutPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-taja-secondary text-sm truncate">{item.title}</h4>
+                          {item.variantName && (
+                            <div className="mt-1">
+                              <span className="text-[9px] font-black text-taja-primary uppercase bg-taja-primary/5 px-2 py-0.5 rounded-full tracking-widest">
+                                {item.variantName}
+                              </span>
+                            </div>
+                          )}
                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                             {item.quantity} × {formatCurrency(item.price)}
                           </p>
@@ -647,7 +636,7 @@ export default function CheckoutPage() {
                       <span className="font-bold text-taja-secondary">{formatCurrency(subtotal)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Logistics</span>
+                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Shipping</span>
                       <span className="font-bold text-taja-secondary">{formatCurrency(shippingCost)}</span>
                     </div>
 
@@ -667,7 +656,7 @@ export default function CheckoutPage() {
                       <div className="flex justify-between items-end mb-6">
                         <div>
                           <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-1">Total Amount</p>
-                          <p className="text-3xl font-black text-taja-secondary tracking-tighter">{formatCurrency(total)}</p>
+                          <p className="text-3xl font-black text-taja-secondary tracking-tighter">{formatCurrency(orderTotal)}</p>
                         </div>
                         <Zap className="w-6 h-6 text-taja-primary mb-1 animate-pulse" />
                       </div>
@@ -682,7 +671,7 @@ export default function CheckoutPage() {
                         ) : (
                           <>
                             <Lock className="w-4 h-4 mr-2" />
-                            {selectedPaymentMethod === "cod" ? "Place Order — Pay on Delivery" : "Secure Order & Pay via Paystack"}
+                            Complete Purchase
                           </>
                         )}
                       </Button>

@@ -15,8 +15,8 @@ export async function GET(
       await connectDB();
 
       const order = await Order.findById(params.id)
-        .populate('buyer', 'fullName email phone')
-        .populate('seller', 'fullName email phone')
+        .populate('buyer', 'fullName email phone avatar')
+        .populate('seller', 'fullName email phone avatar')
         .populate('shop', 'shopName shopSlug logo')
         .populate('items.product')
         .lean();

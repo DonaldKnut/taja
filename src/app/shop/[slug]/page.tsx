@@ -36,6 +36,8 @@ import { shopsApi, api } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { StructuredData } from "@/components/StructuredData";
+import { generateShopStructuredData } from "@/lib/seo";
 
 interface Shop {
   _id: string;
@@ -140,7 +142,6 @@ export default function ShopPage() {
     return `https://tiktok.com/@${username}`;
   };
 
-  // Tenure badge
   const tenureBadge = useMemo(() => {
     if (!shop) return { label: "Merchant", isNew: true };
     const createdAt = shop.createdAt ? new Date(shop.createdAt).getTime() : 0;
@@ -148,6 +149,21 @@ export default function ShopPage() {
     const orders = shop.stats?.totalOrders ?? 0;
     const isNew = monthsActive < 3 || orders < 10;
     return { label: isNew ? "New Seller" : "Trusted Seller", isNew };
+  }, [shop]);
+
+  const shopStructuredData = useMemo(() => {
+    if (!shop) return null;
+    return generateShopStructuredData({
+      name: shop.shopName,
+      description: shop.description || shop.about || "",
+      logo: shop.logo,
+      url: `/shop/${shop.shopSlug}`,
+      image: shop.banner || shop.logo,
+      rating: shop.stats?.averageRating ? {
+        value: shop.stats.averageRating,
+        count: shop.stats.totalReviews || shop.stats.reviewCount || 0
+      } : undefined,
+    });
   }, [shop]);
 
   useEffect(() => {
@@ -288,6 +304,7 @@ export default function ShopPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {shopStructuredData && <StructuredData data={shopStructuredData} />}
       {/* Background Ambient Glows */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-gradient-to-bl from-taja-primary/[0.04] via-emerald-500/[0.03] to-transparent blur-[120px] rounded-full" />

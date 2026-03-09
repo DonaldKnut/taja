@@ -181,7 +181,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                             <section className="px-6 pt-12 pb-6 bg-white border-b border-gray-100">
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="space-y-1">
-                                        <p className="text-gray-400 text-xs font-medium uppercase tracking-widest leading-none">Premium Registry</p>
+                                        <p className="text-gray-400 text-xs font-medium uppercase tracking-widest leading-none">Premium Collection</p>
                                         <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-none italic">Hello, {firstName} 👋</h2>
                                     </div>
 
@@ -202,7 +202,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                     </div>
                                     <input
                                         type="text"
-                                        placeholder="Search artifacts & treasures..."
+                                        placeholder="Search for something special..."
                                         className="w-full h-16 bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all shadow-sm"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -240,7 +240,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         {/* ═══ Product Feed ═══ */}
                         <section className="px-6 space-y-8 mt-4 pb-20">
                             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                                <h3 className="text-2xl font-black text-gray-900 tracking-tighter italic">Acquisition Registry</h3>
+                                <h3 className="text-2xl font-black text-gray-900 tracking-tighter italic">Product Catalog</h3>
                                 <div className="flex gap-2">
                                     {["All", "Promo", "Best Deals"].map((tab) => (
                                         <button
@@ -277,7 +277,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                     </motion.div>
                                 ) : (
                                     <div className="bg-white/50 backdrop-blur-md rounded-[3rem] p-20 text-center border-dashed border-2 border-gray-200">
-                                        <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-xs">Registry Inventory Clear</p>
+                                        <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-xs">No products found here yet</p>
                                     </div>
                                 )}
                             </AnimatePresence>
@@ -292,7 +292,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-black border-t-transparent" />
                                     ) : (
                                         <>
-                                            <span className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-900">Scan Registry Arrivals</span>
+                                            <span className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-900">Load More Products</span>
                                             <ChevronRight className="w-5 h-5 text-taja-primary group-hover:translate-x-1 transition-transform" />
                                         </>
                                     )}
@@ -304,7 +304,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         <section className="px-6 py-4 pt-10 border-t border-gray-100">
                             <div className="flex items-center gap-3 mb-6">
                                 <Crown className="w-5 h-5 text-taja-primary" />
-                                <h3 className="text-lg font-black text-gray-900 tracking-tighter uppercase italic">Curated Registry</h3>
+                                <h3 className="text-lg font-black text-gray-900 tracking-tighter uppercase italic">Featured Shops</h3>
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-1 pb-6">
                                 {(feed.recommendedShops && feed.recommendedShops.length > 0 ? feed.recommendedShops : []).map((shop) => (
@@ -375,7 +375,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                     <div className="space-y-4">
                                         <h3 className="text-sm font-black text-taja-primary uppercase tracking-[0.4em]">The Taja Experience</h3>
                                         <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight italic">
-                                            Curated Artifacts <br /> & Premium Treasures.
+                                            Curated Collections <br /> & Premium Finds.
                                         </h2>
                                     </div>
 

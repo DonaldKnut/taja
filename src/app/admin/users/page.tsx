@@ -188,7 +188,7 @@ export default function UserManagementPage() {
           </div>
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Manage Community</p>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Member Directory</h1>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">User Management</h1>
           </div>
         </div>
       </div>
@@ -240,7 +240,7 @@ export default function UserManagementPage() {
         <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-10 py-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-xl font-black text-slate-900 tracking-tight">Unified Directory</CardTitle>
+              <CardTitle className="text-xl font-black text-slate-900 tracking-tight">All Users</CardTitle>
               <p className="text-sm font-bold text-slate-500 mt-1">
                 Showing {total === 0 ? 0 : (page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total} users
               </p>
@@ -265,11 +265,11 @@ export default function UserManagementPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/30">
-                    <th className="py-5 px-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">Member Identity</th>
+                    <th className="py-5 px-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">User Info</th>
                     <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Engagement</th>
                     <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                    <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trust Level</th>
-                    <th className="py-5 px-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Authority</th>
+                    <th className="py-5 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Verification Status</th>
+                    <th className="py-5 px-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Management</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -353,7 +353,7 @@ export default function UserManagementPage() {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2.5rem] w-full max-w-md shadow-huge border border-slate-100 overflow-hidden">
               <div className="p-8 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Administrative Override</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Edit User</p>
                   <h3 className="text-xl font-black text-slate-900 tracking-tight">Modify Profile</h3>
                 </div>
                 <button onClick={() => setEditingUser(null)} className="p-2 hover:bg-slate-50 rounded-full"><X className="h-5 w-5 text-slate-400" /></button>
@@ -461,7 +461,7 @@ export default function UserManagementPage() {
                 </div>
                 <Button onClick={handleSaveProfile} disabled={savingProfile} className="w-full h-14 rounded-2xl bg-slate-950 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-huge transition-all">
                   {savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Synchronize Changes
+                  Save Changes
                 </Button>
               </div>
             </motion.div>

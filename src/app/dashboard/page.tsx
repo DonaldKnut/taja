@@ -239,6 +239,13 @@ export default function DashboardPage() {
     return "Good evening";
   })();
 
+  const greetingsSub = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Ready to find something amazing this morning?";
+    if (h < 17) return "How is your shopping experience going?";
+    return "Wrapping up your day with some retail therapy?";
+  })();
+
   return (
     <div className="space-y-8 pb-16">
       {/* ═══ Welcome Hero ═══ */}
@@ -247,58 +254,96 @@ export default function DashboardPage() {
         variants={fadeUp}
         initial="hidden"
         animate="show"
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-taja-secondary via-[#0a3d2e] to-taja-secondary p-6 sm:p-8 lg:p-10"
+        className="relative overflow-hidden rounded-[2.5rem] bg-[#020617] p-8 sm:p-10 lg:p-12 border border-slate-800 shadow-2xl"
       >
         {/* Decorative elements */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-taja-primary/15 rounded-full blur-[100px]" />
-          <div className="absolute -bottom-20 -left-20 w-[300px] h-[300px] bg-emerald-500/10 rounded-full blur-[80px]" />
-          <div className="absolute inset-0 motif-blanc opacity-[0.04]" />
+          <div className="absolute -top-24 -right-24 w-[500px] h-[500px] bg-taja-primary/10 rounded-full blur-[120px]" />
+          <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px]" />
+          <div className="absolute inset-0 motif-blanc opacity-[0.03]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950/40" />
         </div>
 
-        <div className="relative z-10">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div className="space-y-2">
-              <p className="text-emerald-300/70 text-sm font-medium">{greeting},</p>
-              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
-                {firstName} 👋
+        <div className="relative z-10 px-2">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-10">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="h-1 w-6 bg-taja-primary rounded-full" />
+                <p className="text-taja-primary text-[10px] font-black uppercase tracking-[0.3em]">{greeting}</p>
+              </div>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-none italic">
+                Your Shopping Summary, {firstName}
               </h1>
-              <p className="text-gray-400 text-sm font-medium max-w-md leading-relaxed">
-                Here's what's happening with your orders and account today.
+              <p className="text-slate-400 text-sm font-medium max-w-md leading-relaxed">
+                {greetingsSub} Here is a quick look at your Taja activity and orders.
               </p>
             </div>
 
-            {/* Stat Pills */}
-            <div className="flex flex-wrap gap-3">
-              <div className="flex items-center gap-3 px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl">
-                <div className="h-8 w-8 rounded-lg bg-taja-primary/20 flex items-center justify-center">
-                  <Wallet className="h-4 w-4 text-taja-primary" />
+            {/* Stat Bento Pills */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:w-[600px]">
+              {/* Total Spent */}
+              <div className="group relative p-6 rounded-3xl bg-slate-950 border border-slate-800 hover:border-taja-primary/30 transition-all duration-500 overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-taja-primary/5 rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700" />
+                  <div className="absolute inset-0 motif-blanc opacity-[0.02]" />
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Total Spent</p>
-                  <p className="text-lg font-bold text-white leading-none">
+                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Wallet className="h-12 w-12 text-taja-primary" />
+                </div>
+                <div className="relative z-10">
+                  <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mb-2">Total Spend</p>
+                  <p className="text-2xl font-black text-white tracking-tighter">
                     ₦{stats.totalSpent?.toLocaleString() || "0"}
                   </p>
+                  <div className="mt-3 flex items-center gap-1.5">
+                    <div className="h-1 w-8 bg-slate-800 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "65%" }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className="h-full bg-taja-primary shadow-[0_0_8px_rgba(255,42,109,0.5)]"
+                      />
+                    </div>
+                    <span className="text-[8px] font-bold text-taja-primary uppercase">Shopping</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl">
-                <div className="h-8 w-8 rounded-lg bg-emerald-400/20 flex items-center justify-center">
-                  <Package className="h-4 w-4 text-emerald-400" />
+              {/* Orders */}
+              <div className="group relative p-6 rounded-3xl bg-slate-950 border border-slate-800 hover:border-amber-500/30 transition-all duration-500 overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/5 rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700" />
+                  <div className="absolute inset-0 motif-blanc opacity-[0.02]" />
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Orders</p>
-                  <p className="text-lg font-bold text-white leading-none">{stats.totalOrders}</p>
+                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <ShoppingBag className="h-12 w-12 text-amber-500" />
+                </div>
+                <div className="relative z-10">
+                  <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mb-2">Total Orders</p>
+                  <p className="text-2xl font-black text-white tracking-tighter">{stats.totalOrders}</p>
+                  <div className="mt-3 flex items-center gap-1.5 text-amber-500">
+                    <Star className="h-3 w-3 fill-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                    <span className="text-[8px] font-bold uppercase tracking-widest">Order History</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl">
-                <div className="h-8 w-8 rounded-lg bg-blue-400/20 flex items-center justify-center">
-                  <Truck className="h-4 w-4 text-blue-400" />
+              {/* In Transit */}
+              <div className="group relative p-6 rounded-3xl bg-slate-950 border border-slate-800 hover:border-blue-500/30 transition-all duration-500 overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/5 rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700" />
+                  <div className="absolute inset-0 motif-blanc opacity-[0.02]" />
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">In Transit</p>
-                  <p className="text-lg font-bold text-white leading-none">{stats.pendingOrders}</p>
+                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Zap className="h-12 w-12 text-blue-500" />
+                </div>
+                <div className="relative z-10">
+                  <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mb-2">On The Way</p>
+                  <p className="text-2xl font-black text-white tracking-tighter">{stats.pendingOrders}</p>
+                  <div className="mt-3 flex items-center gap-1.5 text-blue-500">
+                    <Truck className="h-3 w-3 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                    <span className="text-[8px] font-bold uppercase tracking-widest">Track Delivery</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -311,29 +356,32 @@ export default function DashboardPage() {
         {/* Marketplace — Quick Access */}
         <motion.div custom={1} variants={fadeUp} initial="hidden" animate="show" className="md:col-span-2">
           <Link href="/dashboard/marketplace" className="group block h-full">
-            <div className="relative h-full min-h-[220px] rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-500 via-taja-primary to-taja-secondary p-6 sm:p-8 transition-all duration-300 hover:shadow-xl hover:shadow-taja-primary/10">
+            <div className="relative h-full min-h-[240px] rounded-[2rem] overflow-hidden bg-[#0f172a] p-8 sm:p-10 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 border border-slate-800">
               <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-[60px] group-hover:scale-125 transition-transform duration-700" />
-                <div className="absolute inset-0 motif-blanc opacity-[0.06]" />
+                <div className="absolute -right-16 -top-16 w-80 h-80 bg-indigo-500/10 rounded-full blur-[80px] group-hover:scale-125 transition-transform duration-700" />
+                <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-emerald-500/5 rounded-full blur-[60px]" />
+                <div className="absolute inset-0 motif-blanc opacity-[0.04]" />
               </div>
 
               <div className="relative z-10 h-full flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm w-fit">
-                    <ShoppingBag className="h-3 w-3" />
-                    Marketplace
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-[0.2em] backdrop-blur-sm w-fit">
+                    <Sparkles className="h-3 w-3" />
+                    Featured Collections
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
-                    Discover Quality Assets
+                  <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tighter leading-tight italic">
+                    Shop Premium<br />African Products
                   </h3>
-                  <p className="text-emerald-100/60 text-sm font-medium max-w-sm leading-relaxed">
-                    Explore curated listings from verified sellers across the nation.
+                  <p className="text-slate-400 text-sm font-medium max-w-sm leading-relaxed">
+                    Explore our curated marketplace of verified high-quality products from across the continent.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-white text-sm font-semibold group-hover:gap-3 transition-all mt-6">
-                  Start shopping
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <div className="flex items-center gap-3 text-white text-sm font-black uppercase tracking-widest group-hover:gap-4 transition-all mt-8 italic">
+                  Start Shopping
+                  <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-white/10 transition-colors">
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -341,27 +389,33 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Side cards */}
-        <motion.div custom={2} variants={fadeUp} initial="hidden" animate="show" className="flex flex-col gap-4">
-          <Link href="/marketplace" className="group flex-1">
-            <div className="h-full p-5 rounded-2xl bg-white border border-gray-100 hover:border-taja-primary/20 hover:shadow-lg hover:shadow-taja-primary/5 transition-all duration-300 flex flex-col justify-between">
-              <div className="h-10 w-10 rounded-xl bg-taja-primary/10 flex items-center justify-center text-taja-primary mb-4 group-hover:scale-110 group-hover:bg-taja-primary group-hover:text-white transition-all duration-300">
-                <ShoppingBag className="h-5 w-5" />
+        <motion.div custom={2} variants={fadeUp} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-1 gap-4">
+          <Link href="/marketplace" className="group h-full">
+            <div className="h-full p-6 rounded-[2rem] bg-white border border-slate-100 hover:border-taja-primary/30 hover:shadow-xl hover:shadow-taja-primary/5 transition-all duration-500 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                <ShoppingBag className="h-16 w-16 text-taja-primary" />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-taja-secondary mb-1">Marketplace</h3>
-                <p className="text-xs text-gray-400 font-medium">Browse curated products</p>
+              <div className="h-12 w-12 rounded-2xl bg-taja-primary/10 flex items-center justify-center text-taja-primary mb-4 group-hover:scale-110 group-hover:bg-taja-primary group-hover:text-white transition-all duration-500">
+                <Grid3x3 className="h-6 w-6" />
+              </div>
+              <div className="relative z-10">
+                <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none mb-1 uppercase">Categories</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Browse Everything</p>
               </div>
             </div>
           </Link>
 
-          <Link href="/dashboard/wallet" className="group flex-1">
-            <div className="h-full p-5 rounded-2xl bg-white border border-gray-100 hover:border-taja-primary/20 hover:shadow-lg hover:shadow-taja-primary/5 transition-all duration-300 flex flex-col justify-between">
-              <div className="h-10 w-10 rounded-xl bg-taja-secondary/10 flex items-center justify-center text-taja-secondary mb-4 group-hover:scale-110 group-hover:bg-taja-secondary group-hover:text-white transition-all duration-300">
-                <CreditCard className="h-5 w-5" />
+          <Link href="/dashboard/wallet" className="group h-full">
+            <div className="h-full p-6 rounded-[2rem] bg-slate-900 border border-slate-800 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-500 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity">
+                <CreditCard className="h-16 w-16 text-blue-400" />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-taja-secondary mb-1">Wallet</h3>
-                <p className="text-xs text-gray-400 font-medium">Manage your payments</p>
+              <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-4 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
+                <Wallet className="h-6 w-6" />
+              </div>
+              <div className="relative z-10">
+                <h3 className="text-lg font-black text-white tracking-tight leading-none mb-1 uppercase">My Wallet</h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Manage Your Funds</p>
               </div>
             </div>
           </Link>
@@ -369,11 +423,14 @@ export default function DashboardPage() {
       </div>
 
       {/* ═══ Recent Orders ═══ */}
-      <motion.section custom={3} variants={fadeUp} initial="hidden" animate="show" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-taja-secondary">Recent Orders</h2>
-            <p className="text-xs text-gray-400 font-medium mt-0.5">Track and manage your purchases</p>
+      <motion.section custom={3} variants={fadeUp} initial="hidden" animate="show" className="space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1 bg-taja-primary rounded-full" />
+            <div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase italic">My Orders</h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Track your recent purchases and delivery status</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center bg-gray-100 p-0.5 rounded-lg">
@@ -452,9 +509,9 @@ export default function DashboardPage() {
                     href={`/dashboard/orders/${order._id}`}
                     className="group block"
                   >
-                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-taja-primary/20 hover:shadow-lg hover:shadow-taja-primary/5 transition-all duration-300">
+                    <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden hover:border-taja-primary/30 hover:shadow-2xl hover:shadow-taja-primary/5 transition-all duration-500">
                       {/* Thumbnail */}
-                      <div className="relative aspect-[16/10] bg-gray-50">
+                      <div className="relative aspect-[16/10] bg-slate-50">
                         {orderImg ? (
                           <Image
                             src={orderImg}
@@ -574,11 +631,14 @@ export default function DashboardPage() {
 
       {/* ═══ Recommended For You ═══ */}
       {recommendedProducts.length > 0 && (
-        <motion.section custom={4} variants={fadeUp} initial="hidden" animate="show" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-taja-secondary">Recommended For You</h2>
-              <p className="text-xs text-gray-400 font-medium mt-0.5">Products you might love</p>
+        <motion.section custom={4} variants={fadeUp} initial="hidden" animate="show" className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-1 bg-indigo-500 rounded-full" />
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase italic">Picked For You</h2>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Products we think you&apos;ll love based on your style</p>
+              </div>
             </div>
             <Link
               href="/marketplace"
@@ -596,8 +656,8 @@ export default function DashboardPage() {
                 href={`/products/${product.slug || product._id}`}
                 className="group block"
               >
-                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:border-taja-primary/20 hover:shadow-lg hover:shadow-taja-primary/5 transition-all duration-300 h-full flex flex-col">
-                  <div className="aspect-square relative bg-gray-50 overflow-hidden">
+                <div className="bg-white rounded-[1.5rem] border border-slate-100 overflow-hidden hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-500 h-full flex flex-col">
+                  <div className="aspect-square relative bg-slate-50 overflow-hidden">
                     {product.images?.[0] || product.image ? (
                       <Image
                         src={product.images?.[0] || product.image || ""}

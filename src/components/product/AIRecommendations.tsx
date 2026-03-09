@@ -74,7 +74,7 @@ export function AIRecommendations({
       case "similar":
         return "You May Also Like";
       case "frequently_bought":
-        return "Complete the Acquisition";
+        return "Frequently Bought Together";
       case "trending":
         return "Marketplace Trends";
       case "cross_sell":

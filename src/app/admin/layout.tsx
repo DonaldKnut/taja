@@ -43,16 +43,16 @@ import { CartIcon, useCartStore } from "@/components/cart";
 
 const adminNavGroups = [
   {
-    label: "Management Hub",
+    label: "Operations",
     items: [
-      { name: "Global Overview", href: "/admin/dashboard", icon: Activity },
-      { name: "Market Analytics", href: "/admin/analytics", icon: BarChart3 },
+      { name: "Dashboard Overview", href: "/admin/dashboard", icon: Activity },
+      { name: "Business Analytics", href: "/admin/analytics", icon: BarChart3 },
     ],
   },
   {
-    label: "Security & Trust",
+    label: "Safety & Security",
     items: [
-      { name: "User Directory", href: "/admin/users", icon: Users },
+      { name: "User Management", href: "/admin/users", icon: Users },
       { name: "Identity Verification", href: "/admin/kyc", icon: ShieldCheck },
       { name: "Message Audit Logs", href: "/admin/chats", icon: MessageCircle },
     ],
@@ -141,12 +141,12 @@ export default function AdminLayout({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-black text-white tracking-tight truncate leading-none mb-1">
-                {user?.fullName || "Administrative Operator"}
+                {user?.fullName || "System Manager"}
               </p>
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400/80">
-                  Primary Overseer
+                  System Administrator
                 </p>
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function AdminLayout({
           className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-red-400/60 hover:text-red-400 hover:bg-red-500/5 transition-all group"
         >
           <LogOut className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          Sign Out Portal
+          Logout
         </button>
       </div>
     </div>
@@ -259,7 +259,7 @@ export default function AdminLayout({
               <Logo size="lg" href="/admin/dashboard" variant="header" />
               <div className="hidden lg:flex h-8 w-px bg-gray-100 mx-2" />
               <span className="hidden sm:block text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 shadow-sm">
-                Control Hub
+                Admin Panel
               </span>
             </div>
 
@@ -269,7 +269,7 @@ export default function AdminLayout({
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 h-5 w-5 group-focus-within:text-emerald-500 transition-colors" />
                 <input
                   type="text"
-                  placeholder="Master Intelligence Search..."
+                  placeholder="Admin Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-12 pr-6 h-12 w-full bg-slate-50 border border-gray-100 focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 transition-all rounded-[1.2rem] text-sm font-medium tracking-wide placeholder:text-gray-300"
@@ -306,7 +306,7 @@ export default function AdminLayout({
               <div className="flex items-center gap-3 pl-2 py-1.5 pr-1.5 rounded-2xl hover:bg-gray-50 transition-all group">
                 <div className="hidden sm:block text-right">
                   <p className="text-sm font-black text-slate-900 leading-none mb-1">{user?.fullName?.split(" ")[0] || "Admin"}</p>
-                  <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none">Overseer</p>
+                  <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none">Admin</p>
                 </div>
                 <div className="relative h-11 w-11 rounded-2xl bg-slate-950 flex items-center justify-center text-sm font-black text-white overflow-hidden p-0.5 shadow-sm group-hover:scale-105 transition-transform border border-slate-900">
                   {user?.avatar ? (

@@ -16,6 +16,10 @@ export interface ProductPriceProps {
    */
   compareAtPrice?: number;
   /**
+   * Whether the product has variations
+   */
+  hasVariants?: boolean;
+  /**
    * Custom price formatter
    */
   formatPrice?: (price: number) => string;
@@ -37,16 +41,12 @@ export interface ProductPriceProps {
  * Reusable Product Price Component
  * 
  * Displays product price with optional compare-at price (for discounts).
- * 
- * @example
- * ```tsx
- * <ProductPrice price={10000} compareAtPrice={15000} />
- * ```
  */
 export function ProductPrice({
   price,
   maxPrice,
   compareAtPrice,
+  hasVariants = false,
   formatPrice = (p) => `₦${(p ?? 0).toLocaleString()}`,
   className,
   size = "md",
@@ -58,7 +58,7 @@ export function ProductPrice({
     lg: "text-2xl",
   };
 
-  const hasRange = maxPrice && maxPrice > price;
+  const hasRange = hasVariants && maxPrice && maxPrice > price;
 
   return (
     <div className={cn("flex flex-col", className)}>
@@ -73,12 +73,3 @@ export function ProductPrice({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-

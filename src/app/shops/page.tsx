@@ -155,6 +155,7 @@ export default function ShopsPage() {
                 alt={shop.shopName}
                 fill
                 className="object-cover transition-transform duration-[2s] group-hover:scale-110"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-taja-secondary via-slate-800 to-black" />
@@ -173,7 +174,7 @@ export default function ShopsPage() {
             <div className="absolute -bottom-10 left-8">
               <div className="w-20 h-20 rounded-3xl border-4 border-white shadow-2xl overflow-hidden bg-white ring-4 ring-black/5">
                 {shop.logo ? (
-                  <Image src={shop.logo} alt={shop.shopName} fill className="object-cover" />
+                  <Image src={shop.logo} alt={shop.shopName} fill className="object-cover" sizes="80px" />
                 ) : (
                   <div className="w-full h-full bg-gradient-taja flex items-center justify-center text-white font-black text-2xl">
                     {shop.shopName.charAt(0)}

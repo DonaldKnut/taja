@@ -13,9 +13,9 @@ export async function GET(
   try {
     await connectDB();
 
-      const shop = await Shop.findById(params.shopId)
-        .populate('owner', 'fullName avatar email')
-        .lean();
+    const shop = await Shop.findById(params.shopId)
+      .populate('owner', 'fullName avatar email')
+      .lean();
 
     if (!shop) {
       return NextResponse.json(
@@ -106,6 +106,7 @@ export async function PUT(
       const body = await request.json();
       const {
         shopName,
+        shopSlug,
         description,
         about,
         tagline,
@@ -119,6 +120,25 @@ export async function PUT(
         settings,
         policies,
       } = body;
+
+      if (shopSlug && shopSlug !== shop.shopSlug) {
+        if (user.role !== 'admin') {
+          return NextResponse.json(
+            { success: false, message: 'Only admins can change the shop link' },
+            { status: 403 }
+          );
+        }
+
+        // Check if slug is already taken
+        const existingShop = await Shop.findOne({ shopSlug: shopSlug.toLowerCase().trim() });
+        if (existingShop && existingShop._id.toString() !== params.shopId) {
+          return NextResponse.json(
+            { success: false, message: 'This shop link is already in use' },
+            { status: 400 }
+          );
+        }
+        shop.shopSlug = shopSlug.toLowerCase().trim();
+      }
 
       if (shopName) shop.shopName = shopName;
       if (description !== undefined) shop.description = description;

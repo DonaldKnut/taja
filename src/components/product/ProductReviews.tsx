@@ -200,7 +200,7 @@ export function ProductReviews({ productId, shopId }: ProductReviewsProps) {
                             onClick={() => setShowReviewModal(true)}
                             className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white transition-all"
                         >
-                            Share Your Narrative
+                            Write a Review
                         </Button>
                     )}
                 </div>
@@ -248,7 +248,7 @@ export function ProductReviews({ productId, shopId }: ProductReviewsProps) {
                                                     {review.verifiedPurchase && (
                                                         <span className="flex items-center gap-1 text-[8px] font-black text-emerald-600 uppercase tracking-widest">
                                                             <ShieldCheck className="w-2.5 h-2.5" />
-                                                            Verified Acquisition
+                                                            Verified Purchase
                                                         </span>
                                                     )}
                                                 </div>
@@ -284,7 +284,7 @@ export function ProductReviews({ productId, shopId }: ProductReviewsProps) {
                             exit={{ scale: 0.9, opacity: 0 }}
                             className="relative w-full max-w-lg bg-white rounded-[2.5rem] p-8 shadow-2xl"
                         >
-                            <h3 className="text-2xl font-black text-taja-secondary tracking-tighter mb-6 italic">Submit Your Narrative</h3>
+                            <h3 className="text-2xl font-black text-taja-secondary tracking-tighter mb-6 italic">Write a Review</h3>
 
                             <form onSubmit={handleSubmitReview} className="space-y-6">
                                 <div className="space-y-3">
@@ -320,12 +320,12 @@ export function ProductReviews({ productId, shopId }: ProductReviewsProps) {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">The Narrative</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Your Review</label>
                                     <textarea
                                         required
                                         value={formComment}
                                         onChange={(e) => setFormComment(e.target.value)}
-                                        placeholder="Share the details of this acquisition..."
+                                        placeholder="Share your experience with this product..."
                                         rows={4}
                                         className="w-full p-6 rounded-3xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium resize-none"
                                     />
@@ -345,7 +345,7 @@ export function ProductReviews({ productId, shopId }: ProductReviewsProps) {
                                         disabled={isSubmitting}
                                         className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-slate-900 text-white"
                                     >
-                                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Publish Narrative"}
+                                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Post Review"}
                                     </Button>
                                 </div>
                             </form>

@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Store,
+  AlertCircle,
   Loader2,
   Image as ImageIcon,
   Link2,
@@ -38,6 +39,7 @@ export default function AdminShopEditPage() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [form, setForm] = useState({
     shopName: "",
+    shopSlug: "",
     description: "",
     about: "",
     tagline: "",
@@ -73,6 +75,7 @@ export default function AdminShopEditPage() {
         const s = res.data;
         setForm({
           shopName: s.shopName ?? "",
+          shopSlug: s.shopSlug ?? "",
           description: s.description ?? "",
           about: s.about ?? "",
           tagline: s.tagline ?? "",
@@ -127,6 +130,7 @@ export default function AdminShopEditPage() {
         method: "PUT",
         body: JSON.stringify({
           shopName: form.shopName.trim() || undefined,
+          shopSlug: form.shopSlug.trim() || undefined,
           description: form.description.trim() || undefined,
           about: form.about.trim() || undefined,
           tagline: form.tagline.trim() || undefined,
@@ -197,6 +201,22 @@ export default function AdminShopEditPage() {
               className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:border-taja-primary focus:ring-0 font-medium"
               placeholder="Shop name"
             />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Shop Link (URL Slug)</label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-gray-400">tajaapp.com/shop/</span>
+              <input
+                type="text"
+                value={form.shopSlug}
+                onChange={(e) => setForm((f) => ({ ...f, shopSlug: e.target.value.toLowerCase().replace(/[^a-z0-z0-9-]/g, "") }))}
+                className="flex-1 h-12 px-4 rounded-xl border border-gray-200 bg-white focus:border-taja-primary focus:ring-0 font-medium"
+                placeholder="shop-slug"
+              />
+            </div>
+            <p className="mt-1.5 text-[10px] text-amber-600 font-bold uppercase tracking-wider flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" /> Changing this will break existing links to the shop.
+            </p>
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Short description</label>

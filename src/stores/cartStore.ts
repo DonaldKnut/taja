@@ -12,6 +12,8 @@ export interface CartItem {
   shopSlug?: string;
   moq: number;
   stock: number;
+  variantId?: string;
+  variantName?: string;
 }
 
 interface CartStore {
@@ -20,8 +22,8 @@ interface CartStore {
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
   addItem: (item: Omit<CartItem, "quantity">) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  removeItem: (id: string, variantId?: string) => void;
+  updateQuantity: (id: string, variantId: string | undefined, quantity: number) => void;
   clearCart: () => void;
   toggleCart: () => void;
   getTotalPrice: () => number;
@@ -52,7 +54,9 @@ export const useCartStore = create<CartStore>()(
 
       addItem: (item) => {
         const itemStock = item.stock ?? 999;
-        const existingItem = get().items.find((i) => i._id === item._id);
+        const existingItem = get().items.find(
+          (i) => i._id === item._id && i.variantId === item.variantId
+        );
 
         if (existingItem) {
           if (existingItem.quantity >= itemStock) {
@@ -62,7 +66,9 @@ export const useCartStore = create<CartStore>()(
           const newQuantity = Math.min(existingItem.quantity + 1, itemStock);
           set({
             items: get().items.map((i) =>
-              i._id === item._id ? { ...i, quantity: newQuantity } : i
+              i._id === item._id && i.variantId === item.variantId
+                ? { ...i, quantity: newQuantity }
+                : i
             ),
           });
         } else {
@@ -80,14 +86,14 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
-      removeItem: (id) => {
+      removeItem: (id: string, variantId?: string) => {
         set({
-          items: get().items.filter((i) => i._id !== id),
+          items: get().items.filter((i) => !(i._id === id && i.variantId === variantId)),
         });
       },
 
-      updateQuantity: (id, quantity) => {
-        const item = get().items.find(i => i._id === id);
+      updateQuantity: (id: string, variantId: string | undefined, quantity: number) => {
+        const item = get().items.find(i => i._id === id && i.variantId === variantId);
         if (!item) return;
 
         if (quantity < item.moq) {
@@ -95,7 +101,7 @@ export const useCartStore = create<CartStore>()(
           // to let the user type, but we might cap it at stock.
           // However, if quantity is 0, we remove.
           if (quantity <= 0) {
-            get().removeItem(id);
+            get().removeItem(id, variantId);
             return;
           }
         }
@@ -105,7 +111,7 @@ export const useCartStore = create<CartStore>()(
 
         set({
           items: get().items.map((i) =>
-            i._id === id ? { ...i, quantity: finalQuantity } : i
+            i._id === id && i.variantId === variantId ? { ...i, quantity: finalQuantity } : i
           ),
         });
       },

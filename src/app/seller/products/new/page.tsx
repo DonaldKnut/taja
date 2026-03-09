@@ -22,6 +22,9 @@ import {
   Sparkles,
   DollarSign,
   Target,
+  Plus,
+  LayoutGrid,
+  TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -157,6 +160,15 @@ export default function NewProductPage() {
       metaTitle: "",
       metaDescription: "",
     },
+    variants: [] as {
+      _id?: string;
+      name: string;
+      price: string;
+      stock: string;
+      weight: string;
+      sku?: string;
+      active: boolean;
+    }[],
     status: "active" as "active" | "draft",
   });
   const [tagInput, setTagInput] = useState("");
@@ -469,6 +481,32 @@ export default function NewProductPage() {
     }
   };
 
+  const addVariant = () => {
+    setFormData(prev => ({
+      ...prev,
+      variants: [
+        ...prev.variants,
+        { name: "", price: prev.price, stock: "1", weight: prev.shipping.weight || "0", active: true }
+      ]
+    }));
+  };
+
+  const removeVariant = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateVariant = (index: number, field: string, value: any) => {
+    setFormData(prev => {
+      const newVariants = [...prev.variants];
+      newVariants[index] = { ...newVariants[index], [field]: value };
+      return { ...prev, variants: newVariants };
+    });
+  };
+
+
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
     e.preventDefault();
 
@@ -548,6 +586,12 @@ export default function NewProductPage() {
         },
         seo: formData.seo,
         status: isDraft ? "draft" : formData.status,
+        variants: formData.variants.map(v => ({
+          ...v,
+          price: v.price ? parseFloat(String(v.price)) : undefined,
+          stock: v.stock ? parseInt(String(v.stock)) : undefined,
+          weight: v.weight ? parseFloat(String(v.weight)) : undefined,
+        })),
         shop: userShop._id || userShop.id,
       };
 
@@ -1027,267 +1071,407 @@ export default function NewProductPage() {
                 </div>
               )}
             </motion.section>
-          </div>
 
-          <div className="lg:col-span-4 space-y-12">
-
-            {/* Pricing Card */}
-            <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px] relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] rounded-full -z-10" />
-              <div className="flex items-center gap-3 mb-8">
-                <DollarSign className="h-5 w-5 text-taja-primary" />
-                <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Exchange Protocol</h3>
-              </div>
-
-              <div className="space-y-6">
-                <div className="group space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                      Price (₦) *
-                    </label>
-                    {suggestedPrice && (
-                      <div className="text-[8px] font-bold text-taja-primary bg-taja-primary/5 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                        <Sparkles className="h-2 w-2" />
-                        AI Suggests: {suggestedPrice}
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    name="price"
-                    type="number"
-                    required
-                    min="0"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={handleChange}
-                    className="w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-2xl font-black tracking-tighter text-taja-secondary"
-                    placeholder="0.00"
-                  />
+            {/* Product Variations Section */}
+            <motion.section variants={item} className="glass-panel p-6 sm:p-10 border-white/60 rounded-[30px] sm:rounded-[40px] bg-gradient-to-br from-white to-gray-50/30">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+                <div className="space-y-1">
+                  <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Product Options</h3>
+                  <p className="text-2xl sm:text-3xl font-black text-taja-secondary tracking-tighter italic">Variations</p>
                 </div>
-                <div className="group space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                      Max Price (₦)
-                    </label>
+                <Button
+                  type="button"
+                  onClick={addVariant}
+                  variant="outline"
+                  className="rounded-2xl border-taja-primary/20 text-taja-primary hover:bg-taja-primary hover:text-white transition-all font-black uppercase tracking-widest text-[10px] h-12 px-6 w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Variation
+                </Button>
+              </div>
+
+              {formData.variants.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Desktop Headers - Hidden on Mobile */}
+                  <div className="hidden sm:grid grid-cols-12 gap-4 px-4 mb-2">
+                    <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-gray-400">Variation Name (e.g. Red / XL)</div>
+                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Price (₦)</div>
+                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Stock</div>
+                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">Weight (kg)</div>
+                    <div className="col-span-1"></div>
                   </div>
-                  <input
-                    name="maxPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.maxPrice}
-                    onChange={handleChange}
-                    className="w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-2xl font-black tracking-tighter text-taja-secondary"
-                    placeholder="Optional max fee"
-                  />
-                </div>
-                <div className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Compare at Price (₦)</label>
-                  <input
-                    name="compareAtPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.compareAtPrice}
-                    onChange={handleChange}
-                    className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-gray-400"
-                    placeholder="Original price if on sale"
-                  />
-                </div>
-              </div>
-            </motion.section>
 
-            {/* Inventory Card */}
-            <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px]">
-              <div className="flex items-center gap-3 mb-8">
-                <Package className="h-5 w-5 text-blue-500" />
-                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Stock Intelligence</h3>
-              </div>
-
-              <div className="space-y-6">
-                <label className="flex items-center gap-4 cursor-pointer group p-2 rounded-xl hover:bg-white/40 transition-all">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      name="inventory.trackQuantity"
-                      checked={formData.inventory.trackQuantity}
-                      onChange={handleChange}
-                      className="peer hidden"
-                    />
-                    <div className="w-10 h-6 bg-gray-200 peer-checked:bg-taja-primary rounded-full transition-all duration-300 shadow-inner" />
-                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-4 shadow-sm" />
-                  </div>
-                  <span className="text-[10px] font-black text-taja-secondary uppercase tracking-widest">Track Inventory</span>
-                </label>
-
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Minimum order quantity (MOQ)</label>
-                  <input
-                    name="inventory.moq"
-                    type="number"
-                    min="1"
-                    value={formData.inventory.moq}
-                    onChange={handleChange}
-                    className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
-                  />
-                </motion.div>
-                {formData.inventory.trackQuantity && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Quantity Available</label>
-                    <input
-                      name="inventory.quantity"
-                      type="number"
-                      min="0"
-                      value={formData.inventory.quantity}
-                      onChange={handleChange}
-                      className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-lg font-black text-taja-secondary"
-                    />
-                  </motion.div>
-                )}
-              </div>
-            </motion.section>
-
-            {/* Shipping Card */}
-            <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px]">
-              <div className="flex items-center gap-3 mb-8">
-                <Truck className="h-5 w-5 text-purple-500" />
-                <h3 className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em]">Logistics Protocol</h3>
-              </div>
-
-              <div className="space-y-6">
-                <label className="flex items-center gap-4 cursor-pointer group p-2 rounded-xl hover:bg-white/40 transition-all">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      name="shipping.freeShipping"
-                      checked={formData.shipping.freeShipping}
-                      onChange={handleChange}
-                      className="peer hidden"
-                    />
-                    <div className="w-10 h-6 bg-gray-200 peer-checked:bg-emerald-500 rounded-full transition-all duration-300  shadow-inner" />
-                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-4 shadow-sm" />
-                  </div>
-                  <span className="text-[10px] font-black text-taja-secondary uppercase tracking-widest">Free Shipping</span>
-                </label>
-
-                {!formData.shipping.freeShipping && (
-                  <>
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Shipping Cost (₦) — flat</label>
-                      <input
-                        name="shipping.shippingCost"
-                        type="number"
-                        min="0"
-                        value={formData.shipping.shippingCost}
-                        onChange={handleChange}
-                        className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
-                      />
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Or cost per kg (₦) — weight-based</label>
-                      <input
-                        name="shipping.costPerKg"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.shipping.costPerKg}
-                        onChange={handleChange}
-                        placeholder="Optional: logistics-style pricing"
-                        className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
-                      />
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Weight (kg)</label>
-                      <input
-                        name="shipping.weight"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.shipping.weight}
-                        onChange={handleChange}
-                        placeholder="For weight-based delivery"
-                        className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
-                      />
-                    </motion.div>
-                  </>
-                )}
-
-                <div className="group space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Processing Time</label>
-                  <select
-                    name="shipping.processingTime"
-                    value={formData.shipping.processingTime}
-                    onChange={handleChange}
-                    className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white appearance-none transition-all rounded-2xl text-[10px] font-black uppercase tracking-widest text-taja-secondary"
-                  >
-                    <option value="1-2-days">1-2 Business Days</option>
-                    <option value="3-5-days">3-5 Business Days</option>
-                    <option value="1-week">1 Week Execution</option>
-                    <option value="2-weeks">2 Weeks Strategy</option>
-                  </select>
-                </div>
-              </div>
-            </motion.section>
-
-            {/* SEO & Tags Card */}
-            <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px]">
-              <div className="flex items-center gap-3 mb-8">
-                <Target className="h-5 w-5 text-amber-600" />
-                <h3 className="text-[10px] font-black text-amber-600 uppercase tracking-[0.3em]">Discovery Engine</h3>
-              </div>
-
-              <div className="space-y-6">
-                <div className="group space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Marketplace Context Tags</label>
-                  <div className="relative group/input">
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                      className="w-full h-14 pl-6 pr-32 glass-panel border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-sm font-bold text-taja-secondary placeholder:text-gray-300 shadow-premium"
-                      placeholder="Add discovery tag..."
-                    />
-                    <button
-                      type="button"
-                      onClick={addTag}
-                      className="absolute right-2 top-2 h-10 px-6 bg-taja-secondary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-taja-primary transition-all shadow-premium group-hover/input:scale-95 active:scale-90"
-                    >
-                      Sync
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2.5 min-h-[40px]">
-                  <AnimatePresence initial={false}>
-                    {formData.seo.tags.map((tag) => (
-                      <motion.span
-                        key={tag}
-                        initial={{ opacity: 0, scale: 0.8, x: -10 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, x: 10 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="inline-flex items-center px-5 py-2.5 glass-panel bg-white/80 border-taja-primary/10 text-taja-secondary text-[9px] font-black uppercase tracking-widest rounded-full shadow-sm hover:shadow-md hover:border-taja-primary/30 transition-all group/tag select-none"
+                  <AnimatePresence>
+                    {formData.variants.map((variant, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="relative p-6 sm:p-4 glass-card bg-white border-white/60 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-huge transition-all group"
                       >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => removeTag(tag)}
-                          className="ml-3 text-gray-300 hover:text-red-500 transition-colors"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </motion.span>
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 sm:gap-4 items-end sm:items-center">
+                          {/* Name Input */}
+                          <div className="sm:col-span-4 space-y-2 sm:space-y-0">
+                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Variation Name</label>
+                            <input
+                              type="text"
+                              value={variant.name}
+                              onChange={(e) => updateVariant(index, 'name', e.target.value)}
+                              placeholder="e.g. Color / Size"
+                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-bold text-taja-secondary"
+                            />
+                          </div>
+
+                          {/* Price Input */}
+                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
+                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
+                            <input
+                              type="number"
+                              value={variant.price}
+                              onChange={(e) => updateVariant(index, 'price', e.target.value)}
+                              placeholder="Price"
+                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-black text-taja-primary"
+                            />
+                          </div>
+
+                          {/* Stock Input */}
+                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
+                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
+                            <input
+                              type="number"
+                              value={variant.stock}
+                              onChange={(e) => updateVariant(index, 'stock', e.target.value)}
+                              placeholder="Stock"
+                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-bold text-taja-secondary"
+                            />
+                          </div>
+
+                          {/* Weight Input */}
+                          <div className="sm:col-span-3 space-y-2 sm:space-y-0">
+                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={variant.weight}
+                              onChange={(e) => updateVariant(index, 'weight', e.target.value)}
+                              placeholder="Weight (kg)"
+                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-medium text-gray-500"
+                            />
+                          </div>
+
+                          {/* Remove Button */}
+                          <div className="sm:col-span-1 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(index)}
+                              className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                            >
+                              <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
                     ))}
                   </AnimatePresence>
-                  {formData.seo.tags.length === 0 && (
-                    <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest italic pt-2">No tags synchronized yet.</p>
-                  )}
                 </div>
-              </div>
-            </motion.section>
-
+                            onClick={() => removeVariant(index)}
+                          >
+            </button>
           </div>
+      </motion.div>
+                    ))}
+    </AnimatePresence>
+                </div >
+              ) : (
+    <div className="py-20 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-[2.5rem] bg-gray-50/30">
+      <div className="w-16 h-16 rounded-3xl bg-white shadow-premium flex items-center justify-center mb-6">
+        <LayoutGrid className="w-8 h-8 text-gray-200" />
+      </div>
+      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6">No Variations Defined</p>
+      <Button
+        type="button"
+        onClick={addVariant}
+        variant="outline"
+        className="rounded-2xl border-gray-200 text-gray-400 hover:border-taja-primary hover:text-taja-primary transition-all font-black uppercase tracking-widest text-[10px] h-10 px-6 bg-white"
+      >
+        Add Your First Variation
+      </Button>
+    </div>
+  )
+}
+
+<div className="mt-10 p-6 rounded-3xl bg-blue-50/50 border border-blue-100/50 flex items-start gap-4">
+  <div className="p-2 bg-blue-500 rounded-lg shrink-0">
+    <TrendingUp className="w-4 h-4 text-white" />
+  </div>
+  <p className="text-[10px] font-bold text-blue-900 leading-relaxed uppercase tracking-widest">
+    Variations allow you to offer different sizes, colors, or versions of your product, each with its own price and stock levels. This increases conversion by providing more choices to elite buyers.
+  </p>
+</div>
+            </motion.section >
+
+          </div >
+
+  <div className="lg:col-span-4 space-y-12">
+
+    {/* Pricing Card */}
+    <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px] relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] rounded-full -z-10" />
+      <div className="flex items-center gap-3 mb-8">
+        <DollarSign className="h-5 w-5 text-taja-primary" />
+        <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Exchange Protocol</h3>
+      </div>
+
+      <div className="space-y-6">
+        <div className="group space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+              Price (₦) *
+            </label>
+            {suggestedPrice && (
+              <div className="text-[8px] font-bold text-taja-primary bg-taja-primary/5 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                <Sparkles className="h-2 w-2" />
+                AI Suggests: {suggestedPrice}
+              </div>
+            )}
+          </div>
+          <input
+            name="price"
+            type="number"
+            required
+            min="0"
+            step="0.01"
+            value={formData.price}
+            onChange={handleChange}
+            className="w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-2xl font-black tracking-tighter text-taja-secondary"
+            placeholder="0.00"
+          />
+        </div>
+        <div className="group space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+              Max Price (₦)
+            </label>
+          </div>
+          <input
+            name="maxPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            value={formData.maxPrice}
+            onChange={handleChange}
+            className="w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-2xl font-black tracking-tighter text-taja-secondary"
+            placeholder="Optional max fee"
+          />
+        </div>
+        <div className="group space-y-2">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Compare at Price (₦)</label>
+          <input
+            name="compareAtPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            value={formData.compareAtPrice}
+            onChange={handleChange}
+            className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-gray-400"
+            placeholder="Original price if on sale"
+          />
+        </div>
+      </div>
+    </motion.section>
+
+    {/* Inventory Card */}
+    <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px]">
+      <div className="flex items-center gap-3 mb-8">
+        <Package className="h-5 w-5 text-blue-500" />
+        <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Stock Intelligence</h3>
+      </div>
+
+      <div className="space-y-6">
+        <label className="flex items-center gap-4 cursor-pointer group p-2 rounded-xl hover:bg-white/40 transition-all">
+          <div className="relative">
+            <input
+              type="checkbox"
+              name="inventory.trackQuantity"
+              checked={formData.inventory.trackQuantity}
+              onChange={handleChange}
+              className="peer hidden"
+            />
+            <div className="w-10 h-6 bg-gray-200 peer-checked:bg-taja-primary rounded-full transition-all duration-300 shadow-inner" />
+            <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-4 shadow-sm" />
+          </div>
+          <span className="text-[10px] font-black text-taja-secondary uppercase tracking-widest">Track Inventory</span>
+        </label>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Minimum order quantity (MOQ)</label>
+          <input
+            name="inventory.moq"
+            type="number"
+            min="1"
+            value={formData.inventory.moq}
+            onChange={handleChange}
+            className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+          />
+        </motion.div>
+        {formData.inventory.trackQuantity && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Quantity Available</label>
+            <input
+              name="inventory.quantity"
+              type="number"
+              min="0"
+              value={formData.inventory.quantity}
+              onChange={handleChange}
+              className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-lg font-black text-taja-secondary"
+            />
+          </motion.div>
+        )}
+      </div>
+    </motion.section>
+
+    {/* Shipping Card */}
+    <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px]">
+      <div className="flex items-center gap-3 mb-8">
+        <Truck className="h-5 w-5 text-purple-500" />
+        <h3 className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em]">Logistics Protocol</h3>
+      </div>
+
+      <div className="space-y-6">
+        <label className="flex items-center gap-4 cursor-pointer group p-2 rounded-xl hover:bg-white/40 transition-all">
+          <div className="relative">
+            <input
+              type="checkbox"
+              name="shipping.freeShipping"
+              checked={formData.shipping.freeShipping}
+              onChange={handleChange}
+              className="peer hidden"
+            />
+            <div className="w-10 h-6 bg-gray-200 peer-checked:bg-emerald-500 rounded-full transition-all duration-300  shadow-inner" />
+            <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-4 shadow-sm" />
+          </div>
+          <span className="text-[10px] font-black text-taja-secondary uppercase tracking-widest">Free Shipping</span>
+        </label>
+
+        {!formData.shipping.freeShipping && (
+          <>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Delivery Fee (₦) — flat rate</label>
+              <input
+                name="shipping.shippingCost"
+                type="number"
+                min="0"
+                value={formData.shipping.shippingCost}
+                onChange={handleChange}
+                className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+              />
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Or cost per kg (₦) — weight-based</label>
+              <input
+                name="shipping.costPerKg"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.shipping.costPerKg}
+                onChange={handleChange}
+                placeholder="Optional: logistics-style pricing"
+                className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+              />
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Weight (kg)</label>
+              <input
+                name="shipping.weight"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.shipping.weight}
+                onChange={handleChange}
+                placeholder="For weight-based delivery"
+                className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
+              />
+            </motion.div>
+          </>
+        )}
+
+        <div className="group space-y-2">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Processing Time</label>
+          <select
+            name="shipping.processingTime"
+            value={formData.shipping.processingTime}
+            onChange={handleChange}
+            className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white appearance-none transition-all rounded-2xl text-[10px] font-black uppercase tracking-widest text-taja-secondary"
+          >
+            <option value="1-2-days">1-2 Business Days</option>
+            <option value="3-5-days">3-5 Business Days</option>
+            <option value="1-week">1 Week Execution</option>
+            <option value="2-weeks">2 Weeks Strategy</option>
+          </select>
+        </div>
+      </div>
+    </motion.section>
+
+    {/* SEO & Tags Card */}
+    <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px]">
+      <div className="flex items-center gap-3 mb-8">
+        <Target className="h-5 w-5 text-amber-600" />
+        <h3 className="text-[10px] font-black text-amber-600 uppercase tracking-[0.3em]">Discovery Engine</h3>
+      </div>
+
+      <div className="space-y-6">
+        <div className="group space-y-3">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Marketplace Context Tags</label>
+          <div className="relative group/input">
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+              className="w-full h-14 pl-6 pr-32 glass-panel border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-sm font-bold text-taja-secondary placeholder:text-gray-300 shadow-premium"
+              placeholder="Add discovery tag..."
+            />
+            <button
+              type="button"
+              onClick={addTag}
+              className="absolute right-2 top-2 h-10 px-6 bg-taja-secondary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-taja-primary transition-all shadow-premium group-hover/input:scale-95 active:scale-90"
+            >
+              Sync
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2.5 min-h-[40px]">
+          <AnimatePresence initial={false}>
+            {formData.seo.tags.map((tag) => (
+              <motion.span
+                key={tag}
+                initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="inline-flex items-center px-5 py-2.5 glass-panel bg-white/80 border-taja-primary/10 text-taja-secondary text-[9px] font-black uppercase tracking-widest rounded-full shadow-sm hover:shadow-md hover:border-taja-primary/30 transition-all group/tag select-none"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="ml-3 text-gray-300 hover:text-red-500 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </motion.span>
+            ))}
+          </AnimatePresence>
+          {formData.seo.tags.length === 0 && (
+            <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest italic pt-2">No tags synchronized yet.</p>
+          )}
+        </div>
+      </div>
+    </motion.section>
+
+  </div>
         </div >
       </motion.div >
 

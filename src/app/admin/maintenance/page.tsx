@@ -158,13 +158,13 @@ export default function AdminMaintenancePage() {
                         </div>
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-taja-primary mb-2">Systems Intelligence</p>
-                        <h1 className="text-5xl md:text-6xl font-black text-taja-secondary tracking-tighter italic leading-none">Maintenance <span className="text-taja-primary font-thin not-italic">&</span> Ledger</h1>
+                        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-taja-primary mb-2">System Tools</p>
+                        <h1 className="text-5xl md:text-6xl font-black text-taja-secondary tracking-tighter italic leading-none">System <span className="text-taja-primary font-thin not-italic">&</span> Maintenance</h1>
                     </div>
                 </div>
                 <div className="max-w-2xl">
                     <p className="text-lg text-taja-secondary/60 font-medium leading-relaxed italic border-l-4 border-taja-primary/20 pl-6">
-                        Authorized merchant oversight protocols. Execute scrubbing algorithms to maintain Registry integrity and facilitate authentic commerce.
+                        Authorized platform tools. Clean up database to maintain platform stability and facilitate authentic commerce.
                     </p>
                 </div>
             </div>
@@ -181,7 +181,7 @@ export default function AdminMaintenancePage() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="text-3xl font-black text-taja-secondary tracking-tight group-hover:text-taja-primary transition-colors italic">Scrub Demo Assets</h3>
+                            <h3 className="text-3xl font-black text-taja-secondary tracking-tight group-hover:text-taja-primary transition-colors italic">Remove Demo Data</h3>
                             <p className="text-sm font-medium text-slate-500 leading-relaxed">
                                 Removes all seeded entities from the Registry catalog. Targeted at "Vintage Finds", "Handmade by Chioma", and "Retro" demo signatures.
                             </p>
@@ -192,7 +192,7 @@ export default function AdminMaintenancePage() {
                                 onClick={() => setActiveModal("demo")}
                                 className="w-full h-18 bg-taja-secondary hover:bg-taja-primary text-white rounded-[1.5rem] shadow-huge font-black uppercase tracking-widest text-[11px] transition-all group-active:scale-95 flex items-center justify-center gap-3 border border-white/10"
                             >
-                                Execute Purge Protocol
+                                Start Cleanup
                                 <ArrowRight className="h-4 w-4 group-hover:translate-x-2 transition-transform" />
                             </Button>
                         </div>
@@ -213,9 +213,9 @@ export default function AdminMaintenancePage() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="text-3xl font-black text-taja-secondary tracking-tight italic">Full Registry Wipe</h3>
+                            <h3 className="text-3xl font-black text-taja-secondary tracking-tight italic">Factory Reset</h3>
                             <p className="text-sm font-medium text-taja-secondary/60 leading-relaxed italic">
-                                Absolute eradication protocol. Erases <span className="font-black text-taja-secondary font-not-italic underline decoration-taja-primary underline-offset-4">EVERY</span> registered product and shop across the entire infrastructure.
+                                Absolute cleanup protocol. Erases <span className="font-black text-taja-secondary font-not-italic underline decoration-taja-primary underline-offset-4">EVERY</span> registered product and shop across the entire infrastructure.
                             </p>
                         </div>
 
@@ -225,7 +225,7 @@ export default function AdminMaintenancePage() {
                                 variant="outline"
                                 className="w-full h-18 border-taja-secondary/20 text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 rounded-[1.5rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-3 border-dashed"
                             >
-                                Reset Infrastructure
+                                Factory Reset
                                 <Activity className="h-4 w-4" />
                             </Button>
                         </div>
@@ -250,13 +250,13 @@ export default function AdminMaintenancePage() {
                                     <div className="space-y-8 flex-1 text-center md:text-left">
                                         <div>
                                             <p className="text-[10px] font-black text-taja-primary uppercase tracking-[0.5em] mb-2">Operation Summary</p>
-                                            <h3 className="text-4xl font-black text-taja-secondary tracking-tighter italic w-full border-b border-taja-light pb-6 mb-2">Protocol Successful</h3>
+                                            <h3 className="text-4xl font-black text-taja-secondary tracking-tighter italic w-full border-b border-taja-light pb-6 mb-2">Cleanup Complete</h3>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
                                             {[
-                                                { label: "Assets Neutralized", value: result.productsDeleted, icon: ShoppingCart },
-                                                { label: "Shops Decoupled", icon: Store },
-                                                { label: "Accounts Scrubbed", icon: Users },
+                                                { label: "Products Removed", value: result.productsDeleted, icon: ShoppingCart },
+                                                { label: "Shops Removed", icon: Store },
+                                                { label: "Users Removed", icon: Users },
                                             ].map((stat, i) => (
                                                 <div key={i} className="space-y-2 group">
                                                     <div className="flex items-center gap-2 justify-center md:justify-start">
@@ -284,8 +284,8 @@ export default function AdminMaintenancePage() {
                 onConfirm={() => handleCleanup(false)}
                 loading={loading}
                 title="Authorization Required"
-                description="This protocol will scrub all pre-seeded demo entities from the platform. Real user data will remain intact. Proceed with the purge?"
-                confirmText="Purge Demo Grid"
+                description="This will clean up all pre-seeded demo entities from the platform. Real user data will remain intact. Proceed?"
+                confirmText="Clean up Demo Data"
                 type="warning"
             />
 
@@ -294,9 +294,9 @@ export default function AdminMaintenancePage() {
                 onClose={() => setActiveModal(null)}
                 onConfirm={() => handleCleanup(true)}
                 loading={loading}
-                title="Infrastructure Shutdown"
-                description="CRITICAL: You are about to initiate a full Registry reset. All products and shops will be eradicated. This action is terminal and irreversible."
-                confirmText="Initiate Lockdown"
+                title="System Reset"
+                description="CRITICAL: You are about to initiate a full platform reset. All products and shops will be removed. This action is terminal and irreversible."
+                confirmText="Start Reset"
                 type="danger"
                 requireVerification={true}
             />

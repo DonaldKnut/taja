@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
         seo,
         status = 'draft',
         shop,
+        variants,
       } = body;
 
       if (!title || !description || !category || !price || !images || images.length === 0) {
@@ -215,6 +216,7 @@ export async function POST(request: NextRequest) {
         specifications: specifications || {},
         seo: seo || { tags: [] },
         status,
+        variants: variants || [],
       });
 
       return NextResponse.json(

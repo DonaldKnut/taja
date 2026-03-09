@@ -37,6 +37,10 @@ export interface IProduct extends Document {
      * Variant-specific stock quantity (falls back to inventory.quantity when omitted).
      */
     stock?: number;
+    /**
+     * Variant-specific weight in kg.
+     */
+    weight?: number;
     image?: string;
     /**
      * Arbitrary option key/values like { size: "M", color: "Red" }.
@@ -169,6 +173,7 @@ const ProductSchema = new Schema<IProduct>(
         price: { type: Number, min: 0 },
         compareAtPrice: { type: Number, min: 0 },
         stock: { type: Number, min: 0 },
+        weight: { type: Number, min: 0 },
         image: String,
         options: {
           type: Map,
