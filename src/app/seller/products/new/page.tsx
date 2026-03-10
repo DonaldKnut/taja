@@ -167,6 +167,7 @@ export default function NewProductPage() {
       stock: string;
       weight: string;
       sku?: string;
+      image?: string;
       active: boolean;
     }[],
     status: "active" as "active" | "draft",
@@ -591,6 +592,7 @@ export default function NewProductPage() {
           price: v.price ? parseFloat(String(v.price)) : undefined,
           stock: v.stock ? parseInt(String(v.stock)) : undefined,
           weight: v.weight ? parseFloat(String(v.weight)) : undefined,
+          image: v.image || undefined,
         })),
         shop: userShop._id || userShop.id,
       };
@@ -619,8 +621,8 @@ export default function NewProductPage() {
 
   return (
     <div className="min-h-screen bg-motif-blanc selection:bg-taja-primary/30">
-      {/* Navigation - Actions Bar */}
-      <nav className="sticky top-0 z-40 border-b border-taja-primary/10 bg-white/10 backdrop-blur-xl">
+      {/* Navigation - Actions Bar (fixed below seller header) */}
+      <nav className="fixed top-[72px] left-0 right-0 z-40 border-b border-taja-primary/10 bg-white/80 backdrop-blur-xl">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-10">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-6">
@@ -660,7 +662,7 @@ export default function NewProductPage() {
         initial="hidden"
         animate="show"
         variants={container}
-        className="max-w-[1400px] mx-auto px-4 sm:px-10 py-12"
+        className="max-w-[1400px] mx-auto px-4 sm:px-10 pt-32 pb-12"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Main Form Area */}
@@ -871,9 +873,15 @@ export default function NewProductPage() {
                 {formData.images.length < 8 && (
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.click();
+                      } else {
+                        document.getElementById("seller-product-image-input")?.click();
+                      }
+                    }}
                     disabled={uploadingImages}
-                    className="aspect-square flex flex-col items-center justify-center p-8 glass-card border-dashed border-white/60 bg-white/10 hover:bg-white hover:shadow-premium transition-all duration-500 group rounded-[32px]"
+                    className="aspect-square flex flex-col items-center justify-center p-8 glass-card border-dashed border-white/60 bg-white/10 hover:bg-white hover:shadow-premium transition-all duration-500 group rounded-[32px] cursor-pointer"
                   >
                     {uploadingImages ? (
                       <Loader2 className="h-8 w-8 text-taja-primary animate-spin" />
@@ -1110,8 +1118,11 @@ export default function NewProductPage() {
                     <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">
                       Stock
                     </div>
-                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">
+                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">
                       Weight (kg)
+                    </div>
+                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">
+                      Variant Image
                     </div>
                     <div className="col-span-1" />
                   </div>
@@ -1169,7 +1180,7 @@ export default function NewProductPage() {
                           </div>
 
                           {/* Weight Input */}
-                          <div className="sm:col-span-3 space-y-2 sm:space-y-0">
+                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
                             <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
                               Weight (kg)
                             </label>
@@ -1181,6 +1192,37 @@ export default function NewProductPage() {
                               placeholder="Weight (kg)"
                               className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-medium text-gray-500"
                             />
+                          </div>
+
+                          {/* Variant Image Selector */}
+                          <div className="sm:col-span-3 space-y-2 sm:space-y-1">
+                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                              Variant Image
+                            </label>
+                            <select
+                              value={variant.image || ""}
+                              onChange={(e) => updateVariant(index, "image", e.target.value)}
+                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-xs font-medium text-taja-secondary appearance-none"
+                              disabled={formData.images.length === 0}
+                            >
+                              <option value="">
+                                {formData.images.length
+                                  ? "Use main product image"
+                                  : "Upload images above first"}
+                              </option>
+                              {formData.images.map((url, idx) => (
+                                <option key={url} value={url}>
+                                  Image {idx + 1}
+                                </option>
+                              ))}
+                            </select>
+                            {formData.images.length === 0 && (
+                              <p className="text-[10px] sm:text-[9px] font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 sm:py-1.5 leading-snug">
+                                Upload your main product images in the{" "}
+                                <span className="font-bold">Product Images</span> section above to unlock
+                                per-variation images.
+                              </p>
+                            )}
                           </div>
 
                           {/* Remove Button */}
@@ -1493,6 +1535,7 @@ export default function NewProductPage() {
       </motion.div >
 
       <input
+        id="seller-product-image-input"
         ref={fileInputRef}
         type="file"
         multiple

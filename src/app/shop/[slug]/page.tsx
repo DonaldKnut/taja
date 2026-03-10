@@ -254,6 +254,12 @@ export default function ShopPage() {
     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
+  // Compute a simple catalog value as the sum of product base prices.
+  const catalogValue = useMemo(
+    () => products.reduce((sum, p: any) => sum + (p.price || 0), 0),
+    [products]
+  );
+
   // ─── Loading State ───
   if (loading) {
     return (
@@ -613,30 +619,45 @@ export default function ShopPage() {
                             <span>Orders</span>
                           </div>
                           <span className="text-xl font-black text-taja-secondary block">{shop.stats?.totalOrders ?? 0}</span>
+                          <p className="text-[9px] text-gray-400 font-medium">
+                            Includes all orders placed; revenue only counts confirmed ones.
+                          </p>
                         </div>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-gray-500 font-bold text-[10px] uppercase">
                             <CheckCircle className="h-3 w-3 text-taja-primary/50" />
                             <span>Status</span>
                           </div>
-                          <span className={cn(
-                            "px-3 py-1 mt-1 inline-block rounded-lg font-black text-[9px] uppercase tracking-widest border",
-                            shop.verification?.isVerified
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200/60"
-                              : "bg-gray-50 text-gray-500 border-gray-200/60"
-                          )}>
+                          <span
+                            className={cn(
+                              "px-3 py-1 mt-1 inline-block rounded-lg font-black text-[9px] uppercase tracking-widest border",
+                              shop.verification?.isVerified
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200/60"
+                                : "bg-gray-50 text-gray-500 border-gray-200/60"
+                            )}
+                          >
                             {shop.verification?.isVerified ? "Verified" : "Pending"}
                           </span>
                         </div>
-                        {(shop.stats?.totalRevenue ?? 0) > 0 && (
+                        {(shop.stats?.totalRevenue ?? 0) > 0 || catalogValue > 0 ? (
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 text-gray-500 font-bold text-[10px] uppercase">
                               <TrendingUp className="h-3 w-3 text-taja-primary/50" />
-                              <span>Revenue</span>
+                              <span>
+                                {(shop.stats?.totalRevenue ?? 0) > 0 ? "Revenue" : "Catalog value"}
+                              </span>
                             </div>
-                            <span className="text-xl font-black text-taja-secondary block">₦{(shop.stats!.totalRevenue! / 1000).toFixed(0)}k+</span>
+                            <span className="text-xl font-black text-taja-secondary block">
+                              ₦
+                              {(
+                                ((shop.stats?.totalRevenue ?? 0) > 0
+                                  ? shop.stats!.totalRevenue!
+                                  : catalogValue) / 1000
+                              ).toFixed(0)}
+                              k+
+                            </span>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>

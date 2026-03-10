@@ -34,7 +34,7 @@ export default function AdminBroadcastPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
+  const [messageHtml, setMessageHtml] = useState("");
 
   const fetchSubscribers = useCallback(async () => {
     try {
@@ -89,7 +89,8 @@ export default function AdminBroadcastPage() {
       toast.error("Enter a subject");
       return;
     }
-    if (!message.trim()) {
+    const cleanedHtml = messageHtml.replace(/<p><br><\/p>/g, "").trim();
+    if (!cleanedHtml) {
       toast.error("Enter a message");
       return;
     }
@@ -100,14 +101,15 @@ export default function AdminBroadcastPage() {
         body: JSON.stringify({
           emails,
           subject: subject.trim(),
-          message: message.trim(),
+          // Pass rich HTML so formatting (bold, italics, lists) is preserved in email
+          message: cleanedHtml,
         }),
       });
       if (res?.success) {
         toast.success(res?.message || "Broadcast sent");
         setSelected(new Set());
         setSubject("");
-        setMessage("");
+        setMessageHtml("");
       } else {
         toast.error(res?.message || "Failed to send");
       }
@@ -120,71 +122,123 @@ export default function AdminBroadcastPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div className="mb-10 p-1">
         <div className="flex items-center gap-6">
-          <div className="w-14 h-14 rounded-[1.2rem] bg-slate-950 shadow-sm flex items-center justify-center">
+          <div className="w-14 h-14 rounded-[1.2rem] bg-slate-950 shadow-huge flex items-center justify-center">
             <Megaphone className="h-7 w-7 text-emerald-400" />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Communications</p>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Broadcast message</h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">
+              Communications
+            </p>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight italic">
+              Broadcast Messages
+            </h1>
+            <p className="text-[11px] font-medium text-slate-500 mt-2 max-w-xl">
+              Write once, and Taja will deliver it to every selected user&apos;s inbox with your formatting preserved.
+            </p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Compose */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="rounded-2xl border-slate-100 shadow-sm">
-            <CardHeader className="border-b border-slate-100">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="rounded-[2rem] border-slate-100 shadow-huge overflow-hidden">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/60">
               <CardTitle className="flex items-center gap-2 text-slate-900 font-black">
                 <Mail className="h-5 w-5 text-emerald-500" />
-                Compose
+                Compose Broadcast
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="pt-6 space-y-5">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Subject</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                  Subject
+                </label>
                 <Input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Platform updates…"
-                  className="rounded-xl"
+                  placeholder="e.g. Taja Seller Updates – March"
+                  className="rounded-2xl h-11 text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Message</label>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                  Message (Rich Text)
+                </label>
+                <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                  <span>Use bold, italics, lists and links — they will show exactly like this in email.</span>
+                </div>
+                {/* Simple rich text toolbar */}
+                <div className="flex items-center gap-2 mb-2 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => document.execCommand("bold")}
+                    className="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold"
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => document.execCommand("italic")}
+                    className="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 italic"
+                  >
+                    I
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => document.execCommand("insertUnorderedList")}
+                    className="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
+                  >
+                    • List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => document.execCommand("insertOrderedList")}
+                    className="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
+                  >
+                    1. List
+                  </button>
+                  <span className="ml-auto text-[10px] text-slate-400">
+                    Basic formatting only (no images).
+                  </span>
+                </div>
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => setMessageHtml((e.target as HTMLDivElement).innerHTML)}
+                  className="w-full min-h-[220px] max-h-[420px] overflow-y-auto px-4 py-3 rounded-2xl border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 text-sm leading-relaxed"
                   placeholder="Write your announcement or platform update…"
-                  rows={8}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none text-sm"
+                  dangerouslySetInnerHTML={{ __html: messageHtml || "" }}
                 />
+                <p className="text-[10px] text-slate-400">
+                  This content is sent as HTML, so your bold, italics and lists will appear the same in Gmail and other inboxes.
+                </p>
               </div>
               <Button
                 onClick={handleSend}
                 disabled={sending || selected.size === 0}
-                className="w-full rounded-xl h-12 font-bold bg-slate-900 hover:bg-emerald-600 text-white flex items-center justify-center gap-2"
+                className="w-full rounded-2xl h-12 font-black bg-slate-900 hover:bg-emerald-600 text-white flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.2em]"
               >
                 {sending ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
                   <Send className="h-5 w-5" />
                 )}
-                Send to {selected.size} selected
+                Send to {selected.size} recipient{selected.size === 1 ? "" : "s"}
               </Button>
             </CardContent>
           </Card>
         </div>
 
         {/* Subscribers list */}
-        <div className="lg:col-span-2">
-          <Card className="rounded-2xl border-slate-100 shadow-sm overflow-hidden">
-            <CardHeader className="border-b border-slate-100 bg-slate-50/30 flex flex-row items-center justify-between flex-wrap gap-4">
+        <div className="lg:col-span-1">
+          <Card className="rounded-[2rem] border-slate-100 shadow-huge overflow-hidden">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/60 flex flex-row items-center justify-between flex-wrap gap-4">
               <CardTitle className="flex items-center gap-2 text-slate-900 font-black">
                 <Users className="h-5 w-5 text-emerald-500" />
-                Subscribers
+                Audience
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <input
@@ -206,7 +260,7 @@ export default function AdminBroadcastPage() {
                   <option value="admin">Admin</option>
                 </select>
                 <Button variant="outline" size="sm" onClick={fetchSubscribers} className="rounded-xl">
-                  <Search className="h-4 w-4 mr-1" /> Search
+                  <Search className="h-4 w-4 mr-1" /> Refresh
                 </Button>
               </div>
             </CardHeader>

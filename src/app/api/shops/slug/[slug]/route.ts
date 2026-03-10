@@ -38,7 +38,50 @@ export async function GET(
       Product.countDocuments({ shop: shop._id, status: { $ne: 'deleted' } }),
       Order.aggregate([
         { $match: { shop: shop._id } },
-        { $group: { _id: null, count: { $sum: 1 }, totalRevenue: { $sum: '$totals.total' } } },
+        {
+          $group: {
+            _id: null,
+            count: { $sum: 1 },
+            settledCount: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ['$paymentStatus', 'paid'] },
+                      {
+                        $in: [
+                          '$buyerConfirmation.status',
+                          ['confirmed', 'auto_confirmed'],
+                        ],
+                      },
+                    ],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
+            settledRevenue: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ['$paymentStatus', 'paid'] },
+                      {
+                        $in: [
+                          '$buyerConfirmation.status',
+                          ['confirmed', 'auto_confirmed'],
+                        ],
+                      },
+                    ],
+                  },
+                  '$totals.total',
+                  0,
+                ],
+              },
+            },
+          },
+        },
       ]),
       Review.aggregate([
         { $match: { shop: shop._id } },
@@ -52,7 +95,7 @@ export async function GET(
         .lean(),
     ]);
 
-    const orderData = ordersResult[0] || { count: 0, totalRevenue: 0 };
+    const orderData = ordersResult[0] || { count: 0, settledCount: 0, settledRevenue: 0 };
     const reviewData = reviews[0] || { averageRating: 0, reviewCount: 0 };
 
     // Normalise product shape for ProductCard (id, _id, shopSlug, etc.)
@@ -77,7 +120,7 @@ export async function GET(
         ...(shop as any).stats,
         totalProducts: productCount,
         totalOrders: orderData.count,
-        totalRevenue: orderData.totalRevenue || 0,
+        totalRevenue: orderData.settledRevenue || 0,
         averageRating: Math.round((reviewData.averageRating || 0) * 10) / 10,
         reviewCount: reviewData.reviewCount || 0,
         followerCount,

@@ -25,6 +25,8 @@ import {
   AlertCircle,
   Plus,
   Loader2,
+  Sparkles,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -94,6 +96,8 @@ export default function EditProductPage() {
   });
 
   const [tagInput, setTagInput] = useState("");
+  const [suggestedPrice, setSuggestedPrice] = useState("");
+  const [analyzingPrice, setAnalyzingPrice] = useState(false);
 
   // Fetch categories and product data
   useEffect(() => {
@@ -231,11 +235,42 @@ export default function EditProductPage() {
         images: [...prev.images, ...uploadedUrls].slice(0, 8),
       }));
       toast.success(`${uploadedUrls.length} image(s) uploaded`);
+      if (!formData.images.length && uploadedUrls[0]) {
+        // Auto-analyze first image for pricing hint
+        handleAnalyzePrice(uploadedUrls[0]);
+      }
     } catch (error: any) {
       console.error("Image upload error:", error);
       toast.error(error?.message || "Failed to upload images");
     } finally {
       setUploadingImages(false);
+    }
+  };
+
+  const handleAnalyzePrice = async (imageUrl?: string) => {
+    const target = imageUrl || formData.images[0];
+    if (!target) {
+      toast.error("Upload at least one image so AI can analyze pricing.");
+      return;
+    }
+    if (analyzingPrice) return;
+    setAnalyzingPrice(true);
+    try {
+      const res = await api("/api/ai/analyze-image", {
+        method: "POST",
+        body: JSON.stringify({ imageUrl: target }),
+      });
+      if (res?.analysis?.suggestedPriceRange) {
+        setSuggestedPrice(res.analysis.suggestedPriceRange);
+        toast.success("AI suggested a price range for this product.");
+      } else {
+        toast.error("AI could not confidently suggest a price. Try another image.");
+      }
+    } catch (error: any) {
+      console.error("AI price analysis error:", error);
+      toast.error(error?.message || "Failed to get AI price suggestion");
+    } finally {
+      setAnalyzingPrice(false);
     }
   };
 
@@ -767,10 +802,18 @@ export default function EditProductPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                    <div className="relative">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">
-                        {formData.isRange ? "Minimum (₦)" : "Price (₦)"}
-                      </label>
+                    <div className="relative space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block">
+                          {formData.isRange ? "Minimum (₦)" : "Price (₦)"}
+                        </label>
+                        {suggestedPrice && (
+                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-taja-primary/5 text-[9px] font-bold text-taja-primary uppercase tracking-[0.16em]">
+                            <Sparkles className="h-3 w-3" />
+                            {suggestedPrice}
+                          </div>
+                        )}
+                      </div>
                       <div className="relative group">
                         <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-gray-300">₦</span>
                         <Input
@@ -781,6 +824,19 @@ export default function EditProductPage() {
                           className="rounded-2xl h-16 pl-12 text-xl font-black border-gray-100 focus:border-taja-primary transition-all"
                           placeholder="0.00"
                         />
+                        <button
+                          type="button"
+                          onClick={() => handleAnalyzePrice()}
+                          disabled={analyzingPrice}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-taja-primary/10 text-[9px] font-black text-taja-primary uppercase tracking-[0.16em] hover:bg-taja-primary hover:text-white transition-colors disabled:opacity-50"
+                        >
+                          {analyzingPrice ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3 w-3" />
+                          )}
+                          AI Price
+                        </button>
                       </div>
                     </div>
 
