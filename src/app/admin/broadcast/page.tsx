@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Mail,
   Send,
@@ -34,7 +34,7 @@ export default function AdminBroadcastPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [subject, setSubject] = useState("");
-  const [messageHtml, setMessageHtml] = useState("");
+  const messageEditorRef = useRef<HTMLDivElement>(null);
 
   const fetchSubscribers = useCallback(async () => {
     try {
@@ -89,7 +89,8 @@ export default function AdminBroadcastPage() {
       toast.error("Enter a subject");
       return;
     }
-    const cleanedHtml = messageHtml.replace(/<p><br><\/p>/g, "").trim();
+    const rawHtml = messageEditorRef.current?.innerHTML ?? "";
+    const cleanedHtml = rawHtml.replace(/<p><br><\/p>/gi, "").trim();
     if (!cleanedHtml) {
       toast.error("Enter a message");
       return;
@@ -101,7 +102,6 @@ export default function AdminBroadcastPage() {
         body: JSON.stringify({
           emails,
           subject: subject.trim(),
-          // Pass rich HTML so formatting (bold, italics, lists) is preserved in email
           message: cleanedHtml,
         }),
       });
@@ -109,7 +109,7 @@ export default function AdminBroadcastPage() {
         toast.success(res?.message || "Broadcast sent");
         setSelected(new Set());
         setSubject("");
-        setMessageHtml("");
+        if (messageEditorRef.current) messageEditorRef.current.innerHTML = "";
       } else {
         toast.error(res?.message || "Failed to send");
       }
@@ -143,7 +143,7 @@ export default function AdminBroadcastPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Compose */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6" dir="ltr">
           <Card className="rounded-[2rem] border-slate-100 shadow-huge overflow-hidden">
             <CardHeader className="border-b border-slate-100 bg-slate-50/60">
               <CardTitle className="flex items-center gap-2 text-slate-900 font-black">
@@ -157,6 +157,8 @@ export default function AdminBroadcastPage() {
                   Subject
                 </label>
                 <Input
+                  dir="ltr"
+                  autoComplete="off"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="e.g. Taja Seller Updates – March"
@@ -205,12 +207,13 @@ export default function AdminBroadcastPage() {
                   </span>
                 </div>
                 <div
+                  ref={messageEditorRef}
                   contentEditable
                   suppressContentEditableWarning
-                  onInput={(e) => setMessageHtml((e.target as HTMLDivElement).innerHTML)}
-                  className="w-full min-h-[220px] max-h-[420px] overflow-y-auto px-4 py-3 rounded-2xl border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 text-sm leading-relaxed"
-                  placeholder="Write your announcement or platform update…"
-                  dangerouslySetInnerHTML={{ __html: messageHtml || "" }}
+                  dir="ltr"
+                  style={{ direction: "ltr", unicodeBidi: "isolate" }}
+                  data-placeholder="Write your announcement or platform update…"
+                  className="w-full min-h-[220px] max-h-[420px] overflow-y-auto px-4 py-3 rounded-2xl border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 text-sm leading-relaxed text-left empty:before:content-[attr(data-placeholder)] empty:before:text-slate-400"
                 />
                 <p className="text-[10px] text-slate-400">
                   This content is sent as HTML, so your bold, italics and lists will appear the same in Gmail and other inboxes.
