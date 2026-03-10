@@ -7,7 +7,7 @@ import { FileText, ArrowLeft, Shield, CheckCircle2, Info } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function TermsPage() {
-  const lastUpdated = "8 November 2025";
+  const lastUpdated = "10 March 2026";
 
   const sections = [
     {
@@ -32,13 +32,15 @@ export default function TermsPage() {
     },
     {
       number: "05",
-      title: "Escrow & Payments",
-      content: "All prices must be quoted in Nigerian Naira (₦). We process payments via PCI-DSS compliant partners. Buyers authorize us to hold funds in escrow until order confirmation or delivery verification. Funds are remitted to Sellers net of platform fees and applicable taxes.",
+      title: "Escrow, Platform Fees & Taxes",
+      content:
+        "All prices must be quoted in Nigerian Naira (₦). We process payments via PCI‑DSS compliant partners and operate an escrow-based settlement framework. When you place an order, you authorize us and our payment partners to hold funds on your behalf until delivery is confirmed or an investigation is concluded. Funds are remitted to Sellers net of Taja.Shop platform fees and applicable statutory taxes (including VAT where required by law). The applicable platform fee percentage and settlement timelines may be updated from time to time and are reflected in your dashboard.",
     },
     {
       number: "06",
-      title: "Dispute Resolution",
-      content: "Buyers may raise disputes within 48 hours after delivery for defective or misdescribed products. Our support team will review evidence and determine an outcome based on the Seller’s policy and Nigerian consumer law. Our decision regarding platform-mediated disputes is final.",
+      title: "Disputes, Refunds & Auto‑Release",
+      content:
+        "If a Buyer believes a product is defective, damaged or not as described, they must raise a dispute through the Platform within the dispute window communicated at checkout or in the order screen (for example, within 7 days of marked delivery). Where no dispute is raised within that window, funds may be automatically released from escrow to the Seller. If a dispute is opened in time, funds are held while our team reviews evidence in line with the Seller’s stated policy and applicable Nigerian consumer law. Depending on the outcome, we may authorize a partial or full refund to the Buyer or release funds to the Seller.",
     },
     {
       number: "07",

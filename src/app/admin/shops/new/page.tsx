@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -36,6 +36,8 @@ export default function AdminShopsNewPage() {
   const [loading, setLoading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [users, setUsers] = useState<Array<{ _id: string; fullName?: string; email?: string; kyc?: { status?: string } }>>([]);
+  const [ownerId, setOwnerId] = useState<string>("");
   const [form, setForm] = useState({
     shopName: "",
     shopSlug: "",
@@ -53,6 +55,19 @@ export default function AdminShopsNewPage() {
     youtube: "",
     linkedin: "",
   });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api("/api/admin/users?role=seller&limit=200");
+        if (res?.success && Array.isArray(res?.data)) {
+          setUsers(res.data);
+        }
+      } catch {
+        // ignore, fallback is admin-owned shop
+      }
+    })();
+  }, []);
 
   const handleImageFile = async (file: File, type: "logo" | "banner") => {
     const setUploading = type === "banner" ? setUploadingCover : setUploadingLogo;
@@ -103,6 +118,7 @@ export default function AdminShopsNewPage() {
       const res = await api("/api/admin/shops", {
         method: "POST",
         body: JSON.stringify({
+          ownerId: ownerId || undefined,
           shopName: form.shopName.trim(),
           shopSlug: slug,
           description: form.description.trim() || undefined,
@@ -187,6 +203,28 @@ export default function AdminShopsNewPage() {
               </div>
 
               <div className="space-y-8">
+                {/* Attach to existing verified user (optional) */}
+                <div className="group space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                    Assign to Seller (optional)
+                  </label>
+                  <p className="text-[10px] text-gray-400 mb-1">
+                    Pick a verified seller account to own this shop. Leave empty to keep it as a platform/admin shop.
+                  </p>
+                  <select
+                    value={ownerId}
+                    onChange={(e) => setOwnerId(e.target.value)}
+                    className="w-full h-12 px-4 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 rounded-2xl text-xs font-medium text-taja-secondary"
+                  >
+                    <option value="">Platform-owned (no specific user)</option>
+                    {users.map((u) => (
+                      <option key={u._id} value={u._id}>
+                        {u.fullName || "Unnamed"} {u.email ? `(${u.email})` : ""}{" "}
+                        {u.kyc?.status ? `— KYC: ${u.kyc.status}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="group space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
                     Shop Name *

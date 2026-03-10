@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Shop from '@/models/Shop';
+import User from '@/models/User';
 import { requireRole } from '@/lib/middleware';
 
 export const dynamic = 'force-dynamic';
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
         address,
         socialLinks,
         settings,
+        ownerId,
       } = body;
 
       if (!shopName || !shopSlug) {
@@ -69,6 +71,18 @@ export async function POST(request: NextRequest) {
       }
 
       await connectDB();
+
+      let ownerObjectId = user.userId;
+      if (ownerId && typeof ownerId === 'string') {
+        const ownerDoc = await User.findById(ownerId).select('_id').lean();
+        if (!ownerDoc) {
+          return NextResponse.json(
+            { success: false, message: 'Selected owner user not found' },
+            { status: 400 }
+          );
+        }
+        ownerObjectId = ownerDoc._id;
+      }
 
       const slug = shopSlug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       if (!slug) {
@@ -98,7 +112,7 @@ export async function POST(request: NextRequest) {
       } : undefined;
 
       const shop = await Shop.create({
-        owner: user.userId,
+        owner: ownerObjectId,
         shopName: shopName.trim(),
         shopSlug: slug,
         description: description?.trim() || undefined,

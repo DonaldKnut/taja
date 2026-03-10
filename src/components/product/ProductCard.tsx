@@ -140,7 +140,25 @@ export function ProductCard({
     });
   };
 
-  const hasVariants = product.variants && product.variants.length > 0;
+  const hasVariants = !!(product.variants && product.variants.length > 0);
+
+  // Derive min/max price from variants when present, fall back to product.price/maxPrice
+  let displayMinPrice = product.price;
+  let displayMaxPrice = product.maxPrice;
+
+  if (hasVariants) {
+    const activeVariants = (product.variants || []).filter((v) => v && (v as any).active !== false);
+    const variantPrices = activeVariants
+      .map((v) => v.price)
+      .filter((p): p is number => typeof p === "number" && !Number.isNaN(p));
+
+    if (variantPrices.length > 0) {
+      const min = Math.min(...variantPrices);
+      const max = Math.max(...variantPrices);
+      displayMinPrice = min;
+      displayMaxPrice = max > min ? max : undefined;
+    }
+  }
 
   return (
     <motion.div
@@ -202,8 +220,8 @@ export function ProductCard({
         <div className="mt-auto pt-3 flex items-center justify-between">
           <div className="flex flex-col">
             <ProductPrice
-              price={product.price}
-              maxPrice={product.maxPrice}
+              price={displayMinPrice}
+              maxPrice={displayMaxPrice}
               hasVariants={hasVariants}
               size="md"
               className="leading-tight"

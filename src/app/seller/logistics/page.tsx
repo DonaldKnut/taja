@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { checkoutApi, trackingApi, api } from "@/lib/api";
+import toast from "react-hot-toast";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -121,6 +122,7 @@ export default function SellerLogisticsPage() {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [shop, setShop] = useState<{
     _id: string;
+    shopName?: string;
     settings?: {
       defaultDeliveryFee?: number;
       pickupPoints?: Array<{ name: string; address: string; city: string; state: string; phone?: string }>;
@@ -136,6 +138,7 @@ export default function SellerLogisticsPage() {
         notes?: string;
         active?: boolean;
       }>;
+      returnPolicy?: string;
     };
   } | null>(null);
   const [deliverySaving, setDeliverySaving] = useState(false);
@@ -148,6 +151,10 @@ export default function SellerLogisticsPage() {
     Array<{ id: string; date: string; startTime: string; endTime: string; maxOrders: number; notes?: string; active: boolean }>
   >([]);
   const [policyLoading, setPolicyLoading] = useState<"returns" | "shipping" | null>(null);
+  const [policyDraft, setPolicyDraft] = useState<{ returns: string; shipping: string }>({
+    returns: "",
+    shipping: "",
+  });
 
   useEffect(() => {
     (async () => {
@@ -356,6 +363,35 @@ export default function SellerLogisticsPage() {
             <div className="flex flex-wrap gap-2 text-[10px]">
               <button
                 type="button"
+                disabled={policyLoading === "returns"}
+                onClick={async () => {
+                  if (!shop?._id) return;
+                  setPolicyLoading("returns");
+                  try {
+                    const res = await api("/api/ai/shop-policies", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        policyType: "returns",
+                        shopName: shop?.shopName,
+                        categories: [],
+                      }),
+                    });
+                    if ((res as any)?.success && (res as any).text) {
+                      setPolicyDraft((prev) => ({ ...prev, returns: (res as any).text }));
+                    }
+                  } catch (e) {
+                    console.error(e);
+                  } finally {
+                    setPolicyLoading(null);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-taja-primary/30 bg-white/40 text-taja-primary font-black uppercase tracking-widest disabled:opacity-50"
+              >
+                <Sparkles className="h-3 w-3" />
+                {policyLoading === "returns" ? "AI Returns…" : "AI Return Policy"}
+              </button>
+              <button
+                type="button"
                 disabled={policyLoading === "shipping"}
                 onClick={async () => {
                   if (!shop?._id) return;
@@ -365,16 +401,12 @@ export default function SellerLogisticsPage() {
                       method: "POST",
                       body: JSON.stringify({
                         policyType: "shipping",
-                        shopName: "",
+                        shopName: shop?.shopName,
                         categories: [],
                       }),
                     });
-                    if ((res as any)?.success) {
-                      // We only surface this in a toast for now; you can paste into your policy fields.
-                      const text: string = (res as any).text || "";
-                      if (text) {
-                        console.log("AI shipping policy suggestion:", text);
-                      }
+                    if ((res as any)?.success && (res as any).text) {
+                      setPolicyDraft((prev) => ({ ...prev, shipping: (res as any).text }));
                     }
                   } catch (e) {
                     console.error(e);
@@ -593,6 +625,92 @@ export default function SellerLogisticsPage() {
             <p className="text-[10px] text-gray-400">
               These tiers are applied using the total order weight when products don&apos;t specify their own shipping cost.
             </p>
+          </div>
+
+          {/* AI-generated shop policies (optional) */}
+          <div className="pt-6 mt-4 border-t border-white/40 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                  Return Policy (shown to buyers)
+                </label>
+                {shop?.settings?.returnPolicy && (
+                  <Badge className="text-[8px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border-emerald-100">
+                    Active
+                  </Badge>
+                )}
+              </div>
+              <textarea
+                rows={5}
+                value={policyDraft.returns}
+                onChange={(e) =>
+                  setPolicyDraft((prev) => ({
+                    ...prev,
+                    returns: e.target.value,
+                  }))
+                }
+                placeholder="Use AI above to draft a clear, fair return policy, then edit it in your own words."
+                className="w-full p-3 rounded-2xl border border-white/60 bg-white/50 text-xs text-taja-secondary placeholder:text-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+              />
+              <button
+                type="button"
+                disabled={!shop?._id || !policyDraft.returns.trim()}
+                onClick={async () => {
+                  if (!shop?._id || !policyDraft.returns.trim()) return;
+                  setDeliverySaving(true);
+                  try {
+                    await api(`/api/shops/${shop._id}`, {
+                      method: "PUT",
+                      body: JSON.stringify({
+                        settings: {
+                          ...(shop.settings || {}),
+                          returnPolicy: policyDraft.returns.trim(),
+                        },
+                      }),
+                    });
+                    toast.success("Return policy saved to your shop.");
+                    setShop((current) =>
+                      current
+                        ? {
+                            ...current,
+                            settings: {
+                              ...(current.settings || {}),
+                              returnPolicy: policyDraft.returns.trim(),
+                            },
+                          }
+                        : current
+                    );
+                  } catch (e: any) {
+                    console.error(e);
+                    toast.error(e?.message || "Failed to save return policy.");
+                  } finally {
+                    setDeliverySaving(false);
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-taja-secondary text-white disabled:opacity-50"
+              >
+                Save Return Policy
+              </button>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                  Shipping & Delivery Notes
+                </label>
+              </div>
+              <textarea
+                rows={5}
+                value={policyDraft.shipping}
+                onChange={(e) =>
+                  setPolicyDraft((prev) => ({
+                    ...prev,
+                    shipping: e.target.value,
+                  }))
+                }
+                placeholder="Use AI above to generate shipping & delivery copy you can paste into your shop policies or product pages."
+                className="w-full p-3 rounded-2xl border border-white/60 bg-white/50 text-xs text-taja-secondary placeholder:text-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+              />
+            </div>
           </div>
           {/* ── Capacity Planning & Delivery Slots ────────────────────────────── */}
           <div className="pt-8 border-t border-white/40 space-y-6">

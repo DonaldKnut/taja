@@ -218,6 +218,60 @@ export default function SellerDashboardPage() {
         </motion.div>
       )}
 
+      {/* Progressive onboarding nudges when account is live */}
+      {!isRestricted && (
+        <motion.div
+          variants={item}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"
+        >
+          <Link href="/seller/logistics" className="group">
+            <div className="glass-card p-4 border-white/60 rounded-2xl flex items-center gap-3 hover:border-taja-primary/40 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-taja-primary/10 flex items-center justify-center text-taja-primary">
+                <Truck className="h-4 w-4" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-taja-secondary uppercase tracking-[0.2em]">
+                  Delivery Slots
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  Add delivery windows so buyers can pick exact dates.
+                </p>
+              </div>
+            </div>
+          </Link>
+          <Link href="/seller/logistics" className="group">
+            <div className="glass-card p-4 border-white/60 rounded-2xl flex items-center gap-3 hover:border-taja-primary/40 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <Shield className="h-4 w-4" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-taja-secondary uppercase tracking-[0.2em]">
+                  Return Policy (AI)
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  Use AI in Logistics Hub to draft a clear return policy.
+                </p>
+              </div>
+            </div>
+          </Link>
+          <Link href="/seller/products/new" className="group">
+            <div className="glass-card p-4 border-white/60 rounded-2xl flex items-center gap-3 hover:border-taja-primary/40 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+                <Plus className="h-4 w-4" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-taja-secondary uppercase tracking-[0.2em]">
+                  Publish First Product
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  Let AI help with title, description and tags.
+                </p>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
+      )}
+
       {/* Header & Primary Stats */}
       <motion.div variants={item} className="flex flex-col lg:flex-row justify-between items-end gap-10">
         <div className="space-y-2">
