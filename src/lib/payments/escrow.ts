@@ -9,6 +9,7 @@
  */
 
 import Order from "@/models/Order";
+import PlatformSettings from "@/models/PlatformSettings";
 import { connectDB } from "@/lib/db";
 
 export interface EscrowHold {
@@ -23,16 +24,38 @@ export interface EscrowHold {
   createdAt: Date;
 }
 
-const PLATFORM_FEE_PERCENTAGE = parseFloat(process.env.PLATFORM_FEE_PERCENTAGE || "7"); // Default 7%
+/**
+ * Platform fee configuration
+ * Priority:
+ * 1. Admin-configured percentage from PlatformSettings
+ * 2. Environment variable PLATFORM_FEE_PERCENTAGE
+ * 3. Default 7%
+ */
+const ENV_PLATFORM_FEE_PERCENTAGE = parseFloat(process.env.PLATFORM_FEE_PERCENTAGE || "7"); // fallback
 
 /**
  * Calculate platform fee and seller amount
  */
-export function calculateEscrowAmounts(totalAmount: number): {
+export async function getPlatformFeePercentage(): Promise<number> {
+  try {
+    await connectDB();
+    const doc = await PlatformSettings.findOne().lean();
+    const fromSettings = (doc as any)?.payments?.platformFeePercentage;
+    if (typeof fromSettings === "number" && fromSettings >= 0 && fromSettings <= 100) {
+      return fromSettings;
+    }
+  } catch (e) {
+    console.error("Error loading platform fee percentage from settings, falling back to env/default:", e);
+  }
+  return Number.isFinite(ENV_PLATFORM_FEE_PERCENTAGE) ? ENV_PLATFORM_FEE_PERCENTAGE : 7;
+}
+
+export async function calculateEscrowAmounts(totalAmount: number): Promise<{
   platformFee: number;
   sellerAmount: number;
-} {
-  const platformFee = Math.round((totalAmount * PLATFORM_FEE_PERCENTAGE) / 100);
+}> {
+  const pct = await getPlatformFeePercentage();
+  const platformFee = Math.round((totalAmount * pct) / 100);
   const sellerAmount = totalAmount - platformFee;
 
   return {
@@ -56,7 +79,7 @@ export async function createEscrowHold(
     throw new Error("Order not found");
   }
 
-  const { platformFee, sellerAmount } = calculateEscrowAmounts(amount);
+  const { platformFee, sellerAmount } = await calculateEscrowAmounts(amount);
 
   // Store escrow information in order
   const escrowHold: EscrowHold = {

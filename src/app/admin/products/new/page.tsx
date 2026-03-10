@@ -18,8 +18,9 @@ import {
   AlertTriangle,
   Upload,
   X,
+  LayoutGrid,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { api, uploadProductImage } from "@/lib/api";
 import toast from "react-hot-toast";
 
@@ -73,6 +74,7 @@ export default function AdminProductsNewPage() {
   });
   const [imageList, setImageList] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -208,10 +210,43 @@ export default function AdminProductsNewPage() {
     }));
   };
 
+  const handleGenerateDescription = async () => {
+    if (!form.title.trim()) {
+      toast.error("Enter a product title first so AI has something to work with.");
+      return;
+    }
+    setGeneratingDescription(true);
+    try {
+      const res = await api("/api/ai/generate-description", {
+        method: "POST",
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          category: form.category,
+        }),
+      });
+      if (res?.success && res?.description) {
+        setForm((prev) => ({
+          ...prev,
+          description: res.description,
+        }));
+        toast.success("Description generated with AI. Feel free to tweak it.");
+      } else if (res?.message) {
+        toast.error(res.message);
+      } else {
+        toast.error("AI could not generate a description. Please try again.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to generate description");
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-motif-blanc selection:bg-taja-primary/30">
-      {/* ── Sticky Action Bar ── */}
-      <nav className="sticky top-[72px] lg:top-0 z-40 border-b border-taja-primary/10 bg-white/80 backdrop-blur-xl">
+      {/* ── Fixed Action Bar (just below main header) ── */}
+      <nav className="fixed top-[72px] left-0 right-0 z-40 border-b border-taja-primary/10 bg-white/80 backdrop-blur-xl">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-10">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-6">
@@ -251,7 +286,7 @@ export default function AdminProductsNewPage() {
         initial="hidden"
         animate="show"
         variants={container}
-        className="max-w-[1200px] mx-auto px-4 sm:px-10 py-12"
+        className="max-w-[1200px] mx-auto px-4 sm:px-10 pt-32 pb-12"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
@@ -297,9 +332,24 @@ export default function AdminProductsNewPage() {
             {/* Product Information */}
             <motion.section variants={item} className="glass-panel p-10 border-white/60 rounded-[40px] relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-taja-primary/5 blur-[100px] rounded-full -z-10" />
-              <div className="space-y-1 mb-10">
-                <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Foundation</h3>
-                <p className="text-3xl font-black text-taja-secondary tracking-tighter italic">Product Details</p>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+                <div className="space-y-1">
+                  <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Foundation</h3>
+                  <p className="text-3xl font-black text-taja-secondary tracking-tighter italic">Product Details</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGenerateDescription}
+                  disabled={generatingDescription}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-taja-primary/10 text-taja-primary border border-taja-primary/20 text-[10px] font-black uppercase tracking-widest hover:bg-taja-primary hover:text-white transition-all disabled:opacity-50"
+                >
+                  {generatingDescription ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  AI: Generate Description
+                </button>
               </div>
 
               <div className="space-y-8">
@@ -451,6 +501,146 @@ export default function AdminProductsNewPage() {
                 </div>
               </div>
             </motion.section>
+
+            {/* Product Variations - moved under media for full-width layout */}
+            <motion.section variants={item} className="glass-panel p-6 sm:p-8 border-white/60 rounded-[40px] relative overflow-hidden bg-gradient-to-br from-white to-gray-50/30">
+              <div className="absolute top-0 left-0 w-48 h-48 bg-taja-primary/5 blur-[80px] rounded-full -z-10" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+                <div className="space-y-1">
+                  <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Product Options</h3>
+                  <p className="text-xl sm:text-2xl font-black text-taja-secondary tracking-tighter italic">Variations</p>
+                  <p className="text-[11px] text-gray-500 max-w-md">
+                    Add size, color or style options. These variations share the main product images above; you can later extend this to attach images to specific options if needed.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addVariant}
+                  className="flex items-center justify-center gap-2 px-6 h-12 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-taja-primary transition-all w-full sm:w-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Option
+                </button>
+              </div>
+
+              {form.variants.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Desktop Headers - Hidden on Mobile */}
+                  <div className="hidden md:grid grid-cols-12 gap-4 px-4 mb-2">
+                    <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-gray-400">Option Name (e.g. Red / XL)</div>
+                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Price (₦)</div>
+                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Stock</div>
+                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">Weight (kg)</div>
+                    <div className="col-span-1" />
+                  </div>
+
+                  <AnimatePresence>
+                    {form.variants.map((v, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="relative p-6 sm:p-4 glass-card bg-white border-gray-100 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-premium transition-all group"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-4 items-end md:items-center">
+                          {/* Option Name Input */}
+                          <div className="md:col-span-4 space-y-2 md:space-y-0">
+                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Option Name</label>
+                            <input
+                              type="text"
+                              value={v.name}
+                              onChange={(e) => updateVariant(i, "name", e.target.value)}
+                              placeholder="e.g. Red / XL"
+                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-bold transition-all"
+                            />
+                          </div>
+
+                          {/* Price Input */}
+                          <div className="md:col-span-2 space-y-2 md:space-y-0">
+                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
+                            <input
+                              type="number"
+                              value={v.price}
+                              onChange={(e) => updateVariant(i, "price", e.target.value)}
+                              placeholder="Same as base"
+                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-black text-taja-primary transition-all"
+                            />
+                          </div>
+
+                          {/* Stock Input */}
+                          <div className="md:col-span-2 space-y-2 md:space-y-0">
+                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
+                            <input
+                              type="number"
+                              value={v.stock}
+                              onChange={(e) => updateVariant(i, "stock", e.target.value)}
+                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-bold transition-all"
+                            />
+                          </div>
+
+                          {/* Weight Input */}
+                          <div className="md:col-span-2 space-y-2 md:space-y-0">
+                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={(v as any).weight}
+                              onChange={(e) => updateVariant(i, "weight", e.target.value)}
+                              placeholder="Weight"
+                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-medium text-gray-400 transition-all"
+                            />
+                          </div>
+
+                          {/* Variant Image Selector */}
+                          <div className="md:col-span-3 space-y-2 md:space-y-0">
+                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                              Variant Image
+                            </label>
+                            <select
+                              value={(v as any).image || ""}
+                              onChange={(e) => updateVariant(i, "image", e.target.value)}
+                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-medium text-taja-secondary appearance-none"
+                              disabled={imageList.length === 0}
+                            >
+                              <option value="">{imageList.length ? "Use main product image" : "Upload images above first"}</option>
+                              {imageList.map((url, idx) => (
+                                <option key={url} value={url}>
+                                  Image {idx + 1}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Remove Button */}
+                          <div className="md:col-span-1 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(i)}
+                              className="w-10 h-10 flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition-colors shadow-sm bg-white border border-gray-100"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="py-16 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-[2rem] bg-gray-50/30">
+                  <div className="w-14 h-14 rounded-2xl bg-white shadow-premium flex items-center justify-center mb-4">
+                    <LayoutGrid className="w-6 h-6 text-gray-200" />
+                  </div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center px-4">
+                    No product options defined yet
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-2 text-center px-6">
+                    Use this section to add sizes, colors or other options. Variations appear under this product in the marketplace.
+                  </p>
+                </div>
+              )}
+            </motion.section>
           </div>
 
           {/* ── Sidebar ── */}
@@ -541,117 +731,6 @@ export default function AdminProductsNewPage() {
               </div>
             </motion.section>
 
-            {/* Product Variations */}
-            <motion.section variants={item} className="glass-panel p-6 sm:p-8 border-white/60 rounded-[32px] relative overflow-hidden bg-gradient-to-br from-white to-gray-50/30">
-              <div className="absolute top-0 left-0 w-48 h-48 bg-taja-primary/5 blur-[80px] rounded-full -z-10" />
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
-                <div className="space-y-1">
-                  <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Product Options</h3>
-                  <p className="text-xl sm:text-2xl font-black text-taja-secondary tracking-tighter italic">Variations</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={addVariant}
-                  className="flex items-center justify-center gap-2 px-6 h-12 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-taja-primary transition-all w-full sm:w-auto"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Option
-                </button>
-              </div>
-
-              {form.variants.length > 0 ? (
-                <div className="space-y-6">
-                  {/* Desktop Headers - Hidden on Mobile */}
-                  <div className="hidden sm:grid grid-cols-12 gap-4 px-4 mb-2">
-                    <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-gray-400">Option Name (e.g. Red / XL)</div>
-                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Price (₦)</div>
-                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Stock</div>
-                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">Weight (kg)</div>
-                    <div className="col-span-1"></div>
-                  </div>
-
-                  <AnimatePresence>
-                    {form.variants.map((v, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="relative p-6 sm:p-4 glass-card bg-white border-gray-100 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-premium transition-all group"
-                      >
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 sm:gap-4 items-end sm:items-center">
-                          {/* Option Name Input */}
-                          <div className="sm:col-span-4 space-y-2 sm:space-y-0">
-                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Option Name</label>
-                            <input
-                              type="text"
-                              value={v.name}
-                              onChange={(e) => updateVariant(i, "name", e.target.value)}
-                              placeholder="e.g. Red / XL"
-                              className="w-full h-12 sm:h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-bold transition-all"
-                            />
-                          </div>
-
-                          {/* Price Input */}
-                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
-                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
-                            <input
-                              type="number"
-                              value={v.price}
-                              onChange={(e) => updateVariant(i, "price", e.target.value)}
-                              placeholder="Same as base"
-                              className="w-full h-12 sm:h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-black text-taja-primary transition-all"
-                            />
-                          </div>
-
-                          {/* Stock Input */}
-                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
-                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
-                            <input
-                              type="number"
-                              value={v.stock}
-                              onChange={(e) => updateVariant(i, "stock", e.target.value)}
-                              className="w-full h-12 sm:h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-bold transition-all"
-                            />
-                          </div>
-
-                          {/* Weight Input */}
-                          <div className="sm:col-span-3 space-y-2 sm:space-y-0">
-                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={v.weight}
-                              onChange={(e) => updateVariant(i, "weight", e.target.value)}
-                              placeholder="Weight"
-                              className="w-full h-12 sm:h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-medium text-gray-400 transition-all"
-                            />
-                          </div>
-
-                          {/* Remove Button */}
-                          <div className="sm:col-span-1 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => removeVariant(i)}
-                              className="w-10 h-10 sm:w-10 sm:h-10 flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition-colors shadow-sm bg-white border border-gray-100"
-                            >
-                              <X className="h-4 w-4 sm:h-4 sm:w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div className="py-16 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-[2rem] bg-gray-50/30">
-                  <div className="w-14 h-14 rounded-2xl bg-white shadow-premium flex items-center justify-center mb-4">
-                    <LayoutGrid className="w-6 h-6 text-gray-200" />
-                  </div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center px-4">No product options defined yet</p>
-                </div>
-              )}
-            </motion.section>
 
             {/* Inventory */}
             <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[32px] relative overflow-hidden">

@@ -147,6 +147,7 @@ export default function SellerLogisticsPage() {
   const [deliverySlots, setDeliverySlots] = useState<
     Array<{ id: string; date: string; startTime: string; endTime: string; maxOrders: number; notes?: string; active: boolean }>
   >([]);
+  const [policyLoading, setPolicyLoading] = useState<"returns" | "shipping" | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -347,10 +348,47 @@ export default function SellerLogisticsPage() {
       {/* Delivery & fees (manage delivery fee, pickup points, tiers & slots) */}
       {shop && (
         <motion.div variants={item} className="glass-panel rounded-2xl border border-white/60 p-6 space-y-4">
-          <h3 className="text-sm font-bold text-taja-secondary flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-taja-primary" />
-            Delivery & capacity configuration
-          </h3>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <h3 className="text-sm font-bold text-taja-secondary flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-taja-primary" />
+              Delivery & capacity configuration
+            </h3>
+            <div className="flex flex-wrap gap-2 text-[10px]">
+              <button
+                type="button"
+                disabled={policyLoading === "shipping"}
+                onClick={async () => {
+                  if (!shop?._id) return;
+                  setPolicyLoading("shipping");
+                  try {
+                    const res = await api("/api/ai/shop-policies", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        policyType: "shipping",
+                        shopName: "",
+                        categories: [],
+                      }),
+                    });
+                    if ((res as any)?.success) {
+                      // We only surface this in a toast for now; you can paste into your policy fields.
+                      const text: string = (res as any).text || "";
+                      if (text) {
+                        console.log("AI shipping policy suggestion:", text);
+                      }
+                    }
+                  } catch (e) {
+                    console.error(e);
+                  } finally {
+                    setPolicyLoading(null);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-taja-primary/30 bg-white/40 text-taja-primary font-black uppercase tracking-widest disabled:opacity-50"
+              >
+                <Sparkles className="h-3 w-3" />
+                {policyLoading === "shipping" ? "AI Shipping…" : "AI Shipping Policy"}
+              </button>
+            </div>
+          </div>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <button

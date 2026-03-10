@@ -34,6 +34,8 @@ export default function SellerSetupPage() {
   const [loading, setLoading] = useState(false);
   const [checkingShop, setCheckingShop] = useState(true);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [suggestingShopNames, setSuggestingShopNames] = useState(false);
+  const [shopIdea, setShopIdea] = useState("");
   const [formData, setFormData] = useState({
     shopName: "",
     shopSlug: "",
@@ -50,12 +52,12 @@ export default function SellerSetupPage() {
       twitter: "",
       facebook: "",
     },
+    // Keep only lightweight, non-logistics settings here.
+    // All delivery fees, pickup points, tiers & slots are configured later
+    // in the dedicated Logistics page.
     settings: {
       responseTime: "within-day",
-      shippingMethods: ["delivery"] as string[],
       returnPolicy: "No returns accepted",
-      defaultDeliveryFee: 0,
-      pickupPoints: [] as { name: string; address: string; city: string; state: string; phone?: string }[],
     },
   });
 
@@ -75,18 +77,6 @@ export default function SellerSetupPage() {
       categories: prev.categories.includes(category)
         ? prev.categories.filter((c) => c !== category)
         : [...prev.categories, category],
-    }));
-  };
-
-  const handleShippingMethodChange = (method: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      settings: {
-        ...prev.settings,
-        shippingMethods: prev.settings.shippingMethods.includes(method)
-          ? prev.settings.shippingMethods.filter((m) => m !== method)
-          : [...prev.settings.shippingMethods, method],
-      },
     }));
   };
 
@@ -142,6 +132,56 @@ export default function SellerSetupPage() {
       toast.success("Description generated. Feel free to edit it!");
     } finally {
       setGeneratingDescription(false);
+    }
+  };
+
+  const suggestShopNames = async () => {
+    if (!shopIdea.trim() && formData.categories.length === 0) {
+      toast.error("Type a short idea or pick at least one category first.");
+      return;
+    }
+    setSuggestingShopNames(true);
+    try {
+      const res = await api("/api/ai/shop-suggestions", {
+        method: "POST",
+        body: JSON.stringify({
+          idea: shopIdea,
+          categories: formData.categories,
+        }),
+      });
+      if ((res as any)?.success) {
+        const names: string[] = (res as any).names || [];
+        const tagline: string = (res as any).tagline || "";
+        if (!names.length && !tagline) {
+          toast.error("AI could not find good suggestions. Try rephrasing your idea.");
+          return;
+        }
+        setFormData((prev) => ({
+          ...prev,
+          shopName: prev.shopName || names[0] || prev.shopName,
+          shopSlug:
+            prev.shopSlug ||
+            (names[0]
+              ? names[0].toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, "_").substring(0, 30)
+              : prev.shopSlug),
+          description:
+            prev.description ||
+            (tagline
+              ? `${tagline}\n\n${prev.description || ""}`.trim()
+              : prev.description),
+        }));
+        if (names.length) {
+          toast.success("Shop name ideas added. You can tweak them.");
+        } else {
+          toast.success("Tagline added. You can tweak it.");
+        }
+      } else {
+        toast.error((res as any)?.message || "Failed to generate shop suggestions.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to generate shop suggestions.");
+    } finally {
+      setSuggestingShopNames(false);
     }
   };
 
@@ -241,19 +281,50 @@ export default function SellerSetupPage() {
                   <p className="text-sm text-gray-500">Name your shop and what you sell.</p>
                 </div>
 
-                {/* Shop Name */}
-                <div>
-                  <label className="block text-sm font-semibold text-taja-secondary mb-2">
-                    Shop Name <span className="text-taja-primary">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.shopName}
-                    onChange={handleShopNameChange}
-                    placeholder="e.g., Amina's Thrift Store"
-                    className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-taja-secondary placeholder:text-gray-300 focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20 transition-all"
-                  />
+                {/* Shop Name + AI idea helper */}
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-taja-secondary mb-2">
+                      Shop Name <span className="text-taja-primary">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.shopName}
+                      onChange={handleShopNameChange}
+                      placeholder="e.g., Amina's Thrift Store"
+                      className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-taja-secondary placeholder:text-gray-300 focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      Describe your shop idea (optional, powers AI helper)
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={shopIdea}
+                        onChange={(e) => setShopIdea(e.target.value)}
+                        placeholder="e.g., thrift clothes in Ibadan for students"
+                        className="flex-1 h-10 px-3 rounded-xl border border-gray-200 bg-white text-xs text-taja-secondary placeholder:text-gray-300 focus:outline-none focus:border-taja-primary/60 focus:ring-1 focus:ring-taja-primary/20 transition-all"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={suggestShopNames}
+                        disabled={suggestingShopNames}
+                        className="h-10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+                      >
+                        {suggestingShopNames ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3.5 w-3.5" />
+                        )}
+                        AI Name Ideas
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Shop URL */}
@@ -404,7 +475,9 @@ export default function SellerSetupPage() {
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div>
                   <h2 className="text-xl font-bold text-taja-secondary mb-1">Shop Settings</h2>
-                  <p className="text-sm text-gray-500">Set your response time, shipping methods, and return policy.</p>
+                  <p className="text-sm text-gray-500">
+                    Set your response time and basic policies. You&apos;ll configure delivery fees, pickup points and slots later in your seller dashboard.
+                  </p>
                 </div>
 
                 {/* Response Time */}
@@ -417,147 +490,70 @@ export default function SellerSetupPage() {
                       { value: "1-2-days", label: "1–2 days" },
                       { value: "3-5-days", label: "3–5 days" },
                     ].map(({ value, label }) => (
-                      <button key={value} type="button"
+                      <button
+                        key={value}
+                        type="button"
                         onClick={() => setFormData((p) => ({ ...p, settings: { ...p.settings, responseTime: value } }))}
-                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${formData.settings.responseTime === value ? "border-taja-primary bg-taja-primary/10 text-taja-secondary" : "border-gray-200 hover:border-taja-primary/40 text-gray-600"}`}>
+                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                          formData.settings.responseTime === value
+                            ? "border-taja-primary bg-taja-primary/10 text-taja-secondary"
+                            : "border-gray-200 hover:border-taja-primary/40 text-gray-600"
+                        }`}
+                      >
                         {label}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Shipping Methods */}
-                <div>
-                  <label className="block text-sm font-semibold text-taja-secondary mb-3">Shipping Methods</label>
-                  <div className="flex flex-wrap gap-3">
-                    {[
-                      { value: "pickup", label: "Pickup", emoji: "🏪" },
-                      { value: "delivery", label: "Delivery", emoji: "🛵" },
-                      { value: "shipping", label: "Nationwide Shipping", emoji: "📦" },
-                    ].map(({ value, label, emoji }) => {
-                      const selected = formData.settings.shippingMethods.includes(value);
-                      return (
-                        <button key={value} type="button" onClick={() => handleShippingMethodChange(value)}
-                          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${selected ? "border-taja-primary bg-taja-primary/10 text-taja-secondary" : "border-gray-200 hover:border-taja-primary/40 text-gray-600"}`}>
-                          <span>{emoji}</span>{label}
-                          {selected && <Check className="h-3.5 w-3.5 text-taja-primary ml-1" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Default delivery fee */}
-                <div>
-                  <label className="block text-sm font-semibold text-taja-secondary mb-2">Default delivery fee (₦)</label>
-                  <p className="text-xs text-gray-500 mb-2">Used when a product has no shipping cost. Enter 0 for free delivery.</p>
-                  <input
-                    type="number"
-                    min={0}
-                    step={100}
-                    value={formData.settings.defaultDeliveryFee ?? 0}
-                    onChange={(e) => setFormData((p) => ({
-                      ...p,
-                      settings: { ...p.settings, defaultDeliveryFee: Math.max(0, parseInt(e.target.value, 10) || 0) },
-                    }))}
-                    className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-taja-secondary focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20"
-                    placeholder="e.g. 1500"
-                  />
-                </div>
-
-                {/* Pickup points */}
-                <div>
-                  <label className="block text-sm font-semibold text-taja-secondary mb-2">Pickup / drop-off points</label>
-                  <p className="text-xs text-gray-500 mb-2">Locations where buyers can pick up orders (optional).</p>
-                  {formData.settings.pickupPoints?.map((point, idx) => (
-                    <div key={idx} className="mb-3 p-3 rounded-xl border border-gray-200 bg-white space-y-2">
-                      <input
-                        type="text"
-                        value={point.name}
-                        onChange={(e) => {
-                          const next = [...(formData.settings.pickupPoints || [])];
-                          next[idx] = { ...next[idx], name: e.target.value };
-                          setFormData((p) => ({ ...p, settings: { ...p.settings, pickupPoints: next } }));
-                        }}
-                        placeholder="Point name (e.g. Main store)"
-                        className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm"
-                      />
-                      <input
-                        type="text"
-                        value={point.address}
-                        onChange={(e) => {
-                          const next = [...(formData.settings.pickupPoints || [])];
-                          next[idx] = { ...next[idx], address: e.target.value };
-                          setFormData((p) => ({ ...p, settings: { ...p.settings, pickupPoints: next } }));
-                        }}
-                        placeholder="Full address"
-                        className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          value={point.city}
-                          onChange={(e) => {
-                            const next = [...(formData.settings.pickupPoints || [])];
-                            next[idx] = { ...next[idx], city: e.target.value };
-                            setFormData((p) => ({ ...p, settings: { ...p.settings, pickupPoints: next } }));
-                          }}
-                          placeholder="City"
-                          className="h-10 px-3 rounded-lg border border-gray-200 text-sm"
-                        />
-                        <input
-                          type="text"
-                          value={point.state}
-                          onChange={(e) => {
-                            const next = [...(formData.settings.pickupPoints || [])];
-                            next[idx] = { ...next[idx], state: e.target.value };
-                            setFormData((p) => ({ ...p, settings: { ...p.settings, pickupPoints: next } }));
-                          }}
-                          placeholder="State"
-                          className="h-10 px-3 rounded-lg border border-gray-200 text-sm"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setFormData((p) => ({
-                          ...p,
-                          settings: {
-                            ...p.settings,
-                            pickupPoints: (p.settings.pickupPoints || []).filter((_, i) => i !== idx),
-                          },
-                        }))}
-                        className="text-xs text-red-600 hover:underline"
-                      >
-                        Remove point
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setFormData((p) => ({
-                      ...p,
-                      settings: {
-                        ...p.settings,
-                        pickupPoints: [...(p.settings.pickupPoints || []), { name: "", address: "", city: "", state: "" }],
-                      },
-                    }))}
-                    className="text-sm text-taja-primary font-medium hover:underline"
-                  >
-                    + Add pickup point
-                  </button>
-                </div>
-
                 {/* Return Policy */}
                 <div>
                   <label className="block text-sm font-semibold text-taja-secondary mb-2">Return Policy</label>
-                  <Textarea name="settings.returnPolicy" rows={3} value={formData.settings.returnPolicy} onChange={handleChange}
-                    className="rounded-xl border-gray-200 resize-none focus:border-taja-primary" placeholder="Describe your return policy…" />
+                  <Textarea
+                    name="settings.returnPolicy"
+                    rows={3}
+                    value={formData.settings.returnPolicy}
+                    onChange={handleChange}
+                    className="rounded-xl border-gray-200 resize-none focus:border-taja-primary"
+                    placeholder="Describe your return policy…"
+                  />
+                </div>
+
+                <div className="p-4 rounded-2xl bg-taja-light border border-taja-primary/15 flex items-start gap-3">
+                  <Sparkles className="h-4 w-4 text-taja-primary mt-0.5" />
+                  <p className="text-xs text-gray-600">
+                    Detailed delivery fees, pickup locations, weight tiers and delivery slots are all managed from your{" "}
+                    <span className="font-semibold text-taja-primary">Logistics Hub</span> in the seller dashboard after launch.
+                  </p>
                 </div>
 
                 <div className="flex gap-3 pt-2 border-t border-gray-100">
-                  <Button type="button" variant="outline" onClick={() => setStep(2)} className="flex items-center gap-2 rounded-xl h-12 px-6"><ChevronLeft className="h-4 w-4" />Back</Button>
-                  <Button type="submit" variant="gradient" disabled={loading} className="flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2">
-                    {loading ? <><Loader2 className="h-5 w-5 animate-spin" />Creating…</> : <><Sparkles className="h-5 w-5" />Launch Shop</>}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(2)}
+                    className="flex items-center gap-2 rounded-xl h-12 px-6"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="gradient"
+                    disabled={loading}
+                    className="flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Creating…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5" />
+                        Launch Shop
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

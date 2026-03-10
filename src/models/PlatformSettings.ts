@@ -12,6 +12,17 @@ export interface IPlatformSettings extends Document {
      */
     bonusPercentage: number;
   };
+  payments?: {
+    /**
+     * Percentage of order total (in Naira) kept by platform as revenue.
+     * Stored as a plain number, e.g. 5 = 5%.
+     */
+    platformFeePercentage: number;
+    /**
+     * Number of days after delivery before escrow auto-release to seller.
+     */
+    autoReleaseDays: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +32,10 @@ const PlatformSettingsSchema = new Schema<IPlatformSettings>(
     referral: {
       enabled: { type: Boolean, default: true },
       bonusPercentage: { type: Number, default: 2 },
+    },
+    payments: {
+      platformFeePercentage: { type: Number, default: 5 },
+      autoReleaseDays: { type: Number, default: 7 },
     },
   },
   {

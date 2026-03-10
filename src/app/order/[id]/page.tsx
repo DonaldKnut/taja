@@ -241,6 +241,7 @@ export default function OrderTrackingPage() {
     );
   }
 
+  const timeline = order.timeline || [];
   const currentStatusConfig =
     statusConfig[order.status as keyof typeof statusConfig];
 
@@ -296,14 +297,14 @@ export default function OrderTrackingPage() {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-600">Order Progress</span>
               <span className="text-sm font-medium text-taja-primary">
-                {Math.round((order.timeline.length / 4) * 100)}% Complete
+                {Math.round(((timeline.length || 0) / 4) * 100)}% Complete
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className="bg-taja-primary h-2 rounded-full transition-all duration-300"
                 style={{
-                  width: `${Math.round((order.timeline.length / 4) * 100)}%`,
+                  width: `${Math.round(((timeline.length || 0) / 4) * 100)}%`,
                 }}
               ></div>
             </div>
@@ -399,10 +400,10 @@ export default function OrderTrackingPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {order.timeline.map((event, index) => {
+                  {timeline.map((event, index) => {
                     const config =
                       statusConfig[event.status as keyof typeof statusConfig];
-                    const isLast = index === order.timeline.length - 1;
+                    const isLast = index === timeline.length - 1;
 
                     return (
                       <div key={index} className="flex items-start gap-4">

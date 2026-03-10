@@ -267,7 +267,8 @@ export default function CheckoutPage() {
   };
 
   const shippingCost = 2500;
-  const orderTotal = subtotal + shippingCost;
+  const tax = Math.round(subtotal * 0.075); // 7.5% VAT to match backend
+  const orderTotal = subtotal + shippingCost + tax;
 
   // ── Place order → Paystack ───────────────────────────────────────────────
   const handlePlaceOrder = async () => {
@@ -638,6 +639,10 @@ export default function CheckoutPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Shipping</span>
                       <span className="font-bold text-taja-secondary">{formatCurrency(shippingCost)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">VAT (7.5%)</span>
+                      <span className="font-bold text-taja-secondary">{formatCurrency(tax)}</span>
                     </div>
 
                     {/* Coupon */}

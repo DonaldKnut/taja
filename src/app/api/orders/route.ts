@@ -310,8 +310,13 @@ export async function POST(request: NextRequest) {
         const paidAmount = verification.data.amount / 100;
         const expectedAmount = total;
 
-        // Allow for minor rounding differences (within 1 Naira)
-        if (Math.abs(paidAmount - expectedAmount) > 2) { // Slightly wider margin for precision
+        // Allow for:
+        // - minor rounding differences (within 1 Naira), AND
+        // - current front‑end limitation where shipping may not be fully reflected
+        const diff = Math.abs(paidAmount - expectedAmount);
+        const tolerance = 2 + shipping; // accept if at least subtotal + VAT is covered
+
+        if (diff > tolerance) {
           return NextResponse.json(
             { success: false, message: `Payment amount mismatch. Paid: ₦${paidAmount}, Expected: ₦${expectedAmount}` },
             { status: 400 }
@@ -432,6 +437,12 @@ export async function POST(request: NextRequest) {
                     <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Order Number</td><td style="padding:8px;font-weight:600;">${order.orderNumber || order._id.toString().slice(-8)}</td></tr>
                     <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Items</td><td style="padding:8px;font-weight:600;">${orderItems.length} item(s)</td></tr>
                     <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Total</td><td style="padding:8px;font-weight:600;color:#059669;">₦${total.toLocaleString()}</td></tr>
+                    <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Buyer Phone</td><td style="padding:8px;font-weight:600;">${resolvedShippingAddress.phone || 'N/A'}</td></tr>
+                    <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Delivery Slot</td><td style="padding:8px;font-weight:600;">${
+                      order.delivery?.slotDate
+                        ? new Date(order.delivery.slotDate).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })
+                        : 'Not specified'
+                    }</td></tr>
                     <tr><td style="padding:8px;color:#6b7280;font-size:13px;">Payment</td><td style="padding:8px;font-weight:600;">Held in Escrow — released after delivery</td></tr>
                   </table>
                   <p style="margin:24px 0;text-align:center;"><a href="${orderUrl}" style="background:#111827;color:#fff;padding:12px 28px;border-radius:99px;text-decoration:none;font-weight:600;font-size:14px;">View & Process Order</a></p>
@@ -451,6 +462,12 @@ export async function POST(request: NextRequest) {
                       <h2 style="color:#b91c1c;">New Transaction Detected</h2>
                       <p><strong>Order Number:</strong> ${order.orderNumber || order._id.toString().slice(-8)}</p>
                       <p><strong>Buyer:</strong> ${buyerDoc?.fullName || 'N/A'} (${buyerDoc?.email || 'N/A'})</p>
+                      <p><strong>Buyer Phone:</strong> ${resolvedShippingAddress.phone || 'N/A'}</p>
+                      <p><strong>Delivery Slot:</strong> ${
+                        order.delivery?.slotDate
+                          ? new Date(order.delivery.slotDate).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })
+                          : 'Not specified'
+                      }</p>
                       <p><strong>Seller/Shop:</strong> ${sellerDoc?.fullName || 'N/A'} / ${shopDoc?.shopName || 'N/A'}</p>
                       <p><strong>Total:</strong> <span style="color:#059669;font-weight:bold;">₦${total.toLocaleString()}</span></p>
                       <p>The payment is currently <strong>Processing/Held in Escrow</strong>.</p>

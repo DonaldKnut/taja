@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import './Shop';
 
 export interface IOrder extends Document {
   orderNumber: string;

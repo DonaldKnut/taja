@@ -391,7 +391,7 @@ export default function OrderDetailPage() {
                   <div className="absolute left-[21px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-taja-primary/40 via-gray-100 to-gray-50" />
 
                   <div className="space-y-10">
-                    {[...order.timeline].reverse().map((event, index) => {
+                    {[...(order.timeline || [])].reverse().map((event, index) => {
                       const config = narrativeStatus[event.status as keyof typeof narrativeStatus] || narrativeStatus.pending;
                       const isFirst = index === 0;
 
@@ -503,7 +503,8 @@ export default function OrderDetailPage() {
                 </div>
               </div>
               <p className="text-sm text-emerald-50/80 leading-relaxed mb-6">
-                Taja Hub is holding your payment of <strong>{formatCurrency(order.totals.total)}</strong> in a secure escrow account. Funds will only be released to the seller after you confirm delivery.
+                Taja Hub is holding your payment of <strong>{formatCurrency(order.totals.total)}</strong> in a secure escrow account.
+                Funds are released to the seller when you confirm delivery, or automatically if you don&apos;t confirm or report a problem within 7 days of delivery.
               </p>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-[11px] font-bold">
@@ -618,7 +619,7 @@ export default function OrderDetailPage() {
                   <Link href={`/shop/${order.shop.shopSlug}`} className="block">
                     <Button variant="ghost" className="w-full rounded-2xl h-12 font-black uppercase tracking-widest text-[10px] text-gray-400 hover:text-taja-primary">
                       <Store className="w-3.5 h-3.5 mr-2" />
-                      Visit Boutique
+                      Visit Shop
                     </Button>
                   </Link>
                 </div>
