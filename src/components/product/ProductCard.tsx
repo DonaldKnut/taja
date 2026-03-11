@@ -165,7 +165,7 @@ export function ProductCard({
       initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className={cn("group/card flex flex-col h-full bg-white rounded-[2rem] overflow-hidden border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
+      className={cn("group/card flex flex-col h-full bg-white rounded-[2rem] border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
     >
       <div className="relative aspect-square overflow-hidden bg-gray-50">
         <Link href={`/product/${product.slug}`} onClick={handleClick} className="block w-full h-full">
