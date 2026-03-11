@@ -125,16 +125,15 @@ export default function WalletPage() {
   return (
     <ProtectedRoute>
       <div className="space-y-10">
-        {/* Operational Header */}
+        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-taja-primary/10 border border-taja-primary/20">
-              <div className="h-1.5 w-1.5 rounded-full bg-taja-primary animate-pulse" />
-              <span className="text-[9px] font-black text-taja-primary uppercase tracking-[0.3em]">Capital Transmission Hub</span>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-black text-taja-secondary tracking-tighter leading-none">
-              Financial <br /> <span className="text-taja-primary">Operational Ledger.</span>
+            <h1 className="text-3xl md:text-4xl font-black text-taja-secondary tracking-tight leading-tight">
+              Your Taja wallet
             </h1>
+            <p className="text-sm text-gray-500 max-w-md">
+              Add money, see what&apos;s available to spend, and track money held in escrow for active orders.
+            </p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -152,15 +151,17 @@ export default function WalletPage() {
         {/* Reward points (earned from purchases) */}
         {points !== null && (
           <div className="rounded-2xl border border-taja-primary/20 bg-taja-light/30 px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-taja-primary/10 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-taja-primary" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-taja-primary/10 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-taja-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-taja-secondary">Reward points</p>
+                  <p className="text-xs text-gray-500">
+                    You earn points each time you confirm delivery. We give 1 point for every ₦100 you spend.
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-bold text-taja-secondary">Reward points</p>
-                <p className="text-xs text-gray-500">Earned when you confirm delivery (1 point per ₦100 spent)</p>
-              </div>
-            </div>
             <p className="text-2xl font-black text-taja-primary tabular-nums">{points.toLocaleString()} pts</p>
           </div>
         )}
@@ -184,8 +185,8 @@ export default function WalletPage() {
                     <Wallet className="w-6 h-6 text-taja-primary" />
                   </div>
                   <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Available Balance</h3>
-                    <p className="text-xs font-bold text-white/80">Ready to Spend</p>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Available balance</h3>
+                    <p className="text-xs font-bold text-white/80">Money you can spend right now</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest shadow-sm">

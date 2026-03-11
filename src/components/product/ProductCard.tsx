@@ -175,7 +175,7 @@ export function ProductCard({
             className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
             fillContainer
             showDots={false}
-            showArrows={false}
+            showArrows={true}
           />
         </Link>
 
@@ -232,19 +232,50 @@ export function ProductCard({
           <div className="relative group/options">
             {hasVariants ? (
               <div className="flex flex-col items-end">
-                <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 opacity-0 translate-y-2 pointer-events-none group-hover/options:opacity-100 group-hover/options:translate-y-0 group-hover/options:pointer-events-auto transition-all duration-300 z-50">
-                  <p className="px-3 py-1.5 text-[8px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 mb-1">Select Option</p>
-                  <div className="max-h-48 overflow-y-auto no-scrollbar space-y-1">
-                    {product.variants?.map((v) => (
-                      <button
-                        key={v._id}
-                        onClick={(e) => handleQuickAdd(e, v)}
-                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group/item"
-                      >
-                        <span className="text-[10px] font-bold text-gray-900">{v.name}</span>
-                        <span className="text-[10px] font-black text-taja-primary">₦{(v.price ?? product.price).toLocaleString()}</span>
-                      </button>
-                    ))}
+                <div className="absolute bottom-full right-0 mb-2 w-60 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 opacity-0 translate-y-2 pointer-events-none group-hover/options:opacity-100 group-hover/options:translate-y-0 group-hover/options:pointer-events-auto transition-all duration-300 z-50">
+                  <p className="px-3 py-1.5 text-[8px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 mb-1">
+                    Select Option
+                  </p>
+                  <div className="max-h-56 overflow-y-auto no-scrollbar space-y-1">
+                    {product.variants?.map((v) => {
+                      const thumb = (v as any).image || images[0];
+                      const price = v.price ?? product.price;
+                      const stock = (v as any).stock ?? product.inventory?.quantity ?? product.stock ?? 0;
+                      const outOfStock = stock <= 0;
+                      return (
+                        <button
+                          key={v._id}
+                          onClick={(e) => !outOfStock && handleQuickAdd(e, v)}
+                          className={cn(
+                            "w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-colors group/item",
+                            outOfStock && "opacity-50 cursor-not-allowed hover:bg-transparent"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="h-8 w-8 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100">
+                              <Image
+                                src={thumb}
+                                alt={v.name}
+                                width={32}
+                                height={32}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex flex-col items-start min-w-0">
+                              <span className="text-[10px] font-bold text-gray-900 truncate max-w-[120px]">
+                                {v.name}
+                              </span>
+                              <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">
+                                {outOfStock ? "Out of stock" : `${stock} in stock`}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-black text-taja-primary whitespace-nowrap ml-2">
+                            ₦{price.toLocaleString()}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <button

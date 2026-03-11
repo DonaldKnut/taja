@@ -525,25 +525,25 @@ export default function OrderDetailPage() {
             {/* Order Ledger */}
             <Card className="rounded-[2.5rem] border-none shadow-premium overflow-hidden">
               <CardHeader className="px-8 pt-8">
-                <CardTitle className="text-lg font-black text-taja-secondary tracking-tight">Financial Ledger</CardTitle>
+                <CardTitle className="text-lg font-black text-taja-secondary tracking-tight">Order summary</CardTitle>
               </CardHeader>
               <CardContent className="px-8 pb-10">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400 font-medium">Subtotal</span>
+                    <span className="text-gray-400 font-medium">Items total</span>
                     <span className="text-taja-secondary font-black">{formatCurrency(order.totals.subtotal)}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400 font-medium">Shipping Logistics</span>
+                    <span className="text-gray-400 font-medium">Delivery fee</span>
                     <span className="text-taja-secondary font-black">{formatCurrency(order.totals.shipping || order.totals.shippingCost || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400 font-medium">VAT (7.5%)</span>
+                    <span className="text-gray-400 font-medium">Tax (7.5%)</span>
                     <span className="text-taja-secondary font-black">{formatCurrency(order.totals.tax)}</span>
                   </div>
                   <div className="h-px bg-gray-50 my-2" />
                   <div className="flex justify-between items-center">
-                    <span className="text-base font-black text-taja-secondary tracking-tight">Total Settlement</span>
+                    <span className="text-base font-black text-taja-secondary tracking-tight">Total you paid</span>
                     <span className="text-2xl font-black text-taja-primary tracking-tighter">{formatCurrency(order.totals.total)}</span>
                   </div>
 

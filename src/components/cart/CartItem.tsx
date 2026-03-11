@@ -38,11 +38,11 @@ export function CartItem({
     setInputValue(val);
 
     if (num > item.stock) {
-      updateQuantity(item._id, item.stock);
+      updateQuantity(item._id, item.variantId, item.stock);
       setInputValue(item.stock.toString());
       toast.error(`Only ${item.stock} units in stock`, { id: 'stock-limit' });
     } else if (num > 0) {
-      updateQuantity(item._id, num);
+      updateQuantity(item._id, item.variantId, num);
     }
   };
 
@@ -50,11 +50,11 @@ export function CartItem({
     let num = parseInt(inputValue) || 0;
 
     if (num < item.moq) {
-      updateQuantity(item._id, item.moq);
+      updateQuantity(item._id, item.variantId, item.moq);
       setInputValue(item.moq.toString());
       toast.error(`Minimum order is ${item.moq} units`, { id: 'moq-limit' });
     } else if (num > item.stock) {
-      updateQuantity(item._id, item.stock);
+      updateQuantity(item._id, item.variantId, item.stock);
       setInputValue(item.stock.toString());
     } else {
       setInputValue(num.toString());
@@ -65,7 +65,7 @@ export function CartItem({
     e.preventDefault();
     e.stopPropagation();
     if (item.quantity < item.stock) {
-      updateQuantity(item._id, item.quantity + 1);
+      updateQuantity(item._id, item.variantId, item.quantity + 1);
     } else {
       toast.error("Stock limit reached", { id: 'stock-limit' });
     }
@@ -75,7 +75,7 @@ export function CartItem({
     e.preventDefault();
     e.stopPropagation();
     if (item.quantity > item.moq) {
-      updateQuantity(item._id, item.quantity - 1);
+      updateQuantity(item._id, item.variantId, item.quantity - 1);
     } else if (item.quantity === item.moq) {
       toast.error(`Minimum order is ${item.moq} units`, { id: 'moq-limit' });
     }
@@ -137,7 +137,7 @@ export function CartItem({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              removeItem(item._id);
+              removeItem(item._id, item.variantId);
             }}
             className="p-1.5 opacity-0 group-hover:opacity-100 bg-white rounded-full shadow-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0"
             aria-label="Remove item"

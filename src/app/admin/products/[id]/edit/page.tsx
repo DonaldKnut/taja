@@ -85,6 +85,9 @@ export default function AdminEditProductPage() {
     });
 
     const [productOwner, setProductOwner] = useState<any>(null);
+    const [uploadingVariantImage, setUploadingVariantImage] = useState<number | null>(null);
+    const variantImageInputRef = useRef<HTMLInputElement>(null);
+    const variantImageIndexRef = useRef<number>(0);
 
     // Fetch categories and product data
     useEffect(() => {
@@ -283,6 +286,31 @@ export default function AdminEditProductPage() {
             ...prev,
             variants: prev.variants.filter((_, i) => i !== index),
         }));
+    };
+
+    const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const variantIndex = variantImageIndexRef.current;
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file?.type.startsWith("image/")) {
+            toast.error("Select an image file (JPG, PNG, etc.)");
+            return;
+        }
+        setUploadingVariantImage(variantIndex);
+        try {
+            const url = await uploadProductImage(file);
+            setFormData(prev => {
+                const images = [...prev.images, url];
+                const variants = [...prev.variants];
+                variants[variantIndex] = { ...variants[variantIndex], image: url };
+                return { ...prev, images, variants };
+            });
+            toast.success("Variant image uploaded");
+        } catch (err: any) {
+            toast.error(err?.message || "Upload failed");
+        } finally {
+            setUploadingVariantImage(null);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -786,6 +814,7 @@ export default function AdminEditProductPage() {
                                             <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-slate-400">Price (₦)</div>
                                             <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-slate-400">Stock</div>
                                             <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-slate-400">Weight (kg)</div>
+                                            <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-slate-400">Variant Image</div>
                                             <div className="col-span-1"></div>
                                         </div>
 
@@ -847,6 +876,47 @@ export default function AdminEditProductPage() {
                                                             />
                                                         </div>
 
+                                                        {/* Variant Image */}
+                                                        <div className="sm:col-span-3 space-y-2 sm:space-y-0">
+                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Variant Image</label>
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
+                                                                    {(v as any).image ? (
+                                                                        <Image src={(v as any).image} alt="" width={48} height={48} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-slate-300 text-[9px] font-bold uppercase tracking-widest">
+                                                                            Img
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 space-y-2">
+                                                                    <select
+                                                                        value={(v as any).image || ""}
+                                                                        onChange={(e) => updateVariant(i, "image", e.target.value)}
+                                                                        className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold text-slate-600 uppercase tracking-widest"
+                                                                    >
+                                                                        <option value="">{formData.images.length ? "Use product image" : "No images yet"}</option>
+                                                                        {formData.images.map((img, idx) => (
+                                                                            <option key={img} value={img}>
+                                                                                Image {idx + 1}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            variantImageIndexRef.current = i;
+                                                                            variantImageInputRef.current?.click();
+                                                                        }}
+                                                                        disabled={uploadingVariantImage !== null}
+                                                                        className="w-full h-9 text-[9px] font-black uppercase tracking-widest rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                                                                    >
+                                                                        {uploadingVariantImage === i ? "Uploading…" : "Upload image"}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
                                                         {/* Remove Button */}
                                                         <div className="sm:col-span-1 flex justify-end">
                                                             <button
@@ -871,6 +941,15 @@ export default function AdminEditProductPage() {
                                     </div>
                                 )}
                             </section>
+
+                            <input
+                                ref={variantImageInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleVariantImageUpload}
+                                aria-hidden
+                            />
                         </div>
 
                         {/* Right Column */}
