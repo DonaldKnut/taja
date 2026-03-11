@@ -8,6 +8,9 @@ if (!GEMINI_API_KEY) {
 
 const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
+/** Gemini model for generateContent. Free tier: use a Flash model (e.g. gemini-2.0-flash); Pro models have very low quota. */
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+
 /**
  * Convert image file to base64 for Gemini API
  */
@@ -66,7 +69,7 @@ export async function analyzeVirtualTryOn(
     throw new Error('Gemini API key not configured');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
   // Prepare images
   let productPart: any;
@@ -164,7 +167,7 @@ export async function getStyleRecommendations(
     throw new Error('Gemini API key not configured');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
   let userPart: any;
   if (typeof userPhoto === 'string') {
@@ -231,7 +234,7 @@ export async function analyzeProductInContext(
     throw new Error('Gemini API key not configured');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
   let productPart: any;
   if (typeof productImage === 'string') {
@@ -286,7 +289,7 @@ export async function generateProductDescription(
     throw new Error('Gemini API key not configured');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
   const prompt = `You are an expert e-commerce copywriter specializing in the Nigerian market. Write a compelling, engaging product description for the following product.
 
@@ -311,8 +314,14 @@ Write only the product description, no additional commentary.`;
     const response = await result.response;
     return response.text().trim();
   } catch (error: any) {
+    const msg = error?.message ?? '';
+    if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('quota') || msg.includes('Quota exceeded')) {
+      throw new Error(
+        'AI rate limit reached. Please wait a minute and try again. For free-tier keys, use a Flash model: set GEMINI_MODEL=gemini-2.0-flash in .env'
+      );
+    }
     console.error('Gemini API error:', error);
-    throw new Error(`Failed to generate product description: ${error.message}`);
+    throw new Error(`Failed to generate product description: ${msg}`);
   }
 }
 
@@ -329,7 +338,7 @@ export async function suggestProductTags(
     throw new Error('Gemini API key not configured');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
   const prompt = `You are an expert e-commerce SEO specialist. Suggest ${count} relevant tags/keywords for the following product.
 
@@ -367,4 +376,59 @@ Return only the tags separated by commas, nothing else. Example format: tag1, ta
   }
 }
 
+/**
+ * Generate shop policies (returns or shipping) using AI
+ */
+export async function generateShopPolicies(options: {
+  shopName: string;
+  categories: string[];
+  policyType: 'returns' | 'shipping';
+}): Promise<string> {
+  if (!genAI) {
+    throw new Error('Gemini API key not configured');
+  }
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+  const prompt = `You are an e-commerce policy writer. Write a clear, professional ${options.policyType} policy for a shop${options.shopName ? ` named "${options.shopName}"` : ''}.
+${options.categories?.length ? `Categories: ${options.categories.join(', ')}.` : ''}
+Keep it concise (2–4 short paragraphs), fair to buyer and seller, and suitable for the Nigerian market. Return only the policy text.`;
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text().trim();
+  } catch (error: any) {
+    console.error('Gemini API error:', error);
+    throw new Error(`Failed to generate shop policy: ${error.message}`);
+  }
+}
+
+/**
+ * Generate shop name and tagline suggestions from an idea and categories
+ */
+export async function generateShopNameAndTagline(
+  idea: string,
+  categories: string[]
+): Promise<{ names: string[]; tagline: string }> {
+  if (!genAI) {
+    throw new Error('Gemini API key not configured');
+  }
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+  const prompt = `Suggest 3 short, memorable shop names and one tagline for an e-commerce store.
+Idea: ${idea || 'general store'}
+${categories?.length ? `Categories: ${categories.join(', ')}.` : ''}
+Respond in JSON only: {"names": ["Name1","Name2","Name3"], "tagline": "One catchy tagline"}. Nigerian market.`;
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { names: [], tagline: '' };
+    return {
+      names: Array.isArray(parsed.names) ? parsed.names.slice(0, 5) : [],
+      tagline: typeof parsed.tagline === 'string' ? parsed.tagline : '',
+    };
+  } catch (error: any) {
+    console.error('Gemini API error:', error);
+    throw new Error(`Failed to generate shop suggestions: ${error.message}`);
+  }
+}
 

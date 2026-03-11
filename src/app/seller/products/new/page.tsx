@@ -107,11 +107,14 @@ export default function NewProductPage() {
   const router = useRouter();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const variantImageInputRef = useRef<HTMLInputElement>(null);
+  const variantImageIndexRef = useRef<number>(0);
   const [loading, setLoading] = useState(false);
   const [checkingShop, setCheckingShop] = useState(true);
   const [hasShop, setHasShop] = useState(false);
   const [isVerifiedSeller, setIsVerifiedSeller] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVariantImage, setUploadingVariantImage] = useState<number | null>(null);
   const [analyzingImage, setAnalyzingImage] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [suggestingTags, setSuggestingTags] = useState(false);
@@ -507,6 +510,33 @@ export default function NewProductPage() {
     });
   };
 
+  const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const variantIndex = variantImageIndexRef.current;
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file?.type.startsWith("image/")) {
+      toast.error("Select an image file (JPG, PNG, etc.)");
+      return;
+    }
+    if (formData.images.length >= 8) {
+      toast.error("Max 8 images. Remove one from the main product images first.");
+      return;
+    }
+    setUploadingVariantImage(variantIndex);
+    try {
+      const url = await uploadProductImage(file);
+      setFormData((prev) => ({
+        ...prev,
+        images: [...prev.images, url].slice(0, 8),
+      }));
+      updateVariant(variantIndex, "image", url);
+      toast.success("Variant image uploaded");
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
+      setUploadingVariantImage(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
     e.preventDefault();
@@ -1105,6 +1135,14 @@ export default function NewProductPage() {
                 </Button>
               </div>
 
+              <input
+                ref={variantImageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                aria-hidden
+                onChange={handleVariantImageUpload}
+              />
               {formData.variants.length > 0 ? (
                 <div className="space-y-6">
                   {/* Desktop Headers - Hidden on Mobile */}
@@ -1194,33 +1232,60 @@ export default function NewProductPage() {
                             />
                           </div>
 
-                          {/* Variant Image Selector */}
-                          <div className="sm:col-span-3 space-y-2 sm:space-y-1">
+                          {/* Variant Image: preview + choose from slider or upload own */}
+                          <div className="sm:col-span-3 min-w-0 space-y-2 sm:space-y-1">
                             <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
                               Variant Image
                             </label>
-                            <select
-                              value={variant.image || ""}
-                              onChange={(e) => updateVariant(index, "image", e.target.value)}
-                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-xs font-medium text-taja-secondary appearance-none"
-                              disabled={formData.images.length === 0}
-                            >
-                              <option value="">
-                                {formData.images.length
-                                  ? "Use main product image"
-                                  : "Upload images above first"}
-                              </option>
-                              {formData.images.map((url, idx) => (
-                                <option key={url} value={url}>
-                                  Image {idx + 1}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
+                              {variant.image ? (
+                                <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                                  <img src={variant.image} alt="" className="w-full h-full object-cover" />
+                                </div>
+                              ) : uploadingVariantImage === index ? (
+                                <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center">
+                                  <Loader2 className="h-6 w-6 animate-spin text-taja-primary" />
+                                </div>
+                              ) : null}
+                              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                <select
+                                  value={variant.image || ""}
+                                  onChange={(e) => updateVariant(index, "image", e.target.value)}
+                                  className="w-full min-w-0 h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-xs font-medium text-taja-secondary appearance-none"
+                                  disabled={uploadingVariantImage === index}
+                                >
+                                  <option value="">
+                                    {formData.images.length
+                                      ? "Use main product image"
+                                      : "Pick or upload below"}
+                                  </option>
+                                  {formData.images.map((url, idx) => (
+                                    <option key={url} value={url}>
+                                      Image {idx + 1} of slider
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    variantImageIndexRef.current = index;
+                                    variantImageInputRef.current?.click();
+                                  }}
+                                  disabled={uploadingVariantImage !== null || formData.images.length >= 8}
+                                  className="flex items-center justify-center gap-2 h-10 px-3 rounded-xl border border-gray-200 bg-white text-[10px] font-bold text-taja-secondary hover:bg-gray-50 hover:border-taja-primary/30 disabled:opacity-50 disabled:pointer-events-none"
+                                >
+                                  {uploadingVariantImage === index ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Upload className="h-3.5 w-3.5" />
+                                  )}
+                                  {uploadingVariantImage === index ? "Uploading…" : "Upload different image"}
+                                </button>
+                              </div>
+                            </div>
                             {formData.images.length === 0 && (
                               <p className="text-[10px] sm:text-[9px] font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 sm:py-1.5 leading-snug">
-                                Upload your main product images in the{" "}
-                                <span className="font-bold">Product Images</span> section above to unlock
-                                per-variation images.
+                                Add product images above, or use the button to upload a variant-specific image.
                               </p>
                             )}
                           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -75,6 +75,9 @@ export default function AdminProductsNewPage() {
   const [imageList, setImageList] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [uploadingVariantImage, setUploadingVariantImage] = useState<number | null>(null);
+  const variantImageInputRef = useRef<HTMLInputElement>(null);
+  const variantImageIndexRef = useRef<number>(0);
 
   useEffect(() => {
     (async () => {
@@ -154,6 +157,14 @@ export default function AdminProductsNewPage() {
   const imageCount = imageList.length + fromPasteCount;
   const hasRequiredFields =
     !!form.shopId && !!form.title.trim() && !!form.description.trim() && !!form.category && !!form.price.trim() && imageCount > 0;
+  const missingRequired = [
+    !form.shopId && "Select shop",
+    !form.title.trim() && "Title",
+    !form.description.trim() && "Description",
+    !form.category && "Category",
+    !form.price.trim() && "Price",
+    imageCount === 0 && "At least one image",
+  ].filter(Boolean) as string[];
 
   const handleImageUpload = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -210,6 +221,31 @@ export default function AdminProductsNewPage() {
     }));
   };
 
+  const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const variantIndex = variantImageIndexRef.current;
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file?.type.startsWith("image/")) {
+      toast.error("Select an image file (JPG, PNG, etc.)");
+      return;
+    }
+    if (imageList.length >= 10) {
+      toast.error("Max 10 images. Remove one from the main slider first.");
+      return;
+    }
+    setUploadingVariantImage(variantIndex);
+    try {
+      const url = await uploadProductImage(file);
+      setImageList((prev) => [...prev, url].slice(0, 10));
+      updateVariant(variantIndex, "image", url);
+      toast.success("Variant image uploaded");
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
+      setUploadingVariantImage(null);
+    }
+  };
+
   const handleGenerateDescription = async () => {
     if (!form.title.trim()) {
       toast.error("Enter a product title first so AI has something to work with.");
@@ -258,25 +294,34 @@ export default function AdminProductsNewPage() {
                 Back to Catalogue
               </Link>
             </div>
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={(e) => handleSubmit(e, true)}
-                disabled={loading || !hasRequiredFields}
-                className="hidden sm:flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-taja-secondary/60 hover:text-taja-secondary hover:bg-white/40 transition-all disabled:opacity-50"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Tag className="h-4 w-4" />}
-                Save Draft
-              </button>
-              <button
-                type="button"
-                onClick={(e) => handleSubmit(e)}
-                disabled={loading || !hasRequiredFields}
-                className="flex items-center gap-3 px-8 py-3 bg-slate-950 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] shadow-premium hover:shadow-premium-hover hover:bg-emerald-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-emerald-400" />}
-                Publish Product
-              </button>
+            <div className="flex flex-col items-end gap-1">
+              {missingRequired.length > 0 && (
+                <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest">
+                  Required: {missingRequired.join(", ")}
+                </p>
+              )}
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmit(e, true)}
+                  disabled={loading || !hasRequiredFields}
+                  title={missingRequired.length ? `Missing: ${missingRequired.join(", ")}` : undefined}
+                  className="hidden sm:flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-taja-secondary/60 hover:text-taja-secondary hover:bg-white/40 transition-all disabled:opacity-50"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Tag className="h-4 w-4" />}
+                  Save Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmit(e)}
+                  disabled={loading || !hasRequiredFields}
+                  title={missingRequired.length ? `Complete required fields to publish: ${missingRequired.join(", ")}` : undefined}
+                  className="flex items-center gap-3 px-8 py-3 bg-slate-950 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] shadow-premium hover:shadow-premium-hover hover:bg-emerald-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-emerald-400" />}
+                  Publish Product
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -523,14 +568,23 @@ export default function AdminProductsNewPage() {
                 </button>
               </div>
 
+              <input
+                ref={variantImageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                aria-hidden
+                onChange={handleVariantImageUpload}
+              />
               {form.variants.length > 0 ? (
                 <div className="space-y-6">
                   {/* Desktop Headers - Hidden on Mobile */}
-                  <div className="hidden md:grid grid-cols-12 gap-4 px-4 mb-2">
+                  <div className="hidden lg:grid grid-cols-12 gap-4 px-4 mb-2">
                     <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-gray-400">Option Name (e.g. Red / XL)</div>
                     <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Price (₦)</div>
                     <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Stock</div>
-                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">Weight (kg)</div>
+                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Weight (kg)</div>
+                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">Variant Image</div>
                     <div className="col-span-1" />
                   </div>
 
@@ -543,10 +597,10 @@ export default function AdminProductsNewPage() {
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="relative p-6 sm:p-4 glass-card bg-white border-gray-100 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-premium transition-all group"
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-4 items-end md:items-center">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-4 items-end lg:items-center">
                           {/* Option Name Input */}
-                          <div className="md:col-span-4 space-y-2 md:space-y-0">
-                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Option Name</label>
+                          <div className="lg:col-span-4 min-w-0 space-y-2 lg:space-y-0">
+                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Option Name</label>
                             <input
                               type="text"
                               value={v.name}
@@ -557,8 +611,8 @@ export default function AdminProductsNewPage() {
                           </div>
 
                           {/* Price Input */}
-                          <div className="md:col-span-2 space-y-2 md:space-y-0">
-                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
+                          <div className="lg:col-span-2 min-w-0 space-y-2 lg:space-y-0">
+                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
                             <input
                               type="number"
                               value={v.price}
@@ -569,8 +623,8 @@ export default function AdminProductsNewPage() {
                           </div>
 
                           {/* Stock Input */}
-                          <div className="md:col-span-2 space-y-2 md:space-y-0">
-                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
+                          <div className="lg:col-span-2 min-w-0 space-y-2 lg:space-y-0">
+                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
                             <input
                               type="number"
                               value={v.stock}
@@ -580,8 +634,8 @@ export default function AdminProductsNewPage() {
                           </div>
 
                           {/* Weight Input */}
-                          <div className="md:col-span-2 space-y-2 md:space-y-0">
-                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
+                          <div className="lg:col-span-2 min-w-0 space-y-2 lg:space-y-0">
+                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
                             <input
                               type="number"
                               step="0.01"
@@ -592,28 +646,57 @@ export default function AdminProductsNewPage() {
                             />
                           </div>
 
-                          {/* Variant Image Selector */}
-                          <div className="md:col-span-3 space-y-2 md:space-y-0">
-                            <label className="md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                          {/* Variant Image: preview + choose from slider or upload own */}
+                          <div className="lg:col-span-3 min-w-0 space-y-2 lg:space-y-0">
+                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
                               Variant Image
                             </label>
-                            <select
-                              value={(v as any).image || ""}
-                              onChange={(e) => updateVariant(i, "image", e.target.value)}
-                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-medium text-taja-secondary appearance-none"
-                              disabled={imageList.length === 0}
-                            >
-                              <option value="">{imageList.length ? "Use main product image" : "Upload images above first"}</option>
-                              {imageList.map((url, idx) => (
-                                <option key={url} value={url}>
-                                  Image {idx + 1}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
+                              {(v as any).image ? (
+                                <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                                  <img src={(v as any).image} alt="" className="w-full h-full object-cover" />
+                                </div>
+                              ) : uploadingVariantImage === i ? (
+                                <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center">
+                                  <Loader2 className="h-6 w-6 animate-spin text-taja-primary" />
+                                </div>
+                              ) : null}
+                              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                <select
+                                  value={(v as any).image || ""}
+                                  onChange={(e) => updateVariant(i, "image", e.target.value)}
+                                  className="w-full min-w-0 h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-medium text-taja-secondary appearance-none"
+                                  disabled={uploadingVariantImage === i}
+                                >
+                                  <option value="">{imageList.length ? "Use main product image" : "Pick or upload below"}</option>
+                                  {imageList.map((url, idx) => (
+                                    <option key={url} value={url}>
+                                      Image {idx + 1} of slider
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    variantImageIndexRef.current = i;
+                                    variantImageInputRef.current?.click();
+                                  }}
+                                  disabled={uploadingVariantImage !== null || imageList.length >= 10}
+                                  className="flex items-center justify-center gap-2 h-10 px-3 rounded-xl border border-gray-200 bg-white text-[10px] font-bold text-taja-secondary hover:bg-gray-50 hover:border-taja-primary/30 disabled:opacity-50 disabled:pointer-events-none"
+                                >
+                                  {uploadingVariantImage === i ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Upload className="h-3.5 w-3.5" />
+                                  )}
+                                  {uploadingVariantImage === i ? "Uploading…" : "Upload different image"}
+                                </button>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Remove Button */}
-                          <div className="md:col-span-1 flex justify-end">
+                          <div className="lg:col-span-1 flex justify-end">
                             <button
                               type="button"
                               onClick={() => removeVariant(i)}

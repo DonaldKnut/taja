@@ -40,7 +40,7 @@ These use `NEXT_PUBLIC_` prefix so they're accessible in the browser:
 
 ### Google Gemini AI
 - `GEMINI_API_KEY` → Your Google Gemini API Key
-- `GEMINI_MODEL` → `gemini-2.5-pro` (from backend)
+- `GEMINI_MODEL` → Optional. Default is `gemini-2.0-flash`. Use a Flash model for free-tier keys (Pro models have very low quota and will hit 429 quickly). Omit or set to `gemini-2.0-flash`.
 
 ### Cloudflare R2 Storage
 All R2 variables directly copied from backend:

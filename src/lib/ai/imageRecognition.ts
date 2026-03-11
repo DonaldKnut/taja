@@ -54,7 +54,7 @@ export async function analyzeProductImage(
     throw new Error('Gemini API not configured');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.0-flash' });
   const imagePart = bufferToGenerativePart(imageBuffer, mimeType);
 
   const prompt = `Analyze this product image and provide detailed information for e-commerce categorization.
@@ -177,7 +177,7 @@ export async function detectInappropriateContent(
     return { isAppropriate: true, confidence: 100, flags: [] };
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.0-flash' });
   const imagePart = bufferToGenerativePart(imageBuffer, mimeType);
 
   const prompt = `Analyze this image for inappropriate content for an e-commerce platform.
@@ -231,7 +231,7 @@ export async function extractImageColors(
     return [];
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.0-flash' });
   const imagePart = bufferToGenerativePart(imageBuffer, mimeType);
 
   const prompt = `List the 3-5 dominant colors in this product image.
@@ -277,7 +277,7 @@ export async function compareProductImages(
     return { similarity: 0, isSameProduct: false, differences: [] };
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.0-flash' });
   const image1Part = bufferToGenerativePart(image1Buffer, mimeType);
   const image2Part = bufferToGenerativePart(image2Buffer, mimeType);
 
