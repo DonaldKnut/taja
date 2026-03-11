@@ -7,6 +7,7 @@ import Image from "next/image";
 import {
     Upload,
     X,
+    Plus,
     Camera,
     Tag,
     Package,
