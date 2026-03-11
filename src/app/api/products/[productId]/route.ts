@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import connectDB from '@/lib/db';
 import Product from '@/models/Product';
+import Shop from '@/models/Shop';
 import { requireAuth } from '@/lib/middleware';
 
 export const dynamic = 'force-dynamic';
