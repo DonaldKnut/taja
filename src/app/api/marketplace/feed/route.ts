@@ -98,7 +98,16 @@ export async function GET(request: NextRequest) {
       category: product.category?.name || product.category || 'General',
       subcategory: product.subcategory,
       condition: product.condition,
-      stock: product.inventory?.quantity || 0,
+      stock: product.inventory?.quantity ?? product.stock ?? 0,
+      moq: product.inventory?.moq ?? product.moq ?? 1,
+      inventory: product.inventory
+        ? {
+          quantity: product.inventory.quantity ?? product.stock ?? 0,
+          moq: product.inventory.moq ?? product.moq ?? 1,
+          trackQuantity: product.inventory.trackQuantity !== false,
+        }
+        : undefined,
+      variants: product.variants || [],
       seller: product.seller?._id?.toString() || product.seller?.toString(),
       shop: product.shop
         ? {
