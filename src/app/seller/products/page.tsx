@@ -34,6 +34,7 @@ import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
+import { ConfirmModal } from "@/components/modal/ConfirmModal";
 
 interface SellerProduct {
   id: string;
@@ -74,6 +75,7 @@ export default function SellerProductsPage() {
   const [category, setCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const isUnderReview = user?.accountStatus === "under_review";
   const kycStatus = user?.kyc?.status;
@@ -169,7 +171,6 @@ export default function SellerProductsPage() {
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
     try {
       await sellerApi.deleteProduct(productId);
       setProducts((prev) => prev.filter((p) => p.id !== productId));
@@ -205,7 +206,23 @@ export default function SellerProductsPage() {
   }
 
   return (
-    <motion.div
+    <>
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="Remove this product from your catalogue?"
+        description="It will be marked as deleted in your seller dashboard and hidden from buyers."
+        confirmLabel="Yes, remove product"
+        cancelLabel="Keep product"
+        variant="danger"
+        onConfirm={async () => {
+          if (!confirmDeleteId) return;
+          await handleDeleteProduct(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+
+      <motion.div
       variants={container}
       initial="hidden"
       animate="show"
@@ -419,7 +436,7 @@ export default function SellerProductsPage() {
                       <Link href={`/seller/products/${product.id}/edit`} className="p-3 text-gray-400 hover:text-taja-primary glass-card border-white/60 hover:bg-white transition-all rounded-2xl">
                         <Edit className="h-4 w-4" />
                       </Link>
-                      <button onClick={() => handleDeleteProduct(product.id)} className="p-3 text-gray-400 hover:text-red-500 glass-card border-white/60 hover:bg-white transition-all rounded-2xl">
+                      <button onClick={() => setConfirmDeleteId(product.id)} className="p-3 text-gray-400 hover:text-red-500 glass-card border-white/60 hover:bg-white transition-all rounded-2xl">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -473,7 +490,7 @@ export default function SellerProductsPage() {
                         <Link href={`/seller/products/${product.id}/edit`} className="p-2 text-gray-400 hover:text-taja-primary glass-card border-white/60 hover:bg-white transition-all rounded-xl">
                           <Edit className="h-3.5 w-3.5" />
                         </Link>
-                        <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-gray-400 hover:text-red-500 glass-card border-white/60 hover:bg-white transition-all rounded-xl">
+                        <button onClick={() => setConfirmDeleteId(product.id)} className="p-2 text-gray-400 hover:text-red-500 glass-card border-white/60 hover:bg-white transition-all rounded-xl">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -486,5 +503,6 @@ export default function SellerProductsPage() {
         )}
       </AnimatePresence>
     </motion.div>
+    </>
   );
 }

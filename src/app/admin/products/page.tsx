@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/Input";
 import { api } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { Badge } from "@/components/ui/Badge";
+import { ConfirmModal } from "@/components/modal/ConfirmModal";
 
 interface Product {
     _id: string;
@@ -69,6 +70,10 @@ export default function AdminProductsPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [actingId, setActingId] = useState<string | null>(null);
     const [stats, setStats] = useState<{ totalProducts: number; activeProducts: number; pendingProducts: number; totalValue: number } | null>(null);
+    const [confirmState, setConfirmState] = useState<{ productId: string | null; action: "suspend" | "activate" | "delete" | null }>({
+        productId: null,
+        action: null,
+    });
 
     useEffect(() => {
         fetchProducts();
@@ -89,7 +94,6 @@ export default function AdminProductsPage() {
     }, []);
 
     const handleProductAction = async (productId: string, action: "suspend" | "activate" | "delete") => {
-        if (action === "delete" && !confirm("Remove this product from the catalogue? It will be marked as deleted.")) return;
         try {
             setActingId(productId);
             const res = await api(`/api/admin/products/${productId}`, {
@@ -107,6 +111,16 @@ export default function AdminProductsPage() {
         } finally {
             setActingId(null);
         }
+    };
+
+    const openDeleteConfirm = (productId: string) => {
+        setConfirmState({ productId, action: "delete" });
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!confirmState.productId || !confirmState.action) return;
+        await handleProductAction(confirmState.productId, confirmState.action);
+        setConfirmState({ productId: null, action: null });
     };
 
     const fetchProducts = async () => {
@@ -143,6 +157,18 @@ export default function AdminProductsPage() {
 
     return (
         <div className="p-4 sm:p-6 lg:p-8">
+            <ConfirmModal
+                isOpen={!!confirmState.productId && confirmState.action === "delete"}
+                title="Remove this product from the catalogue?"
+                description="It will be marked as deleted and hidden from the marketplace, but kept in the audit trail."
+                confirmLabel="Yes, mark as deleted"
+                cancelLabel="Cancel"
+                variant="danger"
+                loading={!!actingId}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setConfirmState({ productId: null, action: null })}
+            />
+
             <div className="mb-10 p-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-6">
                     <div className="w-14 h-14 rounded-[1.2rem] bg-slate-950 shadow-huge flex items-center justify-center">
@@ -374,7 +400,7 @@ export default function AdminProductsPage() {
                                                         </button>
                                                     ) : null}
                                                     <button
-                                                        onClick={() => handleProductAction(product._id, "delete")}
+                                                        onClick={() => openDeleteConfirm(product._id)}
                                                         disabled={actingId === product._id}
                                                         className="h-9 px-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-[9px] uppercase disabled:opacity-50"
                                                     >
