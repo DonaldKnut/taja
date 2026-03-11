@@ -364,7 +364,7 @@ export default function AdminEditProductPage() {
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                 <div className="text-center space-y-4">
                     <div className="h-12 w-12 border-4 border-slate-900 border-t-emerald-500 rounded-full animate-spin mx-auto"></div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Fetching Audit Data...</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Loading product...</p>
                 </div>
             </div>
         );
@@ -383,7 +383,7 @@ export default function AdminEditProductPage() {
                             className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-slate-900 transition-all group"
                         >
                             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                            Back to Catalogue
+                            Back to products
                         </Link>
                         <Button
                             onClick={handleSubmit}
@@ -391,7 +391,7 @@ export default function AdminEditProductPage() {
                             className="flex items-center gap-2 px-6 h-9 rounded-xl bg-slate-900 text-white hover:bg-emerald-600 text-[10px] font-black uppercase tracking-widest transition-all shadow-sm disabled:opacity-50"
                         >
                             <Save className="h-3.5 w-3.5" />
-                            {loading ? "Saving…" : "Publish Corrections"}
+                            {loading ? "Saving…" : "Save changes"}
                         </Button>
                     </div>
                 </div>
@@ -409,21 +409,18 @@ export default function AdminEditProductPage() {
                                     <ArrowLeft className="w-5 h-5" />
                                 </Link>
                                 <div className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/20 rounded-full">
-                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-emerald-400">Administrative Override</span>
-                                </div>
-                                <div className="px-3 py-1 bg-rose-500/20 border border-rose-500/20 rounded-full">
-                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-rose-400">Concierge Mode</span>
+                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-emerald-400">Admin edit</span>
                                 </div>
                             </div>
 
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
                                 <div>
                                     <h1 className="text-3xl md:text-5xl font-black tracking-tighter leading-none mb-4">
-                                        Audit: {formData.title || "Unknown Product"}
+                                        Edit: {formData.title || "Product"}
                                     </h1>
                                     <p className="text-slate-400 font-bold text-sm max-w-2xl">
-                                        You are editing this product on behalf of <span className="text-emerald-400">{productOwner?.shopName || productOwner?.fullName || "a Seller"}</span>.
-                                        Your changes will reflect instantly across the marketplace.
+                                        You are editing this product for <span className="text-emerald-400">{productOwner?.shopName || productOwner?.fullName || "the seller"}</span>.
+                                        Changes are saved to the live listing when you click Save.
                                     </p>
                                 </div>
 
@@ -433,7 +430,7 @@ export default function AdminEditProductPage() {
                                         disabled={loading}
                                         className="rounded-2xl px-10 h-14 font-black uppercase tracking-widest text-[10px] shadow-premium bg-emerald-500 hover:bg-emerald-600 text-white transition-all transform hover:scale-[1.02]"
                                     >
-                                        {loading ? "Syncing..." : "Publish Corrections"}
+                                        {loading ? "Saving…" : "Save changes"}
                                     </Button>
                                 </div>
                             </div>
@@ -445,16 +442,22 @@ export default function AdminEditProductPage() {
                         <div className="lg:col-span-8 space-y-10">
                             {/* Media Section */}
                             <section className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-100">
-                                <div className="flex items-center gap-3 mb-10">
+                                <div className="flex items-center gap-3 mb-4">
                                     <div className="p-3 bg-slate-900 rounded-2xl">
                                         <Camera className="w-6 h-6 text-emerald-400" />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Visual Audit</h2>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gallery & Assets</p>
+                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Product photos</h2>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Add, remove, or reorder images</p>
                                     </div>
                                 </div>
-
+                                {formData.images.length > 0 && (
+                                    <div className="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                        <p className="text-xs font-bold text-slate-600 mb-3">
+                                            Current images on this listing — this is what buyers see. First image is the main one.
+                                        </p>
+                                    </div>
+                                )}
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                                     {formData.images.map((image, index) => (
                                         <motion.div
@@ -470,7 +473,7 @@ export default function AdminEditProductPage() {
                                             {index === 0 && (
                                                 <div className="absolute top-3 left-3 px-2 py-1 bg-emerald-500 rounded-full flex items-center gap-1 shadow-lg">
                                                     <Star className="w-2.5 h-2.5 text-white fill-white" />
-                                                    <span className="text-[8px] font-black text-white uppercase tracking-tighter">HERO</span>
+                                                    <span className="text-[8px] font-black text-white uppercase tracking-tighter">Main</span>
                                                 </div>
                                             )}
 
@@ -509,7 +512,7 @@ export default function AdminEditProductPage() {
                                                     <div className="p-4 bg-slate-50 rounded-2xl group-hover:bg-white transition-colors">
                                                         <Upload className="w-6 h-6 text-slate-400 group-hover:text-emerald-500 transition-colors" />
                                                     </div>
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-3">Add Assets</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-3">Add photo</span>
                                                 </>
                                             )}
                                         </button>
@@ -533,14 +536,14 @@ export default function AdminEditProductPage() {
                                         <LayoutGrid className="w-6 h-6 text-emerald-400" />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Listing Content</h2>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Metadata & Copy</p>
+                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Title & description</h2>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">What buyers see in the listing</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-8">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Product Title</label>
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Title</label>
                                         <Input
                                             name="title"
                                             value={formData.title}
@@ -551,20 +554,20 @@ export default function AdminEditProductPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Detailed Description</label>
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Description</label>
                                         <textarea
                                             name="description"
                                             value={formData.description}
                                             onChange={handleChange}
                                             rows={8}
                                             className="w-full px-6 py-5 bg-slate-50/50 border border-slate-100 rounded-3xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-bold text-slate-700 text-base"
-                                            placeholder="Refine the product description for maximum conversion..."
+                                            placeholder="Describe the product clearly for buyers..."
                                         />
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Catalogue Category</label>
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Category</label>
                                             <select
                                                 name="category"
                                                 value={formData.category}
@@ -579,7 +582,7 @@ export default function AdminEditProductPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Item Condition</label>
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Condition</label>
                                             <div className="flex gap-2">
                                                 {["new", "like-new", "good", "fair"].map((cond) => (
                                                     <button
@@ -610,13 +613,13 @@ export default function AdminEditProductPage() {
                                             <TrendingUp className="w-6 h-6 text-emerald-400" />
                                         </div>
                                         <div>
-                                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Market Valuation</h2>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pricing Strategy</p>
+                                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Price</h2>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Selling price in ₦</p>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-2">Variable Range</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-2">Price range</span>
                                         <button
                                             type="button"
                                             onClick={() => setFormData(prev => ({ ...prev, isRange: !prev.isRange }))}
@@ -637,7 +640,7 @@ export default function AdminEditProductPage() {
                                     <div className="space-y-6">
                                         <div className="relative">
                                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">
-                                                {formData.isRange ? "Minimum (₦)" : "Standard Price (₦)"}
+                                                {formData.isRange ? "Min price (₦)" : "Price (₦)"}
                                             </label>
                                             <div className="relative">
                                                 <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-300">₦</span>
@@ -653,7 +656,7 @@ export default function AdminEditProductPage() {
 
                                         {formData.isRange && (
                                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">Maximum Cap (₦)</label>
+                                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">Max price (₦)</label>
                                                 <div className="relative">
                                                     <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-300">₦</span>
                                                     <Input
@@ -669,7 +672,7 @@ export default function AdminEditProductPage() {
                                     </div>
 
                                     <div className="space-y-6">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">MSRP / Compare At (₦)</label>
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">Compare at / Was (₦)</label>
                                         <div className="relative">
                                             <span className="absolute left-6 top-1/2 -translate-y-1/2 font-bold text-slate-300">NGN</span>
                                             <Input
@@ -683,7 +686,7 @@ export default function AdminEditProductPage() {
                                         <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex gap-3">
                                             <ShieldAlert className="w-5 h-5 text-emerald-500 shrink-0" />
                                             <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest leading-relaxed">
-                                                Increasing the comparison price often increases perceived value during a concierge-led onboarding process.
+                                                A higher "compare at" price can make the current price look like a better deal to buyers.
                                             </p>
                                         </div>
                                     </div>
@@ -698,8 +701,8 @@ export default function AdminEditProductPage() {
                                         <Truck className="w-6 h-6 text-blue-400" />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Logistics Protocol</h2>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Weight & Fulfillment</p>
+                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Shipping</h2>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Weight and delivery fee</p>
                                     </div>
                                 </div>
 
@@ -764,8 +767,8 @@ export default function AdminEditProductPage() {
                                             <Zap className="w-6 h-6 text-emerald-400" />
                                         </div>
                                         <div>
-                                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight italic">Product Options</h2>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Variations</p>
+                                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Sizes / options</h2>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">e.g. Red, XL, 1kg</p>
                                         </div>
                                     </div>
                                     <button
@@ -774,7 +777,7 @@ export default function AdminEditProductPage() {
                                         className="flex items-center justify-center gap-2 px-6 h-12 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all font-sans w-full sm:w-auto"
                                     >
                                         <Plus className="h-4 w-4" />
-                                        Add Option
+                                        Add option
                                     </button>
                                 </div>
 
@@ -867,7 +870,7 @@ export default function AdminEditProductPage() {
                                         <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center mb-4">
                                             <Zap className="w-6 h-6 text-slate-300" />
                                         </div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center px-4">No product options defined</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center px-4">No sizes or options yet</p>
                                     </div>
                                 )}
                             </section>
@@ -881,12 +884,12 @@ export default function AdminEditProductPage() {
                                     <div className="p-2.5 bg-slate-900 rounded-2xl">
                                         <Package className="w-5 h-5 text-emerald-400" />
                                     </div>
-                                    <h2 className="text-lg font-black text-slate-900 tracking-tight">Stock Audit</h2>
+                                    <h2 className="text-lg font-black text-slate-900 tracking-tight">Stock</h2>
                                 </div>
 
                                 <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Units Available</label>
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">In stock</label>
                                         <Input
                                             name="inventory.quantity"
                                             type="number"
@@ -897,7 +900,7 @@ export default function AdminEditProductPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Minimum Order Qty</label>
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Min order (MOQ)</label>
                                         <Input
                                             name="inventory.moq"
                                             type="number"
@@ -911,13 +914,13 @@ export default function AdminEditProductPage() {
 
                             {/* Market Status */}
                             <section className="bg-slate-900 rounded-[2.5rem] p-8 shadow-huge text-white border border-slate-800">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-8">Catalogue Visibility</h3>
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-8">Who can see this</h3>
 
                                 <div className="space-y-4">
                                     {[
-                                        { id: 'active', label: 'Market Live', color: 'bg-emerald-500', sub: 'Visible to everyone' },
-                                        { id: 'draft', label: 'Store Draft', color: 'bg-amber-500', sub: 'Saved but hidden' },
-                                        { id: 'suspended', label: 'Admin Locked', color: 'bg-rose-500', sub: 'Requires review' }
+                                        { id: 'active', label: 'Live', color: 'bg-emerald-500', sub: 'Visible to buyers' },
+                                        { id: 'draft', label: 'Draft', color: 'bg-amber-500', sub: 'Saved but hidden' },
+                                        { id: 'suspended', label: 'Paused', color: 'bg-rose-500', sub: 'Needs review' }
                                     ].map((stat) => (
                                         <button
                                             key={stat.id}
@@ -945,16 +948,16 @@ export default function AdminEditProductPage() {
 
                             {/* Owner Info Sidebar */}
                             <section className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Attribution</h3>
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Sold by</h3>
                                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
                                     <div className="h-12 w-12 rounded-xl bg-slate-900 flex items-center justify-center text-emerald-400 font-black">
                                         {(productOwner?.shopName || productOwner?.fullName || "S")[0]}
                                     </div>
                                     <div>
                                         <p className="text-xs font-black text-slate-900 truncate max-w-[150px]">
-                                            {productOwner?.shopName || productOwner?.fullName || "Unknown Seller"}
+                                            {productOwner?.shopName || productOwner?.fullName || "Seller"}
                                         </p>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Store Owner</p>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Shop</p>
                                     </div>
                                 </div>
                             </section>

@@ -1,4 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import Shop from './Shop';
+import Product from './Product';
 
 export interface IReview extends Document {
   reviewer: mongoose.Types.ObjectId;
@@ -68,9 +70,9 @@ ReviewSchema.index({ order: 1 });
 
 // Update product/shop ratings when review is saved
 ReviewSchema.post('save', async function () {
+  const ReviewModel = mongoose.model('Review');
   if (this.product) {
-    const Product = mongoose.model('Product');
-    const reviews = await mongoose.model('Review').find({ product: this.product });
+    const reviews = await ReviewModel.find({ product: this.product });
     const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
     await Product.findByIdAndUpdate(this.product, {
       averageRating: Math.round(avgRating * 10) / 10,
@@ -78,8 +80,7 @@ ReviewSchema.post('save', async function () {
     });
   }
   if (this.shop) {
-    const Shop = mongoose.model('Shop');
-    const reviews = await mongoose.model('Review').find({ shop: this.shop });
+    const reviews = await ReviewModel.find({ shop: this.shop });
     const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
     await Shop.findByIdAndUpdate(this.shop, {
       'stats.averageRating': Math.round(avgRating * 10) / 10,

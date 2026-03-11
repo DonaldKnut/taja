@@ -27,6 +27,7 @@ import {
   Loader2,
   Sparkles,
   DollarSign,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -412,7 +413,7 @@ export default function EditProductPage() {
             <div className="h-16 w-16 rounded-full border-4 border-taja-light animate-pulse"></div>
             <div className="absolute inset-0 h-16 w-16 rounded-full border-t-4 border-taja-primary animate-spin"></div>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Restoring Masterpiece...</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Loading product...</p>
         </div>
       </div>
     );
@@ -435,12 +436,12 @@ export default function EditProductPage() {
                   <ArrowLeft className="w-5 h-5 text-gray-400" />
                 </Link>
                 <div className="h-1 w-8 bg-taja-primary rounded-full"></div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-taja-primary">Product Editor</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-taja-primary">Edit product</span>
               </div>
               <h1 className="text-3xl md:text-5xl font-black text-taja-secondary tracking-tighter leading-none">
-                Refining {formData.title || "Your Product"}
+                Edit: {formData.title || "Product"}
               </h1>
-              <p className="text-gray-400 font-medium text-sm">Perfecting the presentation for your elite customers.</p>
+              <p className="text-gray-400 font-medium text-sm">Update the details and photos below. Your current images are shown so you can see where you left off.</p>
             </div>
 
             <div className="hidden md:flex items-center gap-4">
@@ -458,7 +459,7 @@ export default function EditProductPage() {
                 disabled={loading}
                 className="rounded-2xl px-10 h-14 font-black uppercase tracking-widest text-xs shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700 hover:scale-[1.02] transition-transform"
               >
-                {loading ? "Updating..." : "Publish Edits"}
+                {loading ? "Saving…" : "Save and publish"}
               </Button>
             </div>
           </div>
@@ -468,16 +469,22 @@ export default function EditProductPage() {
             <div className="lg:col-span-8 space-y-10">
               {/* Media Section */}
               <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium overflow-hidden">
-                <div className="flex items-center gap-3 mb-8">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="p-2.5 bg-taja-primary/10 rounded-2xl">
                     <Camera className="w-5 h-5 text-taja-primary" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Visual Identity</h2>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Main gallery & showcase</p>
+                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Product photos</h2>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Add, remove, or reorder. First image is the main one.</p>
                   </div>
                 </div>
-
+                {formData.images.length > 0 && (
+                  <div className="mb-6 p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                    <p className="text-xs font-bold text-gray-600">
+                      Your current images — this is what buyers see. Change or add more below.
+                    </p>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                   {formData.images.map((image, index) => (
                     <motion.div
@@ -495,7 +502,7 @@ export default function EditProductPage() {
                       {index === 0 && (
                         <div className="absolute top-3 left-3 px-2 py-1 bg-taja-primary rounded-full flex items-center gap-1 shadow-lg">
                           <Star className="w-2.5 h-2.5 text-white fill-white" />
-                          <span className="text-[8px] font-black text-white uppercase tracking-tighter">Main</span>
+                          <span className="text-[8px] font-black text-white uppercase tracking-tighter">Cover</span>
                         </div>
                       )}
 
@@ -534,7 +541,7 @@ export default function EditProductPage() {
                           <div className="p-3 bg-gray-50 rounded-2xl group-hover:bg-white transition-colors">
                             <Upload className="w-5 h-5 text-gray-400 group-hover:text-taja-primary transition-colors" />
                           </div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-3">Add More</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-3">Add photo</span>
                         </>
                       )}
                     </button>
@@ -552,8 +559,8 @@ export default function EditProductPage() {
 
                 <div className="p-4 bg-taja-light/30 rounded-2xl border border-taja-primary/5">
                   <p className="text-[10px] font-bold text-taja-secondary leading-relaxed">
-                    <span className="text-taja-primary mr-1 italic">PRO TIP:</span>
-                    Premium buyers favor products with at least 5 studio-quality images. The first image serves as the cinematic hero of your listing.
+                    <span className="text-taja-primary mr-1 font-bold">Tip:</span>
+                    Listings with several clear photos often sell better. The first image is the one buyers see first.
                   </p>
                 </div>
               </section>
@@ -565,14 +572,14 @@ export default function EditProductPage() {
                     <Package className="w-5 h-5 text-emerald-500" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Core Details</h2>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Essential specifications</p>
+                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Title & description</h2>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">What buyers see in the listing</p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Product Title</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Title</label>
                     <Input
                       name="title"
                       value={formData.title}
@@ -590,7 +597,7 @@ export default function EditProductPage() {
                       onChange={handleChange}
                       rows={6}
                       className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all font-medium text-gray-600"
-                      placeholder="Describe the premium value of this item..."
+                      placeholder="Describe the product clearly for buyers..."
                     />
                   </div>
 
@@ -642,8 +649,8 @@ export default function EditProductPage() {
                       <LayoutGrid className="w-5 h-5 text-taja-primary" />
                     </div>
                     <div>
-                      <h2 className="text-xl sm:text-2xl font-black text-taja-secondary tracking-tight italic">Product Options</h2>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Variations</p>
+                      <h2 className="text-xl sm:text-2xl font-black text-taja-secondary tracking-tight">Sizes / options</h2>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">e.g. Red, XL, 1kg</p>
                     </div>
                   </div>
                   <Button
@@ -653,7 +660,7 @@ export default function EditProductPage() {
                     className="rounded-2xl border-taja-primary/20 text-taja-primary hover:bg-taja-primary hover:text-white transition-all font-black uppercase tracking-widest text-[10px] h-12 px-6 w-full sm:w-auto flex items-center justify-center"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Option
+                    Add option
                   </Button>
                 </div>
 
@@ -746,14 +753,14 @@ export default function EditProductPage() {
                     <div className="w-16 h-16 rounded-3xl bg-white shadow-premium flex items-center justify-center mb-6">
                       <LayoutGrid className="w-8 h-8 text-gray-200" />
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6 text-center px-4">No product options defined yet</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6 text-center px-4">No sizes or options yet</p>
                     <Button
                       type="button"
                       onClick={addVariant}
                       className="rounded-2xl border-gray-200 text-gray-400 hover:border-taja-primary hover:text-taja-primary transition-all font-black uppercase tracking-widest text-[10px] h-10 px-6 bg-white"
                       variant="outline"
                     >
-                      Define Options
+                      Add option
                     </Button>
                   </div>
                 )}
@@ -763,7 +770,7 @@ export default function EditProductPage() {
                     <Zap className="w-4 h-4 text-white" />
                   </div>
                   <p className="text-[10px] font-bold text-blue-900 leading-relaxed uppercase tracking-widest mt-1">
-                    Variations allow you to offer different sizes, colors, or versions of your product, each with its own price and stock levels. This increases conversion by providing more choices to elite buyers.
+                    Add options like size or color so buyers can pick. Each option can have its own price and stock.
                   </p>
                 </div>
               </section>
@@ -777,13 +784,13 @@ export default function EditProductPage() {
                       <Zap className="w-5 h-5 text-amber-500" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-black text-taja-secondary tracking-tight">Standard Pricing</h2>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Revenue model</p>
+                      <h2 className="text-lg font-black text-taja-secondary tracking-tight">Price</h2>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Selling price in ₦</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Price Range</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Price range</span>
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, isRange: !prev.isRange }))}
@@ -805,7 +812,7 @@ export default function EditProductPage() {
                     <div className="relative space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block">
-                          {formData.isRange ? "Minimum (₦)" : "Price (₦)"}
+                          {formData.isRange ? "Min price (₦)" : "Price (₦)"}
                         </label>
                         {suggestedPrice && (
                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-taja-primary/5 text-[9px] font-bold text-taja-primary uppercase tracking-[0.16em]">
@@ -842,7 +849,7 @@ export default function EditProductPage() {
 
                     {formData.isRange && (
                       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Maximum (₦)</label>
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Max price (₦)</label>
                         <div className="relative group">
                           <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-gray-300">₦</span>
                           <Input
@@ -859,7 +866,7 @@ export default function EditProductPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Compare At (₦)</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Compare at / Was (₦)</label>
                     <div className="relative">
                       <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-gray-200 text-sm">Was N</span>
                       <Input
@@ -874,7 +881,7 @@ export default function EditProductPage() {
                     <div className="flex gap-2 p-4 bg-amber-50 rounded-2xl border border-amber-100">
                       <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                       <p className="text-[10px] font-bold text-amber-800 leading-relaxed uppercase tracking-widest">
-                        Setting a "Compare At" price higher than your actual price creates an elite value perception for buyers.
+                        A higher "compare at" price can make your current price look like a better deal.
                       </p>
                     </div>
                   </div>
@@ -890,12 +897,12 @@ export default function EditProductPage() {
                   <div className="p-2.5 bg-blue-500/10 rounded-2xl">
                     <ShieldCheck className="w-5 h-5 text-blue-500" />
                   </div>
-                  <h2 className="text-lg font-black text-taja-secondary tracking-tight">Stock Logistics</h2>
+                  <h2 className="text-lg font-black text-taja-secondary tracking-tight">Stock</h2>
                 </div>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 mb-2 block">In Stock</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 mb-2 block">In stock</label>
                     <Input
                       name="inventory.quantity"
                       type="number"
@@ -907,8 +914,7 @@ export default function EditProductPage() {
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 block">Min Order (MOQ)</label>
-                      <span className="px-2 py-0.5 rounded-full bg-taja-primary/10 text-[8px] font-black text-taja-primary uppercase">Wholesale friendly</span>
+<label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 block">Min order (MOQ)</label>
                     </div>
                     <Input
                       name="inventory.moq"
@@ -925,7 +931,7 @@ export default function EditProductPage() {
                       Number(formData.inventory.quantity) > 0 ? "bg-emerald-500 animate-pulse" : "bg-red-500"
                     )}></div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">
-                      {Number(formData.inventory.quantity) > 0 ? "Actively Selling" : "Halted Listings"}
+                      {Number(formData.inventory.quantity) > 0 ? "In stock" : "Out of stock"}
                     </span>
                   </div>
                 </div>
@@ -937,12 +943,12 @@ export default function EditProductPage() {
                   <div className="p-2.5 bg-white/10 rounded-2xl">
                     <Truck className="w-5 h-5 text-taja-primary" />
                   </div>
-                  <h2 className="text-lg font-black tracking-tight">Performance</h2>
+                  <h2 className="text-lg font-black tracking-tight">Shipping</h2>
                 </div>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2 block">Processing Time</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2 block">Dispatch time</label>
                     <select
                       name="shipping.processingTime"
                       value={formData.shipping.processingTime}
@@ -996,7 +1002,7 @@ export default function EditProductPage() {
 
               {/* Visibility Panel */}
               <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">Market Visibility</h3>
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">Visibility</h3>
 
                 <div className="space-y-4">
                   <button
@@ -1008,7 +1014,7 @@ export default function EditProductPage() {
                     )}
                   >
                     <div className={cn("h-3 w-3 rounded-full", formData.status === 'active' ? "bg-taja-primary ring-4 ring-taja-primary/20" : "bg-gray-200")}></div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">Active Listing</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">Live — visible to buyers</span>
                     <ChevronRight className="w-4 h-4 ml-auto text-gray-300" />
                   </button>
 
@@ -1021,7 +1027,7 @@ export default function EditProductPage() {
                     )}
                   >
                     <div className={cn("h-3 w-3 rounded-full", formData.status === 'draft' ? "bg-amber-500 ring-4 ring-amber-500/20" : "bg-gray-200")}></div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">Stored Draft</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">Draft — hidden from buyers</span>
                     <ChevronRight className="w-4 h-4 ml-auto text-gray-300" />
                   </button>
                 </div>
@@ -1041,7 +1047,7 @@ export default function EditProductPage() {
             onClick={(e) => handleSubmit(e, true)}
             disabled={loading}
           >
-            {loading ? "..." : "Hold Draft"}
+            {loading ? "..." : "Save draft"}
           </Button>
           <Button
             type="submit"
@@ -1049,7 +1055,7 @@ export default function EditProductPage() {
             onClick={(e) => handleSubmit(e, false)}
             className="flex-[2] rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700"
           >
-            {loading ? "Refining..." : "Publish Edits"}
+            {loading ? "Saving…" : "Save and publish"}
           </Button>
         </div>
         <div className="h-[env(safe-area-inset-bottom)]" />
