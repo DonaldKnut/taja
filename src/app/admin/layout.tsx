@@ -31,6 +31,7 @@ import {
   Tag,
   ChevronDown,
   MessageCircle,
+  LayoutGrid,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -194,6 +195,20 @@ export default function AdminLayout({
         </AnimatePresence>
       </div>
 
+      {/* Buyer dashboard - prominent on mobile */}
+      {mobile && (
+        <div className="px-2 mb-6">
+          <Link
+            href="/dashboard"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center justify-center gap-3 w-full px-6 py-3.5 bg-white/10 text-white border border-white/20 rounded-2xl font-black uppercase tracking-[0.15em] hover:bg-white/20 transition-all text-[10px]"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Buyer dashboard
+          </Link>
+        </div>
+      )}
+
       {/* Navigation Groups */}
       <nav className="flex-1 space-y-8 overflow-y-auto custom-scrollbar-visible pb-10">
         {adminNavGroups.map((group) => (
@@ -261,6 +276,14 @@ export default function AdminLayout({
               <span className="hidden sm:block text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 shadow-sm">
                 Admin Panel
               </span>
+              <Link
+                href="/dashboard"
+                aria-label="Buyer dashboard"
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-emerald-600 px-2 sm:px-3 py-1.5 rounded-lg border border-gray-100 hover:border-emerald-100 bg-white hover:bg-emerald-50/50 transition-all shrink-0"
+              >
+                <LayoutGrid className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Buyer dashboard</span>
+              </Link>
             </div>
 
             {/* Center: Search */}
@@ -293,7 +316,7 @@ export default function AdminLayout({
                 )}
               </button>
 
-              <div className="hidden md:flex relative">
+              <div className="flex relative">
                 <CartIcon
                   className="p-3 text-gray-400 hover:text-emerald-500 bg-white border border-gray-100 hover:border-emerald-100 transition-all rounded-2xl shadow-sm"
                   iconSize="h-5 w-5"

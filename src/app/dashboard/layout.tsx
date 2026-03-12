@@ -52,7 +52,6 @@ const navGroups = [
   {
     label: "Discover",
     items: [
-      { name: "Marketplace", href: "/dashboard/marketplace", icon: ShoppingBag },
       { name: "Wishlist", href: "/dashboard/wishlist", icon: Heart },
     ],
   },
@@ -79,6 +78,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [profileCollapsed, setProfileCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -114,9 +114,13 @@ export default function DashboardLayout({
   /* ── Sidebar Content (shared between desktop & mobile) ── */
   const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <div className="h-full flex flex-col">
-      {/* User Avatar Card */}
-      <div className="p-5 mb-2">
-        <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-taja-secondary/5 to-taja-primary/5 border border-white/60">
+      {/* User & Admin block (collapsible) */}
+      <div className="px-5 mb-2">
+        <button
+          type="button"
+          onClick={() => setProfileCollapsed((c) => !c)}
+          className="w-full flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-taja-secondary/5 to-taja-primary/5 border border-white/60 hover:from-taja-secondary/10 hover:to-taja-primary/10 transition-colors text-left"
+        >
           <div className="relative h-11 w-11 shrink-0 rounded-full border-2 border-taja-primary/30 bg-white shadow-sm flex items-center justify-center text-sm font-black text-taja-primary overflow-hidden">
             {user?.avatar ? (
               <Image
@@ -129,34 +133,56 @@ export default function DashboardLayout({
             ) : (
               <span>{getUserInitials()}</span>
             )}
-            {/* Online indicator */}
             <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-taja-primary border-2 border-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-taja-secondary truncate leading-none mb-1">
+            <p className="text-sm font-bold text-taja-secondary truncate leading-none mb-0.5">
               {user?.fullName || "User"}
             </p>
-            <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
+            {!profileCollapsed && (
+              <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
+            )}
+            {profileCollapsed && user?.role === "admin" && (
+              <p className="text-[10px] text-emerald-500/80 font-medium">Admin Dashboard</p>
+            )}
           </div>
-        </div>
-      </div>
-
-      {/* Admin Quick Switch (Conditional) */}
-      {user?.role === "admin" && (
-        <div className="px-5 mb-6">
-          <Link
-            href="/admin/dashboard"
-            onClick={onNavigate}
-            className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-950 text-emerald-400 border border-emerald-500/20 shadow-lg hover:shadow-emerald/20 transition-all group"
+          <motion.div
+            animate={{ rotate: profileCollapsed ? -90 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="shrink-0 text-gray-400"
           >
-            <Zap className="h-[18px] w-[18px] animate-pulse" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mb-1">Admin Dashboard</p>
-              <p className="text-[10px] text-emerald-500/60 font-medium">Manage Platform</p>
-            </div>
-          </Link>
-        </div>
-      )}
+            <ChevronDown className="h-5 w-5" />
+          </motion.div>
+        </button>
+
+        <AnimatePresence initial={false}>
+          {!profileCollapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              {user?.role === "admin" && (
+                <div className="pt-3">
+                  <Link
+                    href="/admin/dashboard"
+                    onClick={onNavigate}
+                    className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-950 text-emerald-400 border border-emerald-500/20 shadow-lg hover:shadow-emerald/20 transition-all group"
+                  >
+                    <Zap className="h-[18px] w-[18px] animate-pulse" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mb-1">Admin Dashboard</p>
+                      <p className="text-[10px] text-emerald-500/60 font-medium">Manage Platform</p>
+                    </div>
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Navigation Groups */}
       <nav className="flex-1 overflow-y-auto px-4 space-y-6 scrollbar-hide pb-4">

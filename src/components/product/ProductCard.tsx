@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { Heart, Star, ShoppingBag, Plus, ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ImageSlider } from "@/components/ui/ImageSlider";
@@ -45,6 +47,35 @@ export function ProductCard({
 }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { items: wishlistItems, toggleWishlistItem } = useWishlistStore();
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const optionsTriggerRef = useRef<HTMLButtonElement>(null);
+  const [optionsPanelPosition, setOptionsPanelPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!optionsOpen || typeof document === "undefined") return;
+    const trigger = optionsTriggerRef.current;
+    if (!trigger) return;
+    const update = () => {
+      const rect = trigger.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const padding = 16;
+      const maxW = Math.min(280, vw - padding * 2);
+      const width = Math.max(260, maxW);
+      // Right-align panel with the Options button so it doesn’t extend too far right
+      let left = rect.right - width;
+      left = Math.max(padding, Math.min(left, vw - width - padding));
+      const gap = 12;
+      const top = rect.top - gap;
+      setOptionsPanelPosition({ top, left, width });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [optionsOpen]);
 
   if (!product) return null;
 
@@ -160,6 +191,82 @@ export function ProductCard({
     }
   }
 
+  const optionsPanelContent = hasVariants && optionsOpen && optionsPanelPosition && typeof document !== "undefined" && createPortal(
+    <>
+      <div
+        className="fixed inset-0 z-[80]"
+        aria-hidden
+        onClick={() => setOptionsOpen(false)}
+      />
+      <div
+        className="fixed z-[81] pointer-events-none"
+        style={{
+          top: Math.max(16, optionsPanelPosition.top - 8),
+          left: optionsPanelPosition.left,
+          width: optionsPanelPosition.width,
+          transform: "translateY(-100%)",
+        }}
+      >
+        <div className="pointer-events-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.04)] border border-gray-100/80 overflow-hidden">
+          <div className="absolute -bottom-2 right-6 left-auto -translate-x-0 w-4 h-4 bg-white border-r border-b border-gray-100/80 rotate-45 rounded-sm shadow-sm" />
+          <div className="relative px-3 pt-3 pb-2">
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">
+              Choose variant
+            </p>
+            <div className="max-h-52 overflow-y-auto no-scrollbar space-y-0.5 pr-0.5">
+              {product.variants?.map((v) => {
+                const thumb = (v as any).image || images[0];
+                const price = v.price ?? product.price;
+                const stock = (v as any).stock ?? product.inventory?.quantity ?? product.stock ?? 0;
+                const outOfStock = stock <= 0;
+                return (
+                  <button
+                    key={v._id}
+                    onClick={(e) => {
+                      if (outOfStock) return;
+                      handleQuickAdd(e, v);
+                      setOptionsOpen(false);
+                    }}
+                    className={cn(
+                      "w-full p-2.5 rounded-xl hover:bg-gray-50/90 transition-colors text-left group/item border border-transparent hover:border-gray-100",
+                      outOfStock && "opacity-50 cursor-not-allowed hover:bg-transparent hover:border-transparent"
+                    )}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-10 w-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100 ring-1 ring-gray-100/50">
+                          <Image
+                            src={thumb}
+                            alt={v.name}
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="block text-xs font-bold text-gray-900 truncate">
+                            {v.name}
+                          </span>
+                          <span className="text-[10px] text-gray-500">
+                            {outOfStock ? "Out of stock" : `${stock} in stock`}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-black text-gray-900 tabular-nums shrink-0 sm:ml-0">
+                        ₦{price.toLocaleString()}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>,
+    document.body
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -167,6 +274,7 @@ export function ProductCard({
       viewport={{ once: true }}
       className={cn("group/card flex flex-col h-full bg-white rounded-[2rem] border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
     >
+      {optionsPanelContent}
       <div className="relative aspect-square overflow-hidden bg-gray-50">
         <Link href={`/product/${product.slug}`} onClick={handleClick} className="block w-full h-full">
           <ImageSlider
@@ -217,7 +325,7 @@ export function ProductCard({
           </p>
         </div>
 
-        <div className="mt-auto pt-3 flex items-center justify-between">
+        <div className="mt-auto pt-3 flex items-center justify-between relative">
           <div className="flex flex-col">
             <ProductPrice
               price={displayMinPrice}
@@ -228,63 +336,22 @@ export function ProductCard({
             />
           </div>
 
-          {/* Variations / Quick Add */}
-          <div className="relative group/options">
+          {/* Variations / Quick Add button */}
+          <div className="relative flex flex-col items-end">
             {hasVariants ? (
-              <div className="flex flex-col items-end">
-                <div className="absolute bottom-full right-0 mb-2 w-60 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 opacity-0 translate-y-2 pointer-events-none group-hover/options:opacity-100 group-hover/options:translate-y-0 group-hover/options:pointer-events-auto transition-all duration-300 z-50">
-                  <p className="px-3 py-1.5 text-[8px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 mb-1">
-                    Select Option
-                  </p>
-                  <div className="max-h-56 overflow-y-auto no-scrollbar space-y-1">
-                    {product.variants?.map((v) => {
-                      const thumb = (v as any).image || images[0];
-                      const price = v.price ?? product.price;
-                      const stock = (v as any).stock ?? product.inventory?.quantity ?? product.stock ?? 0;
-                      const outOfStock = stock <= 0;
-                      return (
-                        <button
-                          key={v._id}
-                          onClick={(e) => !outOfStock && handleQuickAdd(e, v)}
-                          className={cn(
-                            "w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-colors group/item",
-                            outOfStock && "opacity-50 cursor-not-allowed hover:bg-transparent"
-                          )}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="h-8 w-8 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100">
-                              <Image
-                                src={thumb}
-                                alt={v.name}
-                                width={32}
-                                height={32}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="flex flex-col items-start min-w-0">
-                              <span className="text-[10px] font-bold text-gray-900 truncate max-w-[120px]">
-                                {v.name}
-                              </span>
-                              <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">
-                                {outOfStock ? "Out of stock" : `${stock} in stock`}
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-[10px] font-black text-taja-primary whitespace-nowrap ml-2">
-                            ₦{price.toLocaleString()}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <button
-                  className="px-4 h-10 rounded-full bg-black text-white text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-gray-800 transition-all active:scale-95 flex items-center gap-2"
-                >
-                  Options
-                  <Plus className="h-3 w-3" />
-                </button>
-              </div>
+              <button
+                ref={optionsTriggerRef}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setOptionsOpen((open) => !open);
+                }}
+                className="px-4 h-10 rounded-full bg-black text-white text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-gray-800 transition-all active:scale-95 flex items-center gap-2 relative z-10"
+              >
+                Options
+                <Plus className={cn("h-3 w-3 transition-transform", optionsOpen && "rotate-45")} />
+              </button>
             ) : (
               <button
                 onClick={handleQuickAdd}

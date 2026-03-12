@@ -85,6 +85,13 @@ export async function PUT(
       }
 
       const body = await request.json();
+
+      // Clean variants: drop any empty rows without a name to avoid validation errors
+      if (Array.isArray(body.variants)) {
+        body.variants = body.variants.filter(
+          (v: any) => v && typeof v.name === 'string' && v.name.trim().length > 0
+        );
+      }
       const allowedFields = [
         'title',
         'description',

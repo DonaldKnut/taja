@@ -324,6 +324,15 @@ export default function AdminEditProductPage() {
         setLoading(true);
 
         try {
+            const cleanedVariants = formData.variants
+                .filter((v) => v.name && v.name.toString().trim().length > 0)
+                .map((v) => ({
+                    ...v,
+                    price: parseFloat(String(v.price)),
+                    stock: parseInt(String(v.stock)) || 0,
+                    weight: parseFloat(String(v.weight)) || 0,
+                }));
+
             const payload = {
                 title: formData.title,
                 description: formData.description,
@@ -359,12 +368,7 @@ export default function AdminEditProductPage() {
                     metaDescription: formData.seo.metaDescription || undefined,
                 },
                 status: formData.status,
-                variants: formData.variants.map((v) => ({
-                    ...v,
-                    price: parseFloat(String(v.price)),
-                    stock: parseInt(String(v.stock)) || 0,
-                    weight: parseFloat(String(v.weight)) || 0,
-                })),
+                variants: cleanedVariants,
             };
 
             const response = await api(`/api/products/${productId}`, {
