@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
             const limit = parseInt(searchParams.get('limit') || '20');
             const search = searchParams.get('search');
 
-            // Build query
-            const query: any = {};
+            // Build query (exclude soft-deleted)
+            const query: any = { isDeleted: { $ne: true } };
 
             if (status) {
                 query.status = status;

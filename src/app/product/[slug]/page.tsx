@@ -2,32 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  Heart,
-  ShoppingCart,
-  Star,
-  Shield,
-  Truck,
-  ChevronLeft,
-  Share2,
-  MapPin,
-  CheckCircle,
-  ShieldCheck,
-  Minus,
-  Plus,
-  Phone,
-  Instagram,
-  Sparkles,
-  Zap,
-  MessageCircle,
-  ArrowRight,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import { ImageSlider } from "@/components/ui/ImageSlider";
 import { useCartStore } from "@/stores/cartStore";
 import { cartApi, productsApi } from "@/lib/api";
 import toast from "react-hot-toast";
@@ -35,45 +9,18 @@ import { StructuredData } from "@/components/StructuredData";
 import { generateProductStructuredData, generateBreadcrumbs } from "@/lib/seo";
 import { AIRecommendations } from "@/components/product/AIRecommendations";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { cn } from "@/lib/utils";
 import { Container } from "@/components/layout";
 import { ProductReviews } from "@/components/product/ProductReviews";
+import { useWishlistStore, type WishlistItem } from "@/components/wishlist";
+import {
+  ProductDetailGallery,
+  ProductDetailMeta,
+  ProductDetailTabs,
+  ProductPurchaseActions,
+  ProductShopSummary,
+} from "@/components/product";
 
 const fallbackImage = "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png";
-
-// Initial loading state or empty product
-const emptyProduct = {
-  id: "",
-  slug: "",
-  title: "Loading...",
-  description: "",
-  longDescription: "",
-  price: 0,
-  compareAtPrice: 0,
-  maxPrice: 0,
-  stock: 0,
-  images: [],
-  condition: "good",
-  category: "",
-  location: "",
-  createdAt: new Date().toISOString(),
-  views: 0,
-  shop: {
-    shopName: "Loading...",
-    shopSlug: "",
-    isVerified: false,
-    averageRating: 0,
-    totalProducts: 0,
-    followers: 0,
-    since: "",
-    socialLinks: {
-      instagram: "",
-      whatsapp: "",
-    },
-  },
-  reviews: [],
-  relatedProducts: [],
-};
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -85,6 +32,57 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState<"description" | "specifications">("description");
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const { addItem, updateQuantity, toggleCart, isOpen } = useCartStore();
+  const { items: wishlistItems, toggleWishlistItem } = useWishlistStore();
+
+  const isWishlisted = product
+    ? wishlistItems.some((item) => item._id === product.id)
+    : false;
+
+  const handleToggleWishlist = async () => {
+    if (!product) return;
+
+    const wishlistPayload: WishlistItem = {
+      _id: product.id,
+      title: product.title,
+      price: product.price,
+      images: product.images?.length ? product.images : [fallbackImage],
+      slug: product.slug,
+      shop: {
+        shopName: product.shop?.shopName || "Shop",
+        shopSlug: product.shop?.shopSlug || product.slug,
+      },
+      inventory: {
+        quantity: product.stock ?? 0,
+      },
+      status: "active",
+    };
+
+    const nowWishlisted = await toggleWishlistItem(wishlistPayload);
+    toast.success(nowWishlisted ? "Added to wishlist" : "Removed from wishlist");
+  };
+
+  const handleShare = async () => {
+    try {
+      const url = typeof window !== "undefined" ? window.location.href : `/product/${product?.slug}`;
+      const title = product?.title || "Taja product";
+
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share({
+          title,
+          text: `Check this out on Taja: ${title}`,
+          url,
+        });
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      } else {
+        toast.error("Sharing is not supported on this device.");
+      }
+    } catch (err) {
+      console.error("Share failed", err);
+      toast.error("Unable to share right now.");
+    }
+  };
 
   // Format WhatsApp URL with optional product context message
   const getWhatsAppUrl = (whatsapp: string, product?: any) => {
@@ -197,13 +195,21 @@ export default function ProductDetailPage() {
     try {
       const selectedVariant = product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId);
       const finalPrice = selectedVariant?.price || product.price;
+      const variantImage = selectedVariant?.image;
+      const cartImages = variantImage ? [variantImage, ...(product.images || [])] : product.images;
+
+      const availableStock = selectedVariant?.stock ?? product.stock;
+      if (!availableStock || availableStock <= 0) {
+        toast.error("This item is currently out of stock.");
+        return;
+      }
 
       // Add to local cart store
       addItem({
         _id: product.id,
         title: product.title,
         price: finalPrice,
-        images: product.images,
+        images: cartImages,
         seller: product.shop.shopName,
         shopSlug: product.shop.shopSlug,
         moq: product.moq,
@@ -214,7 +220,7 @@ export default function ProductDetailPage() {
 
       // Update quantity if needed
       if (quantity > 1) {
-        updateQuantity(product.id, quantity);
+        updateQuantity(product.id, selectedVariantId || undefined, quantity);
       }
 
       // Sync with server if authenticated
@@ -299,340 +305,50 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-white text-taja-secondary selection:bg-taja-primary/30 selection:text-taja-secondary">
         <AppHeader />
 
-        {/* Product Carousel / Full-Bleed Gallery for Mobile */}
-        <div className="lg:hidden w-full relative aspect-square bg-slate-50 overflow-hidden">
-          <ImageSlider
-            images={product.images}
-            alt={product.title}
-            className="w-full h-full"
-            showDots
-          />
-          <div className="absolute top-4 left-4 flex flex-col gap-2">
-            {discountPercentage > 0 && (
-              <div className="bg-emerald-500 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
-                <Zap className="h-3 w-3 text-white fill-white" />
-                <span className="text-[9px] font-black tracking-widest text-white uppercase">{discountPercentage}% OFF</span>
-              </div>
-            )}
-          </div>
-        </div>
+        <ProductDetailGallery
+          product={product}
+          discountPercentage={discountPercentage}
+          selectedImageIndex={selectedImageIndex}
+          setSelectedImageIndex={setSelectedImageIndex}
+          showDesktop={false}
+        />
 
         {/* Main Product Showcase */}
         <div className="max-w-[1440px] mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10">
           <div className="grid lg:grid-cols-12 gap-10 lg:gap-20">
-
-            {/* Left Column: Desktop Visuals */}
-            <div className="hidden lg:block lg:col-span-7 space-y-8">
-              <div className="sticky top-32">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="group relative aspect-[4/5] bg-slate-50 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-emerald-900/5"
-                >
-                  <Image
-                    src={product.images[selectedImageIndex]}
-                    alt={product.title}
-                    fill
-                    className="object-cover transition-transform duration-[2s] group-hover:scale-105"
-                    priority
-                    sizes="(max-width: 1024px) 100vw, 60vw"
-                  />
-
-                  {/* Gallery Overlays */}
-                  <div className="absolute top-8 left-8 flex flex-col gap-3">
-                    {discountPercentage > 0 && (
-                      <div className="bg-emerald-500 px-4 py-2 rounded-full shadow-xl flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-white fill-white animate-pulse" />
-                        <span className="text-[10px] font-black tracking-widest text-white uppercase">{discountPercentage}% OFF</span>
-                      </div>
-                    )}
-                    <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full border border-white/50 text-[10px] font-black tracking-widest text-taja-secondary uppercase shadow-lg">
-                      {product.condition}
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Thumbnails Mosaic */}
-                {product.images.length > 1 && (
-                  <div className="flex gap-4 mt-8 overflow-x-auto no-scrollbar pb-2">
-                    {product.images.map((image: string, index: number) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedImageIndex(index)}
-                        className={cn(
-                          "relative flex-shrink-0 w-24 h-24 rounded-3xl overflow-hidden border-2 transition-all duration-500",
-                          selectedImageIndex === index
-                            ? "border-emerald-500 scale-105 shadow-xl rotate-0"
-                            : "border-transparent opacity-60 hover:opacity-100 -rotate-2"
-                        )}
-                      >
-                        <Image src={image} alt="" fill className="object-cover" sizes="96px" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <ProductDetailGallery
+              product={product}
+              discountPercentage={discountPercentage}
+              selectedImageIndex={selectedImageIndex}
+              setSelectedImageIndex={setSelectedImageIndex}
+              showMobile={false}
+            />
 
             {/* Right Column: Details */}
             <div className="lg:col-span-5 space-y-10">
-              <div className="space-y-6">
-                {/* Meta Actions */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1 text-emerald-500">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={cn("h-3 w-3 fill-emerald-500")} />
-                      ))}
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Verified Elite Choice
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-                      <Share2 className="w-5 h-5 text-gray-400" />
-                    </button>
-                    <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-                      <Heart className="w-5 h-5 text-gray-400" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-taja-secondary tracking-tighter leading-tight italic">
-                    {product.title}
-                  </h1>
-                  <div className="flex items-center gap-3">
-                    <div className="h-px flex-1 bg-gradient-to-r from-emerald-100 to-transparent"></div>
-                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em]">Authentic Quality</span>
-                  </div>
-                </div>
-
-                {/* Pricing & Offer */}
-                <div className="space-y-2">
-                  <div className="flex items-baseline gap-4">
-                    <span className="text-4xl sm:text-5xl font-black text-taja-primary tracking-tighter">
-                      ₦{(product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId)?.price || product.price).toLocaleString()}
-                      {!selectedVariantId && product.variants?.length > 0 && product.maxPrice > product.price && (
-                        <span className="text-3xl font-bold ml-1"> - ₦{product.maxPrice.toLocaleString()}</span>
-                      )}
-                    </span>
-                    {(product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId)?.compareAtPrice || product.compareAtPrice) > (product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId)?.price || product.price) && (
-                      <span className="text-xl text-gray-300 line-through decoration-emerald-500/30 decoration-2">
-                        ₦{(product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId)?.compareAtPrice || product.compareAtPrice).toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                    <Truck className="w-3 h-3" />
-                    {product.shipping?.freeShipping ? "Complementary Elite Shipping" : "Priority Dispatch in 24h"}
-                  </p>
-                </div>
-
-                {/* Variant Selection */}
-                {product.variants?.length > 0 && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Select Option</label>
-                      <span className="text-[10px] font-bold text-taja-primary uppercase tracking-widest bg-taja-primary/5 px-2 py-0.5 rounded-full">
-                        {product.variants.length} Available
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {product.variants.map((variant: any) => (
-                        <button
-                          key={variant._id || variant.id}
-                          onClick={() => setSelectedVariantId(variant._id || variant.id)}
-                          className={cn(
-                            "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-1",
-                            selectedVariantId === (variant._id || variant.id)
-                              ? "border-taja-primary bg-taja-primary/5 shadow-premium"
-                              : "border-gray-50 bg-gray-50/30 hover:border-gray-100"
-                          )}
-                        >
-                          <span className={cn(
-                            "text-[10px] font-black uppercase tracking-tight text-center leading-tight",
-                            selectedVariantId === (variant._id || variant.id) ? "text-taja-secondary" : "text-gray-400"
-                          )}>
-                            {variant.name}
-                          </span>
-                          <span className={cn(
-                            "text-[10px] font-bold",
-                            selectedVariantId === (variant._id || variant.id) ? "text-taja-primary" : "text-gray-300"
-                          )}>
-                            ₦{(variant.price || product.price).toLocaleString()}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Stack - Only visible on Desktop */}
-              <div className="hidden lg:flex flex-col gap-4">
-                <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-3xl border border-slate-100">
-                  <div className="flex items-center bg-white rounded-2xl border border-slate-100 p-1">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-taja-primary transition-colors"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="w-12 text-sm font-black text-center">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-taja-primary transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <Button
-                    onClick={handleAddToCart}
-                    disabled={product.stock <= 0}
-                    variant="outline"
-                    className={cn(
-                      "flex-1 h-14 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] border-emerald-500/20 hover:bg-emerald-50",
-                      product.stock <= 0 && "opacity-50 cursor-not-allowed border-gray-100"
-                    )}
-                  >
-                    {product.stock > 0 ? "Add to Cart" : "Unavailable"}
-                  </Button>
-                </div>
-                <Button
-                  onClick={handleBuyNow}
-                  disabled={product.stock <= 0}
-                  className={cn(
-                    "w-full h-16 rounded-[1.25rem] text-xs font-black uppercase tracking-[0.3em] shadow-premium bg-gradient-to-r from-taja-secondary to-slate-800",
-                    product.stock <= 0 && "opacity-50 cursor-not-allowed grayscale"
-                  )}
-                >
-                  {product.stock > 0 ? "Buy Now" : "Out of Stock"}
-                </Button>
-
-                {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className="w-full h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                  >
-                    <a
-                      href={getWhatsAppUrl(product.shop.socialLinks.whatsapp, {
-                        title: `Restock Inquiry: ${product.title}`,
-                        price: product.price
-                      }) || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      Inquire about Restock
-                    </a>
-                  </Button>
-                )}
-              </div>
-
-              {/* Shop Profile Mini */}
-              <Link
-                href={`/shop/${product.shop.shopSlug}`}
-                className="group flex items-center justify-between p-6 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white transition-all hover:shadow-xl hover:shadow-emerald-900/5"
-              >
-                <div className="flex items-center gap-5">
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md bg-taja-light">
-                    <Image
-                      src={product.shop.logo || product.shop.sellerAvatar || fallbackImage}
-                      alt={product.shop.shopName}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="font-black text-taja-secondary group-hover:text-taja-primary transition-colors">{product.shop.shopName}</h4>
-                      {product.shop.isVerified && <ShieldCheck className="h-4 w-4 text-emerald-500" />}
-                    </div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      {product.shop.followers.toLocaleString()} Collectors • Level 5 Partner
-                    </p>
-                    {product.shop.ownerName && (
-                      <p className="text-[9px] font-medium text-taja-primary mt-0.5">Managed by {product.shop.ownerName}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center group-hover:bg-emerald-50 transition-colors">
-                  <ArrowRight className="w-4 h-4" />
-                </div>
-              </Link>
-
-              {/* Trust Features */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-3 p-5 rounded-3xl bg-emerald-50/50 border border-emerald-100/50">
-                  <ShieldCheck className="w-6 h-6 text-emerald-600" />
-                  <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest leading-relaxed">
-                    Escrow Protected<br />Secure Payment
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3 p-5 rounded-3xl bg-taja-primary/5 border border-taja-primary/10">
-                  <Truck className="w-6 h-6 text-taja-primary" />
-                  <p className="text-[10px] font-black text-taja-primary uppercase tracking-widest leading-relaxed">
-                    Doorstep Delivery<br />Tracking Included
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-6 pt-6">
-                <div className="flex gap-8 border-b border-gray-100">
-                  <button
-                    onClick={() => setActiveTab("description")}
-                    className={cn(
-                      "pb-4 text-[10px] font-black uppercase tracking-widest transition-all",
-                      activeTab === "description" ? "text-taja-secondary border-b-2 border-taja-primary" : "text-gray-400"
-                    )}
-                  >
-                    Description
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("specifications")}
-                    className={cn(
-                      "pb-4 text-[10px] font-black uppercase tracking-widest transition-all",
-                      activeTab === "specifications" ? "text-taja-secondary border-b-2 border-taja-primary" : "text-gray-400"
-                    )}
-                  >
-                    Specifications
-                  </button>
-                </div>
-
-                <div className="min-h-[100px]">
-                  {activeTab === "description" ? (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-gray-500 leading-relaxed text-sm lg:text-base italic"
-                    >
-                      {product.description ? `"${product.description}"` : "No description provided."}
-                    </motion.p>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4"
-                    >
-                      {product.specifications && Object.keys(product.specifications).length > 0 ? (
-                        Object.entries(product.specifications).map(([key, value]: [string, any]) => (
-                          <div key={key} className="flex justify-between items-center py-2 border-b border-slate-50">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase">{key}</span>
-                            <span className="text-sm text-taja-secondary font-black italic">{value}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-gray-400 text-[10px] uppercase font-bold italic">No technical specifications provided for this asset.</p>
-                      )}
-                    </motion.div>
-                  )}
-                </div>
-              </div>
-
+              <ProductDetailMeta
+                product={product}
+                selectedVariantId={selectedVariantId}
+                setSelectedVariantId={setSelectedVariantId}
+                isWishlisted={isWishlisted}
+                onShare={handleShare}
+                onToggleWishlist={handleToggleWishlist}
+              />
+              <ProductPurchaseActions
+                product={product}
+                quantity={quantity}
+                setQuantity={setQuantity}
+                onAddToCart={handleAddToCart}
+                onBuyNow={handleBuyNow}
+                getWhatsAppUrl={getWhatsAppUrl}
+              />
+              <ProductShopSummary product={product} fallbackImage={fallbackImage} />
+              <ProductDetailTabs
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                description={product.description}
+                specifications={product.specifications}
+              />
             </div>
           </div>
 
@@ -645,60 +361,6 @@ export default function ProductDetailPage() {
             <ProductReviews productId={product.id} shopId={product.shop.shopId} />
           </Container>
         </div>
-
-        {/* Global sticky bar for actions on Mobile */}
-        <AnimatePresence>
-          <motion.div
-            initial={{ y: 100 }}
-            animate={{ y: 0 }}
-            className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/80 backdrop-blur-xl border-t border-gray-100 p-4 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]"
-          >
-            <div className="max-w-7xl mx-auto flex items-center gap-3">
-              <Button
-                onClick={handleAddToCart}
-                disabled={product.stock <= 0}
-                variant="outline"
-                className={cn(
-                  "flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] border-gray-200",
-                  product.stock <= 0 && "opacity-50 cursor-not-allowed border-gray-100"
-                )}
-              >
-                {product.stock > 0 ? "Add to Cart" : "Sold Out"}
-              </Button>
-              <Button
-                onClick={handleBuyNow}
-                disabled={product.stock <= 0}
-                className={cn(
-                  "flex-[2] rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700",
-                  product.stock <= 0 && "opacity-50 cursor-not-allowed grayscale"
-                )}
-              >
-                {product.stock > 0 ? "Buy Now" : "Out of Stock"}
-              </Button>
-
-              {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
-                <Button
-                  asChild
-                  variant="outline"
-                  className="w-14 h-14 rounded-2xl p-0 flex items-center justify-center border-emerald-500/20 text-emerald-600"
-                >
-                  <a
-                    href={getWhatsAppUrl(product.shop.socialLinks.whatsapp, {
-                      title: `Availability Inquiry: ${product.title}`,
-                      price: product.price
-                    }) || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <MessageCircle className="w-6 h-6" />
-                  </a>
-                </Button>
-              )}
-            </div>
-            {/* Safe Area Spacer for iOS */}
-            <div className="h-[env(safe-area-inset-bottom)]" />
-          </motion.div>
-        </AnimatePresence>
 
         {/* Recommendations Section */}
         <div className="bg-slate-50 border-t border-slate-200">

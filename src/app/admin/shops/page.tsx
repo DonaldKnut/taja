@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Store, Plus, Loader2, Trash2, Pause, Play, Pencil, ExternalLink, MessageSquare, Send } from "lucide-react";
+import { Store, Plus, Loader2, Trash2, Pause, Play, Pencil, ExternalLink, MessageSquare, Send, Download } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { api } from "@/lib/api";
+import { api, getAuthToken } from "@/lib/api";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 
@@ -106,6 +106,31 @@ export default function AdminShopsPage() {
     }
   };
 
+  const handleExportCsv = async () => {
+    try {
+      const token = getAuthToken();
+      const res = await fetch("/api/admin/shops/export", {
+        method: "GET",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!res.ok) {
+        toast.error("Failed to export shops");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `shops-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to export shops");
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -118,12 +143,22 @@ export default function AdminShopsPage() {
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Shops</h1>
           </div>
         </div>
-        <Link href="/admin/shops/new">
-          <Button className="h-12 px-6 rounded-2xl bg-slate-950 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create shop
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="h-12 px-5 rounded-2xl border border-slate-200 bg-white text-slate-900 font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-slate-50 transition-all"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
+          <Link href="/admin/shops/new">
+            <Button className="h-12 px-6 rounded-2xl bg-slate-950 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Create shop
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card className="rounded-2xl border-slate-100 shadow-sm overflow-hidden">

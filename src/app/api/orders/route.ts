@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       const status = searchParams.get('status');
       const role = searchParams.get('role') || 'buyer'; // buyer or seller
 
-      const query: any = {};
+      const query: any = { isDeleted: { $ne: true } };
       if (role === 'buyer') {
         query.buyer = user.userId;
       } else if (role === 'seller') {

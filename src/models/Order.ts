@@ -98,6 +98,8 @@ export interface IOrder extends Document {
     code: string;
     discount: number;
   };
+  isDeleted?: boolean;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -256,6 +258,8 @@ const OrderSchema = new Schema<IOrder>(
       code: String,
       discount: Number,
     },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: Date,
   },
   {
     timestamps: true,

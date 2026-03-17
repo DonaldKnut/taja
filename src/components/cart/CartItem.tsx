@@ -113,9 +113,16 @@ export function CartItem({
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-sm text-gray-900 truncate leading-tight group-hover:text-emerald-700 transition-colors">
-                {item.title}
-              </h3>
+              <div className="flex flex-col">
+                <h3 className="font-bold text-sm text-gray-900 truncate leading-tight group-hover:text-emerald-700 transition-colors">
+                  {item.variantName || item.title}
+                </h3>
+                {item.variantName && (
+                  <span className="text-[10px] font-medium text-gray-400 truncate">
+                    {item.title}
+                  </span>
+                )}
+              </div>
               {item.quantity < item.moq && (
                 <span className="flex items-center gap-1 bg-rose-50 text-[8px] font-black text-rose-600 px-1.5 py-0.5 rounded-full border border-rose-100 uppercase tracking-tight whitespace-nowrap">
                   <AlertCircle className="h-2 w-2" /> Min {item.moq}

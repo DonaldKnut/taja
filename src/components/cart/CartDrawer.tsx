@@ -128,18 +128,25 @@ export function CartDrawer({
                   <p className="text-sm text-gray-400 mt-2 max-w-[200px] leading-relaxed">{emptyMessage.subtitle}</p>
                 </div>
               ) : (
-                <div className="space-y-4 pb-4">
-                  {items.map((item, index) => (
-                    <motion.div
-                      key={item._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <CartItem item={item} formatPrice={formatPrice} />
-                    </motion.div>
-                  ))}
-                </div>
+                <>
+                  <div className="mb-2 px-1">
+                    <p className="text-[10px] text-gray-400 font-medium leading-snug">
+                      Tip: you can tap the quantity number and <span className="font-semibold text-gray-600">type the exact amount</span> you want instead of pressing the plus button repeatedly.
+                    </p>
+                  </div>
+                  <div className="space-y-4 pb-4">
+                    {items.map((item, index) => (
+                      <motion.div
+                        key={item._id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <CartItem item={item} formatPrice={formatPrice} />
+                      </motion.div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 

@@ -31,6 +31,14 @@ export interface ProductCardProps {
   imageHeight?: string;
   formatPrice?: (price: number) => string;
   onClick?: (product: Product) => void;
+  /**
+   * When true, used inside dashboard marketplace (no PDP navigation on card).
+   */
+  isInsideDashboard?: boolean;
+  /**
+   * When true, show seller avatar + name block under category.
+   */
+  showSellerRow?: boolean;
 }
 
 export function ProductCard({
@@ -44,6 +52,8 @@ export function ProductCard({
   fallbackImage = "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
   formatPrice = (price) => formatCurrency(price),
   onClick,
+  isInsideDashboard = false,
+  showSellerRow = false,
 }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { items: wishlistItems, toggleWishlistItem } = useWishlistStore();
@@ -87,6 +97,21 @@ export function ProductCard({
   const isVerified = shop?.isVerified;
   const averageRating = shop?.averageRating ?? product.averageRating ?? 4.5;
   const images = product?.images?.length ? product.images : [fallbackImage];
+
+  // Derive seller display for dashboard marketplace
+  const sellerUser = (typeof product.seller === "object" ? product.seller : undefined) as any | undefined;
+  const shopOwner = (shop && typeof shop.owner === "object" ? (shop.owner as any) : undefined) as any | undefined;
+  const sellerName =
+    sellerUser?.fullName ||
+    shopOwner?.fullName ||
+    (product as any)?.shop?.ownerName ||
+    "Seller";
+  const sellerAvatar =
+    sellerUser?.avatar ||
+    shopOwner?.avatar ||
+    (product as any)?.shop?.sellerAvatar ||
+    shop?.logo ||
+    fallbackImage;
 
   const handleClick = () => {
     if (onClick) {
@@ -137,7 +162,7 @@ export function ProductCard({
       _id: product._id,
       title: product.title,
       price: variant?.price ?? product.price,
-      images: product.images,
+      images: (variant as any)?.image ? [(variant as any).image, ...(product.images || [])] : product.images,
       quantity: 1,
       seller: typeof product.seller === 'string' ? product.seller : product.seller?._id,
       shopSlug: shopSlug,
@@ -275,17 +300,30 @@ export function ProductCard({
       className={cn("group/card flex flex-col h-full bg-white rounded-[2rem] border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
     >
       {optionsPanelContent}
-      <div className="relative aspect-square overflow-hidden bg-gray-50">
-        <Link href={`/product/${product.slug}`} onClick={handleClick} className="block w-full h-full">
-          <ImageSlider
-            images={images}
-            alt={product.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
-            fillContainer
-            showDots={false}
-            showArrows={true}
-          />
-        </Link>
+      <div className="relative aspect-square overflow-hidden bg-gray-50 rounded-t-[2rem]">
+        {isInsideDashboard ? (
+          <div className="block w-full h-full">
+            <ImageSlider
+              images={images}
+              alt={product.title}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
+              fillContainer
+              showDots={false}
+              showArrows={true}
+            />
+          </div>
+        ) : (
+          <Link href={`/product/${product.slug}`} onClick={handleClick} className="block w-full h-full">
+            <ImageSlider
+              images={images}
+              alt={product.title}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
+              fillContainer
+              showDots={false}
+              showArrows={true}
+            />
+          </Link>
+        )}
 
         {/* Wishlist Button Overlay */}
         {showWishlist && (
@@ -307,22 +345,45 @@ export function ProductCard({
 
       <CardContent className="p-4 flex flex-col flex-1 relative">
         <div className="space-y-1 pr-12">
-          {/* Shop Name Small */}
-          {showShop && shopName && (
-            <p className="text-[10px] font-medium text-gray-400 truncate uppercase tracking-widest leading-none">
-              {shopName}
-            </p>
-          )}
-
-          <Link href={`/product/${product.slug}`} onClick={handleClick} className="block">
-            <h3 className="text-sm font-bold text-gray-900 group-hover/card:text-blue-600 transition-colors line-clamp-2 min-h-[2.5rem] leading-tight">
+          {isInsideDashboard ? (
+            <h3 className="text-sm font-bold text-gray-900 line-clamp-2 min-h-[2.5rem] leading-tight">
               {product.title}
             </h3>
-          </Link>
+          ) : (
+            <Link href={`/product/${product.slug}`} onClick={handleClick} className="block">
+              <h3 className="text-sm font-bold text-gray-900 group-hover/card:text-blue-600 transition-colors line-clamp-2 min-h-[2.5rem] leading-tight">
+                {product.title}
+              </h3>
+            </Link>
+          )}
 
           <p className="text-[11px] text-gray-400 capitalize">
             {typeof product.category === 'object' ? (product.category as any)?.name : (product.category || "General")}
           </p>
+
+          {showSellerRow && sellerName && (
+            <div className="mt-3 flex items-center gap-2">
+              <div className="h-7 w-7 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                <Image
+                  src={sellerAvatar}
+                  alt={sellerName}
+                  width={28}
+                  height={28}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[11px] font-semibold text-gray-900 leading-tight line-clamp-1">
+                  {sellerName}
+                </span>
+                {shopName && (
+                  <span className="text-[9px] text-gray-400 uppercase tracking-widest leading-none">
+                    Shop: <span className="text-gray-600">{shopName}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-auto pt-3 flex items-center justify-between relative">

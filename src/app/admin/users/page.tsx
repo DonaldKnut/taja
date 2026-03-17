@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Ban, CheckCircle, XCircle, MoreVertical, Filter, Users, Pencil, Save, Loader2, X } from "lucide-react";
+import { Search, Ban, CheckCircle, XCircle, MoreVertical, Filter, Users, Pencil, Save, Loader2, X, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { api, uploadAvatar, uploadCoverPhoto } from "@/lib/api";
+import { api, uploadAvatar, uploadCoverPhoto, getAuthToken } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { Camera, Image as ImageIcon, Upload } from "lucide-react";
 
@@ -90,6 +90,36 @@ export default function UserManagementPage() {
     e.preventDefault();
     setPage(1);
     fetchUsers();
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const token = getAuthToken();
+      const params = new URLSearchParams();
+      if (search.trim()) params.append("search", search.trim());
+      if (roleFilter) params.append("role", roleFilter);
+      if (statusFilter) params.append("accountStatus", statusFilter);
+
+      const res = await fetch(`/api/admin/users/export?${params.toString()}`, {
+        method: "GET",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!res.ok) {
+        toast.error("Failed to export users");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `users-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to export users");
+    }
   };
 
   const handleUserAction = async (userId: string, action: "ban" | "suspend" | "activate") => {
@@ -182,14 +212,24 @@ export default function UserManagementPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-10 p-1">
-        <div className="flex items-center gap-6">
-          <div className="w-14 h-14 rounded-[1.2rem] bg-slate-950 shadow-huge flex items-center justify-center">
-            <Users className="h-7 w-7 text-emerald-400" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="w-14 h-14 rounded-[1.2rem] bg-slate-950 shadow-huge flex items-center justify-center">
+              <Users className="h-7 w-7 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Manage Community</p>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight">User Management</h1>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Manage Community</p>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">User Management</h1>
-          </div>
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="h-12 px-6 rounded-2xl border border-slate-200 bg-white text-slate-900 font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-slate-50 transition-all"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
         </div>
       </div>
 

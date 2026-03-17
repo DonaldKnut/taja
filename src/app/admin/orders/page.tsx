@@ -12,15 +12,14 @@ import {
     Truck,
     Package,
     MoreVertical,
-    ChevronLeft,
-    ChevronRight,
     TrendingUp,
-    Download
+    Download,
+    Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { api } from "@/lib/api";
+import { api, getAuthToken } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { Badge } from "@/components/ui/Badge";
 
@@ -68,6 +67,16 @@ export default function AdminOrdersPage() {
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<Order[]>([]);
     const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
+    const [earnings, setEarnings] = useState<
+        Array<{
+            sellerId: string;
+            sellerName: string;
+            sellerEmail: string;
+            shopName?: string;
+            orderCount: number;
+            totalAmount: number;
+        }>
+    >([]);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
     const [page, setPage] = useState(1);
@@ -81,7 +90,51 @@ export default function AdminOrdersPage() {
         api("/api/admin/stats").then((r) => {
             if (r?.success && r.data) setOrderStats(r.data);
         });
+
+        api("/api/admin/sellers/earnings").then((r) => {
+            if (r?.success && Array.isArray(r.data)) {
+                setEarnings(
+                    r.data.map((e: any) => ({
+                        sellerId: e.sellerId,
+                        sellerName: e.sellerName || "Unknown",
+                        sellerEmail: e.sellerEmail,
+                        shopName: e.shopName,
+                        orderCount: e.orderCount || 0,
+                        totalAmount: e.totalAmount || 0,
+                    }))
+                );
+            }
+        });
     }, []);
+
+    const handleExportCsv = async () => {
+        try {
+            const token = getAuthToken();
+            const params = new URLSearchParams();
+            if (search.trim()) params.append("search", search.trim());
+            if (statusFilter) params.append("status", statusFilter);
+
+            const res = await fetch(`/api/admin/orders/export?${params.toString()}`, {
+                method: "GET",
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
+            if (!res.ok) {
+                toast.error("Failed to export orders");
+                return;
+            }
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to export orders");
+        }
+    };
 
     const fetchOrders = async () => {
         try {
@@ -108,6 +161,40 @@ export default function AdminOrdersPage() {
         }
     };
 
+    const handleUpdateStatus = async (orderId: string, status: string) => {
+        try {
+            const res = await api(`/api/orders/${orderId}/status`, {
+                method: "PATCH",
+                body: JSON.stringify({ status }),
+            });
+            if (res?.success) {
+                toast.success(`Order status updated to ${status}`);
+                fetchOrders();
+            } else {
+                toast.error(res?.message || "Failed to update status");
+            }
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to update status");
+        }
+    };
+
+    const handleDeleteOrder = async (orderId: string) => {
+        if (!confirm("Delete this order from the main ledger? It will be kept in the database for audit.")) return;
+        try {
+            const res = await api(`/api/orders/${orderId}`, {
+                method: "DELETE",
+            });
+            if (res?.success) {
+                toast.success("Order deleted");
+                setOrders(prev => prev.filter(o => o._id !== orderId));
+            } else {
+                toast.error(res?.message || "Failed to delete order");
+            }
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to delete order");
+        }
+    };
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         setPage(1);
@@ -128,7 +215,11 @@ export default function AdminOrdersPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Button variant="outline" className="h-12 px-6 rounded-2xl border-slate-200 font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-slate-50 transition-all">
+                        <Button
+                            variant="outline"
+                            onClick={handleExportCsv}
+                            className="h-12 px-6 rounded-2xl border-slate-200 font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-slate-50 transition-all"
+                        >
                             <Download className="h-4 w-4" />
                             Export CSV
                         </Button>
@@ -224,7 +315,7 @@ export default function AdminOrdersPage() {
                 </CardContent>
             </Card>
 
-            <Card className="border-slate-100 rounded-[2.5rem] shadow-huge overflow-hidden">
+            <Card className="border-slate-100 rounded-[2.5rem] shadow-huge overflow-hidden mb-8">
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -238,7 +329,7 @@ export default function AdminOrdersPage() {
                                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Escrow</th>
                                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Manifest State</th>
                                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Date</th>
-                                    <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">View</th>
+                                    <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -292,9 +383,35 @@ export default function AdminOrdersPage() {
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Order Date</p>
                                             </td>
                                             <td className="px-10 py-5 text-right">
-                                                <Button variant="outline" size="sm" className="h-10 w-10 p-0 rounded-xl border-slate-100 hover:bg-slate-950 hover:text-white transition-all">
-                                                    <Eye className="h-5 w-5" />
-                                                </Button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <select
+                                                        onChange={(e) => e.target.value && handleUpdateStatus(order._id, e.target.value)}
+                                                        defaultValue=""
+                                                        className="h-9 text-[9px] font-black uppercase tracking-[0.2em] border border-slate-200 rounded-xl px-2 bg-white text-slate-500"
+                                                    >
+                                                        <option value="">Change status</option>
+                                                        <option value="pending">Pending</option>
+                                                        <option value="confirmed">Confirmed</option>
+                                                        <option value="processing">Processing</option>
+                                                        <option value="shipped">Shipped</option>
+                                                        <option value="delivered">Delivered</option>
+                                                        <option value="completed">Completed</option>
+                                                        <option value="cancelled">Cancelled</option>
+                                                        <option value="refunded">Refunded</option>
+                                                    </select>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-10 w-10 p-0 rounded-xl border-slate-100 hover:bg-rose-600 hover:text-white transition-all"
+                                                        onClick={() => handleDeleteOrder(order._id)}
+                                                        title="Delete order"
+                                                    >
+                                                        <Trash2 className="h-5 w-5" />
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" className="h-10 w-10 p-0 rounded-xl border-slate-100 hover:bg-slate-950 hover:text-white transition-all">
+                                                        <Eye className="h-5 w-5" />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -327,6 +444,71 @@ export default function AdminOrdersPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {earnings.length > 0 && (
+                <Card className="border-slate-100 rounded-[2rem] shadow-sm overflow-hidden">
+                    <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-10 py-6">
+                        <CardTitle className="text-base font-black text-slate-900 tracking-widest uppercase">
+                            Seller Earnings Snapshot
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-slate-100 bg-slate-50/30">
+                                        <th className="px-10 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            Seller
+                                        </th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            Shop
+                                        </th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            Orders
+                                        </th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            Gross Sales (NGN)
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {earnings.map((row) => (
+                                        <tr key={`${row.sellerId}-${row.shopName || "na"}`} className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="px-10 py-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-slate-900 tracking-tight">
+                                                        {row.sellerName}
+                                                    </span>
+                                                    {row.sellerEmail && (
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                            {row.sellerEmail}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-sm font-black text-slate-900">
+                                                    {row.shopName || "—"}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-sm font-black text-slate-900">
+                                                    {row.orderCount.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-sm font-black text-slate-900">
+                                                    ₦{row.totalAmount.toLocaleString()}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }

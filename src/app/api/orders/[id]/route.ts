@@ -14,7 +14,7 @@ export async function GET(
     try {
       await connectDB();
 
-      const order = await Order.findById(params.id)
+      const order = await Order.findOne({ _id: params.id, isDeleted: { $ne: true } })
         .populate('buyer', 'fullName email phone avatar')
         .populate('seller', 'fullName email phone avatar')
         .populate('shop', 'shopName shopSlug logo')
@@ -73,7 +73,7 @@ export async function PUT(
 
       await connectDB();
 
-      const order = await Order.findById(params.id);
+      const order = await Order.findOne({ _id: params.id, isDeleted: { $ne: true } });
 
       if (!order) {
         return NextResponse.json(
@@ -107,8 +107,11 @@ export async function PUT(
       }
 
       order.status = status;
-      if (status === 'delivered') {
-        order.delivery.deliveredAt = new Date();
+      if (status === 'shipped' && order.delivery) {
+        (order.delivery as any).shippedAt = (order.delivery as any).shippedAt || new Date();
+      }
+      if (status === 'delivered' && order.delivery) {
+        (order.delivery as any).deliveredAt = new Date();
       }
       await order.save();
 
@@ -132,8 +135,51 @@ export async function PUT(
   })(request);
 }
 
+// DELETE /api/orders/:id - Soft delete (seller or admin)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  return requireAuth(async (req, user) => {
+    try {
+      await connectDB();
 
+      const order = await Order.findOne({ _id: params.id, isDeleted: { $ne: true } });
 
+      if (!order) {
+        return NextResponse.json(
+          { success: false, message: 'Order not found' },
+          { status: 404 }
+        );
+      }
+
+      const isSeller = order.seller.toString() === user.userId;
+      const isAdmin = user.role === 'admin';
+
+      if (!isSeller && !isAdmin) {
+        return NextResponse.json(
+          { success: false, message: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+
+      (order as any).isDeleted = true;
+      (order as any).deletedAt = new Date();
+      await order.save();
+
+      return NextResponse.json({
+        success: true,
+        message: 'Order deleted',
+      });
+    } catch (error: any) {
+      console.error('Delete order error:', error);
+      return NextResponse.json(
+        { success: false, message: error.message || 'Failed to delete order' },
+        { status: 500 }
+      );
+    }
+  })(request);
+}
 
 
 

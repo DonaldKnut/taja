@@ -38,6 +38,7 @@ import { SearchModal } from "@/components/SearchModal";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useRouter } from "next/navigation";
 import { CartIcon, CartDrawer, useCartStore } from "@/components/cart";
+import { useWishlistStore } from "@/components/wishlist";
 import { cn } from "@/lib/utils";
 
 const navGroups = [
@@ -85,7 +86,9 @@ export default function DashboardLayout({
   const { user, logout, isAuthenticated } = useAuth();
   const { isOpen, toggleCart } = useCartStore();
   const { unreadCount } = useNotifications();
+  const { toggleDrawer: toggleWishlist, items: wishlistItems } = useWishlistStore();
   const role = user?.role;
+  const wishlistCount = wishlistItems.length;
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -320,6 +323,23 @@ export default function DashboardLayout({
                 )}
               </button>
 
+              {/* Wishlist icon - desktop */}
+              <div className="hidden md:flex relative">
+                <button
+                  onClick={toggleWishlist}
+                  className="p-2 text-gray-400 hover:text-taja-primary transition-colors hover:bg-gray-50 rounded-lg relative"
+                  aria-label="Wishlist"
+                >
+                  <Heart className="h-5 w-5" />
+                  {wishlistCount > 0 && (
+                    <span className="absolute top-0.5 right-0.5 h-4 w-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                      {wishlistCount > 9 ? "9+" : wishlistCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Cart icon - desktop */}
               <div className="hidden md:flex relative">
                 <CartIcon
                   className="p-2 text-gray-400 hover:text-taja-primary transition-colors hover:bg-gray-50 rounded-lg"

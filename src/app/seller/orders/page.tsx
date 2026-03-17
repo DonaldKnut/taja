@@ -115,8 +115,8 @@ export default function SellerOrdersPage() {
     const handleUpdateStatus = async (orderId: string, newStatus: string) => {
         setUpdatingId(orderId);
         try {
-            const res = await api(`/api/orders/${orderId}`, {
-                method: "PUT",
+            const res = await api(`/api/orders/${orderId}/status`, {
+                method: "PATCH",
                 body: JSON.stringify({ status: newStatus }),
             });
             if (res?.success) {
