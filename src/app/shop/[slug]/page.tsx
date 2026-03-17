@@ -39,6 +39,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StructuredData } from "@/components/StructuredData";
 import { generateShopStructuredData } from "@/lib/seo";
 import { CartIcon } from "@/components/cart";
+import { OffPlatformPaymentWarningModal } from "@/components/security/OffPlatformPaymentWarningModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Shop {
   _id: string;
@@ -104,6 +106,7 @@ const fadeUp = {
 export default function ShopPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
   const [shop, setShop] = useState<Shop | null>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +116,8 @@ export default function ShopPage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followers, setFollowers] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<"products" | "about" | "reviews">("products");
+  const [whatsappWarningOpen, setWhatsappWarningOpen] = useState(false);
+  const [pendingWhatsAppUrl, setPendingWhatsAppUrl] = useState<string | null>(null);
 
   // Format WhatsApp URL
   const getWhatsAppUrl = (whatsapp: string, message?: string) => {
@@ -309,6 +314,11 @@ export default function ShopPage() {
 
   const hasSocialLinks = socialLinks.length > 0;
 
+  const isOwner = useMemo(
+    () => !!(isAuthenticated && user?._id && (shop as any)?.owner?._id && user._id === (shop as any).owner._id),
+    [isAuthenticated, user?._id, shop]
+  );
+
   return (
     <div className="min-h-screen bg-white">
       {shopStructuredData && <StructuredData data={shopStructuredData} />}
@@ -433,43 +443,68 @@ export default function ShopPage() {
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3 shrink-0 items-center">
-                  <Button
-                    onClick={toggleFollow}
-                    className={cn(
-                      "rounded-full px-8 h-12 shadow-sm transition-all font-black uppercase tracking-widest text-[10px]",
-                      isFollowing
-                        ? "bg-white text-taja-secondary border border-gray-200 hover:bg-gray-50"
-                        : "bg-taja-primary text-white hover:bg-emerald-600 hover:shadow-lg"
-                    )}
-                  >
-                    <Heart className={cn("h-4 w-4 mr-2", isFollowing ? "fill-current text-red-500" : "")} />
-                    {isFollowing ? "Following" : "Follow"}
-                  </Button>
-
-                  {(shop.owner as any)?._id && (
-                    <Link href={`/chat?seller=${(shop.owner as any)._id}&shopId=${shop._id}`}>
+                  {isOwner ? (
+                    <>
+                      <Link href="/seller/dashboard">
+                        <Button className="rounded-full px-8 h-12 shadow-sm bg-taja-secondary text-white font-black uppercase tracking-widest text-[10px] hover:bg-emerald-700 transition-colors">
+                          <ShoppingBag className="h-4 w-4 mr-2" />
+                          Seller Dashboard
+                        </Button>
+                      </Link>
+                      <Link href={`/seller/products/new?shopId=${shop._id}`}>
+                        <Button
+                          variant="outline"
+                          className="rounded-full px-8 h-12 border-gray-200 text-taja-secondary font-black uppercase tracking-widest text-[10px] hover:bg-taja-primary/10 hover:border-taja-primary/30 hover:text-taja-primary"
+                        >
+                          <DollarSign className="h-4 w-4 mr-2" />
+                          Add Product
+                        </Button>
+                      </Link>
+                    </>
+                  ) : (
+                    <>
                       <Button
-                        variant="outline"
-                        className="rounded-full px-8 h-12 border-gray-200 text-taja-secondary font-black uppercase tracking-widest text-[10px] hover:bg-taja-primary/10 hover:border-taja-primary/30 hover:text-taja-primary"
+                        onClick={toggleFollow}
+                        className={cn(
+                          "rounded-full px-8 h-12 shadow-sm transition-all font-black uppercase tracking-widest text-[10px]",
+                          isFollowing
+                            ? "bg-white text-taja-secondary border border-gray-200 hover:bg-gray-50"
+                            : "bg-taja-primary text-white hover:bg-emerald-600 hover:shadow-lg"
+                        )}
                       >
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Message shop
+                        <Heart className={cn("h-4 w-4 mr-2", isFollowing ? "fill-current text-red-500" : "")} />
+                        {isFollowing ? "Following" : "Follow"}
                       </Button>
-                    </Link>
-                  )}
 
-                  {shop.socialLinks?.whatsapp && (
-                    <Button
-                      variant="outline"
-                      className="rounded-full px-8 h-12 border-gray-200 text-taja-secondary font-black uppercase tracking-widest text-[10px] hover:bg-green-50"
-                      onClick={() => {
-                        const url = getWhatsAppUrl(shop.socialLinks!.whatsapp!);
-                        if (url) window.open(url, "_blank");
-                      }}
-                    >
-                      <Phone className="h-4 w-4 mr-2 text-green-600" />
-                      WhatsApp
-                    </Button>
+                      {(shop.owner as any)?._id && (
+                        <Link href={`/chat?seller=${(shop.owner as any)._id}&shopId=${shop._id}`}>
+                          <Button
+                            variant="outline"
+                            className="rounded-full px-8 h-12 border-gray-200 text-taja-secondary font-black uppercase tracking-widest text-[10px] hover:bg-taja-primary/10 hover:border-taja-primary/30 hover:text-taja-primary"
+                          >
+                            <MessageCircle className="h-4 w-4 mr-2" />
+                            Message shop
+                          </Button>
+                        </Link>
+                      )}
+
+                      {shop.socialLinks?.whatsapp && (
+                        <Button
+                          variant="outline"
+                          className="rounded-full px-8 h-12 border-gray-200 text-taja-secondary font-black uppercase tracking-widest text-[10px] hover:bg-green-50"
+                          onClick={() => {
+                            const url = getWhatsAppUrl(shop.socialLinks!.whatsapp!);
+                            if (url) {
+                              setPendingWhatsAppUrl(url);
+                              setWhatsappWarningOpen(true);
+                            }
+                          }}
+                        >
+                          <Phone className="h-4 w-4 mr-2 text-green-600" />
+                          WhatsApp
+                        </Button>
+                      )}
+                    </>
                   )}
 
                   {/* Cart access from shop page */}
@@ -883,6 +918,20 @@ export default function ShopPage() {
           </Container>
         </div>
       </div>
+      <OffPlatformPaymentWarningModal
+        open={whatsappWarningOpen}
+        onCancel={() => {
+          setWhatsappWarningOpen(false);
+          setPendingWhatsAppUrl(null);
+        }}
+        onContinue={() => {
+          if (pendingWhatsAppUrl) {
+            window.open(pendingWhatsAppUrl, "_blank");
+          }
+          setWhatsappWarningOpen(false);
+          setPendingWhatsAppUrl(null);
+        }}
+      />
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { OffPlatformPaymentWarningModal } from "@/components/security/OffPlatformPaymentWarningModal";
 
 interface ProductPurchaseActionsProps {
   product: any;
@@ -22,6 +24,9 @@ export function ProductPurchaseActions({
   onBuyNow,
   getWhatsAppUrl,
 }: ProductPurchaseActionsProps) {
+  const [whatsappWarningOpen, setWhatsappWarningOpen] = useState(false);
+  const [pendingWhatsAppUrl, setPendingWhatsAppUrl] = useState<string | null>(null);
+
   return (
     <>
       <div className="hidden lg:flex flex-col gap-4">
@@ -66,24 +71,25 @@ export function ProductPurchaseActions({
 
         {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
           <Button
-            asChild
+            type="button"
             variant="ghost"
             className="w-full h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-          >
-            <a
-              href={
+            onClick={() => {
+              const url =
                 getWhatsAppUrl(product.shop.socialLinks.whatsapp, {
                   title: `Restock Inquiry: ${product.title}`,
                   price: product.price,
-                }) || "#"
+                }) || null;
+              if (url) {
+                setPendingWhatsAppUrl(url);
+                setWhatsappWarningOpen(true);
               }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2"
-            >
+            }}
+          >
+            <span className="flex items-center justify-center gap-2">
               <MessageCircle className="w-3.5 h-3.5" />
               Inquire about Restock
-            </a>
+            </span>
           </Button>
         )}
       </div>
@@ -119,28 +125,42 @@ export function ProductPurchaseActions({
 
             {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
               <Button
-                asChild
+                type="button"
                 variant="outline"
                 className="w-14 h-14 rounded-2xl p-0 flex items-center justify-center border-emerald-500/20 text-emerald-600"
-              >
-                <a
-                  href={
+                onClick={() => {
+                  const url =
                     getWhatsAppUrl(product.shop.socialLinks.whatsapp, {
                       title: `Availability Inquiry: ${product.title}`,
                       price: product.price,
-                    }) || "#"
+                    }) || null;
+                  if (url) {
+                    setPendingWhatsAppUrl(url);
+                    setWhatsappWarningOpen(true);
                   }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MessageCircle className="w-6 h-6" />
-                </a>
+                }}
+              >
+                <MessageCircle className="w-6 h-6" />
               </Button>
             )}
           </div>
           <div className="h-[env(safe-area-inset-bottom)]" />
         </motion.div>
       </AnimatePresence>
+      <OffPlatformPaymentWarningModal
+        open={whatsappWarningOpen}
+        onCancel={() => {
+          setWhatsappWarningOpen(false);
+          setPendingWhatsAppUrl(null);
+        }}
+        onContinue={() => {
+          if (pendingWhatsAppUrl) {
+            window.open(pendingWhatsAppUrl, "_blank");
+          }
+          setWhatsappWarningOpen(false);
+          setPendingWhatsAppUrl(null);
+        }}
+      />
     </>
   );
 }
