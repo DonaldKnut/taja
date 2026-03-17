@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { StructuredData } from "@/components/StructuredData";
 import { generateShopStructuredData } from "@/lib/seo";
+import { CartIcon } from "@/components/cart";
 
 interface Shop {
   _id: string;
@@ -431,7 +432,7 @@ export default function ShopPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3 shrink-0">
+                <div className="flex flex-wrap gap-3 shrink-0 items-center">
                   <Button
                     onClick={toggleFollow}
                     className={cn(
@@ -470,6 +471,15 @@ export default function ShopPage() {
                       WhatsApp
                     </Button>
                   )}
+
+                  {/* Cart access from shop page */}
+                  <div className="hidden sm:flex">
+                    <CartIcon
+                      className="p-2 rounded-full border border-gray-200 bg-white text-taja-secondary hover:text-taja-primary hover:border-taja-primary/20 shadow-sm transition-colors"
+                      iconClassName="h-5 w-5"
+                      badgeClassName="!h-4 !w-4 !text-[9px] !-top-0.5 !-right-0.5 bg-taja-primary text-white border-2 border-white"
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>

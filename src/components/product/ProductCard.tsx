@@ -60,6 +60,7 @@ export function ProductCard({
   const [optionsOpen, setOptionsOpen] = useState(false);
   const optionsTriggerRef = useRef<HTMLButtonElement>(null);
   const [optionsPanelPosition, setOptionsPanelPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [sellerPanelOpen, setSellerPanelOpen] = useState(false);
 
   useLayoutEffect(() => {
     if (!optionsOpen || typeof document === "undefined") return;
@@ -292,6 +293,72 @@ export function ProductCard({
     document.body
   );
 
+  const sellerPanelContent = sellerPanelOpen && shopSlug && typeof document !== "undefined" && createPortal(
+    <>
+      <div
+        className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm"
+        onClick={() => setSellerPanelOpen(false)}
+        aria-hidden
+      />
+      <div className="fixed inset-x-0 bottom-0 z-[91]">
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 24, stiffness: 220 }}
+          className="mx-auto max-w-md w-full rounded-t-3xl bg-white shadow-[0_-16px_40px_rgba(15,23,42,0.25)] border-t border-slate-100 overflow-hidden"
+        >
+          <div className="px-5 pt-4 pb-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
+                  <Image
+                    src={sellerAvatar}
+                    alt={sellerName}
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-slate-900 truncate">
+                    {sellerName}
+                  </p>
+                  {shopName && (
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.18em] truncate">
+                      {shopName}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setSellerPanelOpen(false)}
+                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors"
+                aria-label="Close seller preview"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Discover more pieces curated by this seller in their dedicated shop. Tap below to view their full catalog, policies, and story.
+            </p>
+
+            <Link
+              href={`/shop/${shopSlug}`}
+              className="inline-flex items-center justify-center w-full h-11 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.22em] gap-2 hover:bg-emerald-600 transition-colors"
+              onClick={() => setSellerPanelOpen(false)}
+            >
+              Visit Seller Shop
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    </>,
+    document.body
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -300,6 +367,7 @@ export function ProductCard({
       className={cn("group/card flex flex-col h-full bg-white rounded-[2rem] border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
     >
       {optionsPanelContent}
+      {sellerPanelContent}
       <div className="relative aspect-square overflow-hidden bg-gray-50 rounded-t-[2rem]">
         {isInsideDashboard ? (
           <div className="block w-full h-full">
@@ -362,7 +430,15 @@ export function ProductCard({
           </p>
 
           {showSellerRow && sellerName && (
-            <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSellerPanelOpen(true);
+              }}
+              className="mt-3 flex items-center gap-2 w-full text-left group/seller"
+            >
               <div className="h-7 w-7 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
                 <Image
                   src={sellerAvatar}
@@ -373,7 +449,7 @@ export function ProductCard({
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-[11px] font-semibold text-gray-900 leading-tight line-clamp-1">
+                <span className="text-[11px] font-semibold text-gray-900 leading-tight line-clamp-1 group-hover/seller:text-emerald-700 transition-colors">
                   {sellerName}
                 </span>
                 {shopName && (
@@ -382,7 +458,7 @@ export function ProductCard({
                   </span>
                 )}
               </div>
-            </div>
+            </button>
           )}
         </div>
 
