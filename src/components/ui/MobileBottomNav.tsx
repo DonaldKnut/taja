@@ -8,13 +8,13 @@ import {
   Plus,
   ShoppingBag,
   User,
-  ShieldCheck,
   Package,
   LogIn,
   UserPlus,
   ShoppingCart,
   Heart,
   MessageCircle,
+  DollarSign,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCartStore } from "@/stores/cartStore";
@@ -83,10 +83,29 @@ export function MobileBottomNav() {
     { label: "Orders", href: "/seller/orders", icon: Package },
     { label: "Plus", href: "/seller/products/new", icon: Plus },
     { label: "Chat", href: "/chat", icon: MessageCircle },
-    { label: "Verify", href: "/onboarding/kyc", icon: ShieldCheck, activeMatch: (p) => p.startsWith("/onboarding/kyc") || p.startsWith("/seller/verification") },
+    { label: "Wallet", href: "/seller/wallet", icon: DollarSign, activeMatch: (p) => p.startsWith("/seller/wallet") },
   ];
 
-  const items = !isAuthenticated ? unauthItems : role === "seller" ? sellerItems : buyerItems;
+  const sellerNeedsKyc =
+    !!user &&
+    (user as any).role === "seller" &&
+    ((user as any).kyc?.status === "not_started" ||
+      (user as any).kyc?.status === "pending" ||
+      !(user as any).kyc?.status);
+
+  const finalSellerItems: NavItem[] = sellerNeedsKyc
+    ? [
+        ...sellerItems,
+        {
+          label: "Verify",
+          href: "/onboarding/kyc",
+          icon: User,
+          activeMatch: (p) => p.startsWith("/onboarding/kyc") || p.startsWith("/seller/verification"),
+        },
+      ]
+    : sellerItems;
+
+  const items = !isAuthenticated ? unauthItems : role === "seller" ? finalSellerItems : buyerItems;
 
   return (
     <nav
