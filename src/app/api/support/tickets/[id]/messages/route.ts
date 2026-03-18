@@ -78,6 +78,18 @@ export async function POST(
         createdAt: new Date(),
       });
 
+      // Instant auto-ack for end users (system message) to make chat feel responsive.
+      // We only do this for non-staff, non-internal messages.
+      if (senderRole === 'user' && !isInternal) {
+        ticket.messages.push({
+          senderRole: 'system',
+          content: `Thanks — we’ve received your message on ticket ${ticket.ticketNumber}. A support agent will reply here shortly.\n\nTip: If this is about an order, include the order number and a screenshot to speed things up.`,
+          attachments: [],
+          isInternal: false,
+          createdAt: new Date(),
+        } as any);
+      }
+
       // Auto-update status when staff responds
       if (senderRole === 'admin' || senderRole === 'seller') {
         if (ticket.status === 'open' || ticket.status === 'waiting_customer') {

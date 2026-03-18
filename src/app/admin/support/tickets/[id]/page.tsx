@@ -268,7 +268,7 @@ export default function AdminTicketDetailPage() {
               <div className="space-y-4 max-h-[680px] overflow-y-auto pb-4">
                 {ticket.messages?.length ? (
                   ticket.messages.map((msg: any, idx: number) => {
-                    const isStaff = msg.senderRole === "admin" || msg.senderRole === "seller";
+                    const isStaff = msg.senderRole === "admin" || msg.senderRole === "seller" || msg.senderRole === "system";
                     const bubble = isStaff ? "bg-slate-900 text-white" : "bg-slate-50 text-slate-900 border border-gray-100";
                     return (
                       <div key={idx} className={`flex gap-3 ${isStaff ? "flex-row-reverse" : ""}`}>
@@ -291,7 +291,9 @@ export default function AdminTicketDetailPage() {
                           <div className={cn("inline-block p-3 rounded-2xl max-w-[90%]", bubble)}>
                             <div className="text-sm font-black mb-1 flex items-center gap-2 justify-between">
                               <span>
-                                {msg.sender?.fullName || (isStaff ? "Support" : "User")}
+                                {msg.senderRole === "system"
+                                  ? "Taja Support Bot"
+                                  : msg.sender?.fullName || (isStaff ? "Support" : "User")}
                                 {msg.isInternal && (
                                   <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-amber-300">
                                     <ShieldAlert className="h-3 w-3" />

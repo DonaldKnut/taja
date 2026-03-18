@@ -256,7 +256,9 @@ export default function TicketDetailPage() {
                           )}>
                              <div className="flex items-center gap-2 mb-3">
                                <p className={cn("text-[9px] font-black uppercase tracking-widest", isStaff ? "text-taja-primary" : "text-gray-400")}>
-                                 {msg.sender?.fullName || (isStaff ? "Taja Specialist" : "Account Owner")}
+                                 {msg.senderRole === "system"
+                                   ? "Taja Support Bot"
+                                   : msg.sender?.fullName || (isStaff ? "Taja Specialist" : "Account Owner")}
                                </p>
                              </div>
                              <div className="text-[15px] font-medium leading-relaxed whitespace-pre-wrap selection:bg-taja-primary/20">

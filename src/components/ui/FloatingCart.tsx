@@ -55,7 +55,7 @@ export function FloatingCart() {
       const ticketRes = await supportApi.getTicket(ticketId);
       const ticket = ticketRes?.data;
       const msgs = (ticket?.messages || []).map((m: any) => ({
-        role: m.senderRole === "admin" || m.senderRole === "seller" ? ("assistant" as const) : ("user" as const),
+        role: m.senderRole === "admin" || m.senderRole === "seller" || m.senderRole === "system" ? ("assistant" as const) : ("user" as const),
         content: m.content,
       }));
 
@@ -94,7 +94,7 @@ export function FloatingCart() {
         const ticketRes = await supportApi.getTicket(supportTicketId);
         const ticket = ticketRes?.data;
         const msgs = (ticket?.messages || []).map((m: any) => ({
-          role: m.senderRole === "admin" || m.senderRole === "seller" ? ("assistant" as const) : ("user" as const),
+          role: m.senderRole === "admin" || m.senderRole === "seller" || m.senderRole === "system" ? ("assistant" as const) : ("user" as const),
           content: m.content,
         }));
         if (msgs.length) setChatMessages(msgs);

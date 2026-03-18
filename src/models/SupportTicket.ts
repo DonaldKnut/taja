@@ -25,8 +25,8 @@ export interface ISupportTicket extends Document {
   relatedShop?: mongoose.Types.ObjectId;
   messages: Array<{
     _id?: mongoose.Types.ObjectId;
-    sender: mongoose.Types.ObjectId;
-    senderRole: 'user' | 'admin' | 'seller';
+    sender?: mongoose.Types.ObjectId;
+    senderRole: 'user' | 'admin' | 'seller' | 'system';
     content: string;
     attachments?: Array<{
       url: string;
@@ -134,11 +134,10 @@ const SupportTicketSchema = new Schema<ISupportTicket>(
         sender: {
           type: Schema.Types.ObjectId,
           ref: 'User',
-          required: true,
         },
         senderRole: {
           type: String,
-          enum: ['user', 'admin', 'seller'],
+          enum: ['user', 'admin', 'seller', 'system'],
           required: true,
         },
         content: {

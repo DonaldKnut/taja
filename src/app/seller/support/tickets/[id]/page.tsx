@@ -235,7 +235,9 @@ export default function SellerTicketDetailPage() {
                           )}>
                             <div className="flex items-center gap-2 mb-2">
                                <p className={cn("text-[10px] font-black uppercase tracking-widest", isStaff ? "text-taja-primary" : "text-gray-400")}>
-                                 {msg.sender?.fullName || (isStaff ? "Support Intelligence" : "Merchant")}
+                                 {msg.senderRole === "system"
+                                   ? "Taja Support Bot"
+                                   : msg.sender?.fullName || (isStaff ? "Support Intelligence" : "Merchant")}
                                </p>
                                {isStaff && <Zap className="w-3 h-3 text-taja-primary fill-taja-primary" />}
                             </div>
