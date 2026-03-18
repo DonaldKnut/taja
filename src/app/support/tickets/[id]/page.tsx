@@ -224,7 +224,7 @@ export default function TicketDetailPage() {
               <CardContent className="flex-1 px-4 sm:px-10 py-10 overflow-y-auto max-h-[800px] scrollbar-hide space-y-12">
                 <AnimatePresence initial={false}>
                   {ticket.messages?.map((msg: any, idx: number) => {
-                    const isStaff = msg.senderRole === "admin" || msg.senderRole === "seller";
+                    const isStaff = msg.senderRole === "admin" || msg.senderRole === "seller" || msg.senderRole === "system";
                     
                     return (
                       <motion.div

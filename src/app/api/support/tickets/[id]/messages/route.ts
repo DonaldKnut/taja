@@ -6,8 +6,51 @@ import mongoose from 'mongoose';
 import { sendSupportTicketNewMessageEmail } from '@/lib/email';
 import User from '@/models/User';
 import { notifyAdminsSupportTicketMessage } from '@/lib/notifications';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const dynamic = 'force-dynamic';
+
+const SUPPORT_BOT_SYSTEM_PROMPT = `
+You are Taja Support Bot inside a support ticket thread.
+Goal: give a helpful, short, step-by-step response that moves the issue forward.
+
+Rules:
+- Keep replies concise (max ~8 short lines).
+- Ask 1-2 clarifying questions only when necessary.
+- If the user reports payment/escrow/order issues, ask for order number and what they see on screen.
+- If you can't resolve, say a human agent will follow up in this thread.
+- Never mention internal implementation details.
+`.trim();
+
+async function generateSupportBotReply(input: {
+  ticketNumber: string;
+  subject: string;
+  category: string;
+  lastUserMessage: string;
+  recentConversation: Array<{ role: 'user' | 'assistant'; content: string }>;
+}): Promise<string | null> {
+  if (!process.env.GEMINI_API_KEY) return null;
+
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({
+    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+    systemInstruction: SUPPORT_BOT_SYSTEM_PROMPT,
+  });
+
+  const context = `Ticket: ${input.ticketNumber}\nSubject: ${input.subject}\nCategory: ${input.category}`;
+  const history = input.recentConversation.map((m) => ({
+    role: m.role === 'assistant' ? ('model' as const) : ('user' as const),
+    parts: [{ text: m.content }],
+  }));
+
+  // Gemini requires first message be from user
+  const normalizedHistory = [{ role: 'user' as const, parts: [{ text: context }] }, ...history].slice(-12);
+  const chat = model.startChat({ history: normalizedHistory.slice(0, -1) });
+  const result = await chat.sendMessage(normalizedHistory[normalizedHistory.length - 1].parts[0].text);
+  const response = await result.response;
+  const reply = response.text()?.trim();
+  return reply || null;
+}
 
 // POST /api/support/tickets/:id/messages - Add message to ticket
 export async function POST(
@@ -81,9 +124,27 @@ export async function POST(
       // Instant auto-ack for end users (system message) to make chat feel responsive.
       // We only do this for non-staff, non-internal messages.
       if (senderRole === 'user' && !isInternal) {
+        const recent = (ticket.messages || [])
+          .filter((m: any) => !m.isInternal)
+          .slice(-8)
+          .map((m: any) => ({
+            role: m.senderRole === 'admin' || m.senderRole === 'seller' || m.senderRole === 'system' ? ('assistant' as const) : ('user' as const),
+            content: String(m.content || ''),
+          }));
+
+        const botReply =
+          (await generateSupportBotReply({
+            ticketNumber: ticket.ticketNumber,
+            subject: ticket.subject,
+            category: ticket.category,
+            lastUserMessage: content.trim(),
+            recentConversation: recent,
+          })) ||
+          `Thanks — we’ve received your message on ticket ${ticket.ticketNumber}. A support agent will reply here shortly.\n\nTip: If this is about an order, include the order number and a screenshot to speed things up.`;
+
         ticket.messages.push({
           senderRole: 'system',
-          content: `Thanks — we’ve received your message on ticket ${ticket.ticketNumber}. A support agent will reply here shortly.\n\nTip: If this is about an order, include the order number and a screenshot to speed things up.`,
+          content: botReply,
           attachments: [],
           isInternal: false,
           createdAt: new Date(),

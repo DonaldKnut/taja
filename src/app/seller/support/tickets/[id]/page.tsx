@@ -201,7 +201,7 @@ export default function SellerTicketDetailPage() {
               <CardContent className="flex-1 px-4 sm:px-10 py-10 overflow-y-auto max-h-[700px] scrollbar-hide space-y-10">
                 <AnimatePresence initial={false}>
                   {ticket.messages?.map((msg: any, idx: number) => {
-                    const isStaff = msg.senderRole === "admin";
+                    const isStaff = msg.senderRole === "admin" || msg.senderRole === "system";
                     const isSelf = msg.senderRole === "seller" || msg.sender?._id === ticket.user?._id;
                     // Note: If the seller is the requester, they are "Self". 
                     // If it's another seller (assigned staff), they might be "Staff".
