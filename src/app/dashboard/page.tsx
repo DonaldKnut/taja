@@ -391,16 +391,20 @@ export default function DashboardPage() {
         {/* Side cards */}
         <motion.div custom={2} variants={fadeUp} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-1 gap-4">
           <Link href="/marketplace" className="group h-full">
-            <div className="h-full p-6 rounded-[2rem] bg-white border border-slate-100 hover:border-taja-primary/30 hover:shadow-xl hover:shadow-taja-primary/5 transition-all duration-500 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+            <div className="h-full p-6 rounded-[2rem] bg-[#0f172a] border border-slate-800 hover:border-taja-primary/30 hover:shadow-xl hover:shadow-taja-primary/5 transition-all duration-500 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-taja-primary/5 rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700" />
+                <div className="absolute inset-0 motif-blanc opacity-[0.02]" />
+              </div>
+              <div className="absolute top-0 right-0 p-4 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity">
                 <ShoppingBag className="h-16 w-16 text-taja-primary" />
               </div>
               <div className="h-12 w-12 rounded-2xl bg-taja-primary/10 flex items-center justify-center text-taja-primary mb-4 group-hover:scale-110 group-hover:bg-taja-primary group-hover:text-white transition-all duration-500">
                 <Grid3x3 className="h-6 w-6" />
               </div>
               <div className="relative z-10">
-                <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none mb-1 uppercase">Categories</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Browse Everything</p>
+                <h3 className="text-lg font-black text-white tracking-tight leading-none mb-1 uppercase">Categories</h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Browse Everything</p>
               </div>
             </div>
           </Link>

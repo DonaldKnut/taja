@@ -314,10 +314,13 @@ export default function ShopPage() {
 
   const hasSocialLinks = socialLinks.length > 0;
 
-  const isOwner = useMemo(
-    () => !!(isAuthenticated && user?._id && (shop as any)?.owner?._id && user._id === (shop as any).owner._id),
-    [isAuthenticated, user?._id, shop]
-  );
+  const isOwnerView =
+    !!(
+      isAuthenticated &&
+      user &&
+      ((user as any).role === "admin" ||
+        ((shop as any)?.owner?._id && user._id === (shop as any).owner._id))
+    );
 
   return (
     <div className="min-h-screen bg-white">
@@ -443,7 +446,7 @@ export default function ShopPage() {
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3 shrink-0 items-center">
-                  {isOwner ? (
+                  {isOwnerView ? (
                     <>
                       <Link href="/seller/dashboard">
                         <Button className="rounded-full px-8 h-12 shadow-sm bg-taja-secondary text-white font-black uppercase tracking-widest text-[10px] hover:bg-emerald-700 transition-colors">
