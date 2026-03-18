@@ -66,6 +66,10 @@ const SupportTicketSchema = new Schema<ISupportTicket>(
       type: String,
       required: true,
       unique: true,
+      default: () => {
+        const random = crypto.randomBytes(4).toString('hex').toUpperCase();
+        return `TKT-${Date.now()}-${random}`;
+      },
     },
     user: {
       type: Schema.Types.ObjectId,
@@ -210,8 +214,8 @@ SupportTicketSchema.index({ lastCustomerMessageAt: -1 });
 SupportTicketSchema.index({ lastStaffMessageAt: -1 });
 SupportTicketSchema.index({ 'seenBy.user': 1 });
 
-// Generate ticket number before saving
-SupportTicketSchema.pre('save', async function (next) {
+// Ensure ticketNumber exists before validation runs (required validator happens before save hooks)
+SupportTicketSchema.pre('validate', function (next) {
   if (!this.ticketNumber) {
     const random = crypto.randomBytes(4).toString('hex').toUpperCase();
     this.ticketNumber = `TKT-${Date.now()}-${random}`;
