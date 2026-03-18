@@ -23,21 +23,28 @@ export function FloatingCart() {
   const [chatBusy, setChatBusy] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [supportTicketId, setSupportTicketId] = useState<string | null>(null);
-  const [chatMode, setChatMode] = useState<"support" | "ai">("ai");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
-    { role: "assistant", content: "Welcome to Taja! I'm Ada, your guide to our premium registry. How can I assist you with the marketplace today?" },
+    { role: "assistant", content: "Welcome to Taja Support. Send a message and our team will reply shortly." },
   ]);
+  const [isAuthed, setIsAuthed] = useState(false);
 
   const loadSupportThread = async () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (!token) {
-      setChatMode("ai");
+      setIsAuthed(false);
+      setSupportTicketId(null);
+      setChatMessages([
+        {
+          role: "assistant",
+          content: "Please sign in to start a support ticket chat. You can also create a ticket from the Support page after signing in.",
+        },
+      ]);
       return;
     }
 
-    setChatMode("support");
+    setIsAuthed(true);
     try {
       setChatBusy(true);
       const threadRes = await supportApi.getChatThread();
@@ -55,16 +62,19 @@ export function FloatingCart() {
       setChatMessages((prev) => {
         // If thread is empty, keep the welcome copy but relabel as Support.
         if (!msgs.length) {
-          const first = prev[0]?.content?.includes("Welcome to Taja!")
-            ? [{ role: "assistant" as const, content: "Welcome to Taja Support. Send a message and our team will reply shortly." }]
-            : prev;
-          return first;
+          return [{ role: "assistant" as const, content: "Welcome to Taja Support. Send a message and our team will reply shortly." }];
         }
         return msgs;
       });
     } catch (e: any) {
-      // If support thread fails, fall back to AI so the widget still works.
-      setChatMode("ai");
+      setIsAuthed(false);
+      setSupportTicketId(null);
+      setChatMessages([
+        {
+          role: "assistant",
+          content: "Support chat is temporarily unavailable. Please try again, or create a ticket at /support.",
+        },
+      ]);
     } finally {
       setChatBusy(false);
     }
@@ -77,9 +87,10 @@ export function FloatingCart() {
   }, [chatOpen]);
 
   useEffect(() => {
-    if (!chatOpen || chatMode !== "support" || !supportTicketId) return;
+    if (!chatOpen || !supportTicketId) return;
     const interval = setInterval(async () => {
       try {
+        if (document.visibilityState !== "visible") return;
         const ticketRes = await supportApi.getTicket(supportTicketId);
         const ticket = ticketRes?.data;
         const msgs = (ticket?.messages || []).map((m: any) => ({
@@ -92,7 +103,7 @@ export function FloatingCart() {
       }
     }, 4000);
     return () => clearInterval(interval);
-  }, [chatOpen, chatMode, supportTicketId]);
+  }, [chatOpen, supportTicketId]);
 
   if (!mounted) return null;
 
@@ -102,7 +113,7 @@ export function FloatingCart() {
       <button
         onClick={() => setChatOpen(true)}
         className="fixed bottom-32 right-6 z-40 bg-white text-taja-secondary p-4 rounded-full shadow-premium hover:bg-gray-50 transition-all active:scale-95 border border-gray-100/50 flex items-center justify-center"
-        aria-label="Chat with Ada"
+        aria-label="Support chat"
       >
         <MessageCircle className="h-6 w-6" />
         <span className="absolute -top-1 -right-1 w-3 h-3 bg-taja-primary rounded-full animate-pulse border-2 border-white"></span>
@@ -135,10 +146,10 @@ export function FloatingCart() {
                   </div>
                   <div>
                     <div className="text-lg font-black text-taja-secondary tracking-tight">
-                      {chatMode === "support" ? "Support Chat" : "Chat with Ada"}
+                      Support Chat
                     </div>
                     <div className="text-[10px] font-black text-taja-primary uppercase tracking-widest">
-                      {chatMode === "support" ? "Ticket Thread" : "Digital Assistant"}
+                      Ticket Thread
                     </div>
                   </div>
                 </div>
@@ -214,49 +225,43 @@ export function FloatingCart() {
                     setChatInput("");
                     setChatBusy(true);
                     try {
-                      if (chatMode === "support") {
-                        if (!supportTicketId) {
-                          await loadSupportThread();
-                        }
-                        if (!supportTicketId) {
-                          throw new Error("Support thread unavailable");
-                        }
-                        const attachments =
-                          pendingFiles.length > 0
-                            ? await Promise.all(pendingFiles.map((f) => uploadSupportAttachment(f)))
-                            : [];
-                        setPendingFiles([]);
-
-                        await supportApi.addMessage(supportTicketId, { content: content || "Attachment(s)", attachments });
-                        const ticketRes = await supportApi.getTicket(supportTicketId);
-                        const ticket = ticketRes?.data;
-                        const msgs = (ticket?.messages || []).map((m: any) => ({
-                          role:
-                            m.senderRole === "admin" || m.senderRole === "seller"
-                              ? ("assistant" as const)
-                              : ("user" as const),
-                          content: m.content,
-                        }));
-                        if (msgs.length) setChatMessages(msgs);
-                      } else {
-                        const res: any = await api("/api/assistant/chat", {
-                          method: "POST",
-                          body: JSON.stringify({ messages: [...chatMessages, { role: "user", content }].slice(-12) }),
-                        });
-                        const reply =
-                          res?.reply ||
-                          "I'm having trouble connecting to my central brain. Please check your connection.";
-                        setChatMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+                      if (!isAuthed) {
+                        setChatMessages((prev) => [
+                          ...prev,
+                          { role: "assistant", content: "Please sign in first, then send your message here." },
+                        ]);
+                        return;
                       }
+                      if (!supportTicketId) {
+                        await loadSupportThread();
+                      }
+                      if (!supportTicketId) {
+                        throw new Error("Support thread unavailable");
+                      }
+                      const attachments =
+                        pendingFiles.length > 0
+                          ? await Promise.all(pendingFiles.map((f) => uploadSupportAttachment(f)))
+                          : [];
+                      setPendingFiles([]);
+
+                      await supportApi.addMessage(supportTicketId, { content: content || "Attachment(s)", attachments });
+                      const ticketRes = await supportApi.getTicket(supportTicketId);
+                      const ticket = ticketRes?.data;
+                      const msgs = (ticket?.messages || []).map((m: any) => ({
+                        role:
+                          m.senderRole === "admin" || m.senderRole === "seller"
+                            ? ("assistant" as const)
+                            : ("user" as const),
+                        content: m.content,
+                      }));
+                      if (msgs.length) setChatMessages(msgs);
                     } catch (err: any) {
                       setChatMessages((prev) => [
                         ...prev,
                         {
                           role: "assistant",
                           content:
-                            chatMode === "support"
-                              ? "Support chat is temporarily unavailable. Please try again, or create a ticket at /support."
-                              : "I'm experiencing a minor transmission glitch. Could you rephrase that?",
+                            "Support chat is temporarily unavailable. Please try again, or create a ticket at /support.",
                         },
                       ]);
                     } finally {
@@ -288,12 +293,13 @@ export function FloatingCart() {
                   <input
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask Ada anything..."
-                    className="flex-1 bg-gray-50 border-none rounded-2xl px-5 h-14 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-taja-primary/30 transition-all"
+                    placeholder={isAuthed ? "Type your message..." : "Sign in to message support"}
+                    disabled={!isAuthed || chatBusy}
+                    className="flex-1 bg-gray-50 border-none rounded-2xl px-5 h-14 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-taja-primary/30 transition-all disabled:opacity-60"
                   />
                   <button
                     type="submit"
-                    disabled={chatBusy || (!chatInput.trim() && pendingFiles.length === 0)}
+                    disabled={!isAuthed || chatBusy || (!chatInput.trim() && pendingFiles.length === 0)}
                     className="w-14 h-14 rounded-2xl bg-black text-white flex items-center justify-center disabled:opacity-20 hover:scale-105 active:scale-95 transition-all shadow-lg"
                   >
                     <motion.div animate={chatBusy ? { rotate: 360 } : {}} transition={chatBusy ? { repeat: Infinity, duration: 1, ease: "linear" } : {}}>
@@ -301,6 +307,29 @@ export function FloatingCart() {
                     </motion.div>
                   </button>
                 </form>
+
+                {!isAuthed && (
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof window !== "undefined") window.location.href = "/login";
+                      }}
+                      className="text-[10px] font-black uppercase tracking-widest text-white bg-taja-secondary rounded-xl px-4 h-10 hover:bg-black transition-colors"
+                    >
+                      Sign in
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof window !== "undefined") window.location.href = "/support";
+                      }}
+                      className="text-[10px] font-black uppercase tracking-widest text-taja-secondary bg-gray-50 rounded-xl px-4 h-10 hover:bg-gray-100 transition-colors"
+                    >
+                      Go to Support
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </>
