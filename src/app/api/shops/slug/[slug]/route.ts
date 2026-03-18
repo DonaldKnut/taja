@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Shop from '@/models/Shop';
+import { authenticate } from '@/lib/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,21 @@ export async function GET(
         { success: false, message: 'Shop not found' },
         { status: 404 }
       );
+    }
+
+    // Buyers should not see sellers that haven't been vouched/approved yet.
+    // Sellers (shop owners) and admins can still access their own shop page for setup/review.
+    if (shop.status !== 'active') {
+      const auth = await authenticate(request);
+      const isAdmin = auth.user?.role === 'admin';
+      const isOwner = auth.user && shop.owner?._id && String(shop.owner._id) === String(auth.user.userId);
+
+      if (!isAdmin && !isOwner) {
+        return NextResponse.json(
+          { success: false, message: 'Shop not found' },
+          { status: 404 }
+        );
+      }
     }
 
     // Increment view count

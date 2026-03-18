@@ -23,7 +23,7 @@ export default function RoleSelectionPage() {
   useEffect(() => {
     if (!user) return;
     if (user.roleSelected && user.role) {
-      if (user.role === "seller") router.replace("/seller/dashboard");
+      if (user.role === "seller") router.replace("/seller/setup");
       else router.replace(redirect || "/dashboard");
     }
   }, [user, redirect, router]);
@@ -45,7 +45,7 @@ export default function RoleSelectionPage() {
 
         if (role === "seller") {
           if (skipKyc) router.push("/seller/dashboard");
-          else router.push("/onboarding/kyc");
+          else router.push("/seller/setup");
         } else {
           router.push(redirect || "/dashboard");
         }
