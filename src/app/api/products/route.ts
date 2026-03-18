@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Product from '@/models/Product';
 import { requireRole, authenticate } from '@/lib/middleware';
+import '@/models/Shop'; // ensure Shop model is registered for populate('shop')
+import '@/models/User'; // ensure User model is registered for populate('seller')
+import '@/models/Category'; // ensure Category model is registered for populate('category')
 
 export const dynamic = 'force-dynamic';
 

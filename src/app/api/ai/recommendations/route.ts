@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRecommendations, getHomepageRecommendations, recordProductView } from '@/lib/ai/recommendations';
 import { requireAuth } from '@/lib/middleware';
 import Product from '@/models/Product';
+import '@/models/Shop'; // ensure Shop model is registered for populate('shop')
 
 export const dynamic = 'force-dynamic';
 

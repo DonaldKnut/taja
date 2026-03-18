@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getHomepageRecommendations } from '@/lib/ai/recommendations';
 import Product from '@/models/Product';
+import '@/models/Shop'; // ensure Shop model is registered for populate('shop')
 
 export const dynamic = 'force-dynamic';
 
