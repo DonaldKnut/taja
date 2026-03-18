@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Ban, CheckCircle, XCircle, MoreVertical, Filter, Users, Pencil, Save, Loader2, X, Download } from "lucide-react";
+import { Search, Ban, CheckCircle, XCircle, MoreVertical, Filter, Users, Pencil, Save, Loader2, X, Download, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -43,6 +43,10 @@ export default function UserManagementPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+
+  const [kycReminderUser, setKycReminderUser] = useState<User | null>(null);
+  const [kycReminderMessage, setKycReminderMessage] = useState<string>("");
+  const [sendingKycReminder, setSendingKycReminder] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -209,6 +213,64 @@ export default function UserManagementPage() {
     return badges[role as keyof typeof badges] || "text-slate-400";
   };
 
+  const getKycBadge = (status: string) => {
+    const badges: Record<string, string> = {
+      approved: "bg-emerald-400/10 text-emerald-600 border border-emerald-400/20",
+      pending: "bg-indigo-400/10 text-indigo-600 border border-indigo-400/20",
+      rejected: "bg-rose-400/10 text-rose-600 border border-rose-400/20",
+      not_started: "bg-amber-400/10 text-amber-600 border border-amber-400/20",
+    };
+    return badges[status] || "bg-slate-100 text-slate-600";
+  };
+
+  const formatKycStatusLabel = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "Approved";
+      case "pending":
+        return "Pending";
+      case "rejected":
+        return "Rejected";
+      case "not_started":
+        return "Not Started";
+      default:
+        return status || "Not Enrolled";
+    }
+  };
+
+  const openKycReminderModal = (user: User) => {
+    setEditingUser(null); // avoid overlapping modals
+    setKycReminderUser(user);
+    setKycReminderMessage(
+      `Hi ${user.fullName}, it looks like you haven't started your KYC yet.\n\nPlease complete it here: /onboarding/kyc.\n\nThis helps you unlock full access to Taja.Shop.`
+    );
+  };
+
+  const handleSendKycReminder = async () => {
+    if (!kycReminderUser) return;
+    try {
+      setSendingKycReminder(kycReminderUser._id);
+      const res = await api("/api/admin/kyc/reminder", {
+        method: "POST",
+        body: JSON.stringify({
+          userId: kycReminderUser._id,
+          message: kycReminderMessage,
+        }),
+      });
+
+      if (res?.success) {
+        toast.success("KYC reminder sent");
+        setKycReminderUser(null);
+      } else {
+        toast.error(res?.message || "Failed to send reminder");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to send reminder");
+    } finally {
+      setSendingKycReminder(null);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-10 p-1">
@@ -347,8 +409,8 @@ export default function UserManagementPage() {
                         </span>
                       </td>
                       <td className="py-5 px-6 text-center">
-                        <span className={`inline-flex px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full ${user.kycStatus === "approved" ? "bg-emerald-400/10 text-emerald-600 border border-emerald-400/20" : "bg-slate-100 text-slate-400"}`}>
-                          {user.kycStatus || "Not Enrolled"}
+                        <span className={`inline-flex px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full ${getKycBadge(user.kycStatus)}`}>
+                          {formatKycStatusLabel(user.kycStatus)}
                         </span>
                       </td>
                       <td className="py-5 px-10">
@@ -368,6 +430,17 @@ export default function UserManagementPage() {
                           >
                             <Pencil className="h-3 w-3" /> Edit
                           </button>
+
+                          {user.kycStatus === "not_started" && (
+                            <button
+                              onClick={() => openKycReminderModal(user)}
+                              disabled={sendingKycReminder === user._id}
+                              className="h-9 px-5 rounded-xl border border-amber-100 text-amber-700 hover:bg-amber-50 font-black uppercase tracking-widest text-[9px] flex items-center gap-2 transition-all shadow-sm"
+                            >
+                              <Send className="h-3 w-3" />
+                              Send Reminder
+                            </button>
+                          )}
                           {user.accountStatus === "active" ? (
                             <>
                               <button onClick={() => handleUserAction(user._id, "suspend")} disabled={submitting === user._id} className="h-9 px-5 rounded-xl border border-amber-100 text-amber-600 hover:bg-amber-50 font-black uppercase tracking-widest text-[9px]">Suspend</button>
@@ -502,6 +575,64 @@ export default function UserManagementPage() {
                 <Button onClick={handleSaveProfile} disabled={savingProfile} className="w-full h-14 rounded-2xl bg-slate-950 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-huge transition-all">
                   {savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Save Changes
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {kycReminderUser && (
+          <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-[2.5rem] w-full max-w-md shadow-huge border border-slate-100 overflow-hidden"
+            >
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">
+                    KYC Reminder
+                  </p>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                    Message {kycReminderUser.fullName}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setKycReminderUser(null)}
+                  className="p-2 hover:bg-slate-50 rounded-full"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">
+                    Reminder message
+                  </label>
+                  <textarea
+                    value={kycReminderMessage}
+                    onChange={(e) => setKycReminderMessage(e.target.value)}
+                    rows={6}
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50/50 p-3 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleSendKycReminder}
+                  disabled={sendingKycReminder === kycReminderUser._id}
+                  className="w-full h-14 rounded-2xl bg-slate-950 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-huge transition-all"
+                >
+                  {sendingKycReminder === kycReminderUser._id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  {sendingKycReminder === kycReminderUser._id ? "Sending..." : "Send Reminder"}
                 </Button>
               </div>
             </motion.div>
