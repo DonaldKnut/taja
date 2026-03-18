@@ -71,6 +71,7 @@ const adminNavGroups = [
     label: "Communications",
     items: [
       { name: "Broadcast message", href: "/admin/broadcast", icon: Mail },
+      { name: "Support Inbox", href: "/admin/support/tickets", icon: HelpCircle },
     ],
   },
   {
@@ -97,6 +98,61 @@ export default function AdminLayout({
   const { toggleCart } = useCartStore();
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
+
+  const [supportCounts, setSupportCounts] = useState({
+    unread: 0,
+    needsReply: 0,
+    unassigned: 0,
+  });
+
+  // Lightweight support inbox counters (polling)
+  // Counts are scoped to what admin can see (all tickets).
+  // Unread/needsReply are computed from lastCustomerMessageAt/lastStaffMessageAt/seenBy.
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCounts = async () => {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        if (!token) return;
+        // Small page size is enough for counters; we still need total for unassigned.
+        const res = await fetch(`/api/support/tickets?page=1&limit=200&assignedTo=unassigned`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!res.ok || !json?.success) return;
+
+        const tickets = json.data?.tickets || [];
+        const unassigned = json.data?.pagination?.total ?? tickets.length;
+
+        const me = user?._id;
+        let unread = 0;
+        let needsReply = 0;
+        for (const t of tickets) {
+          const lastCustomerAt = t.lastCustomerMessageAt ? new Date(t.lastCustomerMessageAt).getTime() : 0;
+          const lastStaffAt = t.lastStaffMessageAt ? new Date(t.lastStaffMessageAt).getTime() : 0;
+          const actionable =
+            t.status === "open" || t.status === "in_progress" || t.status === "waiting_customer";
+          if (actionable && lastCustomerAt > 0 && lastCustomerAt > lastStaffAt) needsReply++;
+          if (me && lastCustomerAt > 0 && Array.isArray(t.seenBy)) {
+            const entry = t.seenBy.find((s: any) => String(s.user) === String(me));
+            const seenAt = entry?.seenAt ? new Date(entry.seenAt).getTime() : 0;
+            if (lastCustomerAt > seenAt) unread++;
+          }
+        }
+
+        if (!cancelled) setSupportCounts({ unread, needsReply, unassigned });
+      } catch {
+        // ignore
+      }
+    };
+
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [user?._id]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -217,6 +273,20 @@ export default function AdminLayout({
             <div className="space-y-1">
               {group.items.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                const supportBadges =
+                  item.href === "/admin/support/tickets"
+                    ? [
+                        supportCounts.unread > 0
+                          ? { label: "Unread", value: supportCounts.unread, className: "bg-indigo-500/15 text-indigo-200 border-indigo-500/30" }
+                          : null,
+                        supportCounts.needsReply > 0
+                          ? { label: "Reply", value: supportCounts.needsReply, className: "bg-rose-500/15 text-rose-200 border-rose-500/30" }
+                          : null,
+                        supportCounts.unassigned > 0
+                          ? { label: "Unassigned", value: supportCounts.unassigned, className: "bg-amber-500/15 text-amber-200 border-amber-500/30" }
+                          : null,
+                      ].filter(Boolean)
+                    : [];
                 return (
                   <Link
                     key={item.name}
@@ -231,7 +301,27 @@ export default function AdminLayout({
                       <item.icon className={`mr-4 h-4 w-4 ${isActive ? "text-white" : "text-white/20 group-hover:text-emerald-400 transition-colors"}`} />
                       {item.name}
                     </div>
-                    {isActive && <motion.div layoutId={`activeNav${mobile ? 'Mob' : 'Desk'}`} className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                    <div className="flex items-center gap-2">
+                      {supportBadges.length > 0 && (
+                        <div className="hidden xl:flex items-center gap-1.5">
+                          {supportBadges.slice(0, 2).map((b: any) => (
+                            <span
+                              key={b.label}
+                              className={`px-2 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest ${b.className}`}
+                              title={`${b.label}: ${b.value}`}
+                            >
+                              {b.value > 99 ? "99+" : b.value}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {isActive && (
+                        <motion.div
+                          layoutId={`activeNav${mobile ? "Mob" : "Desk"}`}
+                          className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"
+                        />
+                      )}
+                    </div>
                   </Link>
                 );
               })}

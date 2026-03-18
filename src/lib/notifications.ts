@@ -147,6 +147,82 @@ export async function notifyAdminsNewShop(params: {
 }
 
 /**
+ * Notify all admins when a new support ticket is created.
+ */
+export async function notifyAdminsNewSupportTicket(params: {
+  ticketId: string;
+  ticketNumber: string;
+  subject: string;
+  requesterName?: string;
+}) {
+  try {
+    await connectDB();
+    const User = (await import('@/models/User')).default;
+    const admins = await User.find({ role: 'admin' }).select('_id').lean();
+    const baseUrl = process.env.FRONTEND_URL || process.env.NEXTAUTH_URL || 'https://tajaapp.shop';
+    const actionUrl = `${baseUrl}/admin/support/tickets/${params.ticketId}`;
+    const message = `${params.requesterName || 'A user'} created ticket #${params.ticketNumber}: ${params.subject}`;
+
+    for (const admin of admins) {
+      await createNotification({
+        userId: admin._id.toString(),
+        type: 'system',
+        title: 'New support ticket',
+        message,
+        link: actionUrl,
+        actionUrl,
+        priority: 'high',
+        metadata: params,
+      });
+    }
+  } catch (err: any) {
+    console.error('Failed to notify admins of new support ticket:', err);
+  }
+}
+
+/**
+ * Notify admins (and assignee if provided) on new customer message.
+ */
+export async function notifyAdminsSupportTicketMessage(params: {
+  ticketId: string;
+  ticketNumber: string;
+  subject: string;
+  senderName?: string;
+  preview: string;
+  assignedToId?: string | null;
+}) {
+  try {
+    await connectDB();
+    const User = (await import('@/models/User')).default;
+    const baseUrl = process.env.FRONTEND_URL || process.env.NEXTAUTH_URL || 'https://tajaapp.shop';
+    const actionUrl = `${baseUrl}/admin/support/tickets/${params.ticketId}`;
+
+    const recipients: string[] = [];
+    if (params.assignedToId) recipients.push(params.assignedToId);
+    const admins = await User.find({ role: 'admin' }).select('_id').lean();
+    for (const admin of admins) recipients.push(admin._id.toString());
+
+    const uniq = Array.from(new Set(recipients));
+    const message = `${params.senderName || 'Customer'}: ${params.preview}`;
+
+    for (const userId of uniq) {
+      await createNotification({
+        userId,
+        type: 'system',
+        title: `Support: ${params.ticketNumber}`,
+        message,
+        link: actionUrl,
+        actionUrl,
+        priority: 'high',
+        metadata: params,
+      });
+    }
+  } catch (err: any) {
+    console.error('Failed to notify admins of support ticket message:', err);
+  }
+}
+
+/**
  * Notify all admins when a new order is placed (buyer bought from seller).
  * Admin can follow the process: order → payment → escrow → delivery → release.
  */

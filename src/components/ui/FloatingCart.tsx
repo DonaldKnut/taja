@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
-import { MessageCircle, X } from "lucide-react";
-import { api } from "@/lib/api";
+import { Image as ImageIcon, MessageCircle, Paperclip, X } from "lucide-react";
+import { api, supportApi, uploadSupportAttachment } from "@/lib/api";
 import { CartDrawer } from "@/components/cart";
 import { useMounted } from "@/hooks/useMounted";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,9 +22,77 @@ export function FloatingCart() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatBusy, setChatBusy] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [supportTicketId, setSupportTicketId] = useState<string | null>(null);
+  const [chatMode, setChatMode] = useState<"support" | "ai">("ai");
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     { role: "assistant", content: "Welcome to Taja! I'm Ada, your guide to our premium registry. How can I assist you with the marketplace today?" },
   ]);
+
+  const loadSupportThread = async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!token) {
+      setChatMode("ai");
+      return;
+    }
+
+    setChatMode("support");
+    try {
+      setChatBusy(true);
+      const threadRes = await supportApi.getChatThread();
+      const ticketId = threadRes?.data?.ticketId as string | undefined;
+      if (!ticketId) throw new Error("Missing chat thread id");
+      setSupportTicketId(ticketId);
+
+      const ticketRes = await supportApi.getTicket(ticketId);
+      const ticket = ticketRes?.data;
+      const msgs = (ticket?.messages || []).map((m: any) => ({
+        role: m.senderRole === "admin" || m.senderRole === "seller" ? ("assistant" as const) : ("user" as const),
+        content: m.content,
+      }));
+
+      setChatMessages((prev) => {
+        // If thread is empty, keep the welcome copy but relabel as Support.
+        if (!msgs.length) {
+          const first = prev[0]?.content?.includes("Welcome to Taja!")
+            ? [{ role: "assistant" as const, content: "Welcome to Taja Support. Send a message and our team will reply shortly." }]
+            : prev;
+          return first;
+        }
+        return msgs;
+      });
+    } catch (e: any) {
+      // If support thread fails, fall back to AI so the widget still works.
+      setChatMode("ai");
+    } finally {
+      setChatBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!chatOpen) return;
+    loadSupportThread();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatOpen]);
+
+  useEffect(() => {
+    if (!chatOpen || chatMode !== "support" || !supportTicketId) return;
+    const interval = setInterval(async () => {
+      try {
+        const ticketRes = await supportApi.getTicket(supportTicketId);
+        const ticket = ticketRes?.data;
+        const msgs = (ticket?.messages || []).map((m: any) => ({
+          role: m.senderRole === "admin" || m.senderRole === "seller" ? ("assistant" as const) : ("user" as const),
+          content: m.content,
+        }));
+        if (msgs.length) setChatMessages(msgs);
+      } catch {
+        // ignore polling errors
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [chatOpen, chatMode, supportTicketId]);
 
   if (!mounted) return null;
 
@@ -66,8 +134,12 @@ export function FloatingCart() {
                     <MessageCircle className="w-6 h-6 text-taja-primary" />
                   </div>
                   <div>
-                    <div className="text-lg font-black text-taja-secondary tracking-tight">Chat with Ada</div>
-                    <div className="text-[10px] font-black text-taja-primary uppercase tracking-widest">Digital Assistant</div>
+                    <div className="text-lg font-black text-taja-secondary tracking-tight">
+                      {chatMode === "support" ? "Support Chat" : "Chat with Ada"}
+                    </div>
+                    <div className="text-[10px] font-black text-taja-primary uppercase tracking-widest">
+                      {chatMode === "support" ? "Ticket Thread" : "Digital Assistant"}
+                    </div>
                   </div>
                 </div>
                 <button
@@ -110,29 +182,109 @@ export function FloatingCart() {
 
               {/* Chat Input Section - Includes padding for bottom nav */}
               <div className="p-6 border-t bg-white pb-10 md:pb-6">
+                {pendingFiles.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {pendingFiles.map((f, i) => (
+                      <div
+                        key={`${f.name}-${i}`}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-100 bg-gray-50 text-xs font-semibold"
+                      >
+                        <ImageIcon className="h-4 w-4 text-gray-400" />
+                        <span className="max-w-[180px] truncate">{f.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPendingFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="ml-1 text-gray-400 hover:text-gray-700"
+                          aria-label="Remove attachment"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <form
                   className="flex items-center gap-2"
                   onSubmit={async (e) => {
                     e.preventDefault();
                     const content = chatInput.trim();
-                    if (!content) return;
+                    if (!content && pendingFiles.length === 0) return;
                     setChatMessages((prev) => [...prev, { role: "user", content }]);
                     setChatInput("");
                     setChatBusy(true);
                     try {
-                      const res: any = await api("/api/assistant/chat", {
-                        method: "POST",
-                        body: JSON.stringify({ messages: [...chatMessages, { role: "user", content }].slice(-12) }),
-                      });
-                      const reply = res?.reply || "I'm having trouble connecting to my central brain. Please check your connection.";
-                      setChatMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+                      if (chatMode === "support") {
+                        if (!supportTicketId) {
+                          await loadSupportThread();
+                        }
+                        if (!supportTicketId) {
+                          throw new Error("Support thread unavailable");
+                        }
+                        const attachments =
+                          pendingFiles.length > 0
+                            ? await Promise.all(pendingFiles.map((f) => uploadSupportAttachment(f)))
+                            : [];
+                        setPendingFiles([]);
+
+                        await supportApi.addMessage(supportTicketId, { content: content || "Attachment(s)", attachments });
+                        const ticketRes = await supportApi.getTicket(supportTicketId);
+                        const ticket = ticketRes?.data;
+                        const msgs = (ticket?.messages || []).map((m: any) => ({
+                          role:
+                            m.senderRole === "admin" || m.senderRole === "seller"
+                              ? ("assistant" as const)
+                              : ("user" as const),
+                          content: m.content,
+                        }));
+                        if (msgs.length) setChatMessages(msgs);
+                      } else {
+                        const res: any = await api("/api/assistant/chat", {
+                          method: "POST",
+                          body: JSON.stringify({ messages: [...chatMessages, { role: "user", content }].slice(-12) }),
+                        });
+                        const reply =
+                          res?.reply ||
+                          "I'm having trouble connecting to my central brain. Please check your connection.";
+                        setChatMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+                      }
                     } catch (err: any) {
-                      setChatMessages((prev) => [...prev, { role: "assistant", content: "I'm experiencing a minor transmission glitch. Could you rephrase that?" }]);
+                      setChatMessages((prev) => [
+                        ...prev,
+                        {
+                          role: "assistant",
+                          content:
+                            chatMode === "support"
+                              ? "Support chat is temporarily unavailable. Please try again, or create a ticket at /support."
+                              : "I'm experiencing a minor transmission glitch. Could you rephrase that?",
+                        },
+                      ]);
                     } finally {
                       setChatBusy(false);
                     }
                   }}
                 >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      if (files.length) setPendingFiles((prev) => [...prev, ...files].slice(0, 4));
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={chatBusy}
+                    className="w-14 h-14 rounded-2xl bg-gray-50 text-gray-600 flex items-center justify-center disabled:opacity-30 hover:bg-gray-100 transition-all"
+                    aria-label="Attach image"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </button>
                   <input
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -141,7 +293,7 @@ export function FloatingCart() {
                   />
                   <button
                     type="submit"
-                    disabled={chatBusy || !chatInput.trim()}
+                    disabled={chatBusy || (!chatInput.trim() && pendingFiles.length === 0)}
                     className="w-14 h-14 rounded-2xl bg-black text-white flex items-center justify-center disabled:opacity-20 hover:scale-105 active:scale-95 transition-all shadow-lg"
                   >
                     <motion.div animate={chatBusy ? { rotate: 360 } : {}} transition={chatBusy ? { repeat: Infinity, duration: 1, ease: "linear" } : {}}>

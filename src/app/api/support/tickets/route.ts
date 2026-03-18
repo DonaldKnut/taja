@@ -5,6 +5,9 @@ import { requireAuth } from '@/lib/middleware';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
 import Shop from '@/models/Shop';
+import { sendSupportTicketCreatedEmail } from '@/lib/email';
+import User from '@/models/User';
+import { notifyAdminsNewSupportTicket } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,8 +47,10 @@ export async function POST(request: NextRequest) {
             { status: 404 }
           );
         }
-        // Verify order belongs to user
-        if (relatedOrder.buyer.toString() !== user.userId) {
+        // Verify order belongs to user as buyer or seller
+        const isBuyer = String(relatedOrder.buyer) === user.userId;
+        const isSeller = String(relatedOrder.seller) === user.userId;
+        if (!isBuyer && !isSeller && user.role !== 'admin') {
           return NextResponse.json(
             { success: false, message: 'You can only create tickets for your own orders' },
             { status: 403 }
@@ -87,7 +92,7 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             sender: user.userId,
-            senderRole: user.role === 'admin' ? 'admin' : 'user',
+            senderRole: user.role === 'admin' ? 'admin' : user.role === 'seller' ? 'seller' : 'user',
             content: description.trim(),
             attachments,
           },
@@ -101,6 +106,29 @@ export async function POST(request: NextRequest) {
         { path: 'relatedProduct', select: 'title slug' },
         { path: 'relatedShop', select: 'shopName shopSlug' },
       ]);
+
+      // Notify admins (or assignee) via email
+      try {
+        const requester = await User.findById(user.userId).select('fullName email').lean();
+        await sendSupportTicketCreatedEmail({
+          ticketId: String(ticket._id),
+          ticketNumber: ticket.ticketNumber,
+          subject: ticket.subject,
+          category: ticket.category,
+          priority: ticket.priority,
+          requesterName: requester?.fullName,
+          requesterEmail: requester?.email,
+          assignedToEmail: null,
+        });
+        await notifyAdminsNewSupportTicket({
+          ticketId: String(ticket._id),
+          ticketNumber: ticket.ticketNumber,
+          subject: ticket.subject,
+          requesterName: requester?.fullName,
+        });
+      } catch (e) {
+        console.error('Support ticket email notify failed:', e);
+      }
 
       return NextResponse.json(
         {
@@ -139,17 +167,21 @@ export async function GET(request: NextRequest) {
 
       const query: any = {};
 
-      // Regular users can only see their own tickets
-      if (user.role !== 'admin' && user.role !== 'seller') {
-        query.user = user.userId;
-      } else if (user.role === 'admin') {
+      // Access control:
+      // - Admin: can view all (optionally filter by assignedTo)
+      // - Non-admin: can only view tickets they created OR tickets assigned to them
+      if (user.role === 'admin') {
         // Admins can see all tickets or filter by assignedTo
         const assignedTo = searchParams.get('assignedTo');
         if (assignedTo === 'me') {
           query.assignedTo = user.userId;
+        } else if (assignedTo === 'unassigned') {
+          query.$or = [{ assignedTo: null }, { assignedTo: { $exists: false } }];
         } else if (assignedTo) {
           query.assignedTo = assignedTo;
         }
+      } else {
+        query.$or = [{ user: user.userId }, { assignedTo: user.userId }];
       }
 
       // Apply filters

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { FloatingCart } from "@/components/ui/FloatingCart";
 import { AuthEntryModal } from "@/components/auth/AuthEntryModal";
 import { trackPageView } from "@/lib/analytics";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,7 +26,6 @@ function MarketplaceContent() {
         onClose={() => setAuthModalOpen(false)}
         source="marketplace"
       />
-      <FloatingCart />
     </div>
   );
 }

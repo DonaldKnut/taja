@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import SupportTicket from '@/models/SupportTicket';
 import { requireAuth } from '@/lib/middleware';
+import User from '@/models/User';
+import { sendSupportTicketAssignedEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,18 +32,24 @@ export async function GET(
         );
       }
 
-      // Check permissions: users can only see their own tickets, admins can see all
-      if (user.role !== 'admin' && user.role !== 'seller') {
-        if (ticket.user._id.toString() !== user.userId) {
-          return NextResponse.json(
-            { success: false, message: 'Unauthorized' },
-            { status: 403 }
-          );
-        }
+      // Check permissions:
+      // - Admin: all tickets
+      // - Others: owner OR assigned to the ticket
+      const isAdmin = user.role === 'admin';
+      const isOwner = ticket.user?._id?.toString?.() === user.userId;
+      const assignedId =
+        (ticket.assignedTo as any)?._id?.toString?.() ?? (ticket.assignedTo as any)?.toString?.();
+      const isAssigned = assignedId === user.userId;
+
+      if (!isAdmin && !isOwner && !isAssigned) {
+        return NextResponse.json(
+          { success: false, message: 'Unauthorized' },
+          { status: 403 }
+        );
       }
 
-      // Filter out internal messages for regular users
-      if (user.role !== 'admin' && user.role !== 'seller') {
+      // Filter out internal messages unless admin/assigned
+      if (!isAdmin && !isAssigned) {
         ticket.messages = ticket.messages.filter((msg: any) => !msg.isInternal);
       }
 
@@ -92,6 +100,8 @@ export async function PUT(
         );
       }
 
+      const prevAssignedTo = ticket.assignedTo?.toString() || null;
+
       const body = await request.json();
       const { status, priority, assignedTo, tags, satisfactionRating, satisfactionFeedback } = body;
 
@@ -115,7 +125,7 @@ export async function PUT(
       if (status) ticket.status = status;
       if (priority && (isAdmin || isAssigned)) ticket.priority = priority;
       if (assignedTo !== undefined && isAdmin) {
-        ticket.assignedTo = assignedTo || null;
+        ticket.assignedTo = assignedTo === "me" ? user.userId : assignedTo || null;
       }
       if (tags && (isAdmin || isAssigned)) ticket.tags = tags;
       if (satisfactionRating !== undefined && isOwner) {
@@ -131,6 +141,27 @@ export async function PUT(
         { path: 'user', select: 'fullName email avatar' },
         { path: 'assignedTo', select: 'fullName email avatar' },
       ]);
+
+      // Email assignee when assignment changes (admin-only)
+      try {
+        const nextAssignedTo = ticket.assignedTo?.toString() || null;
+        if (isAdmin && nextAssignedTo && nextAssignedTo !== prevAssignedTo) {
+          const assignee = await User.findById(nextAssignedTo).select('email fullName').lean();
+          const assignedBy = await User.findById(user.userId).select('fullName').lean();
+          if (assignee?.email) {
+            await sendSupportTicketAssignedEmail({
+              ticketId: String(ticket._id),
+              ticketNumber: ticket.ticketNumber,
+              subject: ticket.subject,
+              assigneeEmail: assignee.email,
+              assigneeName: assignee.fullName,
+              assignedByName: assignedBy?.fullName,
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Support ticket assignment email notify failed:', e);
+      }
 
       return NextResponse.json({
         success: true,

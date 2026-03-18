@@ -24,6 +24,7 @@ import {
 import { supportApi } from "@/lib/api";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import { uploadSupportAttachment } from "@/lib/api";
 
 const categories = [
   { value: "order", label: "Order Issue", icon: Package, description: "Problems with your order", color: "amber" },
@@ -71,6 +72,7 @@ function SupportPageInner() {
   const prefillShopId = searchParams.get("shopId");
 
   const [loading, setLoading] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     subject: "",
     description: "",
@@ -96,6 +98,10 @@ function SupportPageInner() {
     }
     try {
       setLoading(true);
+      const uploaded =
+        attachments.length > 0
+          ? await Promise.all(attachments.map((f) => uploadSupportAttachment(f)))
+          : [];
       const res = await supportApi.createTicket({
         subject: formData.subject.trim(),
         description: formData.description.trim(),
@@ -104,6 +110,7 @@ function SupportPageInner() {
         relatedOrderId: formData.relatedOrderId || undefined,
         relatedProductId: formData.relatedProductId || undefined,
         relatedShopId: formData.relatedShopId || undefined,
+        attachments: uploaded,
       });
       if (res.success) {
         toast.success("Support ticket created! We'll get back to you soon.");
@@ -318,6 +325,28 @@ function SupportPageInner() {
                       </span>
                     </div>
                   )}
+
+                  {/* ── Attachments ── */}
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                      Attach screenshots (optional)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        setAttachments(files.slice(0, 4));
+                      }}
+                      className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-900 file:text-white file:font-bold hover:file:bg-slate-800"
+                    />
+                    {attachments.length > 0 && (
+                      <p className="text-[10px] text-slate-600 mt-2 font-medium">
+                        {attachments.length} file{attachments.length !== 1 ? "s" : ""} selected
+                      </p>
+                    )}
+                  </div>
 
                   {/* ── Actions ── */}
                   <div className="flex items-center justify-between pt-2 border-t border-slate-800">

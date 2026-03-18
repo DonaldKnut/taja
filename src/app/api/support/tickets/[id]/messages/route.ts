@@ -3,6 +3,9 @@ import connectDB from '@/lib/db';
 import SupportTicket from '@/models/SupportTicket';
 import { requireAuth } from '@/lib/middleware';
 import mongoose from 'mongoose';
+import { sendSupportTicketNewMessageEmail } from '@/lib/email';
+import User from '@/models/User';
+import { notifyAdminsSupportTicketMessage } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,6 +96,39 @@ export async function POST(
       await ticket.populate('messages.sender', 'fullName email avatar');
 
       const newMessage = ticket.messages[ticket.messages.length - 1];
+
+      // Notify admins/assignee when a customer (non-admin) sends a message (ignore internal notes)
+      try {
+        if (senderRole !== 'admin' && !isInternal) {
+          const senderDoc = await User.findById(user.userId).select('fullName email').lean();
+          let assignedToEmail: string | null = null;
+          let assignedToId: string | null = null;
+          if (ticket.assignedTo) {
+            const assignedDoc = await User.findById(ticket.assignedTo).select('email').lean();
+            assignedToEmail = assignedDoc?.email || null;
+            assignedToId = String(ticket.assignedTo);
+          }
+          await sendSupportTicketNewMessageEmail({
+            ticketId: String(ticket._id),
+            ticketNumber: ticket.ticketNumber,
+            subject: ticket.subject,
+            messagePreview: String(content).slice(0, 400),
+            senderName: senderDoc?.fullName,
+            senderEmail: senderDoc?.email,
+            assignedToEmail,
+          });
+          await notifyAdminsSupportTicketMessage({
+            ticketId: String(ticket._id),
+            ticketNumber: ticket.ticketNumber,
+            subject: ticket.subject,
+            senderName: senderDoc?.fullName,
+            preview: String(content).slice(0, 180),
+            assignedToId,
+          });
+        }
+      } catch (e) {
+        console.error('Support ticket message email notify failed:', e);
+      }
 
       return NextResponse.json({
         success: true,

@@ -585,3 +585,201 @@ export async function sendOrderShippedEmail(
     throw error;
   }
 }
+
+/**
+ * Support tickets: notify admins / assignee
+ *
+ * Env:
+ * - RESEND_API_KEY (required to actually send)
+ * - EMAIL_FROM / RESEND_FROM (optional)
+ * - ADMIN_EMAIL (optional single recipient override)
+ * - FRONTEND_URL / NEXTAUTH_URL (optional for deep links)
+ */
+async function getAdminRecipients(): Promise<string[]> {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) return [adminEmail];
+  try {
+    const { default: User } = await import("@/models/User");
+    const { default: connectDB } = await import("@/lib/db");
+    await connectDB();
+    const admins = await User.find({ role: "admin" }).select("email").lean();
+    return admins.map((a: any) => a.email).filter(Boolean);
+  } catch (e) {
+    console.error("Failed to resolve admin recipients:", e);
+    return [];
+  }
+}
+
+function supportTicketLink(ticketId: string) {
+  const baseUrl =
+    process.env.FRONTEND_URL ||
+    process.env.NEXTAUTH_URL ||
+    "https://tajaapp.shop";
+  return `${baseUrl}/admin/support/tickets/${ticketId}`;
+}
+
+export async function sendSupportTicketCreatedEmail(params: {
+  ticketId: string;
+  ticketNumber: string;
+  subject: string;
+  category?: string;
+  priority?: string;
+  requesterName?: string;
+  requesterEmail?: string;
+  assignedToEmail?: string | null;
+}) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set. Support ticket email skipped.");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  const to = params.assignedToEmail
+    ? [params.assignedToEmail]
+    : await getAdminRecipients();
+
+  if (!to.length) {
+    console.warn("No admin recipients found for support ticket notification.");
+    return { success: false, error: "No recipients" };
+  }
+
+  const url = supportTicketLink(params.ticketId);
+  const html = `
+    <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:#f5f5f7; padding:32px 0;">
+      <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #edf0f4;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">
+          <div>
+            <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#10b981;font-weight:800;">New Support Ticket</div>
+            <div style="font-size:18px;font-weight:900;color:#0f172a;margin-top:6px;">#${params.ticketNumber} — ${params.subject}</div>
+          </div>
+          <a href="${url}" style="background:#0f172a;color:white;padding:10px 14px;border-radius:999px;font-size:12px;font-weight:800;text-decoration:none;">Open in Admin</a>
+        </div>
+        <div style="font-size:13px;color:#334155;line-height:1.6;">
+          <p style="margin:0 0 10px;">
+            <strong>Requester:</strong> ${params.requesterName || "—"} ${params.requesterEmail ? `(${params.requesterEmail})` : ""}
+          </p>
+          <p style="margin:0 0 10px;"><strong>Category:</strong> ${params.category || "general"} &nbsp; • &nbsp; <strong>Priority:</strong> ${params.priority || "medium"}</p>
+        </div>
+        <p style="margin-top:18px;font-size:12px;color:#64748b;">Taja.Shop • ${new Date().getFullYear()}</p>
+      </div>
+    </div>
+  `;
+
+  const { data, error } = await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: `[Taja.Shop] New ticket ${params.ticketNumber}: ${params.subject}`,
+    html,
+  });
+
+  if (error) {
+    console.error("Resend error (support ticket created):", error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}
+
+export async function sendSupportTicketNewMessageEmail(params: {
+  ticketId: string;
+  ticketNumber: string;
+  subject: string;
+  messagePreview: string;
+  senderName?: string;
+  senderEmail?: string;
+  assignedToEmail?: string | null;
+}) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set. Support message email skipped.");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  const to = params.assignedToEmail
+    ? [params.assignedToEmail]
+    : await getAdminRecipients();
+
+  if (!to.length) {
+    console.warn("No admin recipients found for support message notification.");
+    return { success: false, error: "No recipients" };
+  }
+
+  const url = supportTicketLink(params.ticketId);
+  const html = `
+    <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:#f5f5f7; padding:32px 0;">
+      <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #edf0f4;">
+        <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#f59e0b;font-weight:800;">New Customer Message</div>
+        <div style="font-size:18px;font-weight:900;color:#0f172a;margin-top:6px;">#${params.ticketNumber} — ${params.subject}</div>
+        <p style="margin:12px 0 0;color:#334155;font-size:13px;">
+          <strong>From:</strong> ${params.senderName || "—"} ${params.senderEmail ? `(${params.senderEmail})` : ""}
+        </p>
+        <div style="margin-top:14px;background:#0f172a0a;border:1px solid #e2e8f0;border-radius:12px;padding:14px;">
+          <div style="color:#0f172a;font-size:13px;white-space:pre-wrap;line-height:1.55;">
+            ${params.messagePreview}
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <a href="${url}" style="background:#0f172a;color:white;padding:10px 14px;border-radius:999px;font-size:12px;font-weight:800;text-decoration:none;">Reply in Admin</a>
+        </div>
+        <p style="margin-top:18px;font-size:12px;color:#64748b;">Taja.Shop • ${new Date().getFullYear()}</p>
+      </div>
+    </div>
+  `;
+
+  const { data, error } = await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: `[Taja.Shop] New message on ${params.ticketNumber}`,
+    html,
+  });
+
+  if (error) {
+    console.error("Resend error (support message):", error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}
+
+export async function sendSupportTicketAssignedEmail(params: {
+  ticketId: string;
+  ticketNumber: string;
+  subject: string;
+  assigneeEmail: string;
+  assigneeName?: string;
+  assignedByName?: string;
+}) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set. Support assignment email skipped.");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  const url = supportTicketLink(params.ticketId);
+  const html = `
+    <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:#f5f5f7; padding:32px 0;">
+      <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #edf0f4;">
+        <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#10b981;font-weight:800;">Ticket Assigned</div>
+        <div style="font-size:18px;font-weight:900;color:#0f172a;margin-top:6px;">#${params.ticketNumber} — ${params.subject}</div>
+        <p style="margin:12px 0 0;color:#334155;font-size:13px;">
+          Hi ${params.assigneeName || "there"}, this ticket has been assigned to you${params.assignedByName ? ` by ${params.assignedByName}` : ""}.
+        </p>
+        <div style="margin-top:16px;">
+          <a href="${url}" style="background:#0f172a;color:white;padding:10px 14px;border-radius:999px;font-size:12px;font-weight:800;text-decoration:none;">Open ticket</a>
+        </div>
+        <p style="margin-top:18px;font-size:12px;color:#64748b;">Taja.Shop • ${new Date().getFullYear()}</p>
+      </div>
+    </div>
+  `;
+
+  const { data, error } = await resend.emails.send({
+    from: EMAIL_FROM,
+    to: params.assigneeEmail,
+    subject: `[Taja.Shop] Assigned: ${params.ticketNumber}`,
+    html,
+  });
+
+  if (error) {
+    console.error("Resend error (support assignment):", error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}

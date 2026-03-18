@@ -1,11 +1,22 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import crypto from 'crypto';
 
 export interface ISupportTicket extends Document {
   ticketNumber: string;
   user: mongoose.Types.ObjectId;
   subject: string;
   description: string;
-  category: 'order' | 'payment' | 'product' | 'account' | 'delivery' | 'refund' | 'technical' | 'general';
+  category:
+    | 'order'
+    | 'payment'
+    | 'payout'
+    | 'shop'
+    | 'product'
+    | 'account'
+    | 'delivery'
+    | 'refund'
+    | 'technical'
+    | 'general';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'open' | 'in_progress' | 'waiting_customer' | 'resolved' | 'closed';
   assignedTo?: mongoose.Types.ObjectId; // Admin or support staff
@@ -35,6 +46,12 @@ export interface ISupportTicket extends Document {
   }>;
   tags?: string[];
   firstResponseAt?: Date;
+  lastCustomerMessageAt?: Date;
+  lastStaffMessageAt?: Date;
+  seenBy?: Array<{
+    user: mongoose.Types.ObjectId;
+    seenAt: Date;
+  }>;
   resolvedAt?: Date;
   closedAt?: Date;
   satisfactionRating?: number; // 1-5 after resolution
@@ -68,7 +85,18 @@ const SupportTicketSchema = new Schema<ISupportTicket>(
     },
     category: {
       type: String,
-      enum: ['order', 'payment', 'product', 'account', 'delivery', 'refund', 'technical', 'general'],
+      enum: [
+        'order',
+        'payment',
+        'payout',
+        'shop',
+        'product',
+        'account',
+        'delivery',
+        'refund',
+        'technical',
+        'general',
+      ],
       default: 'general',
     },
     priority: {
@@ -145,6 +173,14 @@ const SupportTicketSchema = new Schema<ISupportTicket>(
     ],
     tags: [String],
     firstResponseAt: Date,
+    lastCustomerMessageAt: Date,
+    lastStaffMessageAt: Date,
+    seenBy: [
+      {
+        user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        seenAt: { type: Date, default: Date.now },
+      },
+    ],
     resolvedAt: Date,
     closedAt: Date,
     satisfactionRating: {
@@ -170,12 +206,15 @@ SupportTicketSchema.index({ createdAt: -1 });
 SupportTicketSchema.index({ relatedOrder: 1 });
 SupportTicketSchema.index({ relatedProduct: 1 });
 SupportTicketSchema.index({ relatedShop: 1 });
+SupportTicketSchema.index({ lastCustomerMessageAt: -1 });
+SupportTicketSchema.index({ lastStaffMessageAt: -1 });
+SupportTicketSchema.index({ 'seenBy.user': 1 });
 
 // Generate ticket number before saving
 SupportTicketSchema.pre('save', async function (next) {
   if (!this.ticketNumber) {
-    const count = await mongoose.models.SupportTicket?.countDocuments() || 0;
-    this.ticketNumber = `TKT-${Date.now()}-${(count + 1).toString().padStart(6, '0')}`;
+    const random = crypto.randomBytes(4).toString('hex').toUpperCase();
+    this.ticketNumber = `TKT-${Date.now()}-${random}`;
   }
   next();
 });
@@ -189,6 +228,17 @@ SupportTicketSchema.pre('save', function (next) {
     );
     if (hasStaffResponse && !this.firstResponseAt) {
       this.firstResponseAt = new Date();
+    }
+
+    // Maintain last message timestamps for inbox signals.
+    // Ignore internal notes for customer visibility, but still count them as staff activity.
+    const last = this.messages[this.messages.length - 1] as any;
+    if (last?.createdAt) {
+      if (last.senderRole === 'admin' || last.senderRole === 'seller') {
+        this.lastStaffMessageAt = new Date(last.createdAt);
+      } else {
+        this.lastCustomerMessageAt = new Date(last.createdAt);
+      }
     }
   }
 
@@ -210,8 +260,4 @@ const SupportTicket: Model<ISupportTicket> =
   mongoose.model<ISupportTicket>('SupportTicket', SupportTicketSchema);
 
 export default SupportTicket;
-
-
-
-
 

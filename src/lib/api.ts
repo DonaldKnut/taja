@@ -352,6 +352,39 @@ export async function uploadCoverPhoto(file: File): Promise<string> {
   return data.data?.url ?? data.data;
 }
 
+// Upload API helper for support attachments (images only)
+export async function uploadSupportAttachment(
+  file: File
+): Promise<{ url: string; filename: string; type: string; size: number }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("type", "general");
+
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new ApiError(data.message || data.error || "Upload failed", response.status, data);
+  }
+  const payload = data.data || data;
+  return {
+    url: payload.url,
+    filename: payload.filename || file.name,
+    type: payload.type || file.type,
+    size: payload.size || file.size,
+  };
+}
+
 // Users API helpers
 export const usersApi = {
   getProfile: () => api("/api/users/me"),
@@ -560,4 +593,6 @@ export const supportApi = {
     attachments?: Array<{ url: string; filename: string; type: string; size: number }>;
     isInternal?: boolean;
   }) => api(`/api/support/tickets/${ticketId}/messages`, { method: "POST", body: JSON.stringify(data) }),
+  getChatThread: () => api("/api/support/chat-thread", { method: "POST" }),
+  markSeen: (ticketId: string) => api(`/api/support/tickets/${ticketId}/seen`, { method: "POST" }),
 };
