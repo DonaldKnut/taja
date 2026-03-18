@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -67,13 +67,13 @@ const adminNavGroups = [
       { name: "Product Catalog", href: "/admin/products", icon: Package },
     ],
   },
-  {
-    label: "Communications",
-    items: [
-      { name: "Broadcast message", href: "/admin/broadcast", icon: Mail },
-      { name: "Support Inbox", href: "/admin/support/tickets", icon: HelpCircle },
-    ],
-  },
+      {
+        label: "Communications",
+        items: [
+          { name: "Broadcast message", href: "/admin/broadcast", icon: Mail },
+          { name: "Support Inbox", href: "/admin/support/tickets", icon: HelpCircle },
+        ],
+      },
   {
     label: "System Configuration",
     items: [
@@ -287,6 +287,16 @@ export default function AdminLayout({
                           : null,
                       ].filter(Boolean)
                     : [];
+
+                const inboxTotal =
+                  item.href === "/admin/support/tickets"
+                    ? supportCounts.unread + supportCounts.needsReply + supportCounts.unassigned
+                    : 0;
+
+                const displayName =
+                  item.href === "/admin/support/tickets" && inboxTotal > 0
+                    ? `${item.name} (${inboxTotal})`
+                    : item.name;
                 return (
                   <Link
                     key={item.name}
@@ -299,7 +309,7 @@ export default function AdminLayout({
                   >
                     <div className="flex items-center">
                       <item.icon className={`mr-4 h-4 w-4 ${isActive ? "text-white" : "text-white/20 group-hover:text-emerald-400 transition-colors"}`} />
-                      {item.name}
+                      {displayName}
                     </div>
                     <div className="flex items-center gap-2">
                       {supportBadges.length > 0 && (

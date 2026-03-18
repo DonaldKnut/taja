@@ -197,7 +197,7 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-4 sm:pt-20 pb-20 sm:pb-0 overflow-y-auto">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-950/40 backdrop-blur-md"
@@ -205,7 +205,7 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl mx-4 bg-[#020617] shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2rem] border border-slate-800 overflow-hidden">
+      <div className="relative w-full max-w-2xl mx-4 my-auto sm:my-0 bg-[#020617] shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2rem] border border-slate-800 overflow-hidden">
         {/* Decorative background elements */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px]" />

@@ -14,6 +14,8 @@ interface ProductPurchaseActionsProps {
   onAddToCart: () => void;
   onBuyNow: () => void;
   getWhatsAppUrl: (whatsapp: string, product?: any) => string | null;
+  requiresVariantSelection?: boolean;
+  isVariantSelected?: boolean;
 }
 
 export function ProductPurchaseActions({
@@ -23,9 +25,14 @@ export function ProductPurchaseActions({
   onAddToCart,
   onBuyNow,
   getWhatsAppUrl,
+  requiresVariantSelection = false,
+  isVariantSelected = true,
 }: ProductPurchaseActionsProps) {
   const [whatsappWarningOpen, setWhatsappWarningOpen] = useState(false);
   const [pendingWhatsAppUrl, setPendingWhatsAppUrl] = useState<string | null>(null);
+
+  const mustSelectVariant = requiresVariantSelection && !isVariantSelected;
+  const canPurchase = product.stock > 0 && !mustSelectVariant;
 
   return (
     <>
@@ -47,27 +54,41 @@ export function ProductPurchaseActions({
             </button>
           </div>
           <Button
-            onClick={onAddToCart}
-            disabled={product.stock <= 0}
+          onClick={onAddToCart}
+          disabled={!canPurchase}
             variant="outline"
             className={cn(
               "flex-1 h-14 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] border-emerald-500/20 hover:bg-emerald-50",
-              product.stock <= 0 && "opacity-50 cursor-not-allowed border-gray-100"
+              (!canPurchase) && "opacity-50 cursor-not-allowed border-gray-100"
             )}
           >
-            {product.stock > 0 ? "Add to Cart" : "Unavailable"}
+          {product.stock <= 0
+            ? "Unavailable"
+            : mustSelectVariant
+              ? "Select an Option"
+              : "Add to Cart"}
           </Button>
         </div>
         <Button
           onClick={onBuyNow}
-          disabled={product.stock <= 0}
+        disabled={!canPurchase}
           className={cn(
             "w-full h-16 rounded-[1.25rem] text-xs font-black uppercase tracking-[0.3em] shadow-premium bg-gradient-to-r from-taja-secondary to-slate-800",
-            product.stock <= 0 && "opacity-50 cursor-not-allowed grayscale"
+            (!canPurchase) && "opacity-50 cursor-not-allowed grayscale"
           )}
         >
-          {product.stock > 0 ? "Buy Now" : "Out of Stock"}
+          {product.stock <= 0
+            ? "Out of Stock"
+            : mustSelectVariant
+              ? "Select an Option"
+              : "Buy Now"}
         </Button>
+
+        {mustSelectVariant && (
+          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
+            Please select an option before adding to cart.
+          </p>
+        )}
 
         {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
           <Button
@@ -103,24 +124,32 @@ export function ProductPurchaseActions({
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <Button
               onClick={onAddToCart}
-              disabled={product.stock <= 0}
+            disabled={!canPurchase}
               variant="outline"
               className={cn(
                 "flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] border-gray-200",
-                product.stock <= 0 && "opacity-50 cursor-not-allowed border-gray-100"
+                (!canPurchase) && "opacity-50 cursor-not-allowed border-gray-100"
               )}
             >
-              {product.stock > 0 ? "Add to Cart" : "Sold Out"}
+              {product.stock <= 0
+                ? "Sold Out"
+                : mustSelectVariant
+                  ? "Select Option"
+                  : "Add to Cart"}
             </Button>
             <Button
               onClick={onBuyNow}
-              disabled={product.stock <= 0}
+            disabled={!canPurchase}
               className={cn(
                 "flex-[2] rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700",
-                product.stock <= 0 && "opacity-50 cursor-not-allowed grayscale"
+                (!canPurchase) && "opacity-50 cursor-not-allowed grayscale"
               )}
             >
-              {product.stock > 0 ? "Buy Now" : "Out of Stock"}
+              {product.stock <= 0
+                ? "Out of Stock"
+                : mustSelectVariant
+                  ? "Select Option"
+                  : "Buy Now"}
             </Button>
 
             {product.stock <= 0 && product.shop.socialLinks.whatsapp && (

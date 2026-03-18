@@ -25,15 +25,22 @@ export async function POST(
       }
 
       const now = new Date();
-      const seenBy: any[] = (ticket as any).seenBy || [];
-      const idx = seenBy.findIndex((s) => String(s.user) === user.userId);
-      if (idx >= 0) {
-        seenBy[idx].seenAt = now;
-      } else {
-        seenBy.push({ user: user.userId, seenAt: now });
+
+      // Use atomic update operations instead of document.save() to avoid
+      // VersionError race conditions when multiple mark-seen calls happen.
+      // 1) Try to update existing seenBy entry for this user
+      const updateExisting = await SupportTicket.updateOne(
+        { _id: ticket._id, "seenBy.user": user.userId },
+        { $set: { "seenBy.$.seenAt": now } }
+      );
+
+      // 2) If no existing entry was updated, push a new one
+      if (updateExisting.modifiedCount === 0) {
+        await SupportTicket.updateOne(
+          { _id: ticket._id, "seenBy.user": { $ne: user.userId } },
+          { $push: { seenBy: { user: user.userId, seenAt: now } } }
+        );
       }
-      (ticket as any).seenBy = seenBy;
-      await ticket.save();
 
       return NextResponse.json({ success: true, data: { seenAt: now } });
     } catch (e: any) {

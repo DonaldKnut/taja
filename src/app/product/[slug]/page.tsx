@@ -341,6 +341,8 @@ export default function ProductDetailPage() {
                 onAddToCart={handleAddToCart}
                 onBuyNow={handleBuyNow}
                 getWhatsAppUrl={getWhatsAppUrl}
+                requiresVariantSelection={product.variants?.length > 0}
+                isVariantSelected={!!selectedVariantId}
               />
               <ProductShopSummary product={product} fallbackImage={fallbackImage} />
               <ProductDetailTabs
