@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight } from "lucide-react";
+import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ImageSlider } from "@/components/ui/ImageSlider";
 import { ProductPrice } from "./ProductPrice";
@@ -97,6 +97,20 @@ export function ProductCard({
   const shopName = shop?.shopName || "Shop";
   const isVerified = shop?.isVerified;
   const averageRating = shop?.averageRating ?? product.averageRating ?? 4.5;
+  const shopStats = (shop as any)?.stats as
+    | { averageRating?: number; reviewCount?: number; followerCount?: number }
+    | undefined;
+  const ratingValue = shopStats?.averageRating ?? (averageRating as any);
+  const reviewCount =
+    shopStats?.reviewCount ??
+    (shop as any)?.reviewCount ??
+    (product as any)?.reviewCount;
+  const followerCount = shopStats?.followerCount ?? (shop as any)?.followerCount;
+  const responseTime = (shop as any)?.settings?.responseTime as string | undefined;
+  const locationParts = [
+    (shop as any)?.address?.city,
+    (shop as any)?.address?.state,
+  ].filter(Boolean);
   const images = product?.images?.length ? product.images : [fallbackImage];
 
   // Derive seller display for dashboard marketplace
@@ -343,6 +357,54 @@ export function ProductCard({
             <p className="text-[11px] text-slate-500 leading-relaxed">
               Discover more pieces curated by this seller in their dedicated shop. Tap below to view their full catalog, policies, and story.
             </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                <ShieldCheck className={`h-4 w-4 ${isVerified ? "text-emerald-600" : "text-slate-300"}`} />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Status</p>
+                  <p className="text-[11px] font-bold text-slate-900 truncate">
+                    {isVerified ? "Verified seller" : "Seller"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Rating</p>
+                  <p className="text-[11px] font-bold text-slate-900 truncate">
+                    {typeof ratingValue === "number" ? ratingValue.toFixed(1) : "—"}
+                    {reviewCount ? <span className="text-slate-400"> · {reviewCount} reviews</span> : null}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                <Users className="h-4 w-4 text-slate-400" />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Followers</p>
+                  <p className="text-[11px] font-bold text-slate-900 truncate">
+                    {typeof followerCount === "number" ? followerCount.toLocaleString() : "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                <Clock className="h-4 w-4 text-slate-400" />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Response</p>
+                  <p className="text-[11px] font-bold text-slate-900 truncate">
+                    {responseTime || "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {locationParts.length > 0 && (
+              <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                <MapPin className="h-4 w-4 text-slate-400" />
+                <span className="font-semibold text-slate-700">Location:</span>
+                <span className="truncate">{locationParts.join(", ")}</span>
+              </div>
+            )}
 
             <Link
               href={`/shop/${shopSlug}`}
