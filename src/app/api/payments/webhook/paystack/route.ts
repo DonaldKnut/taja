@@ -8,6 +8,20 @@ import PlatformSettings from "@/models/PlatformSettings";
 import { notifyPaymentUpdate, notifyAdminsPaymentReceived } from "@/lib/notifications";
 import crypto from "crypto";
 
+async function markOrderPaidOnce(orderId: string, paymentReference: string) {
+  const updatedOrder = await Order.findOneAndUpdate(
+    { _id: orderId, paymentStatus: { $ne: "paid" } },
+    {
+      $set: {
+        paymentStatus: "paid",
+        paymentReference,
+      },
+    },
+    { new: true }
+  );
+  return updatedOrder;
+}
+
 async function getReferralSettings() {
   const envPct = parseFloat(process.env.REFERRAL_BONUS_PERCENTAGE || "2");
   const enabledEnv = process.env.REFERRAL_ENABLED === "false" ? false : true;
@@ -111,33 +125,44 @@ export async function POST(request: NextRequest) {
         if (walletTx && walletTx.status !== "success") {
           const amountKobo = Number(data.amount);
           if (Number.isFinite(amountKobo) && amountKobo === walletTx.amount) {
-            walletTx.status = "success";
-            walletTx.providerReference = String(data.id ?? "");
-            walletTx.metadata = {
-              ...(walletTx.metadata || {}),
-              paidAt: data.paid_at,
-              gatewayResponse: data.gateway_response,
-              channel: data.channel,
-              currency: data.currency,
-            };
-            await walletTx.save();
+            await WalletTransaction.findOneAndUpdate(
+              { _id: walletTx._id, status: { $ne: "success" } },
+              {
+                $set: {
+                  status: "success",
+                  providerReference: String(data.id ?? ""),
+                  metadata: {
+                    ...(walletTx.metadata || {}),
+                    paidAt: data.paid_at,
+                    gatewayResponse: data.gateway_response,
+                    channel: data.channel,
+                    currency: data.currency,
+                  },
+                },
+              }
+            );
           } else {
-            walletTx.status = "failed";
-            walletTx.metadata = { ...(walletTx.metadata || {}), webhookAmount: data.amount, webhookCurrency: data.currency };
-            await walletTx.save();
+            await WalletTransaction.findOneAndUpdate(
+              { _id: walletTx._id, status: { $ne: "success" } },
+              {
+                $set: {
+                  status: "failed",
+                  metadata: {
+                    ...(walletTx.metadata || {}),
+                    webhookAmount: data.amount,
+                    webhookCurrency: data.currency,
+                  },
+                },
+              }
+            );
           }
         }
 
         return NextResponse.json({ success: true, message: "Webhook processed" });
       }
 
-      if (order.paymentStatus !== "paid") {
-        // Update order payment status
-        await Order.findByIdAndUpdate(order._id, {
-          $set: {
-            paymentStatus: "paid",
-          },
-        });
+      const paidOrder = await markOrderPaidOnce(order._id.toString(), reference);
+      if (paidOrder) {
 
         // Create escrow hold
         await escrow.createEscrowHold(

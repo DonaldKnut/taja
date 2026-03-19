@@ -1,0 +1,4435 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Taja Shop API",
+    "description": "OpenAPI map of Next.js `/api/*` routes. Request/response bodies match Zod/Mongoose usage in each `route.ts`. Full business rules: **docs/BACKEND_BUSINESS_LOGIC.md**. Swagger UI: `/docs/api`.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Override via NEXT_PUBLIC_APP_URL"
+    }
+  ],
+  "tags": [
+    {
+      "name": "AI",
+      "description": "AI endpoints"
+    },
+    {
+      "name": "Admin",
+      "description": "Admin endpoints"
+    },
+    {
+      "name": "Auth",
+      "description": "Auth endpoints"
+    },
+    {
+      "name": "Blog",
+      "description": "Blog endpoints"
+    },
+    {
+      "name": "Cart",
+      "description": "Cart endpoints"
+    },
+    {
+      "name": "Categories",
+      "description": "Categories endpoints"
+    },
+    {
+      "name": "Chat",
+      "description": "Chat endpoints"
+    },
+    {
+      "name": "Config",
+      "description": "Config endpoints"
+    },
+    {
+      "name": "Cron",
+      "description": "Cron endpoints"
+    },
+    {
+      "name": "Delivery",
+      "description": "Delivery endpoints"
+    },
+    {
+      "name": "KYC",
+      "description": "KYC endpoints"
+    },
+    {
+      "name": "Marketplace",
+      "description": "Marketplace endpoints"
+    },
+    {
+      "name": "Notifications",
+      "description": "Notifications endpoints"
+    },
+    {
+      "name": "Orders",
+      "description": "Orders endpoints"
+    },
+    {
+      "name": "Payments",
+      "description": "Payments endpoints"
+    },
+    {
+      "name": "Products",
+      "description": "Products endpoints"
+    },
+    {
+      "name": "Referrals",
+      "description": "Referrals endpoints"
+    },
+    {
+      "name": "Reviews",
+      "description": "Reviews endpoints"
+    },
+    {
+      "name": "Search",
+      "description": "Search endpoints"
+    },
+    {
+      "name": "Seller",
+      "description": "Seller endpoints"
+    },
+    {
+      "name": "Shops",
+      "description": "Shops endpoints"
+    },
+    {
+      "name": "Support",
+      "description": "Support endpoints"
+    },
+    {
+      "name": "Tracking",
+      "description": "Tracking endpoints"
+    },
+    {
+      "name": "Upload",
+      "description": "Upload endpoints"
+    },
+    {
+      "name": "Users",
+      "description": "Users endpoints"
+    },
+    {
+      "name": "Wallet",
+      "description": "Wallet endpoints"
+    },
+    {
+      "name": "Wishlist",
+      "description": "Wishlist endpoints"
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logout",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/profile": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Profile (session)",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Update profile",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Google OAuth start",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/oauth/google/callback": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Google callback",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/oauth/callback": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "OAuth callback",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Forgot password",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Reset password",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-reset-token": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Verify reset token",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-reset-token/{token}": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Verify reset token by path",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-email": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Verify email",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/auth/send-email-verification": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Resend verification",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Current user",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update me",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete account",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/users/addresses": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List addresses",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Add address",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Patch address",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete address",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/users/addresses/{id}": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update address",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete address by id",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/users/select-role": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Select buyer/seller role",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/users/kyc/submit": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Submit KYC",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/users/password": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Change password",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/users/avatar": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Upload avatar",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Remove avatar",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/users/export": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Export user data",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/users/payment-methods": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Payment methods",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Add payment method",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/shops": {
+      "get": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "List shops",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Create shop",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/shops/my": {
+      "get": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "My shop",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/shops/{shopId}": {
+      "get": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Shop by id",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Update shop",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/shops/slug/{slug}": {
+      "get": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Shop by slug",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/shops/{shopId}/products": {
+      "get": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Shop products",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/shops/{shopId}/reviews": {
+      "get": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Shop reviews",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/shops/{shopId}/follow": {
+      "post": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Follow shop",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Unfollow",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/shops/{shopId}/analytics": {
+      "get": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Shop analytics",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/shops/{shopId}/delivery-slots": {
+      "get": {
+        "tags": [
+          "Shops"
+        ],
+        "summary": "Delivery slots",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "List products",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Create product",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/products/featured": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Featured",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/products/slug/{slug}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Product by slug",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/products/{productId}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Product by id",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Update product",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Delete product",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/cart": {
+      "get": {
+        "tags": [
+          "Cart"
+        ],
+        "summary": "Get cart",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Cart"
+        ],
+        "summary": "Add to cart",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cart"
+        ],
+        "summary": "Clear cart",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/cart/{itemId}": {
+      "put": {
+        "tags": [
+          "Cart"
+        ],
+        "summary": "Update line",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cart"
+        ],
+        "summary": "Remove line",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/cart/merge": {
+      "post": {
+        "tags": [
+          "Cart"
+        ],
+        "summary": "Merge guest cart",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "List orders",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Create order",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Order detail",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Update order",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Cancel order",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/status": {
+      "patch": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Status (seller/admin)",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/confirm": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Buyer confirm receipt",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/confirm-delivery": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Confirm delivery flow",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/tracking": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Add tracking",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Update tracking",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/dispute": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Open dispute",
+        "responses": {
+          "200": {
+            "description": "Dispute opened",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDisputeCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or rule check failed"
+          },
+          "403": {
+            "description": "Only buyer can dispute"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderDisputeCreateRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Dispute status",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/payments/config": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Public payment config",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/payments/initialize": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Initialize checkout",
+        "responses": {
+          "200": {
+            "description": "Payment initialized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentInitializeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Unauthorized buyer/order mismatch"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentInitializeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payments/verify": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Verify transaction",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Verify POST",
+        "responses": {
+          "200": {
+            "description": "Webhook processed or already processed"
+          },
+          "400": {
+            "description": "Reference missing"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentVerifyWebhookRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payments/webhook/paystack": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Paystack webhook",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/payments/webhook/flutterwave": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Flutterwave webhook",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/payments/payout": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Seller payout",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/wallet/balance": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "summary": "Balance",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/wallet/transactions": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "summary": "Transactions",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/wallet/fund": {
+      "post": {
+        "tags": [
+          "Wallet"
+        ],
+        "summary": "Fund wallet",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/wallet/verify": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "summary": "Verify wallet top-up",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/marketplace/feed": {
+      "get": {
+        "tags": [
+          "Marketplace"
+        ],
+        "summary": "Discovery feed",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Search",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/search/suggestions": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Suggestions",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "List categories",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Create (admin)",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/categories/{categoryId}": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Category",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Delete category",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/categories/{categoryId}/subcategories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Subcategories",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "get": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "List reviews",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Create review",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/wishlist": {
+      "get": {
+        "tags": [
+          "Wishlist"
+        ],
+        "summary": "List",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Wishlist"
+        ],
+        "summary": "Add",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "List",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Create (internal)",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark read",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Delete",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/notifications/mark-all-read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark all read",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/notifications/stream": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "SSE stream",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Threads",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Start thread",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/chat/{id}": {
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Thread",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Delete thread",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/chat/{id}/messages": {
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Send message",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/chat/{id}/read": {
+      "put": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Mark read",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/support/tickets": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "List tickets",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Create ticket",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/support/tickets/{id}": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Ticket",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Update ticket",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/support/tickets/{id}/seen": {
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Mark seen (admin)",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/support/tickets/{id}/messages": {
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Reply",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/support/chat-thread": {
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Link chat to ticket",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/delivery": {
+      "get": {
+        "tags": [
+          "Delivery"
+        ],
+        "summary": "Quotes / options",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Delivery"
+        ],
+        "summary": "Book delivery",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/delivery/track/{trackingNumber}": {
+      "get": {
+        "tags": [
+          "Delivery"
+        ],
+        "summary": "Track",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/delivery/webhook/kwik": {
+      "post": {
+        "tags": [
+          "Delivery"
+        ],
+        "summary": "Kwik webhook",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/delivery/webhook/gokada": {
+      "post": {
+        "tags": [
+          "Delivery"
+        ],
+        "summary": "Gokada webhook",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/tracking/{trackingNumber}": {
+      "get": {
+        "tags": [
+          "Tracking"
+        ],
+        "summary": "Public track",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/tracking/order/{orderId}": {
+      "get": {
+        "tags": [
+          "Tracking"
+        ],
+        "summary": "Order tracking",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/seller/dashboard": {
+      "get": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "Dashboard",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/seller/analytics": {
+      "get": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "Analytics",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/seller/products": {
+      "get": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "My products",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/seller/categories": {
+      "get": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "Seller categories",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "Create category",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/referrals/me": {
+      "get": {
+        "tags": [
+          "Referrals"
+        ],
+        "summary": "My referral",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/referrals/referred-users": {
+      "get": {
+        "tags": [
+          "Referrals"
+        ],
+        "summary": "Referred users",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/referrals/apply": {
+      "post": {
+        "tags": [
+          "Referrals"
+        ],
+        "summary": "Apply code",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "tags": [
+          "Upload"
+        ],
+        "summary": "Multipart upload",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/config/paystack": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Paystack public key",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/verify/identity": {
+      "post": {
+        "tags": [
+          "KYC"
+        ],
+        "summary": "Identity verification provider",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/analyze-image": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Analyze image",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/generate-description": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Generate description",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/suggest-tags": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Suggest tags",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/product/tags": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Product tags",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/product/description": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Product description",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/shop-policies": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Shop policies",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/shop-suggestions": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Shop suggestions",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/virtual-tryon": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Virtual try-on",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/style-recommendations": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Style recommendations",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/inventory": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Inventory insights",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/recommendations": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Recommendations",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Recommendations POST",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/ai/recommendations/homepage": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Homepage recs",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/assistant/chat": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Shopping assistant",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/blog/posts": {
+      "get": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Posts",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Create post",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/blog/posts/{slug}": {
+      "get": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Post by slug",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Update post",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Delete post",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/blog/categories": {
+      "get": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Categories",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Create category",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/cron/auto-confirm": {
+      "get": {
+        "tags": [
+          "Cron"
+        ],
+        "summary": "Auto-confirm orders",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Cron"
+        ],
+        "summary": "Auto-confirm POST",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/stats": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Dashboard stats",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List users",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{userId}": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "User detail",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update user",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/users/export": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Export users",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/orders": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Orders",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/orders/export": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Export orders",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/shops": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Shops",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Create shop",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/shops/{shopId}": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update shop",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Delete shop",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/shops/pending": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Pending shops",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/shops/{shopId}/review": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Approve/reject shop",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/shops/export": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Export shops",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/products": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Products",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Create product",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/products/{productId}": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update product",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/products/stats": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Product stats",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/kyc": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "KYC list",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/kyc/pending": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Pending KYC",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/kyc/{userId}": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Review KYC",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/kyc/reminder": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "KYC reminder email",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/disputes": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Disputes",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/disputes/{id}": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Dispute detail",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Resolve dispute",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/sellers/earnings": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Seller earnings",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/broadcast": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Broadcast notification",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/subscribers": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Subscribers",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/notifications": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Send notification",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/settings/payments": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Payment settings",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update payment settings",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/settings/referral": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Referral settings",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update referral",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/search/sync": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Search sync",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Search sync PUT",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Search sync status",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/cleanup": {
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Cleanup",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/admin/seed": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Seed DB",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Clear seed",
+        "responses": {
+          "200": {
+            "description": "Success (see route implementation for shape)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Authorization: Bearer <token> where required"
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
+      "PaymentInitializeRequest": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "example": "65f2f3c5aa1c9f0012345678"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "paystack",
+              "flutterwave"
+            ],
+            "default": "auto"
+          }
+        },
+        "required": [
+          "orderId"
+        ]
+      },
+      "PaymentInitializeResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Payment initialized successfully"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "paymentUrl": {
+                "type": "string",
+                "format": "uri"
+              },
+              "reference": {
+                "type": "string"
+              },
+              "orderId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "paymentUrl",
+              "reference",
+              "orderId"
+            ]
+          }
+        }
+      },
+      "PaymentVerifyWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "paystack",
+              "flutterwave"
+            ],
+            "default": "auto"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string"
+              },
+              "tx_ref": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "OrderDisputeCreateRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "not_received",
+              "damaged",
+              "wrong_item",
+              "not_as_described",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 3
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "required": [
+          "reason",
+          "description"
+        ]
+      },
+      "OrderDisputeCreateResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Dispute opened successfully"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "orderId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "example": "disputed"
+              },
+              "dispute": {
+                "type": "object",
+                "properties": {
+                  "openedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "example": "open"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

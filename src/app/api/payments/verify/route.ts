@@ -56,6 +56,20 @@ async function createReferralBonusHold(params: {
   }
 }
 
+async function markOrderPaidOnce(orderId: string, paymentReference: string) {
+  const updatedOrder = await Order.findOneAndUpdate(
+    { _id: orderId, paymentStatus: { $ne: "paid" } },
+    {
+      $set: {
+        paymentStatus: "paid",
+        paymentReference,
+      },
+    },
+    { new: true }
+  );
+  return updatedOrder;
+}
+
 /**
  * GET /api/payments/verify
  * Verify payment after buyer completes payment
@@ -100,50 +114,46 @@ export async function GET(request: NextRequest) {
         verification.data?.amount === order.totals.total * 100); // Handle kobo conversion
 
     if (isSuccessful) {
-      // Update order payment status
-      await Order.findByIdAndUpdate(orderId, {
-        $set: {
-          paymentStatus: "paid",
+      const paidOrder = await markOrderPaidOnce(orderId, reference);
+      if (paidOrder) {
+
+        // Create escrow hold
+        await escrow.createEscrowHold(
+          orderId,
+          order.totals.total,
+          reference
+        );
+
+        // Create referral bonus (held until escrow release)
+        await createReferralBonusHold({
+          buyerId: order.buyer.toString(),
+          orderId,
+          orderNumber: order.orderNumber,
+          totalNaira: order.totals.total,
           paymentReference: reference,
-        },
-      });
+        });
 
-      // Create escrow hold
-      await escrow.createEscrowHold(
-        orderId,
-        order.totals.total,
-        reference
-      );
+        // Notify buyer
+        await notifyPaymentUpdate(
+          order.buyer.toString(),
+          order.orderNumber,
+          "paid"
+        );
 
-      // Create referral bonus (held until escrow release)
-      await createReferralBonusHold({
-        buyerId: order.buyer.toString(),
-        orderId,
-        orderNumber: order.orderNumber,
-        totalNaira: order.totals.total,
-        paymentReference: reference,
-      });
+        // Notify seller
+        await notifyPaymentUpdate(
+          order.seller.toString(),
+          order.orderNumber,
+          "paid"
+        );
 
-      // Notify buyer
-      await notifyPaymentUpdate(
-        order.buyer.toString(),
-        order.orderNumber,
-        "paid"
-      );
-
-      // Notify seller
-      await notifyPaymentUpdate(
-        order.seller.toString(),
-        order.orderNumber,
-        "paid"
-      );
-
-      // Notify admins: payment received and funds in escrow (follow process to release after delivery)
-      await notifyAdminsPaymentReceived({
-        orderId,
-        orderNumber: order.orderNumber,
-        totalNaira: order.totals.total,
-      });
+        // Notify admins: payment received and funds in escrow (follow process to release after delivery)
+        await notifyAdminsPaymentReceived({
+          orderId,
+          orderNumber: order.orderNumber,
+          totalNaira: order.totals.total,
+        });
+      }
 
       return NextResponse.redirect(
         new URL(`/dashboard/orders/${orderId}?payment=success`, request.url)
@@ -205,13 +215,11 @@ export async function POST(request: NextRequest) {
       (verification.data?.amount === order.totals.total ||
         verification.data?.amount === order.totals.total * 100);
 
-    if (isSuccessful && order.paymentStatus !== "paid") {
-      // Update order payment status
-      await Order.findByIdAndUpdate(order._id, {
-        $set: {
-          paymentStatus: "paid",
-        },
-      });
+    if (isSuccessful) {
+      const paidOrder = await markOrderPaidOnce(order._id.toString(), reference);
+      if (!paidOrder) {
+        return NextResponse.json({ success: true, message: "Webhook already processed" });
+      }
 
       // Create escrow hold
       await escrow.createEscrowHold(

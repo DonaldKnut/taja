@@ -8,6 +8,20 @@ import User from "@/models/User";
 import WalletTransaction from "@/models/WalletTransaction";
 import PlatformSettings from "@/models/PlatformSettings";
 
+async function markOrderPaidOnce(orderId: string, paymentReference: string) {
+  const updatedOrder = await Order.findOneAndUpdate(
+    { _id: orderId, paymentStatus: { $ne: "paid" } },
+    {
+      $set: {
+        paymentStatus: "paid",
+        paymentReference,
+      },
+    },
+    { new: true }
+  );
+  return updatedOrder;
+}
+
 async function getReferralSettings() {
   const envPct = parseFloat(process.env.REFERRAL_BONUS_PERCENTAGE || "2");
   const enabledEnv = process.env.REFERRAL_ENABLED === "false" ? false : true;
@@ -117,13 +131,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (order.paymentStatus !== "paid") {
-        // Update order payment status
-        await Order.findByIdAndUpdate(order._id, {
-          $set: {
-            paymentStatus: "paid",
-          },
-        });
+      const paidOrder = await markOrderPaidOnce(order._id.toString(), txRef);
+      if (paidOrder) {
 
         // Create escrow hold
         await escrow.createEscrowHold(
