@@ -101,9 +101,11 @@ export async function POST(request: NextRequest) {
         compareAtPrice,
         images,
         inventory,
+        stock,
         shipping,
         specifications,
         seo,
+        variants,
         status = 'active',
       } = body;
 
@@ -131,6 +133,15 @@ export async function POST(request: NextRequest) {
       const existingProduct = await Product.findOne({ slug });
       const finalSlug = existingProduct ? `${slug}-${Date.now()}` : slug;
 
+      const normalizedInventoryQty = inventory?.quantity != null
+        ? Number(inventory.quantity)
+        : stock != null
+          ? Number(stock)
+          : 0;
+      const safeInventoryQty = Number.isFinite(normalizedInventoryQty)
+        ? Math.max(0, normalizedInventoryQty)
+        : 0;
+
       const product = await Product.create({
         seller: shop.owner,
         shop: shop._id,
@@ -146,9 +157,11 @@ export async function POST(request: NextRequest) {
         compareAtPrice: compareAtPrice != null ? Number(compareAtPrice) : undefined,
         images,
         inventory: {
-          quantity: inventory?.quantity ?? 0,
+          // Accept both inventory.quantity and legacy stock field.
+          quantity: safeInventoryQty,
           sku: inventory?.sku,
           trackQuantity: inventory?.trackQuantity !== false,
+          moq: inventory?.moq ?? 1,
         },
         shipping: {
           weight: shipping?.weight ?? 0,
@@ -160,6 +173,7 @@ export async function POST(request: NextRequest) {
         specifications: specifications || {},
         seo: seo || { tags: [] },
         status: status === 'draft' ? 'draft' : 'active',
+        variants: Array.isArray(variants) ? variants : [],
       });
 
       return NextResponse.json({

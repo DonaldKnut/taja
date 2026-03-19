@@ -113,6 +113,7 @@ export default function AdminProductsNewPage() {
     }
     setLoading(true);
     try {
+      const parsedStock = Math.max(0, parseInt(form.stock, 10) || 0);
       const res = await api("/api/admin/products", {
         method: "POST",
         body: JSON.stringify({
@@ -125,7 +126,14 @@ export default function AdminProductsNewPage() {
           compareAtPrice: form.compareAtPrice ? parseFloat(form.compareAtPrice) : undefined,
           images,
           condition: form.condition,
-          stock: parseInt(form.stock) || 1,
+          // Send inventory explicitly so API persists quantity correctly.
+          inventory: {
+            quantity: parsedStock,
+            trackQuantity: true,
+            moq: 1,
+          },
+          // Keep legacy field for backward compatibility with older handlers.
+          stock: parsedStock,
           status: isDraft ? "draft" : form.status,
           shipping: {
             weight: shipping.weight ? parseFloat(shipping.weight) : 0,
