@@ -524,8 +524,8 @@ export function ProductCard({
           )}
         </div>
 
-        <div className="mt-auto pt-3 flex items-center justify-between relative">
-          <div className="flex flex-col">
+        <div className="mt-auto pt-3 flex items-center justify-between gap-2 relative">
+          <div className="flex flex-col min-w-0">
             <ProductPrice
               price={displayMinPrice}
               maxPrice={displayMaxPrice}
@@ -536,7 +536,7 @@ export function ProductCard({
           </div>
 
           {/* Variations / Quick Add button */}
-          <div className="relative flex flex-col items-end">
+          <div className="relative flex flex-col items-end shrink-0">
             {hasVariants ? (
               <button
                 ref={optionsTriggerRef}
@@ -546,7 +546,7 @@ export function ProductCard({
                   e.stopPropagation();
                   setOptionsOpen((open) => !open);
                 }}
-                className="px-4 h-10 rounded-full bg-black text-white text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-gray-800 transition-all active:scale-95 flex items-center gap-2 relative z-10"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-black text-white text-[9px] sm:text-[10px] font-black uppercase tracking-[0.16em] sm:tracking-widest shadow-lg hover:bg-gray-800 transition-all active:scale-95 flex items-center gap-1.5 sm:gap-2 relative z-10 max-w-full"
               >
                 Options
                 <Plus className={cn("h-3 w-3 transition-transform", optionsOpen && "rotate-45")} />

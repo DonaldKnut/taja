@@ -1,17 +1,15 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Search, Filter, ShoppingCart, Zap, Gift, Tag, Star, Sparkles, ChevronRight, ShoppingBag, ShieldCheck, Crown } from "lucide-react";
+import { Search, Filter, Zap, Gift, Tag, Star, ChevronRight, ShoppingBag, ShieldCheck, Crown, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/product";
 import { useMarketplaceFeed } from "@/hooks/useMarketplaceFeed";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { CATEGORIES } from "@/lib/constants/categories";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { useCartStore } from "@/stores/cartStore";
 import { CartIcon } from "@/components/cart/CartIcon";
 
 // Sliding background images for the header
@@ -38,6 +36,12 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [selectedTab, setSelectedTab] = useState<string>("All");
     const [searchQuery, setSearchQuery] = useState("");
+    const [shopQuery, setShopQuery] = useState("");
+    const [sellerQuery, setSellerQuery] = useState("");
+    const [minPrice, setMinPrice] = useState("");
+    const [maxPrice, setMaxPrice] = useState("");
+    const [verifiedOnly, setVerifiedOnly] = useState(false);
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
     const [showVerifiedIntro, setShowVerifiedIntro] = useState(() => {
         if (typeof window !== "undefined" && !isInsideDashboard) {
             return !sessionStorage.getItem("taja_intro_played");
@@ -48,41 +52,46 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
 
     const { user } = useAuth();
     const firstName = user?.fullName?.split(" ")[0] || "Shopper";
-    const { items, toggleCart, getTotalItems } = useCartStore();
-    const cartCount = getTotalItems();
 
     const feed = useMarketplaceFeed({
         category: selectedCategory || undefined,
         search: searchQuery || undefined,
+        shop: shopQuery || undefined,
+        seller: sellerQuery || undefined,
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        verifiedOnly,
     });
 
-    // Derived Brands from Product Feed
-    const brands = useMemo(() => {
-        const uniqueBrands = new Set<string>();
-        feed.products.forEach(p => {
-            // Check specifications for brand
-            if (p.specifications?.brand) {
-                uniqueBrands.add(p.specifications.brand);
-            } else if (p.specifications?.Brand) {
-                uniqueBrands.add(p.specifications.Brand);
+    const availableShops = useMemo(() => {
+        const seen = new Set<string>();
+        const shops: string[] = [];
+        feed.products.forEach((product) => {
+            const shopName = typeof product.shop === "object" ? product.shop?.shopName : "";
+            if (shopName && !seen.has(shopName.toLowerCase())) {
+                seen.add(shopName.toLowerCase());
+                shops.push(shopName);
             }
         });
-
-        // Fallback if no brands found in feed, or to supplement
-        const list = Array.from(uniqueBrands).map(b => ({
-            name: b,
-            logo: `https://ui-avatars.com/api/?name=${encodeURIComponent(b)}&background=f8fafc&color=0f172a&bold=true`
-        }));
-
-        if (list.length === 0) {
-            return [
-                { name: "Nike", logo: "https://www.nike.com/favicon.ico" },
-                { name: "Apple", logo: "https://www.apple.com/favicon.ico" },
-                { name: "Sony", logo: "https://www.sony.net/favicon.ico" },
-            ];
-        }
-        return list;
+        return shops.sort((a, b) => a.localeCompare(b));
     }, [feed.products]);
+
+    const availableSellers = useMemo(() => {
+        const seen = new Set<string>();
+        const sellers: string[] = [];
+        feed.products.forEach((product) => {
+            const sellerName = typeof product.seller === "object" ? product.seller?.fullName : "";
+            if (sellerName && !seen.has(sellerName.toLowerCase())) {
+                seen.add(sellerName.toLowerCase());
+                sellers.push(sellerName);
+            }
+        });
+        return sellers.sort((a, b) => a.localeCompare(b));
+    }, [feed.products]);
+
+    const hasAdvancedFilters = Boolean(
+        selectedCategory || shopQuery || sellerQuery || minPrice || maxPrice || verifiedOnly
+    );
 
     const displayedProducts = useMemo(() => {
         let prods = feed.products;
@@ -90,6 +99,15 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
         if (selectedTab === "Best Deals") return prods.slice(0, 4);
         return prods;
     }, [feed.products, selectedTab]);
+
+    const clearAdvancedFilters = () => {
+        setSelectedCategory("");
+        setShopQuery("");
+        setSellerQuery("");
+        setMinPrice("");
+        setMaxPrice("");
+        setVerifiedOnly(false);
+    };
 
     // Intro timer
     useEffect(() => {
@@ -177,8 +195,11 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                     >
                         {/* ═══ Sliding Media Header ═══ */}
                         {/* ═══ Header Registry Search ═══ */}
-                        {!isInsideDashboard && (
-                            <section className="px-6 pt-12 pb-6 bg-white border-b border-gray-100">
+                        <section className={cn(
+                            "px-6 pb-6 bg-white border-b border-gray-100",
+                            isInsideDashboard ? "pt-8" : "pt-12"
+                        )}>
+                            {!isInsideDashboard && (
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="space-y-1">
                                         <p className="text-gray-400 text-xs font-medium uppercase tracking-widest leading-none">Premium Collection</p>
@@ -194,25 +215,135 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                         />
                                     </div>
                                 </div>
+                            )}
 
-                                {/* Search Bar - Functional at the top */}
-                                <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-taja-primary transition-colors">
-                                        <Search className="w-5 h-5" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        placeholder="Search for something special..."
-                                        className="w-full h-16 bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all shadow-sm"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                    <button className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black transition-colors bg-gray-50 rounded-xl">
-                                        <Filter className="w-4 h-4" />
-                                    </button>
+                            <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-taja-primary transition-colors">
+                                    <Search className="w-5 h-5" />
                                 </div>
-                            </section>
-                        )}
+                                <input
+                                    type="text"
+                                    placeholder="Search products, shops, and sellers..."
+                                    className="w-full h-16 bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all shadow-sm"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAdvancedFilters((prev) => !prev)}
+                                    className={cn(
+                                        "absolute right-3 top-1/2 -translate-y-1/2 h-10 px-3 flex items-center justify-center gap-2 transition-colors rounded-xl",
+                                        showAdvancedFilters || hasAdvancedFilters
+                                            ? "text-taja-primary bg-taja-light/40"
+                                            : "text-gray-400 hover:text-black bg-gray-50"
+                                    )}
+                                >
+                                    <Filter className="w-4 h-4" />
+                                    <ChevronDown className={cn("w-3 h-3 transition-transform", showAdvancedFilters && "rotate-180")} />
+                                </button>
+                            </div>
+
+                            <AnimatePresence initial={false}>
+                                {showAdvancedFilters && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0, y: -4 }}
+                                        animate={{ opacity: 1, height: "auto", y: 0 }}
+                                        exit={{ opacity: 0, height: 0, y: -4 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="mt-4 rounded-3xl border border-gray-200 bg-gray-50/70 p-4 md:p-5 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <SlidersHorizontal className="w-4 h-4 text-taja-primary" />
+                                                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-gray-700">Advanced Filters</h4>
+                                                </div>
+                                                {hasAdvancedFilters && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={clearAdvancedFilters}
+                                                        className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-gray-800"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                        Clear
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                                                <select
+                                                    value={selectedCategory}
+                                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                                                >
+                                                    <option value="">All Categories</option>
+                                                    {(feed.categories || []).map((category) => (
+                                                        <option key={category} value={category}>{category}</option>
+                                                    ))}
+                                                </select>
+
+                                                <input
+                                                    type="text"
+                                                    list="marketplace-shops-list"
+                                                    value={shopQuery}
+                                                    onChange={(e) => setShopQuery(e.target.value)}
+                                                    placeholder="Filter by shop"
+                                                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                                                />
+                                                <datalist id="marketplace-shops-list">
+                                                    {availableShops.map((shop) => (
+                                                        <option key={shop} value={shop} />
+                                                    ))}
+                                                </datalist>
+
+                                                <input
+                                                    type="text"
+                                                    list="marketplace-sellers-list"
+                                                    value={sellerQuery}
+                                                    onChange={(e) => setSellerQuery(e.target.value)}
+                                                    placeholder="Filter by seller"
+                                                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                                                />
+                                                <datalist id="marketplace-sellers-list">
+                                                    {availableSellers.map((sellerName) => (
+                                                        <option key={sellerName} value={sellerName} />
+                                                    ))}
+                                                </datalist>
+
+                                                <label className="h-11 rounded-xl border border-gray-200 bg-white px-3 flex items-center gap-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={verifiedOnly}
+                                                        onChange={(e) => setVerifiedOnly(e.target.checked)}
+                                                        className="h-4 w-4 rounded border-gray-300 text-taja-primary focus:ring-taja-primary/30"
+                                                    />
+                                                    <span className="text-sm font-semibold text-gray-700">Verified shops only</span>
+                                                </label>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    value={minPrice}
+                                                    onChange={(e) => setMinPrice(e.target.value)}
+                                                    placeholder="Minimum price (₦)"
+                                                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    value={maxPrice}
+                                                    onChange={(e) => setMaxPrice(e.target.value)}
+                                                    placeholder="Maximum price (₦)"
+                                                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                                                />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </section>
 
                         {/* ═══ Stats View ═══ */}
                         <section className="px-6 py-8 grid grid-cols-2 gap-4 -mt-6 relative z-20">

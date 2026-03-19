@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, productsApi } from "@/lib/api";
+import { api } from "@/lib/api";
 import type { Product, Shop } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -9,6 +9,11 @@ interface MarketplaceFeedOptions {
   category?: string;
   limit?: number;
   search?: string;
+  shop?: string;
+  seller?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  verifiedOnly?: boolean;
   signal?: AbortSignal;
 }
 
@@ -33,7 +38,7 @@ const fallbackCategories = [
 ];
 
 export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
-  const { category, limit, search } = options;
+  const { category, limit, search, shop, seller, minPrice, maxPrice, verifiedOnly } = options;
   const { user, isAuthenticated } = useAuth();
   const [data, setData] = useState<MarketplaceFeedResponse>({
     products: [],
@@ -52,26 +57,19 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
       setError(null);
 
       try {
-        // If search query is provided, use productsApi.search instead
-        if (options?.search) {
-          const response = await productsApi.search(options.search, undefined, options.limit);
-
-          const searchResults = response?.data?.products || response?.products || response?.data || [];
-
-          setData({
-            products: searchResults,
-            recommendedShops: [],
-            categories: fallbackCategories,
-            savedFilters: [],
-            personalizedHeadline: undefined,
-            experimentVariant: "control",
-          });
-          return;
-        }
-
-        // Otherwise use the marketplace feed endpoint
+        // Fetch marketplace feed endpoint with server-side filtering.
         const params = new URLSearchParams();
         if (category) params.append("category", category);
+        if (search) params.append("search", search);
+        if (shop) params.append("shop", shop);
+        if (seller) params.append("seller", seller);
+        if (typeof minPrice === "number" && !Number.isNaN(minPrice)) {
+          params.append("minPrice", `${minPrice}`);
+        }
+        if (typeof maxPrice === "number" && !Number.isNaN(maxPrice)) {
+          params.append("maxPrice", `${maxPrice}`);
+        }
+        if (verifiedOnly) params.append("verifiedOnly", "true");
         params.append("limit", `${limit ?? 50}`);
         if (isAuthenticated && user?._id) params.append("userId", user._id);
         if (isAuthenticated && (user as any)?.role === "seller") params.append("includeMine", "true");
@@ -144,7 +142,7 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
         setLoading(false);
       }
     },
-    [category, limit, options?.search, isAuthenticated, user?._id]
+    [category, limit, search, shop, seller, minPrice, maxPrice, verifiedOnly, isAuthenticated, user?._id]
   );
 
   useEffect(() => {
