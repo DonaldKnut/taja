@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import connectDB from '@/lib/db';
 import Order from '@/models/Order';
 import { requireAuth } from '@/lib/middleware';
@@ -12,6 +13,13 @@ export async function GET(
 ) {
   return requireAuth(async (req, user) => {
     try {
+      if (!mongoose.Types.ObjectId.isValid(params.id)) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid order id' },
+          { status: 400 }
+        );
+      }
+
       await connectDB();
 
       const order = await Order.findOne({ _id: params.id, isDeleted: { $ne: true } })
@@ -61,6 +69,13 @@ export async function PUT(
 ) {
   return requireAuth(async (req, user) => {
     try {
+      if (!mongoose.Types.ObjectId.isValid(params.id)) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid order id' },
+          { status: 400 }
+        );
+      }
+
       const body = await request.json();
       const { status } = body;
 
@@ -142,6 +157,13 @@ export async function DELETE(
 ) {
   return requireAuth(async (req, user) => {
     try {
+      if (!mongoose.Types.ObjectId.isValid(params.id)) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid order id' },
+          { status: 400 }
+        );
+      }
+
       await connectDB();
 
       const order = await Order.findOne({ _id: params.id, isDeleted: { $ne: true } });

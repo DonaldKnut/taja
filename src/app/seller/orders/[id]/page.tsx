@@ -38,6 +38,8 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { api, checkoutApi } from "@/lib/api";
 import toast from "react-hot-toast";
 
+const isMongoObjectId = (value: string) => /^[a-f\d]{24}$/i.test(value);
+
 const narrativeStatus = {
   pending: {
     label: "Order placed",
@@ -96,6 +98,12 @@ export default function SellerOrderDetailPage() {
 
   useEffect(() => {
     if (params.id) {
+      const id = String(params.id);
+      if (!isMongoObjectId(id)) {
+        toast.error("This order link is invalid. Please open the order from your list.");
+        router.push("/seller/orders");
+        return;
+      }
       fetchOrder();
     }
   }, [params.id]);

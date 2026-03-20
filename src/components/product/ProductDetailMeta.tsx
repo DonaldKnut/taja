@@ -2,6 +2,7 @@
 
 import { Heart, Share2, Star, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPricing";
 
 interface ProductDetailMetaProps {
   product: any;
@@ -21,8 +22,10 @@ export function ProductDetailMeta({
   onToggleWishlist,
 }: ProductDetailMetaProps) {
   const selectedVariant = product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId);
-  const currentPrice = selectedVariant?.price || product.price;
-  const currentCompareAtPrice = selectedVariant?.compareAtPrice || product.compareAtPrice;
+  const currentPrice = getEffectivePrice(product.price, selectedVariant?.price);
+  const currentCompareAtPrice = selectedVariant?.compareAtPrice ?? product.compareAtPrice;
+  const { minPrice, maxPrice } = getProductDisplayPriceRange(product);
+  const showRange = !selectedVariantId && !!maxPrice;
 
   return (
     <div className="space-y-6">
@@ -71,10 +74,9 @@ export function ProductDetailMeta({
       <div className="space-y-2">
         <div className="flex items-baseline gap-4">
           <span className="text-4xl sm:text-5xl font-black text-taja-primary tracking-tighter">
-            ₦{currentPrice.toLocaleString()}
-            {!selectedVariantId && product.variants?.length > 0 && product.maxPrice > product.price && (
-              <span className="text-3xl font-bold ml-1"> - ₦{product.maxPrice.toLocaleString()}</span>
-            )}
+            {showRange
+              ? `₦${minPrice.toLocaleString()} - ₦${maxPrice.toLocaleString()}`
+              : `₦${currentPrice.toLocaleString()}`}
           </span>
           {currentCompareAtPrice > currentPrice && (
             <span className="text-xl text-gray-300 line-through decoration-emerald-500/30 decoration-2">
@@ -127,7 +129,7 @@ export function ProductDetailMeta({
                       isSelected ? "text-taja-primary" : "text-gray-300"
                     )}
                   >
-                    ₦{(variant.price || product.price).toLocaleString()}
+                    ₦{getEffectivePrice(product.price, variant.price).toLocaleString()}
                   </span>
                 </button>
               );

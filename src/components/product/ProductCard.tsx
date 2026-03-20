@@ -10,6 +10,7 @@ import { ImageSlider } from "@/components/ui/ImageSlider";
 import { ProductPrice } from "./ProductPrice";
 import { ShopLink } from "../shop/ShopLink";
 import { formatCurrency } from "@/lib/utils";
+import { getProductDisplayPriceRange } from "@/lib/productPricing";
 import { trackEvent } from "@/lib/analytics";
 import type { Product, Shop } from "@/types";
 import { cn } from "@/lib/utils";
@@ -212,24 +213,7 @@ export function ProductCard({
   };
 
   const hasVariants = !!(product.variants && product.variants.length > 0);
-
-  // Derive min/max price from variants when present, fall back to product.price/maxPrice
-  let displayMinPrice = product.price;
-  let displayMaxPrice = product.maxPrice;
-
-  if (hasVariants) {
-    const activeVariants = (product.variants || []).filter((v) => v && (v as any).active !== false);
-    const variantPrices = activeVariants
-      .map((v) => v.price)
-      .filter((p): p is number => typeof p === "number" && !Number.isNaN(p));
-
-    if (variantPrices.length > 0) {
-      const min = Math.min(...variantPrices);
-      const max = Math.max(...variantPrices);
-      displayMinPrice = min;
-      displayMaxPrice = max > min ? max : undefined;
-    }
-  }
+  const { minPrice: displayMinPrice, maxPrice: displayMaxPrice } = getProductDisplayPriceRange(product);
 
   const optionsPanelContent = hasVariants && optionsOpen && optionsPanelPosition && typeof document !== "undefined" && createPortal(
     <>

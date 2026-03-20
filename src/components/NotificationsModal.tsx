@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { toast } from "react-hot-toast";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,7 @@ interface NotificationsModalProps {
 
 export function NotificationsModal({ open, onClose }: NotificationsModalProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const {
     notifications,
@@ -76,16 +78,41 @@ export function NotificationsModal({ open, onClose }: NotificationsModalProps) {
     toast.success("Notification deleted");
   };
 
+  const resolveNotificationTarget = (rawPath: string) => {
+    if (!rawPath) return rawPath;
+
+    // Seller should not be redirected to buyer dashboard order pages.
+    if (user?.role === "seller") {
+      if (rawPath.startsWith("/dashboard/orders")) {
+        return rawPath.replace("/dashboard/orders", "/seller/orders");
+      }
+
+      if (rawPath.startsWith("http://") || rawPath.startsWith("https://")) {
+        try {
+          const url = new URL(rawPath);
+          if (url.pathname.startsWith("/dashboard/orders")) {
+            url.pathname = url.pathname.replace("/dashboard/orders", "/seller/orders");
+            return `${url.pathname}${url.search}${url.hash}`;
+          }
+        } catch {
+          // Ignore malformed URL and keep original target.
+        }
+      }
+    }
+
+    return rawPath;
+  };
+
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
       markAsRead(notification._id);
     }
 
     if (notification.link) {
-      router.push(notification.link);
+      router.push(resolveNotificationTarget(notification.link));
       onClose();
     } else if (notification.actionUrl) {
-      router.push(notification.actionUrl);
+      router.push(resolveNotificationTarget(notification.actionUrl));
       onClose();
     }
   };

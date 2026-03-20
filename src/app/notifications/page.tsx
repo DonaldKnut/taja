@@ -50,7 +50,7 @@ const mockNotifications: Notification[] = [
     message: "You have a new order (#TJS001234) worth ₦25,000",
     read: false,
     priority: "high",
-    actionUrl: "/seller/orders/1",
+    actionUrl: "/seller/orders",
     createdAt: new Date(Date.now() - 30 * 60 * 1000),
   },
   {
@@ -60,7 +60,7 @@ const mockNotifications: Notification[] = [
     message: "Payment of ₦18,500 has been processed for order #TJS001230",
     read: false,
     priority: "normal",
-    actionUrl: "/seller/orders/2",
+    actionUrl: "/seller/orders",
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
   },
   {

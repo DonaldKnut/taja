@@ -7,6 +7,7 @@ import { cartApi, productsApi } from "@/lib/api";
 import toast from "react-hot-toast";
 import { StructuredData } from "@/components/StructuredData";
 import { generateProductStructuredData, generateBreadcrumbs } from "@/lib/seo";
+import { getEffectivePrice } from "@/lib/productPricing";
 import { AIRecommendations } from "@/components/product/AIRecommendations";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Container } from "@/components/layout";
@@ -175,9 +176,7 @@ export default function ProductDetailPage() {
         };
 
         setProduct(transformedProduct);
-        if (transformedProduct.variants?.length > 0) {
-          setSelectedVariantId(transformedProduct.variants[0]._id || transformedProduct.variants[0].id);
-        }
+        setSelectedVariantId(null);
       } catch (error: any) {
         console.error("Error fetching product:", error);
         toast.error(error?.message || "Failed to load product");
@@ -194,7 +193,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = async () => {
     try {
       const selectedVariant = product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId);
-      const finalPrice = selectedVariant?.price || product.price;
+      const finalPrice = getEffectivePrice(product.price, selectedVariant?.price);
       const variantImage = selectedVariant?.image;
       const cartImages = variantImage ? [variantImage, ...(product.images || [])] : product.images;
 
