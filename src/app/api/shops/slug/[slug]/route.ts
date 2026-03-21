@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Shop from '@/models/Shop';
 import { authenticate } from '@/lib/middleware';
+import { notifyOwnerViewAlert } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +44,36 @@ export async function GET(
     await Shop.findByIdAndUpdate(shop._id, {
       $inc: { 'stats.viewCount': 1 },
     });
+
+    // Notify shop owner that their shop was viewed (throttled per viewer + shop).
+    try {
+      const auth = await authenticate(request);
+      const ownerId =
+        typeof (shop as any).owner === 'object' && (shop as any).owner?._id
+          ? String((shop as any).owner._id)
+          : String((shop as any).owner);
+      const viewerUserId = auth.user?.userId ? String(auth.user.userId) : null;
+      const viewerName = auth.user?.fullName || undefined;
+      const forwardedFor = request.headers.get('x-forwarded-for') || '';
+      const ip = forwardedFor.split(',')[0]?.trim() || 'unknown-ip';
+      const ua = request.headers.get('user-agent') || 'unknown-ua';
+      const anonViewerKey = `anon:${ip}:${ua.slice(0, 80)}`;
+      const viewerKey = viewerUserId ? `user:${viewerUserId}` : anonViewerKey;
+
+      if (ownerId && viewerUserId !== ownerId) {
+        await notifyOwnerViewAlert({
+          ownerUserId: ownerId,
+          entityType: 'shop',
+          entityId: String((shop as any)._id),
+          entityName: (shop as any).shopName,
+          entitySlug: (shop as any).shopSlug,
+          viewerName,
+          viewerKey,
+        });
+      }
+    } catch (notifyError) {
+      console.error('Shop view notification error:', notifyError);
+    }
 
     // Calculate dynamic stats and fetch products for showroom
     const Product = (await import('@/models/Product')).default;
@@ -105,7 +136,7 @@ export async function GET(
       ]),
       ShopFollow.countDocuments({ shop: shop._id }),
       Product.find({ shop: shop._id, status: 'active' })
-        .select('title slug price maxPrice images condition category status createdAt')
+        .select('title slug price maxPrice images condition category status createdAt variants likes')
         .sort({ createdAt: -1 })
         .limit(100)
         .lean(),

@@ -20,8 +20,13 @@ export async function GET(request: NextRequest) {
     const tag = searchParams.get('tag');
     const search = searchParams.get('search');
     const author = searchParams.get('author');
+    const featured = searchParams.get('featured');
 
     const query: any = { status: 'published' };
+
+    if (featured === 'true' || featured === '1') {
+      query.isFeatured = true;
+    }
 
     if (category) {
       query.category = category;

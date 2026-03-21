@@ -19,6 +19,7 @@ import {
   Upload,
   X,
   LayoutGrid,
+  Camera,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api, uploadProductImage } from "@/lib/api";
@@ -59,7 +60,6 @@ export default function AdminProductsNewPage() {
     description: "",
     category: "",
     price: "",
-    maxPrice: "",
     compareAtPrice: "",
     imageUrls: "",
     condition: "new",
@@ -122,7 +122,6 @@ export default function AdminProductsNewPage() {
           description: form.description.trim(),
           category: form.category,
           price: parseFloat(form.price),
-          maxPrice: form.maxPrice ? parseFloat(form.maxPrice) : undefined,
           compareAtPrice: form.compareAtPrice ? parseFloat(form.compareAtPrice) : undefined,
           images,
           condition: form.condition,
@@ -585,16 +584,8 @@ export default function AdminProductsNewPage() {
                 onChange={handleVariantImageUpload}
               />
               {form.variants.length > 0 ? (
-                <div className="space-y-6">
-                  {/* Desktop Headers - Hidden on Mobile */}
-                  <div className="hidden lg:grid grid-cols-12 gap-4 px-4 mb-2">
-                    <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-gray-400">Option Name (e.g. Red / XL)</div>
-                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Price (₦)</div>
-                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Stock</div>
-                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Weight (kg)</div>
-                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">Variant Image</div>
-                    <div className="col-span-1" />
-                  </div>
+                <div className="space-y-10">
+                  {/* Grid layout labels are now inside the cards for more space */}
 
                   <AnimatePresence>
                     {form.variants.map((v, i) => (
@@ -605,84 +596,88 @@ export default function AdminProductsNewPage() {
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="relative p-6 sm:p-4 glass-card bg-white border-gray-100 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-premium transition-all group"
                       >
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-4 items-end lg:items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-start">
                           {/* Option Name Input */}
-                          <div className="lg:col-span-4 min-w-0 space-y-2 lg:space-y-0">
-                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Option Name</label>
+                          <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Option Name</label>
                             <input
                               type="text"
                               value={v.name}
                               onChange={(e) => updateVariant(i, "name", e.target.value)}
-                              placeholder="e.g. Red / XL"
-                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-bold transition-all"
+                              placeholder="Red / XL"
+                              className="w-full h-16 sm:h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-lg font-bold text-taja-secondary shadow-sm"
                             />
                           </div>
 
                           {/* Price Input */}
-                          <div className="lg:col-span-2 min-w-0 space-y-2 lg:space-y-0">
-                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
+                          <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
                             <input
                               type="number"
                               value={v.price}
                               onChange={(e) => updateVariant(i, "price", e.target.value)}
-                              placeholder="Same as base"
-                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-black text-taja-primary transition-all"
+                              placeholder="0"
+                              className="w-full h-16 sm:h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-xl font-black text-taja-primary text-center shadow-sm"
                             />
                           </div>
 
                           {/* Stock Input */}
-                          <div className="lg:col-span-2 min-w-0 space-y-2 lg:space-y-0">
-                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
+                          <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
                             <input
                               type="number"
                               value={v.stock}
                               onChange={(e) => updateVariant(i, "stock", e.target.value)}
-                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-bold transition-all"
+                              placeholder="0"
+                              className="w-full h-16 sm:h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-lg font-bold text-taja-secondary text-center shadow-sm"
                             />
                           </div>
 
                           {/* Weight Input */}
-                          <div className="lg:col-span-2 min-w-0 space-y-2 lg:space-y-0">
-                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
+                          <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
                             <input
                               type="number"
                               step="0.01"
                               value={(v as any).weight}
                               onChange={(e) => updateVariant(i, "weight", e.target.value)}
-                              placeholder="Weight"
-                              className="w-full h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-medium text-gray-400 transition-all"
+                              placeholder="0"
+                              className="w-full h-16 sm:h-16 px-4 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-base font-medium text-gray-500 text-center shadow-sm"
                             />
                           </div>
 
-                          {/* Variant Image: preview + choose from slider or upload own */}
-                          <div className="lg:col-span-3 min-w-0 space-y-2 lg:space-y-0">
-                            <label className="lg:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                          {/* Variant Image Section */}
+                          <div className="sm:col-span-2 space-y-3 pt-2">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                               Variant Image
                             </label>
-                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
-                              {(v as any).image ? (
-                                <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-                                  <img src={(v as any).image} alt="" className="w-full h-full object-cover" />
-                                </div>
-                              ) : uploadingVariantImage === i ? (
-                                <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center">
-                                  <Loader2 className="h-6 w-6 animate-spin text-taja-primary" />
-                                </div>
-                              ) : null}
-                              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                            <div className="flex flex-col sm:flex-row gap-6 items-center bg-gray-50/30 p-4 rounded-[2rem] border border-gray-100/50">
+                              <div className="flex-shrink-0">
+                                {(v as any).image ? (
+                                  <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white shadow-premium">
+                                    <img src={(v as any).image} alt="" className="w-full h-full object-cover" />
+                                  </div>
+                                ) : (
+                                  <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-200 bg-white flex flex-col items-center justify-center gap-1 text-gray-300">
+                                    <Camera className="w-6 h-6" />
+                                    <span className="text-[8px] font-black uppercase tracking-widest">No Image</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                                 <select
                                   value={(v as any).image || ""}
                                   onChange={(e) => updateVariant(i, "image", e.target.value)}
-                                  className="w-full min-w-0 h-12 px-4 glass-card border-white/20 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-taja-primary/20 rounded-xl text-xs font-medium text-taja-secondary appearance-none"
+                                  className="w-full h-14 px-6 bg-white border border-gray-100 focus:border-taja-primary focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-xl text-xs font-bold text-taja-secondary appearance-none shadow-sm"
                                   disabled={uploadingVariantImage === i}
                                 >
-                                  <option value="">{imageList.length ? "Use main product image" : "Pick or upload below"}</option>
+                                  <option value="">{imageList.length ? "Main Image / Gallery" : "Pick Image"}</option>
                                   {imageList.map((url, idx) => (
-                                    <option key={url} value={url}>
-                                      Image {idx + 1} of slider
-                                    </option>
+                                    <option key={url} value={url}>Side Photo {idx + 1}</option>
                                   ))}
                                 </select>
+
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -690,30 +685,28 @@ export default function AdminProductsNewPage() {
                                     variantImageInputRef.current?.click();
                                   }}
                                   disabled={uploadingVariantImage !== null || imageList.length >= 10}
-                                  className="flex items-center justify-center gap-2 h-10 px-3 rounded-xl border border-gray-200 bg-white text-[10px] font-bold text-taja-secondary hover:bg-gray-50 hover:border-taja-primary/30 disabled:opacity-50 disabled:pointer-events-none"
+                                  className="flex items-center justify-center gap-2 h-14 px-6 rounded-xl border border-gray-200 bg-white text-[10px] font-black uppercase tracking-widest text-taja-secondary hover:bg-gray-50 hover:border-taja-primary transition-all shadow-sm disabled:opacity-50"
                                 >
                                   {uploadingVariantImage === i ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <Loader2 className="h-5 w-5 animate-spin text-taja-primary" />
                                   ) : (
-                                    <Upload className="h-3.5 w-3.5" />
+                                    <Plus className="h-5 w-5" />
                                   )}
-                                  {uploadingVariantImage === i ? "Uploading…" : "Upload different image"}
+                                  {uploadingVariantImage === i ? "Wait..." : "New Photo"}
                                 </button>
                               </div>
                             </div>
                           </div>
-
-                          {/* Remove Button */}
-                          <div className="lg:col-span-1 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => removeVariant(i)}
-                              className="w-10 h-10 flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition-colors shadow-sm bg-white border border-gray-100"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
                         </div>
+
+                        {/* Absolute Remove Button */}
+                        <button
+                          type="button"
+                          onClick={() => removeVariant(i)}
+                          className="absolute -top-3 -right-3 w-10 h-10 flex items-center justify-center bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-full transition-all shadow-huge border border-gray-100 z-10 group/del"
+                        >
+                          <X className="h-5 w-5 transition-transform group-hover/del:scale-110" />
+                        </button>
                       </motion.div>
                     ))}
                   </AnimatePresence>

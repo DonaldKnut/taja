@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Sparkles, TrendingUp, Package, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { getProductDisplayPriceRange } from "@/lib/productPricing";
 import { Button } from "@/components/ui/Button";
 
 interface Product {
@@ -15,6 +16,7 @@ interface Product {
   slug: string;
   price: number;
   maxPrice?: number;
+  variants?: Array<{ price?: number; active?: boolean }>;
   images: string[];
   rating?: number;
   soldCount?: number;
@@ -142,7 +144,13 @@ export function HomepageRecommendations() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                {group.products.slice(0, 4).map((product, idx) => (
+                {group.products.slice(0, 4).map((product, idx) => {
+                  const { minPrice, maxPrice } = getProductDisplayPriceRange(product);
+                  const priceLabel =
+                    maxPrice !== undefined && maxPrice > minPrice
+                      ? `${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}`
+                      : formatCurrency(minPrice);
+                  return (
                   <motion.div
                     key={product._id}
                     initial={{ opacity: 0, y: 20 }}
@@ -181,10 +189,7 @@ export function HomepageRecommendations() {
                         </h4>
 
                         <div className="text-lg font-bold text-taja-secondary">
-                          {product.maxPrice && product.maxPrice > product.price
-                            ? `${formatCurrency(product.price)} - ${formatCurrency(product.maxPrice)}`
-                            : formatCurrency(product.price)
-                          }
+                          {priceLabel}
                         </div>
 
                         {product.shop && (
@@ -195,7 +200,8 @@ export function HomepageRecommendations() {
                       </div>
                     </Link>
                   </motion.div>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
           ))}

@@ -58,12 +58,22 @@ export function ProductPrice({
     lg: "text-2xl",
   };
 
-  const hasRange = hasVariants && maxPrice && maxPrice > price;
+  const hasRange = maxPrice !== undefined && maxPrice > price;
+
+  const rangeLabel =
+    hasRange && hasVariants
+      ? `From ${formatPrice(price)} - ${formatPrice(maxPrice)}`
+      : hasRange
+        ? `${formatPrice(price)} - ${formatPrice(maxPrice)}`
+        : formatPrice(price);
 
   return (
     <div className={cn("flex flex-col", className)}>
-      <span className={cn("font-bold text-gray-900", sizeClasses[size])}>
-        {hasRange ? `${formatPrice(price)} - ${formatPrice(maxPrice)}` : formatPrice(price)}
+      <span 
+        className={cn("font-black text-gray-900 tracking-tight", sizeClasses[size])}
+        style={{ fontFamily: 'var(--font-sora), sans-serif' }}
+      >
+        {rangeLabel}
       </span>
       {showCompare && compareAtPrice && compareAtPrice > price && (
         <span className="text-sm text-gray-500 line-through">

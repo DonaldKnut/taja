@@ -75,7 +75,7 @@ export function ProductDetailMeta({
         <div className="flex items-baseline gap-4">
           <span className="text-4xl sm:text-5xl font-black text-taja-primary tracking-tighter">
             {showRange
-              ? `₦${minPrice.toLocaleString()} - ₦${maxPrice.toLocaleString()}`
+              ? `From ₦${minPrice.toLocaleString()} - ₦${maxPrice.toLocaleString()}`
               : `₦${currentPrice.toLocaleString()}`}
           </span>
           {currentCompareAtPrice > currentPrice && (

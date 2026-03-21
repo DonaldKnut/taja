@@ -406,6 +406,150 @@ export async function notifyDeliveryUpdate(
   });
 }
 
+/**
+ * Notify an owner that someone viewed their product/shop.
+ * Deduplicates by owner + entity + viewer key within a cooldown window.
+ */
+export async function notifyOwnerViewAlert(params: {
+  ownerUserId: string;
+  entityType: 'product' | 'shop';
+  entityId: string;
+  entityName?: string;
+  entitySlug?: string;
+  viewerName?: string;
+  viewerKey: string;
+  cooldownMinutes?: number;
+}) {
+  const {
+    ownerUserId,
+    entityType,
+    entityId,
+    entityName,
+    entitySlug,
+    viewerName,
+    viewerKey,
+    cooldownMinutes = 180,
+  } = params;
+
+  try {
+    await connectDB();
+
+    const cutoff = new Date(Date.now() - cooldownMinutes * 60 * 1000);
+    const recent = await Notification.findOne({
+      user: ownerUserId,
+      type: 'shop',
+      'metadata.event': 'profile_view',
+      'metadata.entityType': entityType,
+      'metadata.entityId': entityId,
+      'metadata.viewerKey': viewerKey,
+      createdAt: { $gte: cutoff },
+    })
+      .select('_id')
+      .lean();
+
+    if (recent) return null;
+
+    const actor = viewerName?.trim() ? viewerName.trim() : 'Someone';
+    const noun = entityType === 'product' ? 'product' : 'shop';
+    const title = entityType === 'product' ? 'Product viewed' : 'Shop discovered';
+    const readableName = entityName?.trim() || `your ${noun}`;
+    const message = `${actor} viewed ${readableName}. Your listing is getting attention.`;
+    const link =
+      entityType === 'product' && entitySlug
+        ? `/seller/products`
+        : entityType === 'shop'
+          ? `/seller/dashboard`
+          : '/seller';
+
+    return createNotification({
+      userId: ownerUserId,
+      type: 'shop',
+      title,
+      message,
+      link,
+      actionUrl: link,
+      priority: 'normal',
+      metadata: {
+        event: 'profile_view',
+        entityType,
+        entityId,
+        entitySlug,
+        viewerKey,
+      },
+    });
+  } catch (error: any) {
+    console.error('Failed to notify owner about view:', error);
+    return null;
+  }
+}
+
+/**
+ * Notify seller that a product received a new like/wishlist.
+ * Deduplicates per seller + product + liker key within a cooldown window.
+ */
+export async function notifySellerProductLiked(params: {
+  sellerUserId: string;
+  productId: string;
+  productTitle?: string;
+  likerName?: string;
+  likerKey: string;
+  likesCount?: number;
+  cooldownMinutes?: number;
+}) {
+  const {
+    sellerUserId,
+    productId,
+    productTitle,
+    likerName,
+    likerKey,
+    likesCount,
+    cooldownMinutes = 1440, // 24h per liker to avoid notification spam
+  } = params;
+
+  try {
+    await connectDB();
+
+    const cutoff = new Date(Date.now() - cooldownMinutes * 60 * 1000);
+    const recent = await Notification.findOne({
+      user: sellerUserId,
+      type: 'shop',
+      'metadata.event': 'product_like',
+      'metadata.productId': productId,
+      'metadata.likerKey': likerKey,
+      createdAt: { $gte: cutoff },
+    })
+      .select('_id')
+      .lean();
+
+    if (recent) return null;
+
+    const actor = likerName?.trim() ? likerName.trim() : 'Someone';
+    const suffix =
+      typeof likesCount === 'number' && likesCount >= 0
+        ? ` (${likesCount} total likes)`
+        : '';
+
+    return createNotification({
+      userId: sellerUserId,
+      type: 'shop',
+      title: 'New product like',
+      message: `${actor} liked ${productTitle || 'your product'}${suffix}.`,
+      link: '/seller/products',
+      actionUrl: '/seller/products',
+      priority: 'normal',
+      metadata: {
+        event: 'product_like',
+        productId,
+        likerKey,
+        likesCount,
+      },
+    });
+  } catch (error: any) {
+    console.error('Failed to notify seller about product like:', error);
+    return null;
+  }
+}
+
 
 
 

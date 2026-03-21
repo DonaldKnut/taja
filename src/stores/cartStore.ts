@@ -26,6 +26,8 @@ interface CartStore {
   updateQuantity: (id: string, variantId: string | undefined, quantity: number) => void;
   clearCart: () => void;
   toggleCart: () => void;
+  openDrawer: () => void;
+  closeDrawer: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
 }
@@ -123,6 +125,8 @@ export const useCartStore = create<CartStore>()(
       toggleCart: () => {
         set({ isOpen: !get().isOpen });
       },
+      openDrawer: () => set({ isOpen: true }),
+      closeDrawer: () => set({ isOpen: false }),
 
       getTotalPrice: () => {
         return get().items.reduce(

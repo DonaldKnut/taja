@@ -48,13 +48,15 @@ export function WishlistDrawer() {
 
         // Add to cart
         addItemToCart({
-            productId: item._id,
+            _id: item._id,
             title: item.title,
             price: item.price,
-            image: item.images[0] || "/placeholder.jpg",
-            shopId: item.shop._id || item.shop, // Depending on population depth
-            shopName: item.shop.shopName || "Taja Shop"
-        }, 1);
+            images: item.images || ["/placeholder.jpg"],
+            seller: item.shop?.shopName || "Taja Store",
+            shopSlug: item.shop?.shopSlug,
+            moq: 1,
+            stock: item.inventory?.quantity ?? 999
+        });
 
         // Remove from wishlist
         await removeItem(item._id);
@@ -85,14 +87,14 @@ export function WishlistDrawer() {
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
                         className="relative w-full max-w-md h-full bg-white shadow-huge flex flex-col"
                     >
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white z-10">
+                        {/* Header: Focused on clarity and branding */}
+                        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 bg-white z-10">
                             <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-rose-50 rounded-xl text-rose-500">
+                                <div className="p-2.5 bg-rose-50 rounded-xl text-rose-500 hidden min-[400px]:block">
                                     <Heart className="h-5 w-5 fill-current" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Your Wishlist</h2>
+                                    <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Your Wishlist</h2>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                                         {items.length} {items.length === 1 ? "Item" : "Items"} Saved
                                     </p>
@@ -154,13 +156,13 @@ export function WishlistDrawer() {
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
-                                                className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex gap-4 group hover:shadow-md transition-shadow"
+                                                className="bg-white p-3 sm:p-4 rounded-[1.5rem] sm:rounded-3xl border border-gray-100 shadow-premium-subtle flex gap-3 sm:gap-4 group hover:shadow-premium transition-all"
                                             >
-                                                {/* Image */}
+                                                {/* Image: Compact for small screens */}
                                                 <Link
                                                     href={`/product/${item.slug}`}
                                                     onClick={closeDrawer}
-                                                    className="relative h-24 w-24 rounded-2xl bg-slate-100 overflow-hidden flex-shrink-0"
+                                                    className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-slate-50 overflow-hidden flex-shrink-0 border border-gray-50"
                                                 >
                                                     <Image
                                                         src={item.images?.[0] || "/placeholder.jpg"}
@@ -169,51 +171,56 @@ export function WishlistDrawer() {
                                                         className="object-cover transition-transform group-hover:scale-105"
                                                     />
                                                 </Link>
-
-                                                {/* Details & Actions */}
-                                                <div className="flex flex-1 flex-col">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <Link href={`/product/${item.slug}`} onClick={closeDrawer}>
-                                                            <h4 className="text-sm font-black text-slate-900 line-clamp-1 group-hover:text-emerald-600 transition-colors">
+                                                
+                                                {/* Details: Optimized for readability */}
+                                                <div className="flex flex-1 flex-col min-w-0">
+                                                    <div className="flex justify-between items-start mb-0.5">
+                                                        <Link href={`/product/${item.slug}`} onClick={closeDrawer} className="min-w-0">
+                                                            <h4 className="text-[13px] sm:text-sm font-black text-slate-900 line-clamp-1 group-hover:text-emerald-600 transition-colors tracking-tight">
                                                                 {item.title}
                                                             </h4>
+                                                            {/* Secondary Title / Category Line */}
+                                                            <p className="text-[11px] font-bold text-slate-400 line-clamp-1">
+                                                                {item.title}
+                                                            </p>
                                                         </Link>
                                                         <button
                                                             onClick={() => removeItem(item._id)}
-                                                            className="p-1.5 -mr-1.5 -mt-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                                                            className="p-1.5 -mr-1.5 -mt-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors flex-shrink-0"
                                                         >
                                                             <X className="h-4 w-4" />
                                                         </button>
                                                     </div>
 
-                                                    <p className="text-[10px] font-bold text-slate-400 capitalize mb-auto">
-                                                        By {item.shop?.shopName || "Store"}
+                                                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1 mb-auto">
+                                                        By {item.shop?.shopName || "Taja Store"}
                                                     </p>
-
-                                                    <div className="flex items-end justify-between mt-3">
-                                                        <span className="text-base font-black text-slate-900 tracking-tight">
+                                                    
+                                                    <div className="flex items-center justify-between mt-2 gap-2">
+                                                        <span className="text-[15px] sm:text-base font-black text-slate-900 tracking-tighter">
                                                             ₦{(item.price || 0).toLocaleString()}
                                                         </span>
-
-                                                        <Button
+                                                        
+                                                        <button
                                                             onClick={() => handleMoveToCart(item)}
                                                             disabled={movingToCart === item._id || (item.inventory?.quantity === 0)}
-                                                            className="h-8 px-4 rounded-xl font-bold text-[10px] uppercase tracking-wider bg-slate-950 hover:bg-emerald-600 text-white"
+                                                            className="flex items-center justify-center p-2 rounded-xl bg-slate-950 text-white hover:bg-emerald-600 transition-all font-black uppercase text-[8px] tracking-widest shadow-premium active:scale-95 disabled:opacity-50"
                                                         >
                                                             {movingToCart === item._id ? (
                                                                 <Loader2 className="h-3 w-3 animate-spin" />
                                                             ) : item.inventory?.quantity === 0 ? (
-                                                                "Sold Out"
+                                                                "Sold"
                                                             ) : (
-                                                                "Move to Cart"
+                                                                "Add"
                                                             )}
-                                                        </Button>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </motion.div>
                                         ))}
                                     </AnimatePresence>
                                 </div>
+
                             )}
                         </div>
 

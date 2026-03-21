@@ -385,8 +385,8 @@ export default function ShopPage() {
             >
               <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center">
                 {/* Logo — pulls up into the banner */}
-                <div className="relative -mt-20 md:-mt-24 group shrink-0">
-                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-[1.8rem] border-4 border-white shadow-[0_8px_30px_-6px_rgba(0,0,0,0.15)] overflow-hidden bg-white group-hover:scale-[1.03] transition-transform duration-500">
+                <div className="relative -mt-16 md:-mt-20 group shrink-0 z-30">
+                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-[1.8rem] border-4 border-white shadow-[0_12px_40px_-8px_rgba(0,0,0,0.25)] overflow-hidden bg-white group-hover:scale-[1.03] transition-transform duration-500">
                     {shop.logo ? (
                       <Image
                         src={shop.logo}
@@ -439,22 +439,25 @@ export default function ShopPage() {
                     </div>
                   </div>
 
-                  <p className="text-sm font-medium text-gray-500 leading-relaxed max-w-2xl line-clamp-2">
-                    {shop.description || "Welcome to our shop — explore quality products and enjoy a trusted shopping experience."}
-                  </p>
+                    <p className="text-sm font-medium text-gray-500 leading-relaxed max-w-2xl line-clamp-2">
+                        {shop.description || shop.about || (shop.shopName === "Jizzy's Paradise" 
+                            ? "Welcome to Jizzy's Collection, your trusted online spot for sports & fitness, fashion & clothing. We help shoppers across Nigeria discover quality items at fair prices, without the usual stress of social media statuses and DMs."
+                            : "Welcome to our shop — explore quality products and enjoy a trusted shopping experience.")
+                        }
+                    </p>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3 shrink-0 items-center">
                   {isOwnerView ? (
                     <>
-                      <Link href="/seller/dashboard">
+                      <Link href={(user as any)?.role === "admin" ? "/admin/dashboard" : "/seller/dashboard"}>
                         <Button className="rounded-full px-8 h-12 shadow-sm bg-taja-secondary text-white font-black uppercase tracking-widest text-[10px] hover:bg-emerald-700 transition-colors">
                           <ShoppingBag className="h-4 w-4 mr-2" />
-                          Seller Dashboard
+                          {(user as any)?.role === "admin" ? "Admin Dashboard" : "Seller Dashboard"}
                         </Button>
                       </Link>
-                      <Link href={`/seller/products/new?shopId=${shop._id}`}>
+                      <Link href={(user as any)?.role === "admin" ? "/admin/products/new" : `/seller/products/new?shopId=${shop._id}`}>
                         <Button
                           variant="outline"
                           className="rounded-full px-8 h-12 border-gray-200 text-taja-secondary font-black uppercase tracking-widest text-[10px] hover:bg-taja-primary/10 hover:border-taja-primary/30 hover:text-taja-primary"
@@ -597,7 +600,7 @@ export default function ShopPage() {
                   className="grid lg:grid-cols-2 gap-6"
                 >
                   {/* Seller Card & Shop Stats Combined */}
-                  <div className="glass-card p-6 md:p-8 rounded-[2rem] border-white/80 bg-white/30 flex flex-col md:flex-row gap-8 justify-between">
+                  <div className="glass-card p-6 md:p-8 rounded-[2rem] border-white/80 bg-white/60 backdrop-blur-xl shadow-premium flex flex-col md:flex-row gap-8 justify-between">
                     {/* Left: Seller info */}
                     <div className="space-y-6 flex-1">
                       <div className="space-y-1">
@@ -783,7 +786,7 @@ export default function ShopPage() {
                         <div
                           className={cn(
                             viewMode === "grid"
-                              ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6"
+                              ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-6"
                               : "space-y-6"
                           )}
                         >
@@ -794,7 +797,7 @@ export default function ShopPage() {
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: idx * 0.04, duration: 0.5 }}
                             >
-                              <ProductCard product={product} />
+                              <ProductCard product={product} showSellerRow={true} />
                             </motion.div>
                           ))}
                         </div>

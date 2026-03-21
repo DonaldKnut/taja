@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Heart, Search, ArrowRight, Grid, LayoutGrid } from "lucide-react";
+import { Heart, Search, ArrowRight, Grid, LayoutGrid, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useWishlistStore } from "@/components/wishlist";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -63,103 +63,106 @@ export default function WishlistPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] pb-24">
-      {/* Premium Cinematic Hero Header */}
-      <div className="relative pt-32 pb-24 overflow-hidden">
+    <div className="min-h-screen bg-[#FDFDFD] pb-32">
+      {/* Premium Cinematic Hero Header - Light Mode */}
+      <div className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden border-b border-gray-100/50">
         {/* Abstract Background Elements */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-[#0A0A0B]"></div>
-          {/* Custom Noise Pattern */}
-          <div className="absolute inset-0 bg-[url('https://res.cloudinary.com/db2fcni0k/image/upload/v1771783815/noise_hq9z5n.png')] opacity-[0.15] mix-blend-overlay"></div>
+          <div className="absolute inset-0 bg-[#FDFDFD]"></div>
+          {/* Custom Noise Pattern for subtle texture */}
+          <div className="absolute inset-0 bg-[url('https://res.cloudinary.com/db2fcni0k/image/upload/v1771783815/noise_hq9z5n.png')] opacity-[0.03] mix-blend-multiply"></div>
 
-          {/* Dynamic Gradient Shapes */}
+          {/* Dynamic Floating Gradient Shapes - Subtler for Light Mode */}
           <motion.div
             animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.1, 0.2, 0.1],
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0.5, 0.3],
             }}
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-            className="absolute -top-1/4 -left-1/4 w-[60%] h-[120%] bg-rose-600/30 rounded-full blur-[140px] pointer-events-none"
+            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-1/4 -left-1/4 w-[70%] h-[120%] bg-emerald-500/10 rounded-full blur-[160px] pointer-events-none"
           />
           <motion.div
             animate={{
               scale: [1.2, 1, 1.2],
-              opacity: [0.1, 0.2, 0.1],
+              opacity: [0.2, 0.4, 0.2],
             }}
-            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-            className="absolute -bottom-1/4 -right-1/4 w-[60%] h-[120%] bg-taja-primary/20 rounded-full blur-[140px] pointer-events-none"
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+            className="absolute -bottom-1/4 -right-1/4 w-[70%] h-[120%] bg-rose-400/10 rounded-full blur-[160px] pointer-events-none"
           />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12">
-            <div className="max-w-3xl space-y-6">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+            <div className="max-w-3xl space-y-5">
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center rounded-full bg-white/5 backdrop-blur-2xl px-5 py-2.5 border border-white/10 shadow-2xl"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="inline-flex items-center rounded-full bg-taja-primary/5 px-4 py-2 border border-taja-primary/10 shadow-sm"
               >
-                <Heart className="h-3.5 w-3.5 text-rose-500 fill-rose-500 mr-2.5" />
-                <span className="text-[10px] font-black text-rose-100 uppercase tracking-[0.3em]">My Wishlist</span>
+                <Heart className="h-3 w-3 text-rose-500 fill-rose-500 mr-2" />
+                <span className="text-[9px] font-black text-rose-600 uppercase tracking-[0.25em]">Personal Vault</span>
               </motion.div>
 
-              <div className="space-y-4">
+              <div className="space-y-2 md:space-y-4">
                 <motion.h1
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[0.9]"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-4xl xs:text-5xl md:text-7xl lg:text-8xl font-black text-taja-secondary tracking-tighter leading-[0.95] md:leading-[0.9]"
                 >
-                  My Saved <span className="text-transparent bg-clip-text bg-gradient-to-br from-rose-200 via-rose-400 to-rose-600">Items</span>
+                  Your <span className="text-transparent bg-clip-text bg-gradient-taja">Wishlist</span>
                 </motion.h1>
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="text-slate-400 text-lg md:text-xl font-medium max-w-xl leading-relaxed"
+                  className="text-gray-500 text-base md:text-xl font-medium max-w-xl leading-relaxed"
                 >
-                  Your personal collection of saved products and marketplace finds.
+                  Curate your ideal collection from the best of Taja marketplace.
                 </motion.p>
               </div>
             </div>
 
-            {/* Premium Controls */}
+            {/* Responsive Premium Controls - Optimized for Light Mode */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="w-full lg:w-auto space-y-4"
+              className="w-full lg:w-auto flex flex-col gap-3 sm:gap-4"
             >
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-slate-500 group-focus-within:text-white transition-colors" />
+                  <Search className="h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" />
                 </div>
                 <input
                   type="text"
-                  placeholder="Search your wishlist..."
+                  placeholder="Filter your saves..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full lg:min-w-[400px] pl-14 pr-6 py-5 bg-white/5 backdrop-blur-3xl border border-white/10 text-white placeholder-slate-500 rounded-3xl focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-transparent transition-all shadow-2xl font-bold text-sm"
+                  className="w-full lg:min-w-[360px] pl-12 pr-6 py-4 bg-white border border-gray-100 text-taja-secondary placeholder-gray-400 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary/30 transition-all shadow-premium font-bold text-xs"
                 />
               </div>
 
-              <div className="flex items-center gap-3">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="flex-1 lg:flex-none bg-white/5 border border-white/10 text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-white/10 transition-all appearance-none cursor-pointer"
-                >
-                  <option value="newest" className="bg-slate-900">Recently Saved</option>
-                  <option value="price_asc" className="bg-slate-900">Price: Low to High</option>
-                  <option value="price_desc" className="bg-slate-900">Price: High to Low</option>
-                </select>
+              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-3 w-full">
+                <div className="relative flex-1 xs:flex-none">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full bg-white border border-gray-100 text-taja-secondary/70 text-[10px] font-black uppercase tracking-[0.2em] pl-4 pr-10 py-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-taja-primary/10 transition-all appearance-none cursor-pointer shadow-premium"
+                  >
+                    <option value="newest" className="bg-white">Recently Saved</option>
+                    <option value="price_asc" className="bg-white">Price: Low to High</option>
+                    <option value="price_desc" className="bg-white">Price: High to Low</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 pointer-events-none" />
+                </div>
 
                 {wishlistItems.length > 0 && (
                   <Button
                     onClick={handleMoveAllToCart}
-                    className="flex-1 lg:flex-none h-[46px] rounded-2xl bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest px-6 shadow-xl shadow-rose-900/20 group"
+                    className="flex-1 h-[48px] rounded-2xl bg-taja-primary hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-6 shadow-xl shadow-emerald-900/40 group"
                   >
                     Move All to Bag
-                    <ArrowRight className="ml-2 w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="ml-2 w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 )}
               </div>
@@ -167,38 +170,37 @@ export default function WishlistPage() {
           </div>
         </div>
 
-        {/* Cinematic Gradient Divider */}
-        <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-[#FDFDFD] to-transparent"></div>
+        {/* Global Mask for smooth transition to white bg */}
+        <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#FDFDFD] via-[#FDFDFD]/80 to-transparent"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 -mt-10 relative z-20">
-        {/* Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 -mt-4 relative z-20">
+        {/* Loading Skeleton */}
         {isLoading && !hasLoaded ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-6 md:gap-8">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white rounded-[2.5rem] h-[400px] animate-pulse border border-slate-100 shadow-premium" />
+              <div key={i} className="bg-white rounded-[2rem] h-[320px] md:h-[400px] animate-pulse border border-slate-100 shadow-sm" />
             ))}
           </div>
         ) : filteredItems.length > 0 ? (
-          <div className="space-y-12">
-            <div className="flex items-center justify-between">
+          <div className="space-y-10">
+            <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 flex items-center justify-center bg-white rounded-2xl shadow-premium text-slate-900 border border-slate-50 overflow-hidden relative group">
-                  <div className="absolute inset-0 bg-taja-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <LayoutGrid className="h-5 w-5 relative z-10" />
+                <div className="h-10 w-10 md:h-12 md:w-12 flex items-center justify-center bg-white rounded-xl md:rounded-2xl shadow-premium text-taja-secondary border border-gray-100 relative group">
+                  <LayoutGrid className="h-4 w-4 md:h-5 md:w-5" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">{filteredItems.length} Saved Items</h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Your Favorites</p>
+                  <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter leading-none">{filteredItems.length} Favorite{filteredItems.length !== 1 ? 's' : ''}</h3>
+                  <p className="text-[9px] font-black text-taja-primary uppercase tracking-[0.25em] mt-1.5">Collection Ready</p>
                 </div>
               </div>
             </div>
 
             <motion.div
               layout
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 sm:gap-8"
+              className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-6 md:gap-8 lg:gap-10"
             >
-              <AnimatePresence>
+              <AnimatePresence mode="popLayout">
                 {filteredItems.map((item) => {
                   const mappedProduct: Product = {
                     _id: item._id,
@@ -224,14 +226,15 @@ export default function WishlistPage() {
                     <motion.div
                       layout
                       key={item._id}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, rotate: -2 }}
+                      transition={{ type: "spring", damping: 20, stiffness: 300 }}
                     >
                       <ProductCard
                         product={mappedProduct}
                         showWishlist={true}
-                        className="!shadow-premium hover:!shadow-huge transition-all duration-500"
+                        className="!rounded-[1.75rem] md:!rounded-[2.25rem] !shadow-premium hover:!shadow-huge transition-all duration-500 overflow-hidden"
                       />
                     </motion.div>
                   );
@@ -240,40 +243,47 @@ export default function WishlistPage() {
             </motion.div>
           </div>
         ) : (
+          /* Enhanced Cinematic Empty State */
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="py-32 flex flex-col items-center justify-center max-w-lg mx-auto text-center space-y-10"
+            className="py-20 md:py-32 flex flex-col items-center justify-center max-w-lg mx-auto text-center px-4"
           >
-            <div className="relative group">
-              <div className="absolute inset-0 bg-rose-500/10 blur-[80px] rounded-full group-hover:bg-rose-500/20 transition-all duration-700"></div>
-              <div className="h-48 w-48 bg-white rounded-[3rem] shadow-huge flex items-center justify-center relative transform rotate-6 group-hover:rotate-12 transition-all duration-700 overflow-hidden border border-white">
-                <div className="absolute inset-0 bg-gradient-to-br from-rose-50/50 to-transparent" />
-                <Heart className="h-20 w-20 text-rose-100 fill-current opacity-50 relative z-10" />
-                <Heart className="h-20 w-20 text-rose-500 fill-current absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -ml-3 -mt-3 drop-shadow-[0_15px_30px_rgba(244,63,94,0.3)] z-20" />
+            <div className="relative mb-8 md:mb-12">
+              <motion.div 
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.6, 0.3]
+                }}
+                transition={{ duration: 4, repeat: Infinity }}
+                className="absolute inset-0 bg-emerald-100 blur-[60px] md:blur-[100px] rounded-full"
+              />
+              <div className="h-40 w-40 md:h-56 md:w-56 bg-white rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] flex items-center justify-center relative transform -rotate-1 border border-gray-50 overflow-hidden">
+                <Heart className="h-20 w-20 md:h-28 md:w-28 text-emerald-50 fill-current" />
+                <Heart className="h-16 w-16 md:h-20 md:w-20 text-emerald-500 fill-current absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-xl z-20" />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
-                {searchTerm ? "No Items Found" : "Your Wishlist is Empty"}
+            <div className="space-y-4 md:space-y-6">
+              <h3 className="text-3xl md:text-5xl font-black tracking-tighter text-taja-secondary leading-[1.1]">
+                {searchTerm ? "No Matches Found" : "Your Vault is Empty"}
               </h3>
-              <p className="text-slate-500 font-medium text-lg leading-relaxed">
+              <p className="text-gray-400 font-medium text-base md:text-lg leading-relaxed px-4 md:px-0">
                 {searchTerm
-                  ? "We couldn't find any items matching your search. Try broadening your criteria."
-                  : "Save your favorite products to find them easily later. Tap the heart icon on any product to save it here."}
+                  ? "We couldn't find any products in your wishlist matching your search."
+                  : "Tap the heart on any product to save it here for later. Your future favorites are waiting!"}
               </p>
             </div>
 
-            {!searchTerm && (
+            <div className="pt-8 w-full xs:w-auto">
               <Link href="/marketplace">
-                <Button className="h-16 px-12 rounded-[2rem] bg-slate-900 text-white hover:bg-black shadow-huge hover:scale-105 transition-all group overflow-hidden relative">
-                  <span className="relative z-10 font-black uppercase tracking-[0.2em] text-[10px]">Start Shopping</span>
+                <Button className="w-full px-10 h-14 md:h-16 rounded-full bg-taja-secondary text-white hover:bg-black shadow-huge hover:scale-[1.02] transition-all group overflow-hidden relative">
+                  <span className="relative z-10 font-black uppercase tracking-[0.25em] text-[10px]">Back to Marketplace</span>
                   <ArrowRight className="relative z-10 ml-3 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-taja-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-taja-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>
               </Link>
-            )}
+            </div>
           </motion.div>
         )}
       </div>

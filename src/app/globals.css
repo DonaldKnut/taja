@@ -282,3 +282,23 @@ html {
 .toast-glass-loading {
   border-color: rgba(16, 185, 129, 0.3) !important;
 }
+
+/* —— Journal article (HTML from admin CMS); typography via @tailwindcss/typography + BlogArticleBody —— */
+.journal-article-body {
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Admin Journal — Quill editor chrome */
+.journal-quill .ql-toolbar {
+  @apply border-slate-200 bg-slate-50/80 rounded-t-2xl border-b-0;
+}
+.journal-quill .ql-container {
+  @apply border-slate-200 rounded-b-2xl border-t-0;
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+.journal-quill .ql-editor {
+  @apply min-h-[420px] text-base text-slate-800 leading-relaxed px-6 py-8;
+}
+.journal-quill .ql-editor.ql-blank::before {
+  @apply text-slate-400 not-italic;
+}

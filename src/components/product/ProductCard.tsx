@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin } from "lucide-react";
+import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ImageSlider } from "@/components/ui/ImageSlider";
 import { ProductPrice } from "./ProductPrice";
 import { ShopLink } from "../shop/ShopLink";
 import { formatCurrency } from "@/lib/utils";
-import { getProductDisplayPriceRange } from "@/lib/productPricing";
+import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPricing";
 import { trackEvent } from "@/lib/analytics";
 import type { Product, Shop } from "@/types";
 import { cn } from "@/lib/utils";
@@ -58,10 +58,12 @@ export function ProductCard({
 }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { items: wishlistItems, toggleWishlistItem } = useWishlistStore();
+  const [liveLikesCount, setLiveLikesCount] = useState(Number((product as any)?.likes ?? 0));
   const [optionsOpen, setOptionsOpen] = useState(false);
   const optionsTriggerRef = useRef<HTMLButtonElement>(null);
   const [optionsPanelPosition, setOptionsPanelPosition] = useState<{ top: number; left: number; width: number } | null>(null);
   const [sellerPanelOpen, setSellerPanelOpen] = useState(false);
+  const [showBubbles, setShowBubbles] = useState(false);
 
   useLayoutEffect(() => {
     if (!optionsOpen || typeof document === "undefined") return;
@@ -70,15 +72,31 @@ export function ProductCard({
     const update = () => {
       const rect = trigger.getBoundingClientRect();
       const vw = window.innerWidth;
+      const vh = window.innerHeight;
       const padding = 16;
       const maxW = Math.min(280, vw - padding * 2);
       const width = Math.max(260, maxW);
-      // Right-align panel with the Options button so it doesn’t extend too far right
+      
+      // Horizontal positioning
       let left = rect.right - width;
       left = Math.max(padding, Math.min(left, vw - width - padding));
-      const gap = 12;
-      const top = rect.top - gap;
-      setOptionsPanelPosition({ top, left, width });
+
+      // Vertical positioning logic:
+      // If there is enough room above, show it above. 
+      // Otherwise, show it below.
+      const thresholdAbove = 240; // Approx height of portal
+      const roomAbove = rect.top;
+      const showBelow = roomAbove < thresholdAbove;
+      
+      const gap = 8;
+      const top = showBelow ? rect.bottom + gap : rect.top - gap;
+      
+      setOptionsPanelPosition({ 
+        top, 
+        left, 
+        width,
+        placement: showBelow ? "bottom" : "top"
+      } as any);
     };
     update();
     window.addEventListener("scroll", update, true);
@@ -106,6 +124,7 @@ export function ProductCard({
     shopStats?.reviewCount ??
     (shop as any)?.reviewCount ??
     (product as any)?.reviewCount;
+  const likesCount = liveLikesCount;
   const followerCount = shopStats?.followerCount ?? (shop as any)?.followerCount;
   const responseTime = (shop as any)?.settings?.responseTime as string | undefined;
   const locationParts = [
@@ -138,6 +157,7 @@ export function ProductCard({
   const handleWishlistClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const wasWishlisted = isWishlisted;
 
     // Transform to WishlistItem format
     const itemToSave: WishlistItem = {
@@ -157,6 +177,7 @@ export function ProductCard({
     };
 
     const nowWishlisted = await toggleWishlistItem(itemToSave);
+    setLiveLikesCount((prev) => Math.max(0, prev + (nowWishlisted && !wasWishlisted ? 1 : !nowWishlisted && wasWishlisted ? -1 : 0)));
 
     trackEvent({
       name: "wishlist_click",
@@ -164,11 +185,17 @@ export function ProductCard({
     });
 
     if (nowWishlisted) {
+      setShowBubbles(true);
+      setTimeout(() => setShowBubbles(false), 1000);
       toast.success("Added to wishlist", { icon: "❤️" });
     } else {
       toast("Removed from wishlist", { icon: "💔" });
     }
   };
+
+  useEffect(() => {
+    setLiveLikesCount(Number((product as any)?.likes ?? 0));
+  }, [product?._id, (product as any)?.likes]);
 
   const handleQuickAdd = (e: React.MouseEvent, variant?: any) => {
     e.preventDefault();
@@ -177,7 +204,7 @@ export function ProductCard({
     const item = {
       _id: product._id,
       title: product.title,
-      price: variant?.price ?? product.price,
+      price: getEffectivePrice(product.price, variant?.price),
       images: (variant as any)?.image ? [(variant as any).image, ...(product.images || [])] : product.images,
       quantity: 1,
       seller: typeof product.seller === 'string' ? product.seller : product.seller?._id,
@@ -214,33 +241,76 @@ export function ProductCard({
 
   const hasVariants = !!(product.variants && product.variants.length > 0);
   const { minPrice: displayMinPrice, maxPrice: displayMaxPrice } = getProductDisplayPriceRange(product);
+  const baseOptionStock = Number(product.inventory?.quantity ?? (product as any).stock ?? 0);
+  const baseOptionOutOfStock = baseOptionStock <= 0;
 
   const optionsPanelContent = hasVariants && optionsOpen && optionsPanelPosition && typeof document !== "undefined" && createPortal(
     <>
       <div
-        className="fixed inset-0 z-[80]"
+        className="fixed inset-0 z-[40]"
         aria-hidden
         onClick={() => setOptionsOpen(false)}
       />
       <div
-        className="fixed z-[81] pointer-events-none"
+        className="fixed z-[41] pointer-events-none"
         style={{
-          top: Math.max(16, optionsPanelPosition.top - 8),
+          top: optionsPanelPosition.top,
           left: optionsPanelPosition.left,
           width: optionsPanelPosition.width,
-          transform: "translateY(-100%)",
+          transform: (optionsPanelPosition as any).placement === "bottom" ? "none" : "translateY(-100%)",
         }}
       >
         <div className="pointer-events-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.04)] border border-gray-100/80 overflow-hidden">
-          <div className="absolute -bottom-2 right-6 left-auto -translate-x-0 w-4 h-4 bg-white border-r border-b border-gray-100/80 rotate-45 rounded-sm shadow-sm" />
+          <div className={cn(
+            "absolute w-4 h-4 bg-white border-gray-100/80 rotate-45 rounded-sm shadow-sm",
+            (optionsPanelPosition as any).placement === "bottom" 
+              ? "-top-2 right-6 border-l border-t" 
+              : "-bottom-2 right-6 border-r border-b"
+          )} />
           <div className="relative px-3 pt-3 pb-2">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">
-              Choose variant
+              Choose option
             </p>
             <div className="max-h-52 overflow-y-auto no-scrollbar space-y-0.5 pr-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  if (baseOptionOutOfStock) return;
+                  handleQuickAdd(e, undefined);
+                  setOptionsOpen(false);
+                }}
+                className={cn(
+                  "w-full p-2.5 rounded-xl hover:bg-gray-50/90 transition-colors text-left group/item border border-transparent hover:border-gray-100",
+                  baseOptionOutOfStock &&
+                    "opacity-50 cursor-not-allowed hover:bg-transparent hover:border-transparent"
+                )}
+              >
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mt-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100 ring-1 ring-gray-100/50">
+                      <Image
+                        src={images[0]}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="block text-xs font-bold text-gray-900 truncate">Standard</span>
+                      <span className="text-[10px] text-gray-500">
+                        {baseOptionOutOfStock ? "Out of stock" : `${baseOptionStock} in stock`}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black text-gray-900 tabular-nums shrink-0 sm:ml-0">
+                    ₦{Number(product.price ?? 0).toLocaleString()}
+                  </span>
+                </div>
+              </button>
               {product.variants?.map((v) => {
                 const thumb = (v as any).image || images[0];
-                const price = v.price ?? product.price;
+                const price = getEffectivePrice(product.price, (v as any).price);
                 const stock = (v as any).stock ?? product.inventory?.quantity ?? product.stock ?? 0;
                 const outOfStock = stock <= 0;
                 return (
@@ -256,7 +326,7 @@ export function ProductCard({
                       outOfStock && "opacity-50 cursor-not-allowed hover:bg-transparent hover:border-transparent"
                     )}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mt-2">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="h-10 w-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100 ring-1 ring-gray-100/50">
                           <Image
@@ -294,11 +364,11 @@ export function ProductCard({
   const sellerPanelContent = sellerPanelOpen && shopSlug && typeof document !== "undefined" && createPortal(
     <>
       <div
-        className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-[42] bg-black/40 backdrop-blur-sm"
         onClick={() => setSellerPanelOpen(false)}
         aria-hidden
       />
-      <div className="fixed inset-x-0 bottom-0 z-[91]">
+      <div className="fixed inset-x-0 bottom-0 z-[43]">
         <motion.div
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
@@ -390,14 +460,24 @@ export function ProductCard({
               </div>
             )}
 
-            <Link
-              href={`/shop/${shopSlug}`}
-              className="inline-flex items-center justify-center w-full h-11 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.22em] gap-2 hover:bg-emerald-600 transition-colors"
-              onClick={() => setSellerPanelOpen(false)}
-            >
-              Visit Seller Shop
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex flex-col gap-2 pt-2">
+              <Link
+                href={`/chat?seller=${(product.seller as any)?._id || product.seller}&product=${product._id}&shopId=${shop?._id}`}
+                className="inline-flex items-center justify-center w-full h-11 rounded-2xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-[0.22em] gap-2 hover:bg-emerald-700 transition-colors"
+                onClick={() => setSellerPanelOpen(false)}
+              >
+                <MessageCircle className="h-4 w-4" />
+                Message Seller
+              </Link>
+              <Link
+                href={`/shop/${shopSlug}`}
+                className="inline-flex items-center justify-center w-full h-11 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.22em] gap-2 hover:bg-slate-800 transition-colors"
+                onClick={() => setSellerPanelOpen(false)}
+              >
+                Visit Seller Shop
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -441,12 +521,40 @@ export function ProductCard({
 
         {/* Wishlist Button Overlay */}
         {showWishlist && (
-          <button
-            onClick={handleWishlistClick}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-900 shadow-sm border border-white/40 active:scale-90 transition-all z-10"
-          >
-            <Heart className={cn("h-4.5 w-4.5 transition-colors", isWishlisted && "fill-rose-500 text-rose-500")} />
-          </button>
+          <div className="absolute top-4 right-4 z-10">
+            <button
+              onClick={handleWishlistClick}
+              className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-900 shadow-sm border border-white/40 active:scale-90 transition-all relative"
+            >
+              <Heart className={cn("h-4.5 w-4.5 transition-colors relative z-10", isWishlisted && "fill-rose-500 text-rose-500")} />
+              
+              {/* Love Bubbling Animation */}
+              {showBubbles && (
+                <>
+                  {[...Array(8)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ scale: 0, opacity: 1, y: 0, x: 0 }}
+                      animate={{ 
+                        scale: [0, 1.5, 1, 0],
+                        opacity: [1, 1, 0.8, 0],
+                        y: -40 - Math.random() * 50,
+                        x: (Math.random() - 0.5) * 80
+                      }}
+                      transition={{ 
+                        duration: 1,
+                        ease: "easeOut",
+                        delay: Math.random() * 0.2
+                      }}
+                      className="absolute text-rose-500 pointer-events-none"
+                    >
+                      <Heart className="h-3 w-3 fill-current" />
+                    </motion.div>
+                  ))}
+                </>
+              )}
+            </button>
+          </div>
         )}
 
         {/* Condition/New Badge */}
@@ -457,7 +565,7 @@ export function ProductCard({
         )}
       </div>
 
-      <CardContent className="p-4 flex flex-col flex-1 relative">
+      <CardContent className="p-2 sm:p-4 flex flex-col justify-between flex-grow">
         <div className="space-y-1 pr-12">
           {isInsideDashboard ? (
             <h3 className="text-sm font-bold text-gray-900 line-clamp-2 min-h-[2.5rem] leading-tight">
@@ -471,45 +579,59 @@ export function ProductCard({
             </Link>
           )}
 
-          <p className="text-[11px] text-gray-400 capitalize">
+          <p className="inline-flex px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-100/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
             {typeof product.category === 'object' ? (product.category as any)?.name : (product.category || "General")}
+          </p>
+          <p className="text-[10px] text-gray-400 flex items-center gap-1.5">
+            <Heart className="h-3 w-3" />
+            <span>{likesCount.toLocaleString()} likes</span>
           </p>
 
           {showSellerRow && sellerName && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setSellerPanelOpen(true);
-              }}
-              className="mt-3 flex items-center gap-2 w-full text-left group/seller"
-            >
-              <div className="h-7 w-7 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
-                <Image
-                  src={sellerAvatar}
-                  alt={sellerName}
-                  width={28}
-                  height={28}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[11px] font-semibold text-gray-900 leading-tight line-clamp-1 group-hover/seller:text-emerald-700 transition-colors">
-                  {sellerName}
-                </span>
-                {shopName && (
-                  <span className="text-[9px] text-gray-400 uppercase tracking-widest leading-none">
-                    Shop: <span className="text-gray-600">{shopName}</span>
+            <div className="flex items-center justify-between gap-2 mt-3 p-1.5 rounded-2xl border border-gray-50 bg-gray-50/30 group/seller-row">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSellerPanelOpen(true);
+                }}
+                className="flex items-center gap-2 min-w-0"
+              >
+                <div className="h-7 w-7 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                  <Image
+                    src={sellerAvatar}
+                    alt={sellerName}
+                    width={28}
+                    height={28}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-semibold text-gray-900 leading-tight line-clamp-1 group-hover/seller-row:text-emerald-700 transition-colors">
+                    {sellerName}
                   </span>
-                )}
-              </div>
-            </button>
+                  {shopName && (
+                    <span className="text-[9px] text-gray-400 uppercase tracking-widest leading-none truncate">
+                      {shopName}
+                    </span>
+                  )}
+                </div>
+              </button>
+              <Link
+                href={`/chat?seller=${(product.seller as any)?._id || product.seller}&product=${product._id}&shopId=${shop?._id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="h-7 w-7 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all shrink-0 shadow-sm"
+                title="Message Seller"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           )}
         </div>
 
-        <div className="mt-auto pt-3 flex items-center justify-between gap-2 relative">
-          <div className="flex flex-col min-w-0">
+        <div className="mt-auto pt-2 flex flex-col gap-3 relative">
+          <div className="min-w-0">
             <ProductPrice
               price={displayMinPrice}
               maxPrice={displayMaxPrice}
@@ -519,8 +641,9 @@ export function ProductCard({
             />
           </div>
 
-          {/* Variations / Quick Add button */}
-          <div className="relative flex flex-col items-end shrink-0">
+          {/* Variations / Quick Add button - now on its own row for more space */}
+          <div className="relative flex items-center justify-between w-full">
+            <div className="flex-1" />
             {hasVariants ? (
               <button
                 ref={optionsTriggerRef}
@@ -528,30 +651,32 @@ export function ProductCard({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setOptionsOpen((open) => !open);
+                  setOptionsOpen(!optionsOpen);
                 }}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-black text-white text-[9px] sm:text-[10px] font-black uppercase tracking-[0.16em] sm:tracking-widest shadow-lg hover:bg-gray-800 transition-all active:scale-95 flex items-center gap-1.5 sm:gap-2 relative z-10 max-w-full"
+                className={cn(
+                  "h-8 px-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2",
+                  optionsOpen ? "bg-taja-secondary text-white" : "bg-taja-light/50 text-taja-secondary hover:bg-taja-light"
+                )}
               >
                 Options
-                <Plus className={cn("h-3 w-3 transition-transform", optionsOpen && "rotate-45")} />
+                <Plus className={cn("h-3.5 w-3.5 transition-transform", optionsOpen && "rotate-45")} />
               </button>
             ) : (
               <button
-                onClick={handleQuickAdd}
-                disabled={product.stock <= 0}
+                onClick={(e) => {
+                  if (baseOptionOutOfStock) return;
+                  handleQuickAdd(e, undefined);
+                }}
+                disabled={baseOptionOutOfStock}
                 className={cn(
-                  "w-10 h-10 rounded-full bg-black text-white flex items-center justify-center shadow-lg hover:bg-gray-800 transition-all active:scale-90",
-                  product.stock <= 0 && "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  "h-8 w-8 rounded-full flex items-center justify-center transition-all bg-taja-primary text-white hover:bg-emerald-600 active:scale-90 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
-                aria-label={product.stock > 0 ? "Add to cart" : "Out of stock"}
               >
-                {product.stock > 0 ? <Plus className="h-5 w-5" /> : <Plus className="h-5 w-5 opacity-20" />}
+                <Plus className="h-4 w-4" />
               </button>
             )}
           </div>
         </div>
-
-        {/* Absolute corner price optional styling for specific design if needed, but flex items-between is cleaner here */}
       </CardContent>
     </motion.div>
   );

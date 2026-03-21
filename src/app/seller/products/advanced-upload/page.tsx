@@ -151,7 +151,6 @@ interface FormData {
 
   // Pricing
   price: number;
-  maxPrice?: number;
   compareAtPrice: number;
   currency: string;
 
@@ -219,7 +218,6 @@ const initialFormData: FormData = {
   subcategory: "",
   condition: "new",
   price: 0,
-  maxPrice: 0,
   compareAtPrice: 0,
   currency: "NGN",
   images: [],
@@ -990,19 +988,6 @@ export default function AdvancedProductUploadPage() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="maxPrice">Maximum Price (NGN)</Label>
-                <Input
-                  id="maxPrice"
-                  type="number"
-                  value={formData.maxPrice || ""}
-                  onChange={(e) =>
-                    handleInputChange("maxPrice", parseFloat(e.target.value) || 0)
-                  }
-                  placeholder="Optional max fee"
-                  className="mt-1"
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1288,9 +1273,6 @@ export default function AdvancedProductUploadPage() {
                           <span className="font-medium">Price:</span>
                           <span className="text-lg font-bold">
                             ₦{(formData.price || 0).toLocaleString()}
-                            {(formData.maxPrice || 0) > (formData.price || 0) && (
-                              <span> - ₦{(formData.maxPrice || 0).toLocaleString()}</span>
-                            )}
                           </span>
                         </div>
                         {formData.compareAtPrice > formData.price && (

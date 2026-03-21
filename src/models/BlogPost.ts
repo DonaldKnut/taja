@@ -25,6 +25,8 @@ export interface IBlogPost extends Document {
     readingTime: number;
   };
   relatedProducts?: mongoose.Types.ObjectId[];
+  /** Editorial spotlight for the blog index hero */
+  isFeatured?: boolean;
   allowComments: boolean;
   commentsCount: number;
   createdAt: Date;
@@ -100,6 +102,11 @@ const BlogPostSchema = new Schema<IBlogPost>(
       type: Schema.Types.ObjectId,
       ref: 'Product',
     }],
+    isFeatured: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     allowComments: {
       type: Boolean,
       default: true,

@@ -234,6 +234,7 @@ export async function GET(request: NextRequest) {
       location: product.shop?.address?.city || 'Nigeria',
       averageRating: product.averageRating || 0,
       reviewCount: product.reviewCount || 0,
+      likes: product.likes || 0,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     }));

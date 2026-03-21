@@ -38,6 +38,8 @@ import User from "@/models/User";
 import Shop from "@/models/Shop";
 import Product from "@/models/Product";
 import Category from "@/models/Category";
+import BlogCategory from "@/models/BlogCategory";
+import BlogPost from "@/models/BlogPost";
 
 // Demo categories data
 const demoCategories = [
@@ -628,6 +630,99 @@ async function seedDatabase() {
       await Shop.findByIdAndUpdate(shop._id, {
         $set: { "stats.totalProducts": productCount },
       });
+    }
+
+    // Journal (blog) — optional demo content
+    console.log("\n📰 Journal (blog)...");
+    try {
+      const blogAuthor = await User.findOne({ role: 'admin' }) || await User.findOne({ role: 'seller' }) || await User.findOne();
+      if (blogAuthor) {
+        const catStories = await BlogCategory.findOneAndUpdate(
+          { slug: 'stories' },
+          {
+            $setOnInsert: {
+              name: 'Stories',
+              slug: 'stories',
+              description: 'Narratives from the marketplace',
+              color: '#10B981',
+              sortOrder: 1,
+              isActive: true,
+            },
+          },
+          { upsert: true, new: true }
+        );
+        const catGuides = await BlogCategory.findOneAndUpdate(
+          { slug: 'guides' },
+          {
+            $setOnInsert: {
+              name: 'Guides',
+              slug: 'guides',
+              description: 'How to buy and sell better',
+              color: '#059669',
+              sortOrder: 2,
+              isActive: true,
+            },
+          },
+          { upsert: true, new: true }
+        );
+
+        const heroHtml = `<p>Nigeria's independent sellers are redefining what "premium" means — one parcel, one review, one story at a time.</p>
+<h2>Why trust matters more than traffic</h2>
+<p>On Taja, we built escrow, verified shops, and human support because marketplaces win when buyers feel safe. This isn't a race to the bottom on price — it's a curated lane for craft, thrift, and small businesses that deserve the spotlight.</p>
+<blockquote>Great commerce is local. Great stories are too.</blockquote>
+<h2>What you'll read here</h2>
+<p>Expect drops, seller interviews, styling guides, and honest takes on shipping, packaging, and building a brand from your phone.</p>`;
+
+        const secondHtml = `<h2>Start with your first five listings</h2>
+<p>Clear photos, honest condition notes, and a fair price beat perfect copy every time. Buyers scroll fast — give them a reason to stop.</p>
+<h2>Shipping that feels premium</h2>
+<p>Reinforce your brand with consistent packaging and a short thank-you note. Small touches create repeat customers.</p>`;
+
+        const postsSeed = [
+          {
+            title: 'The quiet luxury of Nigerian marketplaces',
+            slug: 'quiet-luxury-nigerian-marketplaces',
+            excerpt: 'Why curated commerce beats endless catalogues — and how Taja helps buyers and sellers meet in the middle.',
+            content: heroHtml,
+            isFeatured: true,
+            category: catStories._id,
+            tags: ['culture', 'taja', 'sellers'],
+            featuredImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80',
+            status: 'published' as const,
+            publishedAt: new Date(),
+          },
+          {
+            title: 'Five habits of top-rated Taja sellers',
+            slug: 'five-habits-top-taja-sellers',
+            excerpt: 'Practical habits from the sellers buyers trust most — from photos to dispatch time.',
+            content: secondHtml,
+            isFeatured: false,
+            category: catGuides._id,
+            tags: ['sellers', 'tips', 'growth'],
+            featuredImage: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80',
+            status: 'published' as const,
+            publishedAt: new Date(Date.now() - 86400000),
+          },
+        ];
+
+        for (const p of postsSeed) {
+          const exists = await BlogPost.findOne({ slug: p.slug });
+          if (!exists) {
+            await BlogPost.create({
+              ...p,
+              author: blogAuthor._id,
+              seo: { title: p.title, description: p.excerpt },
+            });
+            console.log(`  ✅ Journal post: ${p.title}`);
+          } else {
+            console.log(`  ℹ️  Journal post exists: ${p.slug}`);
+          }
+        }
+      } else {
+        console.log('  ℹ️  No users yet — skip Journal seed');
+      }
+    } catch (e) {
+      console.warn('  ⚠️  Journal seed skipped:', (e as Error).message);
     }
 
     console.log(`\n✅ Seeding complete! Created ${totalProducts} products.`);

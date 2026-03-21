@@ -3,8 +3,9 @@ import mongoose from 'mongoose';
 import connectDB from '@/lib/db';
 import Product from '@/models/Product';
 import Shop from '@/models/Shop';
-import { requireAuth } from '@/lib/middleware';
-import Category from '@/models/Category'; // Ensure Category model is registered
+import { authenticate, requireAuth } from '@/lib/middleware';
+import '@/models/Category'; // Ensure Category model is registered for populate('category')
+import { notifyOwnerViewAlert } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,36 @@ export async function GET(
     // Increment views - use _id from the found product
     const productId = product._id;
     await Product.findByIdAndUpdate(productId, { $inc: { views: 1 } });
+
+    // Notify seller that their product is being viewed (throttled per viewer + product).
+    try {
+      const auth = await authenticate(request);
+      const sellerId =
+        typeof product.seller === 'object' && product.seller?._id
+          ? String(product.seller._id)
+          : String((product as any).seller);
+      const viewerUserId = auth.user?.userId ? String(auth.user.userId) : null;
+      const viewerName = auth.user?.fullName || undefined;
+      const forwardedFor = request.headers.get('x-forwarded-for') || '';
+      const ip = forwardedFor.split(',')[0]?.trim() || 'unknown-ip';
+      const ua = request.headers.get('user-agent') || 'unknown-ua';
+      const anonViewerKey = `anon:${ip}:${ua.slice(0, 80)}`;
+      const viewerKey = viewerUserId ? `user:${viewerUserId}` : anonViewerKey;
+
+      if (sellerId && viewerUserId !== sellerId) {
+        await notifyOwnerViewAlert({
+          ownerUserId: sellerId,
+          entityType: 'product',
+          entityId: String(productId),
+          entityName: (product as any).title,
+          entitySlug: (product as any).slug,
+          viewerName,
+          viewerKey,
+        });
+      }
+    } catch (notifyError) {
+      console.error('Product view notification error:', notifyError);
+    }
 
     return NextResponse.json({
       success: true,
@@ -127,6 +158,9 @@ export async function PUT(
             // Specifications is a Map, should be replaced entirely or merged carefully
             // Replacing entirely is safer if the user sends the full set
             product.specifications = body[field];
+          } else if (field === 'maxPrice' && body[field] === null) {
+            // Clear legacy product-level max range; do not store null on a Number path
+            product.set('maxPrice', undefined);
           } else {
             (product as any)[field] = body[field];
           }
@@ -134,6 +168,10 @@ export async function PUT(
       });
 
       await product.save();
+
+      if (body.maxPrice === null) {
+        await Product.updateOne({ _id: product._id }, { $unset: { maxPrice: 1 } });
+      }
 
       return NextResponse.json({
         success: true,

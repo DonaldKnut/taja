@@ -155,7 +155,7 @@ export function MobileBottomNav() {
                   </div>
                 )}
                 {!isPlus && (
-                  <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-1 hidden min-[400px]:block translate-y-0.5">
                     {item.label}
                   </span>
                 )}

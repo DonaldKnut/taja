@@ -148,7 +148,7 @@ export default function ShopsPage() {
       <Link href={`/shop/${shop.shopSlug}`} className="group block h-full">
         <div className="relative glass-panel rounded-[2.5rem] overflow-hidden border-white/60 shadow-premium hover:shadow-premium-hover transition-all duration-700 hover:-translate-y-2 h-full flex flex-col">
           {/* Banner */}
-          <div className="relative h-40 overflow-hidden">
+          <div className="relative h-40">
             {shop.banner ? (
               <Image
                 src={shop.banner}

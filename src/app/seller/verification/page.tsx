@@ -50,6 +50,11 @@ const verificationSteps = [
   { id: "documents", title: "Supporting Documents", description: "Upload additional verification documents", completed: false, required: false },
 ];
 
+const SELLER_BUSINESS_TYPE_LABELS = {
+  individual: "Individual",
+  registered_business: "Registered Business",
+} as const;
+
 // Helper: Custom UploadZone for premium redesign
 const UploadZone = ({ type, label, uploaded, onUpload }: { type: keyof VerificationData["documents"]; label: string; uploaded?: File; onUpload: (file: File) => void }) => (
   <div className="space-y-3">
@@ -96,6 +101,18 @@ export default function SellerVerificationPage() {
   const [verificationData, setVerificationData] = useState<VerificationData>({ nin: "", businessType: "individual", documents: {} });
   const [steps, setSteps] = useState(verificationSteps);
   const [ninValidation, setNinValidation] = useState<{ isValid?: boolean; data?: any; loading?: boolean }>({});
+
+  useEffect(() => {
+    const kyc = (user as any)?.kyc;
+    if (!kyc) return;
+    setVerificationData((prev) => ({
+      ...prev,
+      businessType: kyc.businessType && kyc.businessType !== "individual" ? "business" : "individual",
+      businessName: kyc.businessName || prev.businessName,
+      businessAddress: kyc.businessAddress?.addressLine1 || prev.businessAddress,
+      nin: kyc.idType === "national_id" ? (kyc.idNumber || prev.nin) : prev.nin,
+    }));
+  }, [user]);
 
   useEffect(() => {
     if (user?.accountStatus === "under_review") {
@@ -191,17 +208,38 @@ export default function SellerVerificationPage() {
     if (incompleteSteps.length > 0) { toast.error("Please complete all required verification steps"); return; }
     setLoading(true);
     try {
-      const fd = new FormData();
-      fd.append("nin", verificationData.nin);
-      fd.append("businessType", verificationData.businessType);
-      if (verificationData.businessName) fd.append("businessName", verificationData.businessName);
-      if (verificationData.businessAddress) fd.append("businessAddress", verificationData.businessAddress);
-      Object.entries(verificationData.documents).forEach(([key, file]) => { if (file) fd.append(key, file); });
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/users/verify`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const response = await fetch(`${API_BASE_URL}/api/users/kyc/submit`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          businessName: verificationData.businessName || (verificationData.businessType === "business" ? "Business Account" : user?.fullName || "Individual Seller"),
+          businessType: verificationData.businessType === "business" ? "registered_business" : "individual",
+          businessRegistrationNumber: undefined,
+          idType: "national_id",
+          idNumber: verificationData.nin,
+          bankName: "Pending",
+          accountNumber: "0000000000",
+          accountName: user?.fullName || "Pending",
+          bankVerificationNumber: undefined,
+        }),
+      });
       const data = await response.json();
       if (data.success) {
-        toast.success("Verification submitted! We'll review within 24–48 hours.");
+        const nextBusinessType = verificationData.businessType === "business" ? "registered_business" : "individual";
+        const previousBusinessType = ((user as any)?.kyc?.businessType || "individual") as "individual" | "registered_business";
+        const businessTypeChanged = !!(user as any)?.kyc?.businessType && previousBusinessType !== nextBusinessType;
+
+        if (businessTypeChanged) {
+          toast.success(
+            `Business type updated from ${SELLER_BUSINESS_TYPE_LABELS[previousBusinessType]} to ${SELLER_BUSINESS_TYPE_LABELS[nextBusinessType]}.`
+          );
+        } else {
+          toast.success("Verification submitted! We'll review within 24–48 hours.");
+        }
         window.location.href = "/seller/dashboard?verification=pending";
       } else {
         toast.error(data.message || "Verification submission failed");
@@ -223,15 +261,15 @@ export default function SellerVerificationPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-motif-blanc opacity-40" />
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 sm:px-10 py-16 relative z-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-12 lg:py-16 relative z-10">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8 }}
-          className="flex flex-col sm:flex-row items-center justify-between gap-8 mb-16"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10 sm:mb-16"
         >
           <div className="text-center sm:text-left">
-            <h1 className="text-4xl sm:text-5xl font-black text-taja-secondary tracking-tighter leading-tight uppercase italic mb-3">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-taja-secondary tracking-tighter leading-tight uppercase italic mb-3">
               Become a <span className="text-taja-primary">Verified Seller</span>
             </h1>
             <p className="text-gray-500 font-medium max-w-md">
@@ -239,20 +277,21 @@ export default function SellerVerificationPage() {
             </p>
           </div>
           <Link href="/seller/dashboard">
-            <Button variant="outline" className="h-14 px-8 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] border-white/60 bg-white/20 backdrop-blur-xl group hover:border-taja-primary/40 transition-all">
+            <Button variant="outline" className="h-12 sm:h-14 px-5 sm:px-8 rounded-2xl font-black uppercase tracking-[0.16em] sm:tracking-[0.2em] text-[10px] border-white/60 bg-white/20 backdrop-blur-xl group hover:border-taja-primary/40 transition-all">
               <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
               Back to Dashboard
             </Button>
           </Link>
         </motion.div>
 
-        <div className="grid lg:grid-cols-[1fr,350px] gap-12 items-start">
+        <div className="grid lg:grid-cols-[1fr,350px] gap-6 sm:gap-10 lg:gap-12 items-start">
           <div className="space-y-8">
-            <div className="glass-panel rounded-[40px] p-8 sm:p-12 relative overflow-hidden group">
+            <div className="glass-panel rounded-[28px] sm:rounded-[40px] p-4 sm:p-8 lg:p-12 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-taja-primary/5 blur-3xl rounded-full -mr-32 -mt-32" />
 
               {/* Step indicator */}
-              <div className="flex items-center justify-center gap-0 mb-16 relative z-10">
+              <div className="overflow-x-auto pb-3 mb-10 sm:mb-16 relative z-10">
+                <div className="min-w-[320px] flex items-center justify-center gap-0">
                 {STEPS.map((s, idx) => {
                   const StepIcon = s.icon;
                   const isActive = currentStep === s.id;
@@ -277,15 +316,11 @@ export default function SellerVerificationPage() {
                           {s.label}
                         </span>
                       </div>
-                      {idx < STEPS.length - 1 && (
-                        <div
-                          className={`w-20 sm:w-24 h-[2px] mx-2 mb-8 transition-all duration-700 ${isDone ? "bg-taja-primary" : "bg-white/40"
-                            }`}
-                        />
-                      )}
+                      {idx < STEPS.length - 1 && <div className={`w-10 sm:w-20 lg:w-24 h-[2px] mx-1 sm:mx-2 mb-8 transition-all duration-700 ${isDone ? "bg-taja-primary" : "bg-white/40"}`} />}
                     </div>
                   );
                 })}
+                </div>
               </div>
 
               {/* Step Content */}
@@ -345,7 +380,7 @@ export default function SellerVerificationPage() {
 
                     <div className="space-y-4">
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1">Account Type <span className="text-taja-primary">*</span></label>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {[
                           { value: "individual", label: "Individual", sub: "Personal Account", icon: User },
                           { value: "business", label: "Business", sub: "Registered Business", icon: Shield },
@@ -439,7 +474,7 @@ export default function SellerVerificationPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Button type="button" variant="outline" onClick={() => capturePhoto("selfie")} className="h-24 flex-col gap-3 rounded-[32px] border-white/60 bg-white/40 hover:border-taja-primary/40 group">
                         <Camera className="h-8 w-8 text-gray-400 group-hover:text-taja-primary transition-colors" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Open Camera</span>
@@ -451,11 +486,11 @@ export default function SellerVerificationPage() {
                       </label>
                     </div>
 
-                    <div className="flex gap-4 pt-8 border-t border-white/40">
-                      <Button variant="outline" onClick={() => setCurrentStep(0)} className="h-16 px-8 rounded-2xl border-white/60 font-black uppercase tracking-widest text-[10px]">Back</Button>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-8 border-t border-white/40">
+                      <Button variant="outline" onClick={() => setCurrentStep(0)} className="h-14 sm:h-16 px-8 rounded-2xl border-white/60 font-black uppercase tracking-widest text-[10px]">Back</Button>
                       <Button variant="gradient" onClick={() => setCurrentStep(2)}
                         disabled={steps[1].required && !steps[1].completed}
-                        className="flex-1 h-16 rounded-[24px] font-black uppercase tracking-[0.3em] text-[11px] shadow-emerald hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
+                        className="flex-1 h-14 sm:h-16 rounded-[24px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[11px] shadow-emerald hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
                         Upload Documents <ArrowRight className="h-4 w-4" />
                       </Button>
                     </div>
@@ -474,7 +509,7 @@ export default function SellerVerificationPage() {
                       <p className="text-gray-500 font-medium">Upload supporting documents to complete your verification.</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <UploadZone type="ninImage" label="NIN Credential" uploaded={verificationData.documents.ninImage} onUpload={(file) => handleFileUpload(file, "ninImage")} />
                       <UploadZone type="utilityBill" label="Residency Proof" uploaded={verificationData.documents.utilityBill} onUpload={(file) => handleFileUpload(file, "utilityBill")} />
                       {verificationData.businessType === "business" && (
@@ -484,10 +519,10 @@ export default function SellerVerificationPage() {
                       )}
                     </div>
 
-                    <div className="flex gap-4 pt-8 border-t border-white/40">
-                      <Button variant="outline" onClick={() => setCurrentStep(1)} className="h-16 px-8 rounded-2xl border-white/60 font-black uppercase tracking-widest text-[10px]">Back</Button>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-8 border-t border-white/40">
+                      <Button variant="outline" onClick={() => setCurrentStep(1)} className="h-14 sm:h-16 px-8 rounded-2xl border-white/60 font-black uppercase tracking-widest text-[10px]">Back</Button>
                       <Button variant="gradient" onClick={submitVerification} disabled={loading || steps.some((s) => s.required && !s.completed)}
-                        className="flex-1 h-16 rounded-[24px] font-black uppercase tracking-[0.3em] text-[11px] shadow-emerald hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
+                        className="flex-1 h-14 sm:h-16 rounded-[24px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[11px] shadow-emerald hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
                         {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <><Sparkles className="h-5 w-5" /> Submit Verification</>}
                       </Button>
                     </div>
@@ -497,7 +532,7 @@ export default function SellerVerificationPage() {
             </div>
           </div>
 
-          <aside className="space-y-6">
+          <aside className="space-y-4 sm:space-y-6">
             <div className="glass-panel rounded-[32px] p-8 border-taja-primary/20 bg-taja-primary/5 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-taja-primary/10 blur-2xl rounded-full -mr-16 -mt-16" />
               <div className="flex items-center gap-3 mb-6 relative z-10">

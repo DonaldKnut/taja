@@ -32,6 +32,12 @@ const STEPS = [
   { id: 3, label: "Banking", icon: CreditCard },
 ];
 
+const BUSINESS_TYPE_LABELS: Record<"individual" | "registered_business" | "cooperative", string> = {
+  individual: "Individual",
+  registered_business: "Registered Business",
+  cooperative: "Cooperative",
+};
+
 function KYCPageContent() {
   const router = useRouter();
   const { user, refreshUser, logout } = useAuth();
@@ -55,6 +61,7 @@ function KYCPageContent() {
     error?: string;
     data?: any;
   }>({ verifying: false, verified: false });
+  const [allowPendingEdit, setAllowPendingEdit] = useState(false);
 
   useEffect(() => {
     const kyc = user?.kyc;
@@ -62,20 +69,18 @@ function KYCPageContent() {
       const status = kyc.status || "not_started";
       setKycStatus(status);
       if (status === "approved") { router.push("/seller/dashboard"); return; }
-      if ((status === "rejected" || status === "not_started") && kyc.businessName) {
-        setFormData((prev) => ({
-          ...prev,
-          businessName: kyc.businessName || "",
-          businessType: (kyc.businessType as any) || "individual",
-          businessRegistrationNumber: kyc.businessRegistrationNumber || "",
-          idType: (kyc.idType as any) || "national_id",
-          idNumber: kyc.idNumber || "",
-          bankName: kyc.bankName || "",
-          accountNumber: kyc.accountNumber || "",
-          accountName: kyc.accountName || "",
-          bankVerificationNumber: kyc.bankVerificationNumber || "",
-        }));
-      }
+      setFormData((prev) => ({
+        ...prev,
+        businessName: kyc.businessName || "",
+        businessType: (kyc.businessType as any) || "individual",
+        businessRegistrationNumber: kyc.businessRegistrationNumber || "",
+        idType: (kyc.idType as any) || "national_id",
+        idNumber: kyc.idNumber || "",
+        bankName: kyc.bankName || "",
+        accountNumber: kyc.accountNumber || "",
+        accountName: kyc.accountName || "",
+        bankVerificationNumber: kyc.bankVerificationNumber || "",
+      }));
     } else {
       setKycStatus("not_started");
     }
@@ -139,9 +144,19 @@ function KYCPageContent() {
         body: JSON.stringify({ ...formData, status: "pending" }),
       });
       if (response?.success) {
-        toast.success("KYC submitted! We'll review it shortly.");
+        const previousBusinessType = (user?.kyc?.businessType || "individual") as "individual" | "registered_business" | "cooperative";
+        const businessTypeChanged = !!user?.kyc?.businessType && previousBusinessType !== formData.businessType;
+
+        if (businessTypeChanged) {
+          toast.success(
+            `Business type updated from ${BUSINESS_TYPE_LABELS[previousBusinessType]} to ${BUSINESS_TYPE_LABELS[formData.businessType]}.`
+          );
+        } else {
+          toast.success("KYC submitted! We'll review it shortly.");
+        }
         await refreshUser();
         setKycStatus("pending");
+        setAllowPendingEdit(false);
       } else {
         toast.error(response?.message || "Failed to submit KYC");
       }
@@ -155,7 +170,7 @@ function KYCPageContent() {
   const handleLogout = () => { logout(); router.push("/"); };
 
   // ── Status screens ──
-  if (kycStatus === "pending") {
+  if (kycStatus === "pending" && !allowPendingEdit) {
     return (
       <div className="min-h-screen">
         <OnboardingNavbar currentPageLabel="KYC Verification" user={user} onLogout={handleLogout} />
@@ -171,9 +186,18 @@ function KYCPageContent() {
               <p className="text-gray-500 mb-8 leading-relaxed">
                 Your KYC information is being reviewed. We'll notify you via email once it has been approved — usually within 24–48 hours.
               </p>
-              <Button variant="gradient" onClick={() => router.push("/seller/dashboard")} className="w-full h-12 rounded-xl">
-                Go to Dashboard
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  variant="gradient"
+                  onClick={() => setAllowPendingEdit(true)}
+                  className="w-full h-12 rounded-xl"
+                >
+                  Update Submission
+                </Button>
+                <Button variant="outline" onClick={() => router.push("/seller/dashboard")} className="w-full h-12 rounded-xl">
+                  Go to Dashboard
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -192,13 +216,13 @@ function KYCPageContent() {
       <div className="fixed top-[-10%] left-[-5%] w-96 h-96 rounded-full bg-taja-primary/10 blur-3xl animate-float -z-10" />
       <div className="fixed bottom-[-15%] right-[-5%] w-[32rem] h-[32rem] rounded-full bg-emerald-200/10 blur-3xl -z-10" />
 
-      <div className="max-w-2xl mx-auto px-4 py-10">
+      <div className="max-w-2xl mx-auto px-4 py-8 sm:py-10">
         {/* Page header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-taja shadow-premium mb-4">
             <Shield className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-br from-taja-secondary to-taja-primary">
+          <h1 className="text-3xl sm:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-br from-taja-secondary to-taja-primary">
             Seller Verification
           </h1>
           <p className="text-gray-500 mt-2">
@@ -208,7 +232,8 @@ function KYCPageContent() {
         </div>
 
         {/* Step indicator */}
-        <div className="flex items-center justify-center gap-0 mb-8">
+        <div className="overflow-x-auto pb-2 mb-8">
+          <div className="min-w-[360px] flex items-center justify-center gap-0">
           {STEPS.map((s, idx) => {
             const StepIcon = s.icon;
             const isActive = step === s.id;
@@ -219,7 +244,7 @@ function KYCPageContent() {
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${isDone ? "bg-taja-primary text-white shadow-premium" : isActive ? "bg-gradient-taja text-white shadow-premium scale-110" : "bg-white border-2 border-gray-200 text-gray-400"}`}>
                     {isDone ? <CheckCircle className="h-4 w-4" /> : <StepIcon className="h-4 w-4" />}
                   </div>
-                  <span className={`mt-1 text-xs font-semibold transition-colors ${isActive ? "text-taja-primary" : isDone ? "text-taja-primary/70" : "text-gray-400"}`}>{s.label}</span>
+                  <span className={`mt-1 text-[11px] font-semibold transition-colors ${isActive ? "text-taja-primary" : isDone ? "text-taja-primary/70" : "text-gray-400"}`}>{s.label}</span>
                 </div>
                 {idx < STEPS.length - 1 && (
                   <div className={`w-16 h-0.5 mx-1 mb-5 transition-all duration-500 ${step > s.id ? "bg-taja-primary" : "bg-gray-200"}`} />
@@ -227,6 +252,7 @@ function KYCPageContent() {
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* Rejection alert */}
@@ -251,7 +277,7 @@ function KYCPageContent() {
         )}
 
         {/* Card */}
-        <div className="glass-panel rounded-3xl p-8 shadow-premium-hover">
+        <div className="glass-panel rounded-3xl p-5 sm:p-8 shadow-premium-hover">
           {/* ── Step 1: Business ── */}
           {step === 1 && (
             <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">

@@ -4,6 +4,7 @@ import connectDB from '@/lib/db';
 import Wishlist from '@/models/Wishlist';
 import Product from '@/models/Product';
 import Shop from '@/models/Shop'; // ensures Shop model is loaded for population
+import { notifySellerProductLiked } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
 
         const wishlist = await Wishlist.findOne({ user: userId }).populate({
             path: 'products',
-            select: 'title price images shop slug status inventory',
+            select: 'title price images shop slug status inventory likes',
             populate: {
                 path: 'shop',
                 select: 'shopName shopSlug'
@@ -85,17 +86,38 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if product is already in wishlist
-        const productIndex = wishlist.products.indexOf(productId);
+        const productIndex = wishlist.products.findIndex((id: any) => String(id) === String(productId));
         let isWishlisted = false;
 
         if (productIndex > -1) {
             // Remove it
             wishlist.products.splice(productIndex, 1);
             isWishlisted = false;
+            await Product.findByIdAndUpdate(productId, { $inc: { likes: -1 } });
+            await Product.updateOne({ _id: productId, likes: { $lt: 0 } }, { $set: { likes: 0 } });
         } else {
             // Add it
             wishlist.products.push(productId);
             isWishlisted = true;
+            const updatedProduct = await Product.findByIdAndUpdate(
+                productId,
+                { $inc: { likes: 1 } },
+                { new: true }
+            ).select('seller title likes');
+
+            // Notify seller of new like/wishlist (avoid self-notify).
+            if (updatedProduct && String((updatedProduct as any).seller) !== String(userId)) {
+                const likerName = user.fullName || user.email || undefined;
+                const likerKey = `user:${userId}`;
+                await notifySellerProductLiked({
+                    sellerUserId: String((updatedProduct as any).seller),
+                    productId: String(updatedProduct._id),
+                    productTitle: (updatedProduct as any).title,
+                    likerName,
+                    likerKey,
+                    likesCount: (updatedProduct as any).likes,
+                });
+            }
         }
 
         await wishlist.save();

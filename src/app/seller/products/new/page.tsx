@@ -127,7 +127,6 @@ export default function NewProductPage() {
     subcategory: "",
     condition: "good",
     price: "",
-    maxPrice: "",
     compareAtPrice: "",
     currency: "NGN",
     images: [] as string[],
@@ -595,7 +594,6 @@ export default function NewProductPage() {
         subcategory: formData.subcategory || undefined,
         condition: formData.condition,
         price: parseFloat(formData.price),
-        maxPrice: formData.maxPrice ? parseFloat(formData.maxPrice) : undefined,
         compareAtPrice: formData.compareAtPrice
           ? parseFloat(formData.compareAtPrice)
           : undefined,
@@ -1144,27 +1142,7 @@ export default function NewProductPage() {
                 onChange={handleVariantImageUpload}
               />
               {formData.variants.length > 0 ? (
-                <div className="space-y-6">
-                  {/* Desktop Headers - Hidden on Mobile */}
-                  <div className="hidden sm:grid grid-cols-12 gap-4 px-4 mb-2">
-                    <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-gray-400">
-                      Variation Name (e.g. Red / XL)
-                    </div>
-                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">
-                      Price (₦)
-                    </div>
-                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">
-                      Stock
-                    </div>
-                    <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">
-                      Weight (kg)
-                    </div>
-                    <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">
-                      Variant Image
-                    </div>
-                    <div className="col-span-1" />
-                  </div>
-
+                <div className="space-y-10">
                   <AnimatePresence>
                     {formData.variants.map((variant, index) => (
                       <motion.div
@@ -1172,54 +1150,54 @@ export default function NewProductPage() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="relative p-6 sm:p-4 glass-card bg-white border-white/60 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-huge transition-all group"
+                        className="relative p-8 glass-card bg-white border-white/60 rounded-[2.5rem] shadow-sm hover:shadow-huge transition-all group"
                       >
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 sm:gap-4 items-end sm:items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-start">
                           {/* Name Input */}
-                          <div className="sm:col-span-4 space-y-2 sm:space-y-0">
-                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                          <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                               Variation Name
                             </label>
                             <input
                               type="text"
                               value={variant.name}
                               onChange={(e) => updateVariant(index, "name", e.target.value)}
-                              placeholder="e.g. Color / Size"
-                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-bold text-taja-secondary"
+                              placeholder="Red / XL"
+                              className="w-full h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-lg font-bold text-taja-secondary shadow-sm"
                             />
                           </div>
 
                           {/* Price Input */}
-                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
-                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                          <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                               Price (₦)
                             </label>
                             <input
                               type="number"
                               value={variant.price}
                               onChange={(e) => updateVariant(index, "price", e.target.value)}
-                              placeholder="Price"
-                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-black text-taja-primary"
+                              placeholder="0"
+                              className="w-full h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-xl font-black text-taja-primary text-center shadow-sm"
                             />
                           </div>
 
                           {/* Stock Input */}
-                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
-                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                          <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                               Stock
                             </label>
                             <input
                               type="number"
                               value={variant.stock}
                               onChange={(e) => updateVariant(index, "stock", e.target.value)}
-                              placeholder="Stock"
-                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-bold text-taja-secondary"
+                              placeholder="0"
+                              className="w-full h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-lg font-bold text-taja-secondary text-center shadow-sm"
                             />
                           </div>
 
                           {/* Weight Input */}
-                          <div className="sm:col-span-2 space-y-2 sm:space-y-0">
-                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                          <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                               Weight (kg)
                             </label>
                             <input
@@ -1227,44 +1205,43 @@ export default function NewProductPage() {
                               step="0.01"
                               value={variant.weight}
                               onChange={(e) => updateVariant(index, "weight", e.target.value)}
-                              placeholder="Weight (kg)"
-                              className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-medium text-gray-500"
+                              placeholder="0"
+                              className="w-full h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-base font-medium text-gray-500 text-center shadow-sm"
                             />
                           </div>
 
-                          {/* Variant Image: preview + choose from slider or upload own */}
-                          <div className="sm:col-span-3 min-w-0 space-y-2 sm:space-y-1">
-                            <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                          {/* Variant Image Section */}
+                          <div className="sm:col-span-2 space-y-3 pt-2">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                               Variant Image
                             </label>
-                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
-                              {variant.image ? (
-                                <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-                                  <img src={variant.image} alt="" className="w-full h-full object-cover" />
-                                </div>
-                              ) : uploadingVariantImage === index ? (
-                                <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center">
-                                  <Loader2 className="h-6 w-6 animate-spin text-taja-primary" />
-                                </div>
-                              ) : null}
-                              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                            <div className="flex flex-col sm:flex-row gap-6 items-center bg-gray-50/30 p-4 rounded-[2rem] border border-gray-100/50">
+                              <div className="flex-shrink-0">
+                                {variant.image ? (
+                                  <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white shadow-premium">
+                                    <img src={variant.image} alt="" className="w-full h-full object-cover" />
+                                  </div>
+                                ) : (
+                                  <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-200 bg-white flex flex-col items-center justify-center gap-1 text-gray-300">
+                                    <Camera className="w-6 h-6" />
+                                    <span className="text-[8px] font-black uppercase tracking-widest">No Image</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                                 <select
                                   value={variant.image || ""}
                                   onChange={(e) => updateVariant(index, "image", e.target.value)}
-                                  className="w-full min-w-0 h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-xs font-medium text-taja-secondary appearance-none"
+                                  className="w-full h-14 px-6 bg-white border border-gray-100 focus:border-taja-primary focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-xl text-xs font-bold text-taja-secondary appearance-none shadow-sm"
                                   disabled={uploadingVariantImage === index}
                                 >
-                                  <option value="">
-                                    {formData.images.length
-                                      ? "Use main product image"
-                                      : "Pick or upload below"}
-                                  </option>
+                                  <option value="">{formData.images.length ? "Side Photo / Main" : "Pick Image"}</option>
                                   {formData.images.map((url, idx) => (
-                                    <option key={url} value={url}>
-                                      Image {idx + 1} of slider
-                                    </option>
+                                    <option key={url} value={url}>Side Photo {idx + 1}</option>
                                   ))}
                                 </select>
+
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -1272,35 +1249,33 @@ export default function NewProductPage() {
                                     variantImageInputRef.current?.click();
                                   }}
                                   disabled={uploadingVariantImage !== null || formData.images.length >= 8}
-                                  className="flex items-center justify-center gap-2 h-10 px-3 rounded-xl border border-gray-200 bg-white text-[10px] font-bold text-taja-secondary hover:bg-gray-50 hover:border-taja-primary/30 disabled:opacity-50 disabled:pointer-events-none"
+                                  className="flex items-center justify-center gap-2 h-14 px-6 rounded-xl border border-gray-200 bg-white text-[10px] font-black uppercase tracking-widest text-taja-secondary hover:bg-gray-50 hover:border-taja-primary transition-all shadow-sm disabled:opacity-50"
                                 >
                                   {uploadingVariantImage === index ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <Loader2 className="h-5 w-5 animate-spin text-taja-primary" />
                                   ) : (
-                                    <Upload className="h-3.5 w-3.5" />
+                                    <Plus className="h-5 w-5" />
                                   )}
-                                  {uploadingVariantImage === index ? "Uploading…" : "Upload different image"}
+                                  {uploadingVariantImage === index ? "Wait..." : "New Photo"}
                                 </button>
                               </div>
                             </div>
                             {formData.images.length === 0 && (
-                              <p className="text-[10px] sm:text-[9px] font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 sm:py-1.5 leading-snug">
-                                Add product images above, or use the button to upload a variant-specific image.
+                              <p className="text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2 leading-snug mt-2">
+                                Add product images above, or upload a variant-specific image.
                               </p>
                             )}
                           </div>
-
-                          {/* Remove Button */}
-                          <div className="sm:col-span-1 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => removeVariant(index)}
-                              className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
-                            >
-                              <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                            </button>
-                          </div>
                         </div>
+
+                        {/* Absolute Remove Button */}
+                        <button
+                          type="button"
+                          onClick={() => removeVariant(index)}
+                          className="absolute -top-3 -right-3 w-10 h-10 flex items-center justify-center bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-full transition-all shadow-huge border border-gray-100 z-10 group/del"
+                        >
+                          <X className="h-5 w-5 transition-transform group-hover/del:scale-110" />
+                        </button>
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -1351,7 +1326,7 @@ export default function NewProductPage() {
         <div className="group space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-              Price (₦) *
+              {formData.variants.length > 0 ? "Base price (₦) *" : "Price (₦) *"}
             </label>
             {suggestedPrice && (
               <div className="text-[8px] font-bold text-taja-primary bg-taja-primary/5 px-2 py-0.5 rounded-lg flex items-center gap-1">
@@ -1371,23 +1346,11 @@ export default function NewProductPage() {
             className="w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-2xl font-black tracking-tighter text-taja-secondary"
             placeholder="0.00"
           />
-        </div>
-        <div className="group space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-              Max Price (₦)
-            </label>
-          </div>
-          <input
-            name="maxPrice"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.maxPrice}
-            onChange={handleChange}
-            className="w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-2xl font-black tracking-tighter text-taja-secondary"
-            placeholder="Optional max fee"
-          />
+          {formData.variants.length > 0 && (
+            <p className="text-[10px] font-medium text-gray-400 leading-relaxed">
+              Set each variation’s price below; the storefront shows a range from this base (if it’s the lowest) up to the highest variant price.
+            </p>
+          )}
         </div>
         <div className="group space-y-2">
           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Compare at Price (₦)</label>

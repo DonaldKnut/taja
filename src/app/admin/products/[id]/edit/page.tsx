@@ -24,7 +24,8 @@ import {
     LayoutGrid,
     Settings,
     AlertCircle,
-    ShieldAlert
+    ShieldAlert,
+    Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -428,9 +429,9 @@ export default function AdminEditProductPage() {
 
             <main className="relative z-10 pt-24">
                 <Container size="lg">
-                    {/* Admin Header */}
-                    <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-12 mb-12 shadow-huge relative overflow-hidden text-white border border-slate-800">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full -mr-32 -mt-32"></div>
+                    {/* Admin Header: Styled with premium emerald-black gradient */}
+                    <div className="bg-gradient-to-br from-[#022c22] via-[#020617] to-[#022c22] rounded-[2.5rem] p-8 md:p-12 mb-12 shadow-premium relative overflow-hidden text-white border border-emerald-900/40">
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 blur-[120px] rounded-full -mr-48 -mt-48 animate-pulse"></div>
 
                         <div className="relative z-10">
                             <div className="flex items-center gap-3 mb-6">
@@ -811,16 +812,8 @@ export default function AdminEditProductPage() {
                                 </div>
 
                                 {formData.variants.length > 0 ? (
-                                    <div className="space-y-6">
-                                        {/* Desktop Headers - Hidden on Mobile */}
-                                        <div className="hidden sm:grid grid-cols-12 gap-4 px-4 mb-2">
-                                            <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-slate-400">Option Name (e.g. Red / XL)</div>
-                                            <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-slate-400">Price (₦)</div>
-                                            <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-slate-400">Stock</div>
-                                            <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-slate-400">Weight (kg)</div>
-                                            <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-slate-400">Variant Image</div>
-                                            <div className="col-span-1"></div>
-                                        </div>
+                                    <div className="space-y-10">
+                                        {/* Grid layout labels are now inside the cards for more space */}
 
                                         <AnimatePresence>
                                             {formData.variants.map((v, i) => (
@@ -831,81 +824,88 @@ export default function AdminEditProductPage() {
                                                     exit={{ opacity: 0, scale: 0.95 }}
                                                     className="relative p-6 sm:p-4 bg-slate-50 border border-slate-100 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-md transition-all group"
                                                 >
-                                                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 sm:gap-4 items-end sm:items-center">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-start">
                                                         {/* Option Name Input */}
-                                                        <div className="sm:col-span-4 space-y-2 sm:space-y-0">
-                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Option Name</label>
+                                                        <div className="space-y-3">
+                                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Option Name</label>
                                                             <input
                                                                 type="text"
                                                                 value={v.name}
                                                                 onChange={(e) => updateVariant(i, "name", e.target.value)}
-                                                                placeholder="e.g. Red / XL"
-                                                                className="w-full h-12 sm:h-12 px-4 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-xs font-bold transition-all outline-none"
+                                                                placeholder="Red / XL"
+                                                                className="w-full h-16 px-6 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-8 focus:ring-emerald-500/10 rounded-[20px] text-lg font-bold transition-all outline-none shadow-sm"
                                                             />
                                                         </div>
 
                                                         {/* Price Input */}
-                                                        <div className="sm:col-span-2 space-y-2 sm:space-y-0">
-                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Price (₦)</label>
+                                                        <div className="space-y-3">
+                                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Price (₦)</label>
                                                             <input
                                                                 type="number"
                                                                 value={v.price}
                                                                 onChange={(e) => updateVariant(i, "price", e.target.value)}
-                                                                placeholder="Base price"
-                                                                className="w-full h-12 sm:h-12 px-4 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-xs font-black text-emerald-600 transition-all outline-none"
+                                                                placeholder="0"
+                                                                className="w-full h-16 px-6 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-8 focus:ring-emerald-500/10 rounded-[20px] text-xl font-black text-emerald-600 text-center transition-all outline-none shadow-sm"
                                                             />
                                                         </div>
 
                                                         {/* Stock Input */}
-                                                        <div className="sm:col-span-2 space-y-2 sm:space-y-0">
-                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock</label>
+                                                        <div className="space-y-3">
+                                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Stock</label>
                                                             <input
                                                                 type="number"
                                                                 value={v.stock}
                                                                 onChange={(e) => updateVariant(i, "stock", e.target.value)}
-                                                                className="w-full h-12 sm:h-12 px-4 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-xs font-bold transition-all outline-none"
+                                                                placeholder="0"
+                                                                className="w-full h-16 px-6 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-8 focus:ring-emerald-500/10 rounded-[20px] text-lg font-bold text-center transition-all outline-none shadow-sm"
                                                             />
                                                         </div>
 
                                                         {/* Weight Input */}
-                                                        <div className="sm:col-span-3 space-y-2 sm:space-y-0">
-                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Weight (kg)</label>
+                                                        <div className="space-y-3">
+                                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Weight (kg)</label>
                                                             <input
                                                                 type="number"
                                                                 step="0.01"
                                                                 value={v.weight}
                                                                 onChange={(e) => updateVariant(i, "weight", e.target.value)}
-                                                                placeholder="Weight"
-                                                                className="w-full h-12 sm:h-12 px-4 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-xs font-medium text-slate-500 transition-all outline-none"
+                                                                placeholder="0"
+                                                                className="w-full h-16 px-6 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-8 focus:ring-emerald-500/10 rounded-[20px] text-base font-medium text-slate-500 text-center transition-all outline-none shadow-sm"
                                                             />
                                                         </div>
 
-                                                        {/* Variant Image */}
-                                                        <div className="sm:col-span-3 space-y-2 sm:space-y-0">
-                                                            <label className="sm:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Variant Image</label>
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
+                                                        {/* Variant Image Section */}
+                                                        <div className="sm:col-span-2 space-y-3 pt-2">
+                                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                                                Variant Image
+                                                            </label>
+                                                            <div className="flex flex-col sm:flex-row gap-6 items-center bg-slate-100/50 p-4 rounded-[2rem] border border-slate-200/50">
+                                                                <div className="flex-shrink-0">
                                                                     {(v as any).image ? (
-                                                                        <Image src={(v as any).image} alt="" width={48} height={48} className="w-full h-full object-cover" />
+                                                                        <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white shadow-premium">
+                                                                            <img src={(v as any).image} alt="" className="w-full h-full object-cover" />
+                                                                        </div>
                                                                     ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center text-slate-300 text-[9px] font-bold uppercase tracking-widest">
-                                                                            Img
+                                                                        <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center gap-1 text-slate-300">
+                                                                            <Camera className="w-6 h-6" />
+                                                                            <span className="text-[8px] font-black uppercase tracking-widest">No Image</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <div className="flex-1 space-y-2">
+
+                                                                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                                                                     <select
                                                                         value={(v as any).image || ""}
                                                                         onChange={(e) => updateVariant(i, "image", e.target.value)}
-                                                                        className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold text-slate-600 uppercase tracking-widest"
+                                                                        className="w-full h-14 px-6 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-8 focus:ring-emerald-500/10 transition-all rounded-xl text-xs font-bold text-slate-600 appearance-none shadow-sm"
+                                                                        disabled={uploadingVariantImage === i}
                                                                     >
-                                                                        <option value="">{formData.images.length ? "Use product image" : "No images yet"}</option>
+                                                                        <option value="">{formData.images.length ? "Product Gallery" : "No images"}</option>
                                                                         {formData.images.map((img, idx) => (
-                                                                            <option key={img} value={img}>
-                                                                                Image {idx + 1}
-                                                                            </option>
+                                                                            <option key={img} value={img}>Side Photo {idx + 1}</option>
                                                                         ))}
                                                                     </select>
+
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => {
@@ -913,25 +913,28 @@ export default function AdminEditProductPage() {
                                                                             variantImageInputRef.current?.click();
                                                                         }}
                                                                         disabled={uploadingVariantImage !== null}
-                                                                        className="w-full h-9 text-[9px] font-black uppercase tracking-widest rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                                                                        className="flex items-center justify-center gap-2 h-14 px-6 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-900 hover:bg-white hover:border-emerald-500 transition-all shadow-sm disabled:opacity-50"
                                                                     >
-                                                                        {uploadingVariantImage === i ? "Uploading…" : "Upload image"}
+                                                                        {uploadingVariantImage === i ? (
+                                                                            <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+                                                                        ) : (
+                                                                            <Plus className="h-5 w-5" />
+                                                                        )}
+                                                                        {uploadingVariantImage === i ? "Wait..." : "New Photo"}
                                                                     </button>
                                                                 </div>
                                                             </div>
                                                         </div>
-
-                                                        {/* Remove Button */}
-                                                        <div className="sm:col-span-1 flex justify-end">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeVariant(i)}
-                                                                className="w-10 h-10 sm:w-10 sm:h-10 flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm bg-white border border-slate-200 hover:border-transparent"
-                                                            >
-                                                                <X className="h-4 w-4 sm:h-4 sm:w-4" />
-                                                            </button>
-                                                        </div>
                                                     </div>
+
+                                                    {/* Absolute Remove Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeVariant(i)}
+                                                        className="absolute -top-3 -right-3 w-10 h-10 flex items-center justify-center bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-full transition-all shadow-huge border border-slate-100 z-10 group/del"
+                                                    >
+                                                        <X className="h-5 w-5 transition-transform group-hover/del:scale-110" />
+                                                    </button>
                                                 </motion.div>
                                             ))}
                                         </AnimatePresence>

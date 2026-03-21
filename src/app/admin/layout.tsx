@@ -32,6 +32,7 @@ import {
   ChevronDown,
   MessageCircle,
   LayoutGrid,
+  BookOpen,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -70,6 +71,7 @@ const adminNavGroups = [
       {
         label: "Communications",
         items: [
+          { name: "Journal", href: "/admin/journal", icon: BookOpen },
           { name: "Broadcast message", href: "/admin/broadcast", icon: Mail },
           { name: "Support Inbox", href: "/admin/support/tickets", icon: HelpCircle },
         ],

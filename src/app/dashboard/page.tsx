@@ -2,6 +2,8 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { checkoutApi, productsApi } from "@/lib/api";
+import { getProductDisplayPriceRange } from "@/lib/productPricing";
+import { ProductPrice } from "@/components/product/ProductPrice";
 import {
   ArrowRight,
   CheckCircle,
@@ -22,6 +24,7 @@ import {
   Wallet,
   Heart,
   ShoppingBag,
+  MessageCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -52,14 +55,18 @@ interface Product {
   _id: string;
   title: string;
   price: number;
+  maxPrice?: number;
   images?: string[];
   image?: string;
   slug: string;
   shop?: {
+    _id?: string;
     shopName: string;
     isVerified: boolean;
   };
+  seller?: string | { _id: string; fullName: string; avatar?: string };
   rating?: number;
+  variants?: any[];
 }
 
 const fadeUp = {
@@ -254,14 +261,14 @@ export default function DashboardPage() {
         variants={fadeUp}
         initial="hidden"
         animate="show"
-        className="relative overflow-hidden rounded-[2.5rem] bg-[#020617] p-8 sm:p-10 lg:p-12 border border-slate-800 shadow-2xl"
+        className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#064e3b] via-[#022c22] to-[#064e3b] p-8 sm:p-10 lg:p-12 border border-emerald-900/50 shadow-2xl"
       >
         {/* Decorative elements */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-[500px] h-[500px] bg-taja-primary/10 rounded-full blur-[120px]" />
-          <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px]" />
+          <div className="absolute -top-24 -right-24 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px]" />
+          <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] bg-taja-primary/10 rounded-full blur-[100px]" />
           <div className="absolute inset-0 motif-blanc opacity-[0.03]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950/40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-emerald-950/40" />
         </div>
 
         <div className="relative z-10 px-2">
@@ -274,7 +281,7 @@ export default function DashboardPage() {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-none italic">
                 Your Shopping Summary, {firstName}
               </h1>
-              <p className="text-slate-400 text-sm font-medium max-w-md leading-relaxed">
+              <p className="text-emerald-100/60 text-sm font-medium max-w-md leading-relaxed">
                 {greetingsSub} Here is a quick look at your Taja activity and orders.
               </p>
             </div>
@@ -282,7 +289,7 @@ export default function DashboardPage() {
             {/* Stat Bento Pills */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:w-[600px]">
               {/* Total Spent */}
-              <div className="group relative p-6 rounded-3xl bg-slate-950 border border-slate-800 hover:border-taja-primary/30 transition-all duration-500 overflow-hidden shadow-2xl">
+              <div className="group relative p-6 rounded-3xl bg-emerald-950/50 border border-emerald-900/50 hover:border-taja-primary/30 transition-all duration-500 overflow-hidden shadow-2xl backdrop-blur-sm">
                 <div className="absolute inset-0 pointer-events-none">
                   <div className="absolute -top-12 -right-12 w-32 h-32 bg-taja-primary/5 rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700" />
                   <div className="absolute inset-0 motif-blanc opacity-[0.02]" />
@@ -310,7 +317,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Orders */}
-              <div className="group relative p-6 rounded-3xl bg-slate-950 border border-slate-800 hover:border-amber-500/30 transition-all duration-500 overflow-hidden shadow-2xl">
+              <div className="group relative p-6 rounded-3xl bg-emerald-950/50 border border-emerald-900/50 hover:border-amber-500/30 transition-all duration-500 overflow-hidden shadow-2xl backdrop-blur-sm">
                 <div className="absolute inset-0 pointer-events-none">
                   <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/5 rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700" />
                   <div className="absolute inset-0 motif-blanc opacity-[0.02]" />
@@ -329,7 +336,7 @@ export default function DashboardPage() {
               </div>
 
               {/* In Transit */}
-              <div className="group relative p-6 rounded-3xl bg-slate-950 border border-slate-800 hover:border-blue-500/30 transition-all duration-500 overflow-hidden shadow-2xl">
+              <div className="group relative p-6 rounded-3xl bg-emerald-950/50 border border-emerald-900/50 hover:border-blue-500/30 transition-all duration-500 overflow-hidden shadow-2xl backdrop-blur-sm">
                 <div className="absolute inset-0 pointer-events-none">
                   <div className="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/5 rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700" />
                   <div className="absolute inset-0 motif-blanc opacity-[0.02]" />
@@ -356,23 +363,23 @@ export default function DashboardPage() {
         {/* Marketplace — Quick Access */}
         <motion.div custom={1} variants={fadeUp} initial="hidden" animate="show" className="md:col-span-2">
           <Link href="/dashboard/marketplace" className="group block h-full">
-            <div className="relative h-full min-h-[240px] rounded-[2rem] overflow-hidden bg-[#0f172a] p-8 sm:p-10 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 border border-slate-800">
+            <div className="relative h-full min-h-[240px] rounded-[2rem] overflow-hidden bg-gradient-to-br from-[#024037] to-[#012d27] p-8 sm:p-10 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10 border border-emerald-900/30">
               <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute -right-16 -top-16 w-80 h-80 bg-indigo-500/10 rounded-full blur-[80px] group-hover:scale-125 transition-transform duration-700" />
-                <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-emerald-500/5 rounded-full blur-[60px]" />
+                <div className="absolute -right-16 -top-16 w-80 h-80 bg-emerald-500/10 rounded-full blur-[80px] group-hover:scale-125 transition-transform duration-700" />
+                <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-taja-primary/5 rounded-full blur-[60px]" />
                 <div className="absolute inset-0 motif-blanc opacity-[0.04]" />
               </div>
 
               <div className="relative z-10 h-full flex flex-col justify-between">
                 <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-[0.2em] backdrop-blur-sm w-fit">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-[0.2em] backdrop-blur-sm w-fit">
                     <Sparkles className="h-3 w-3" />
                     Featured Collections
                   </div>
                   <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tighter leading-tight italic">
                     Shop Premium<br />African Products
                   </h3>
-                  <p className="text-slate-400 text-sm font-medium max-w-sm leading-relaxed">
+                  <p className="text-emerald-100/60 text-sm font-medium max-w-sm leading-relaxed">
                     Explore our curated marketplace of verified high-quality products from across the continent.
                   </p>
                 </div>
@@ -391,7 +398,7 @@ export default function DashboardPage() {
         {/* Side cards */}
         <motion.div custom={2} variants={fadeUp} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-1 gap-4">
           <Link href="/marketplace" className="group h-full">
-            <div className="h-full p-6 rounded-[2rem] bg-[#0f172a] border border-slate-800 hover:border-taja-primary/30 hover:shadow-xl hover:shadow-taja-primary/5 transition-all duration-500 flex flex-col justify-between relative overflow-hidden">
+            <div className="h-full p-6 rounded-[2rem] bg-gradient-to-br from-[#024037] to-[#012d27] border border-emerald-900/30 hover:border-taja-primary/30 hover:shadow-xl hover:shadow-taja-primary/5 transition-all duration-500 flex flex-col justify-between relative overflow-hidden">
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-taja-primary/5 rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700" />
                 <div className="absolute inset-0 motif-blanc opacity-[0.02]" />
@@ -410,7 +417,7 @@ export default function DashboardPage() {
           </Link>
 
           <Link href="/dashboard/wallet" className="group h-full">
-            <div className="h-full p-6 rounded-[2rem] bg-slate-900 border border-slate-800 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-500 flex flex-col justify-between relative overflow-hidden">
+            <div className="h-full p-6 rounded-[2rem] bg-emerald-950/40 border border-emerald-900/30 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-500 flex flex-col justify-between relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity">
                 <CreditCard className="h-16 w-16 text-blue-400" />
               </div>
@@ -653,7 +660,7 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
             {recommendedProducts.map((product) => (
               <Link
                 key={product._id}
@@ -675,20 +682,39 @@ export default function DashboardPage() {
                       </div>
                     )}
                     {/* Quick view overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
-                      <div className="h-8 w-8 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300 shadow-sm">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center gap-2">
+                      <div className="h-8 w-8 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300 shadow-sm border border-gray-100">
                         <Eye className="h-3.5 w-3.5 text-taja-secondary" />
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const sellerId = typeof product.seller === 'object' ? product.seller?._id : product.seller;
+                          if (sellerId) {
+                            window.location.href = `/chat?seller=${sellerId}&product=${product._id}&shopId=${product.shop?._id || ""}`;
+                          }
+                        }}
+                        className="h-8 w-8 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300 shadow-sm border border-gray-100 text-emerald-600 hover:bg-emerald-50"
+                        title="Chat with seller"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
-                  <div className="p-3 flex-1 flex flex-col justify-between">
+                  <div className="p-2 sm:p-3 flex-1 flex flex-col justify-between">
                     <h5 className="text-xs font-semibold text-taja-secondary truncate mb-1">
                       {product.title}
                     </h5>
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-taja-primary">
-                        ₦{product.price?.toLocaleString()}
-                      </p>
+                      <ProductPrice
+                        price={getProductDisplayPriceRange(product as any).minPrice}
+                        maxPrice={getProductDisplayPriceRange(product as any).maxPrice}
+                        hasVariants={Array.isArray((product as any).variants) && (product as any).variants.length > 0}
+                        size="sm"
+                        className="text-taja-primary"
+                        showCompare={false}
+                      />
                       {product.rating && (
                         <div className="flex items-center gap-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />

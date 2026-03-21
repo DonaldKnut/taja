@@ -46,6 +46,7 @@ interface SellerProduct {
   updatedAt: string;
   image: string;
   views: number;
+  likes: number;
   sales: number;
 }
 
@@ -131,6 +132,7 @@ export default function SellerProductsPage() {
             updatedAt: product.updatedAt || new Date().toISOString(),
             image: product.images?.[0] || product.image || "/placeholder-product.jpg",
             views: product.views || 0,
+            likes: product.likes || 0,
             sales: product.sales || 0,
           }));
           setProducts(transformedProducts);
@@ -401,6 +403,7 @@ export default function SellerProductsPage() {
                       <h4 className="text-lg font-black text-taja-secondary truncate mb-1 group-hover:text-taja-primary transition-colors">{product.title}</h4>
                       <div className="flex items-center gap-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                         <span className="flex items-center gap-1.5"><Eye className="h-3 w-3" /> {product.views.toLocaleString()}</span>
+                        <span className="flex items-center gap-1.5"><Tag className="h-3 w-3" /> {product.likes.toLocaleString()} likes</span>
                         <span className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3" /> {product.sales.toLocaleString()}</span>
                         <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> Updated {new Date(product.updatedAt).toLocaleDateString()}</span>
                       </div>
@@ -484,6 +487,7 @@ export default function SellerProductsPage() {
                     <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1"><Eye className="h-3 w-3" /> {product.views}</span>
+                        <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1"><Tag className="h-3 w-3" /> {product.likes}</span>
                         <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> {product.sales}</span>
                       </div>
                       <div className="flex items-center gap-2">

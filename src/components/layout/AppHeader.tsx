@@ -89,7 +89,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
         <>
             <header
                 className={cn(
-                    "sticky top-0 w-full z-[100] transition-all duration-500",
+                    "sticky top-0 w-full z-[9999] transition-all duration-500",
                     isTransparent
                         ? "bg-transparent border-transparent"
                         : "bg-white/80 backdrop-blur-xl border-b border-white/40 shadow-premium"
@@ -104,6 +104,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                             {[
                                 { label: "Marketplace", href: "/marketplace" },
                                 { label: "Shops", href: "/shops" },
+                                { label: "Journal", href: "/blog" },
                                 { label: "How it Works", href: "/how-it-works" },
                             ].map((link) => (
                                 <Link
@@ -111,7 +112,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                     href={link.href}
                                     className={cn(
                                         "text-[10px] font-black uppercase tracking-[0.25em] transition-colors",
-                                        pathname.startsWith(link.href)
+                                        (link.href === "/blog" ? pathname.startsWith("/blog") : pathname.startsWith(link.href))
                                             ? "text-taja-primary"
                                             : "text-gray-400 hover:text-taja-secondary"
                                     )}
@@ -145,8 +146,8 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                         {/* Authenticated Actions */}
                         <div className="flex items-center gap-1 md:gap-2">
                             {isAuthenticated ? (
-                                <Link href={user?.role === "seller" ? "/seller/dashboard" : "/dashboard"} className="relative">
-                                    <Button variant="outline" className="rounded-full px-4 md:px-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest h-10 border-taja-light/60 hover:bg-white">
+                                <Link href={user?.role === "admin" ? "/admin/dashboard" : user?.role === "seller" ? "/seller/dashboard" : "/dashboard"} className="relative">
+                                    <Button variant="outline" className="rounded-full px-4 md:px-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest h-10 border-taja-light/60 hover:bg-white transition-all active:scale-95">
                                         <User className="w-3.5 h-3.5 md:hidden" />
                                         <span className="hidden md:inline">Dashboard</span>
                                     </Button>
@@ -234,14 +235,14 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setMobileMenuOpen(false)}
-                            className="fixed inset-0 z-[150] bg-black/20 backdrop-blur-sm lg:hidden"
+                            className="fixed inset-0 z-[10000] bg-black/20 backdrop-blur-sm lg:hidden"
                         />
                         <motion.div
                             initial={{ x: "100%" }}
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                            className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-white z-[151] shadow-2xl p-8 flex flex-col lg:hidden"
+                            className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-white z-[10001] shadow-2xl p-8 flex flex-col lg:hidden"
                         >
                             <div className="flex items-center justify-between mb-12">
                                 <Logo size="lg" variant="header" />
@@ -265,6 +266,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                 {[
                                     { label: "Marketplace", href: "/marketplace" },
                                     { label: "Shops", href: "/shops" },
+                                    { label: "Journal", href: "/blog" },
                                     { label: "How it Works", href: "/how-it-works" },
                                     { label: "Shipping Policy", href: "/shipping" },
                                 ].map((link, i) => (
@@ -274,7 +276,9 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                         onClick={() => setMobileMenuOpen(false)}
                                         className={cn(
                                             "text-2xl font-black tracking-tight transition-colors",
-                                            pathname === link.href ? "text-taja-primary" : "text-taja-secondary hover:text-taja-primary"
+                                            (link.href === "/blog" ? pathname.startsWith("/blog") : pathname === link.href)
+                                                ? "text-taja-primary"
+                                                : "text-taja-secondary hover:text-taja-primary"
                                         )}
                                     >
                                         {link.label}
@@ -285,10 +289,13 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                             <div className="mt-auto pt-10 border-t border-gray-100 flex flex-col gap-4">
                                 {isAuthenticated ? (
                                     <Button
-                                        onClick={() => { setMobileMenuOpen(false); router.push(user?.role === 'seller' ? '/seller/dashboard' : '/dashboard'); }}
+                                        onClick={() => { 
+                                            setMobileMenuOpen(false); 
+                                            router.push(user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'seller' ? '/seller/dashboard' : '/dashboard'); 
+                                        }}
                                         className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs shadow-premium"
                                     >
-                                        {user?.role === 'seller' ? 'Seller Dashboard' : 'My Dashboard'}
+                                        {user?.role === 'admin' ? 'Admin Dashboard' : user?.role === 'seller' ? 'Seller Dashboard' : 'My Dashboard'}
                                     </Button>
                                 ) : (
                                     <>

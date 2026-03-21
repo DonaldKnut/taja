@@ -540,10 +540,10 @@ export function BrandShowcase() {
 
         {/* Global Statistics */}
         <div className="mb-40">
-          <div className="relative glass-card bg-taja-secondary/5 rounded-[48px] p-12 md:p-24 border-white overflow-hidden">
+          <div className="relative glass-card bg-taja-secondary/5 rounded-[48px] p-8 sm:p-12 md:p-24 border-white overflow-hidden">
             <div className="absolute inset-0 bg-motif-blanc opacity-20" />
 
-            <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-12 md:gap-20">
+            <div className="relative z-10 grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-20">
               {stats.map((stat, index) => (
                 <motion.div
                   key={index}
@@ -553,13 +553,13 @@ export function BrandShowcase() {
                   transition={{ delay: index * 0.1 }}
                   className="text-center"
                 >
-                  <div className="w-20 h-20 rounded-[28px] glass-card bg-white/60 border-white flex items-center justify-center mx-auto mb-8 shadow-sm text-taja-primary">
-                    <stat.icon className="h-10 w-10" />
+                  <div className="w-14 h-14 md:w-20 md:h-20 rounded-2xl md:rounded-[28px] glass-card bg-white/60 border-white flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-sm text-taja-primary">
+                    <stat.icon className="h-7 w-7 md:h-10 md:w-10" />
                   </div>
-                  <div className="text-5xl md:text-7xl font-black text-taja-secondary mb-4 tracking-tighter">
+                  <div className="text-4xl md:text-7xl font-black text-taja-secondary mb-3 md:mb-4 tracking-tighter">
                     {stat.number}
                   </div>
-                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em]">
+                  <div className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] md:tracking-[0.4em] px-2">
                     {stat.label}
                   </div>
                 </motion.div>

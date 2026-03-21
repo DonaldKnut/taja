@@ -60,8 +60,18 @@ This document describes **what the marketplace does** so a **NestJS** (or any) b
 ## 5. Products
 
 - Belongs to **seller** and **shop**; category + optional subcategory.
-- **Pricing**: base `price`, optional `compareAtPrice`, `maxPrice` (e.g. auctions — if used).
-- **Variants**: optional array (size/color, SKU, per-variant price/stock/weight/image). **If variants exist, checkout must bind a specific variant** (UI enforces selection before add-to-cart).
+- **Pricing**: base `price`, optional `compareAtPrice`. **Listing price ranges** are not stored as a separate min–max on the product: they are computed from **base `price` + variant prices** (see below). Legacy `maxPrice` on older documents may be cleared on edit; sellers do not set a separate “max” field in the storefront.
+- **Variants**: optional array (size/color, SKU, per-variant price/stock/weight/image). **If variants exist, checkout must bind a specific variant** (UI enforces selection before add-to-cart). Quick-add options on cards include a **“Standard”** row at the **base price** and stock so buyers can pick the default listing without a named variant row.
+
+### Variant pricing (listings vs. selected variant)
+
+- **Stored fields**: `Product.price` is always the **base** listing price. Each variant may set its own `price`; if omitted, the effective price for that variant is the base `price` (same rule for cart/orders: snapshot the resolved amount).
+- **Buyer-facing listings** (product cards, grids, product detail **before** a variant is chosen): show a **range** — **minimum and maximum** over **base `price` plus every active variant’s effective price** (not only variant rows). Example: base ₦4,000 and one variant ₦5,000 → display **From ₦4,000 – ₦5,000** (or equivalent), not a single ₦5,000 that hides the base.
+- **After the buyer selects a variant** (PDP, cart line, checkout): show the **effective price** for that variant: variant `price` when set, otherwise base `price`.
+- **Products with no variants** (or no active variants): use a **single** displayed price — base `price` only (no product-level two-price range).
+
+Reference implementation: `getProductDisplayPriceRange` and `getEffectivePrice` in `src/lib/productPricing.ts`.
+
 - **Inventory**: quantity, SKU, `trackQuantity`, MOQ.
 - **Shipping**: weight, dimensions, freeShipping flag, shippingCost, costPerKg, weight tiers, processing time.
 - **Status**: `draft` | `active` | `out_of_stock` | `suspended` | `deleted`.
@@ -191,9 +201,11 @@ This document describes **what the marketplace does** so a **NestJS** (or any) b
 
 ---
 
-## 18. Blog & CMS-lite
+## 18. Blog & CMS-lite (Journal)
 
-- Blog posts and categories; slug-based public read; admin CRUD.
+- **Public app**: `/blog` — magazine-style index (featured hero, category chips, grid) and `/blog/[slug]` for articles. Server-side data via `src/lib/blog-queries.ts` (revalidate ~120s).
+- **Models**: `BlogPost` (optional `isFeatured` for hero), `BlogCategory`; slug-based read; **admin** CRUD via `POST/PUT/DELETE` `/api/blog/posts` and categories API.
+- **Views**: `recordPostView` on article page (metadata uses read-only fetch so views are not double-counted).
 
 ---
 

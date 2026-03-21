@@ -27,6 +27,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Container, Section } from "@/components/layout";
 import { NewsletterSection } from "@/components/newsletter/NewsletterSection";
+import { CorporateRegistry } from "@/components/homepage/CorporateRegistry";
 
 export default function HomePage() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -106,6 +107,12 @@ export default function HomePage() {
                   className="text-sm font-bold text-taja-secondary hover:text-taja-primary transition-colors tracking-tight"
                 >
                   Marketplace
+                </Link>
+                <Link
+                  href="/blog"
+                  className="text-sm font-bold text-taja-secondary hover:text-taja-primary transition-colors tracking-tight"
+                >
+                  Journal
                 </Link>
                 <Link
                   href="/how-it-works"
@@ -211,6 +218,14 @@ export default function HomePage() {
                   onClick={() => setMobileOpen(false)}
                 >
                   Marketplace
+                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                </Link>
+                <Link
+                  href="/blog"
+                  className="group flex items-center justify-between text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Journal
                   <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
                 </Link>
                 <Link
@@ -353,18 +368,18 @@ export default function HomePage() {
 
                 <div className="pt-10 flex flex-wrap items-center justify-center lg:justify-start gap-10">
                   <div className="flex flex-col items-center lg:items-start gap-1">
-                    <span className="text-2xl font-black text-taja-secondary">1,000+</span>
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Active Sellers</span>
+                    <span className="text-2xl font-black text-taja-secondary">2,500+</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Verified Sellers</span>
                   </div>
                   <div className="h-10 w-px bg-gray-100 hidden sm:block" />
                   <div className="flex flex-col items-center lg:items-start gap-1">
-                    <span className="text-2xl font-black text-taja-secondary">₦500k+</span>
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Monthly Volume</span>
+                    <span className="text-2xl font-black text-taja-secondary">₦25M+</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Monthly GMV</span>
                   </div>
                   <div className="h-10 w-px bg-gray-100 hidden sm:block" />
                   <div className="flex flex-col items-center lg:items-start gap-1">
-                    <span className="text-2xl font-black text-taja-secondary">100%</span>
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Secure Uptime</span>
+                    <span className="text-2xl font-black text-taja-secondary">99.9%</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Uptime SLA</span>
                   </div>
                 </div>
               </div>
@@ -422,6 +437,9 @@ export default function HomePage() {
             </div>
           </Container>
         </section>
+
+        {/* Corporate Trust & Registry Section */}
+        <CorporateRegistry />
 
         {/* Advanced Footer */}
         <AdvancedFooter />

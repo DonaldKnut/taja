@@ -196,7 +196,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         {/* ═══ Sliding Media Header ═══ */}
                         {/* ═══ Header Registry Search ═══ */}
                         <section className={cn(
-                            "px-6 pb-6 bg-white border-b border-gray-100",
+                            "px-4 sm:px-6 pb-6 bg-white border-b border-gray-100",
                             isInsideDashboard ? "pt-8" : "pt-12"
                         )}>
                             {!isInsideDashboard && (
@@ -369,7 +369,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
 
 
                         {/* ═══ Product Feed ═══ */}
-                        <section className="px-6 space-y-8 mt-4 pb-20">
+                        <section className="px-4 sm:px-6 space-y-8 mt-4 pb-20">
                             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                                 <h3 className="text-2xl font-black text-gray-900 tracking-tighter italic">Product Catalog</h3>
                                 <div className="flex gap-2">
@@ -400,7 +400,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                     <motion.div
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 px-1"
+                                        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 md:gap-6 px-1"
                                     >
                                         {displayedProducts.map((product) => (
                                             <ProductCard
@@ -437,12 +437,12 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         </section>
 
                         {/* ═══ Curated Brands ═══ */}
-                        <section className="px-6 py-4 pt-10 border-t border-gray-100">
+                        <section className="px-4 sm:px-6 py-4 pt-10 border-t border-gray-100">
                             <div className="flex items-center gap-3 mb-6">
                                 <Crown className="w-5 h-5 text-taja-primary" />
                                 <h3 className="text-lg font-black text-gray-900 tracking-tighter uppercase italic">Featured Shops</h3>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-1 pb-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-6 px-1 pb-6">
                                 {(feed.recommendedShops && feed.recommendedShops.length > 0 ? feed.recommendedShops : []).map((shop) => (
                                     <Link
                                         key={shop._id}

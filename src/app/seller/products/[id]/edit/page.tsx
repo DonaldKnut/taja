@@ -56,8 +56,6 @@ export default function EditProductPage() {
     subcategory: "",
     condition: "new" as "new" | "like-new" | "good" | "fair" | "poor",
     price: "",
-    maxPrice: "",
-    isRange: false,
     compareAtPrice: "",
     currency: "NGN",
     images: [] as string[],
@@ -136,8 +134,6 @@ export default function EditProductPage() {
           subcategory: productData.subcategory || "",
           condition: productData.condition || "new",
           price: String(productData.price || ""),
-          maxPrice: String(productData.maxPrice || ""),
-          isRange: !!productData.maxPrice,
           compareAtPrice: productData.compareAtPrice || productData.originalPrice ? String(productData.compareAtPrice || productData.originalPrice) : "",
           currency: productData.currency || "NGN",
           images: productData.images || [],
@@ -350,7 +346,7 @@ export default function EditProductPage() {
         subcategory: formData.subcategory || undefined,
         condition: formData.condition,
         price: parseFloat(formData.price),
-        maxPrice: formData.isRange && formData.maxPrice ? parseFloat(formData.maxPrice) : undefined,
+        maxPrice: null,
         compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : undefined,
         currency: formData.currency,
         images: formData.images,
@@ -665,15 +661,8 @@ export default function EditProductPage() {
                 </div>
 
                 {formData.variants.length > 0 ? (
-                  <div className="space-y-6">
-                    {/* Desktop Headers - Hidden on Mobile */}
-                    <div className="hidden sm:grid grid-cols-12 gap-4 px-4 mb-2">
-                      <div className="col-span-4 text-[8px] font-black uppercase tracking-widest text-gray-400">Option Name (e.g. Red / XL)</div>
-                      <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Price (₦)</div>
-                      <div className="col-span-2 text-[8px] font-black uppercase tracking-widest text-gray-400">Stock</div>
-                      <div className="col-span-3 text-[8px] font-black uppercase tracking-widest text-gray-400">Weight (kg)</div>
-                      <div className="col-span-1"></div>
-                    </div>
+                  <div className="space-y-10">
+                    {/* Grid layout labels are now inside the cards for more space */}
 
                     <AnimatePresence>
                       {formData.variants.map((variant, index) => (
@@ -684,66 +673,65 @@ export default function EditProductPage() {
                           exit={{ opacity: 0, scale: 0.95 }}
                           className="relative p-6 sm:p-4 glass-card bg-white border-gray-100 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-premium transition-all group"
                         >
-                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 sm:gap-4 items-end sm:items-center">
-                            {/* Option Name Input */}
-                            <div className="sm:col-span-4 space-y-2 sm:space-y-0">
-                              <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Option Name</label>
-                              <input
-                                type="text"
-                                value={variant.name}
-                                onChange={(e) => updateVariant(index, 'name', e.target.value)}
-                                placeholder="e.g. Red / XL"
-                                className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-bold text-taja-secondary"
-                              />
-                            </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-start">
+                             {/* Option Name Input */}
+                             <div className="space-y-3">
+                               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Option Name</label>
+                               <input
+                                 type="text"
+                                 value={variant.name}
+                                 onChange={(e) => updateVariant(index, 'name', e.target.value)}
+                                 placeholder="Red / XL"
+                                 className="w-full h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-lg font-bold text-taja-secondary shadow-sm"
+                               />
+                             </div>
 
-                            {/* Price Input */}
-                            <div className="sm:col-span-2 space-y-2 sm:space-y-0">
-                              <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
-                              <input
-                                type="number"
-                                value={variant.price}
-                                onChange={(e) => updateVariant(index, 'price', e.target.value)}
-                                placeholder="Same as base"
-                                className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-black text-taja-primary"
-                              />
-                            </div>
+                             {/* Price Input */}
+                             <div className="space-y-3">
+                               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Price (₦)</label>
+                               <input
+                                 type="number"
+                                 value={variant.price}
+                                 onChange={(e) => updateVariant(index, 'price', e.target.value)}
+                                 placeholder="0"
+                                 className="w-full h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-xl font-black text-taja-primary text-center shadow-sm"
+                               />
+                             </div>
 
-                            {/* Stock Input */}
-                            <div className="sm:col-span-2 space-y-2 sm:space-y-0">
-                              <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
-                              <input
-                                type="number"
-                                value={variant.stock}
-                                onChange={(e) => updateVariant(index, 'stock', e.target.value)}
-                                className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-bold text-taja-secondary"
-                              />
-                            </div>
+                             {/* Stock Input */}
+                             <div className="space-y-3">
+                               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
+                               <input
+                                 type="number"
+                                 value={variant.stock}
+                                 onChange={(e) => updateVariant(index, 'stock', e.target.value)}
+                                 placeholder="0"
+                                 className="w-full h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-lg font-bold text-taja-secondary text-center shadow-sm"
+                               />
+                             </div>
 
-                            {/* Weight Input */}
-                            <div className="sm:col-span-3 space-y-2 sm:space-y-0">
-                              <label className="sm:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={variant.weight}
-                                onChange={(e) => updateVariant(index, 'weight', e.target.value)}
-                                placeholder="Weight"
-                                className="w-full h-12 sm:h-11 px-4 bg-gray-50/50 border border-transparent focus:border-taja-primary/20 focus:bg-white focus:ring-4 focus:ring-taja-primary/5 transition-all rounded-xl text-sm sm:text-xs font-medium text-gray-400"
-                              />
-                            </div>
+                             {/* Weight Input */}
+                             <div className="space-y-3">
+                               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Weight (kg)</label>
+                               <input
+                                 type="number"
+                                 step="0.01"
+                                 value={variant.weight}
+                                 onChange={(e) => updateVariant(index, 'weight', e.target.value)}
+                                 placeholder="0"
+                                 className="w-full h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-base font-medium text-gray-500 shadow-sm"
+                               />
+                             </div>
+                           </div>
 
-                            {/* Remove Button */}
-                            <div className="sm:col-span-1 flex justify-end">
-                              <button
-                                type="button"
-                                onClick={() => removeVariant(index)}
-                                className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
-                              >
-                                <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                              </button>
-                            </div>
-                          </div>
+                           {/* Absolute Remove Button */}
+                           <button
+                             type="button"
+                             onClick={() => removeVariant(index)}
+                             className="absolute -top-3 -right-3 w-10 h-10 flex items-center justify-center bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-full transition-all shadow-huge border border-gray-100 z-10 group/del"
+                           >
+                             <X className="h-5 w-5 transition-transform group-hover/del:scale-110" />
+                           </button>
                         </motion.div>
                       ))}
                     </AnimatePresence>
@@ -778,32 +766,17 @@ export default function EditProductPage() {
 
               {/* Pricing Section */}
               <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-amber-500/10 rounded-2xl">
-                      <Zap className="w-5 h-5 text-amber-500" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-black text-taja-secondary tracking-tight">Price</h2>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Selling price in ₦</p>
-                    </div>
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2.5 bg-amber-500/10 rounded-2xl">
+                    <Zap className="w-5 h-5 text-amber-500" />
                   </div>
-
-                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Price range</span>
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, isRange: !prev.isRange }))}
-                      className={cn(
-                        "relative h-6 w-11 rounded-full transition-colors",
-                        formData.isRange ? "bg-taja-primary" : "bg-gray-200"
-                      )}
-                    >
-                      <div className={cn(
-                        "absolute top-1 left-1 h-4 w-4 rounded-full bg-white transition-transform",
-                        formData.isRange ? "translate-x-5" : "translate-x-0"
-                      )} />
-                    </button>
+                  <div>
+                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">Price</h2>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      {formData.variants.length > 0
+                        ? "Base listing price — options add their own prices"
+                        : "Selling price in ₦"}
+                    </p>
                   </div>
                 </div>
 
@@ -812,7 +785,7 @@ export default function EditProductPage() {
                     <div className="relative space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block">
-                          {formData.isRange ? "Min price (₦)" : "Price (₦)"}
+                          {formData.variants.length > 0 ? "Base price (₦)" : "Price (₦)"}
                         </label>
                         {suggestedPrice && (
                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-taja-primary/5 text-[9px] font-bold text-taja-primary uppercase tracking-[0.16em]">
@@ -846,23 +819,6 @@ export default function EditProductPage() {
                         </button>
                       </div>
                     </div>
-
-                    {formData.isRange && (
-                      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Max price (₦)</label>
-                        <div className="relative group">
-                          <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-gray-300">₦</span>
-                          <Input
-                            name="maxPrice"
-                            type="number"
-                            value={formData.maxPrice}
-                            onChange={handleChange}
-                            className="rounded-2xl h-16 pl-12 text-xl font-black border-gray-100 focus:border-taja-primary transition-all text-taja-primary"
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </motion.div>
-                    )}
                   </div>
 
                   <div className="space-y-4">
