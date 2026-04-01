@@ -35,13 +35,7 @@ interface Address {
   isDefault?: boolean;
 }
 
-const NIGERIAN_STATES = [
-  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
-  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo",
-  "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa",
-  "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba",
-  "Yobe", "Zamfara"
-];
+const NIGERIAN_STATES = ["Lagos"];
 
 // ─── AddressModal ─────────────────────────────────────────────────────────────
 // ─── AddressModal ─────────────────────────────────────────────────────────────
@@ -59,7 +53,7 @@ function AddressModal({ onClose, onSaved, editAddress }: AddressModalProps) {
     addressLine1: editAddress?.addressLine1 || "",
     addressLine2: editAddress?.addressLine2 || "",
     city: editAddress?.city || "",
-    state: editAddress?.state || "",
+    state: editAddress?.state || "Lagos",
     postalCode: editAddress?.postalCode || "",
     country: editAddress?.country || "Nigeria",
     isDefault: editAddress?.isDefault || false,
@@ -150,13 +144,12 @@ function AddressModal({ onClose, onSaved, editAddress }: AddressModalProps) {
               <input value={form.city} onChange={F("city")} placeholder="Lagos Island"
                 className="w-full h-12 px-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 focus:ring-2 focus:ring-taja-primary text-sm font-bold text-taja-secondary outline-none transition-all" />
             </div>
-            <div className="space-y-1.5">
+            <div className="group space-y-1.5">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">State *</label>
-              <select value={form.state} onChange={F("state")}
-                className="w-full h-12 px-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 focus:ring-2 focus:ring-taja-primary text-sm font-bold text-taja-secondary outline-none transition-all appearance-none">
-                <option value="">Select State</option>
-                {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <div className="w-full h-12 px-4 rounded-2xl bg-slate-100 flex items-center text-sm font-bold text-taja-secondary opacity-70">
+                Lagos
+              </div>
+              <p className="text-[9px] text-gray-400 mt-1 ml-1 font-bold uppercase tracking-widest italic">Lagos only shipping</p>
             </div>
           </div>
 

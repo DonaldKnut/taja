@@ -874,7 +874,7 @@ export default function ShopPage() {
                                   <Zap className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <h4 className="text-sm font-black text-taja-secondary">Fast Delivery</h4>
-                                <p className="text-xs font-medium text-gray-500 leading-relaxed">Reliable shipping across major cities in Nigeria with real-time tracking on every order.</p>
+                                <p className="text-xs font-medium text-gray-500 leading-relaxed text-balance">Fast and safe delivery across Lagos with tracking on every order.</p>
                               </div>
                             </div>
                           </div>

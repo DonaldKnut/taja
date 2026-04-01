@@ -352,6 +352,31 @@ export async function uploadCoverPhoto(file: File): Promise<string> {
   return data.data?.url ?? data.data;
 }
 
+// Upload API helper for journal/blog images (R2)
+export async function uploadJournalImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("type", "journal");
+
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new ApiError(data.message || data.error || "Upload failed", response.status, data);
+  }
+  return data.data?.url ?? data.data;
+}
+
 // Upload API helper for support attachments (images only)
 export async function uploadSupportAttachment(
   file: File

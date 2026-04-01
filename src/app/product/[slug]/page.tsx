@@ -31,7 +31,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"description" | "specifications">("description");
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | "standard" | null>("standard");
   const { addItem, updateQuantity, toggleCart, isOpen } = useCartStore();
   const { items: wishlistItems, toggleWishlistItem } = useWishlistStore();
 
@@ -176,7 +176,7 @@ export default function ProductDetailPage() {
         };
 
         setProduct(transformedProduct);
-        setSelectedVariantId(null);
+        setSelectedVariantId("standard");
       } catch (error: any) {
         console.error("Error fetching product:", error);
         toast.error(error?.message || "Failed to load product");
@@ -192,7 +192,9 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async () => {
     try {
-      const selectedVariant = product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId);
+      const selectedVariant = product.variants?.find(
+        (v: any) => String(v._id || v.id || v.name) === String(selectedVariantId)
+      );
       const finalPrice = getEffectivePrice(product.price, selectedVariant?.price);
       const variantImage = selectedVariant?.image;
       const cartImages = variantImage ? [variantImage, ...(product.images || [])] : product.images;

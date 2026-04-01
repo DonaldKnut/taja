@@ -1,35 +1,23 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { ClientAppShell } from "@/components/ClientAppShell";
+import {
+  SITE_KEYWORDS,
+  SITE_META_DESCRIPTION,
+  SITE_LONG_DESCRIPTION,
+  getRootWebSiteJsonLd,
+} from "@/lib/site-seo";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://taja.shop";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Taja.Shop - Nigeria's Trusted Marketplace",
+    default: "Taja.Shop — Buy & Sell Online | Marketplace for Nigerian & African Sellers",
     template: "%s | Taja.Shop",
   },
-  description:
-    "Next-generation Nigerian e-commerce marketplace for thrift fashion, vintage items, and handmade crafts. From DMs to your own shop.",
-  keywords: [
-    "taja.shop",
-    "nigeria ecommerce",
-    "nigerian marketplace",
-    "online thrift store nigeria",
-    "thrift fashion nigeria",
-    "vintage clothes nigeria",
-    "second hand clothes nigeria",
-    "handmade crafts nigeria",
-    "buy and sell nigeria",
-    "online shopping nigeria",
-    "nigerian sellers",
-    "virtual try on nigeria",
-    "escrow payments nigeria",
-    "lagos thrift store",
-    "abuja thrift fashion",
-    "nigeria online marketplace",
-  ],
+  description: SITE_META_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
   authors: [{ name: "Taja.Shop Team" }],
   creator: "Taja.Shop Team",
   publisher: "Taja.Shop",
@@ -39,9 +27,8 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "Taja.Shop - Nigeria's Trusted Marketplace",
-    description:
-      "Give every Nigerian seller their own online shop and trusted community marketplace.",
+    title: "Taja.Shop — Buy & Sell Online | Marketplace for Nigerian & African Sellers",
+    description: SITE_META_DESCRIPTION,
     url: siteUrl,
     siteName: "Taja.Shop",
     locale: "en_NG",
@@ -51,15 +38,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Taja.Shop - Nigeria's Trusted Marketplace",
+        alt: "Taja.Shop — Buy & sell online with Nigerian and African sellers",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Taja.Shop - Nigeria's Trusted Marketplace",
-    description:
-      "Give every Nigerian seller their own online shop and trusted community marketplace.",
+    title: "Taja.Shop — Buy & Sell Online | Marketplace for Nigerian & African Sellers",
+    description: SITE_META_DESCRIPTION,
     images: ["/og-image.png"],
     creator: "@tajashop",
   },
@@ -114,21 +100,33 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "Taja.Shop",
+              alternateName: ["Taja", "Taja Shop", "taja.shop"],
               url: siteUrl,
               logo: `${siteUrl}/favicon.png`,
-              contactPoint: {
-                "@type": "ContactPoint",
-                telephone: "+234-XXX-XXXX-XXX",
-                contactType: "customer service",
-                areaServed: "NG",
-                availableLanguage: "en",
-              },
+              description: SITE_LONG_DESCRIPTION,
+              ...(process.env.NEXT_PUBLIC_SUPPORT_PHONE
+                ? {
+                    contactPoint: {
+                      "@type": "ContactPoint",
+                      telephone: process.env.NEXT_PUBLIC_SUPPORT_PHONE,
+                      contactType: "customer service",
+                      areaServed: "NG",
+                      availableLanguage: ["en"],
+                    },
+                  }
+                : {}),
               sameAs: [
                 "https://instagram.com/taja.shop",
                 "https://twitter.com/tajashop",
                 "https://facebook.com/taja.shop",
               ],
             }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(getRootWebSiteJsonLd(siteUrl)),
           }}
         />
       </head>

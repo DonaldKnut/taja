@@ -188,11 +188,11 @@ export default function PrivacyPage() {
                 </p>
               </div>
               <div className="space-y-4 pt-4">
-                <div className="text-lg font-black text-taja-primary tracking-tight">privacy@taja.shop</div>
-                <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Plot 5 Admiralty Road, Lekki Phase 1, Lagos</div>
+                <div className="text-lg font-black text-taja-primary tracking-tight">support@tajaapp.shop</div>
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">23A, Bashorun Okusanya Street, Off Admiralty Road, Off Admiralty Wy, Lekki Phase 1, Lagos</div>
               </div>
               <Link href="/" className="inline-flex items-center gap-2 text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-white transition-all pt-8">
-                <ArrowLeft className="w-3 h-3" /> Marketplace Hub
+                <ArrowLeft className="w-3 h-3" /> 23A, Bashorun Okusanya Street
               </Link>
             </div>
           </div>

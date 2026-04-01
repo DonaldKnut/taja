@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import { SITE_META_DESCRIPTION, SITE_LONG_DESCRIPTION } from "@/lib/site-seo";
 
 const siteName = "Taja.Shop";
-const defaultTitle = "Taja.Shop - Nigeria's Trusted Marketplace";
-const defaultDescription =
-  "Next-generation Nigerian e-commerce marketplace for thrift fashion, vintage items, and handmade crafts. From DMs to your own shop.";
+const defaultTitle = "Taja.Shop — Buy & Sell Online | Marketplace for Nigerian & African Sellers";
+const defaultDescription = SITE_META_DESCRIPTION;
 const defaultImage = "/og-image.png";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://taja.shop";
 
@@ -98,12 +98,14 @@ export function generateStructuredData({
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "Taja.Shop",
+      alternateName: ["Taja", "Taja Shop", "taja.shop"],
       url: baseUrl,
       logo: "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
-      description:
-        "Nigeria's trusted e-commerce marketplace for thrift fashion, vintage items, and handmade crafts.",
+      description: SITE_LONG_DESCRIPTION,
       sameAs: [
-        // Add social media links when available
+        "https://instagram.com/taja.shop",
+        "https://twitter.com/tajashop",
+        "https://facebook.com/taja.shop",
       ],
       ...data,
     },
@@ -121,6 +123,8 @@ export function generateStructuredData({
       "@context": "https://schema.org",
       "@type": "WebSite",
       name: "Taja.Shop",
+      alternateName: ["Taja", "Taja Shop", "taja.shop"],
+      description: SITE_LONG_DESCRIPTION,
       url: baseUrl,
       potentialAction: {
         "@type": "SearchAction",
@@ -235,6 +239,55 @@ export function generateProductStructuredData(product: {
     type: "Product",
     data: structuredData,
   });
+}
+
+/** Article / BlogPosting JSON-LD for Journal posts */
+export function generateArticleJsonLd(input: {
+  headline: string;
+  description: string;
+  url: string;
+  imageUrls: string[];
+  datePublished?: string;
+  dateModified?: string;
+  authorName?: string;
+  section?: string;
+  keywords?: string[];
+}) {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://taja.shop";
+  const logoUrl = `${baseUrl}/favicon.png`;
+  const images = input.imageUrls
+    .filter(Boolean)
+    .map((u) => (u.startsWith("http") ? u : `${siteUrl}${u.startsWith("/") ? u : `/${u}`}`));
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: input.headline,
+    description: input.description,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": input.url,
+    },
+    image: images.length ? images : [`${baseUrl}/og-image.png`],
+    datePublished: input.datePublished,
+    dateModified: input.dateModified || input.datePublished,
+    author: input.authorName
+      ? {
+          "@type": "Person",
+          name: input.authorName,
+        }
+      : undefined,
+    publisher: {
+      "@type": "Organization",
+      name: siteName,
+      logo: {
+        "@type": "ImageObject",
+        url: logoUrl,
+      },
+    },
+    ...(input.section ? { articleSection: input.section } : {}),
+    ...(input.keywords?.length ? { keywords: input.keywords.join(", ") } : {}),
+  };
 }
 
 // Generate shop (LocalBusiness) structured data

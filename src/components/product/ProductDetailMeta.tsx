@@ -1,4 +1,5 @@
 "use client";
+import toast from "react-hot-toast";
 
 import { Heart, Share2, Star, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -6,8 +7,8 @@ import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPri
 
 interface ProductDetailMetaProps {
   product: any;
-  selectedVariantId: string | null;
-  setSelectedVariantId: (id: string) => void;
+  selectedVariantId: string | "standard" | null;
+  setSelectedVariantId: (id: string | "standard" | null) => void;
   isWishlisted: boolean;
   onShare: () => void;
   onToggleWishlist: () => void;
@@ -21,7 +22,7 @@ export function ProductDetailMeta({
   onShare,
   onToggleWishlist,
 }: ProductDetailMetaProps) {
-  const selectedVariant = product.variants?.find((v: any) => (v._id || v.id) === selectedVariantId);
+  const selectedVariant = product.variants?.find((v: any) => String(v._id || v.id || v.name) === String(selectedVariantId));
   const currentPrice = getEffectivePrice(product.price, selectedVariant?.price);
   const currentCompareAtPrice = selectedVariant?.compareAtPrice ?? product.compareAtPrice;
   const { minPrice, maxPrice } = getProductDisplayPriceRange(product);
@@ -100,20 +101,83 @@ export function ProductDetailMeta({
               {product.variants.length} Available
             </span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+
+          {selectedVariant && (
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-tight">
+                  Selected: {selectedVariant.name}
+                </span>
+              </div>
+              <span className="text-[11px] font-black text-taja-secondary">
+                ₦{getEffectivePrice(product.price, selectedVariant.price).toLocaleString()}
+              </span>
+            </div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 relative z-[30] isolate">
+            {/* Standard Option */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSelectedVariantId("standard");
+                toast.success("Standard option selected!", {
+                  id: "v-select-std",
+                  duration: 2000,
+                });
+              }}
+              className={cn(
+                "relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-1 cursor-pointer active:scale-95 touch-manipulation z-[40]",
+                selectedVariantId === "standard"
+                  ? "border-emerald-500 bg-emerald-50/80 shadow-premium ring-2 ring-emerald-500/20"
+                  : "border-slate-100 bg-white hover:border-emerald-200 hover:bg-slate-50"
+              )}
+              style={{ pointerEvents: 'auto', WebkitTapHighlightColor: 'transparent' }}
+            >
+              <span
+                className={cn(
+                  "text-[10px] font-black uppercase tracking-tight text-center leading-tight",
+                  selectedVariantId === "standard" ? "text-taja-secondary" : "text-gray-400"
+                )}
+              >
+                Standard
+              </span>
+              <span
+                className={cn(
+                  "text-[10px] font-bold",
+                  selectedVariantId === "standard" ? "text-taja-primary" : "text-gray-300"
+                )}
+              >
+                ₦{product.price.toLocaleString()}
+              </span>
+            </button>
+
             {product.variants.map((variant: any) => {
-              const variantId = variant._id || variant.id;
-              const isSelected = selectedVariantId === variantId;
+              const variantId = String(variant._id || variant.id || variant.name);
+              const isSelected = String(selectedVariantId) === variantId;
               return (
                 <button
                   key={variantId}
-                  onClick={() => setSelectedVariantId(variantId)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("Selected variant ID:", variantId);
+                    setSelectedVariantId(variantId);
+                    toast.success(`${variant.name} selected!`, {
+                      id: "v-select",
+                      duration: 2000,
+                    });
+                  }}
                   className={cn(
-                    "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-1",
+                    "relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-1 cursor-pointer active:scale-95 touch-manipulation z-[40]",
                     isSelected
-                      ? "border-taja-primary bg-taja-primary/5 shadow-premium"
-                      : "border-gray-50 bg-gray-50/30 hover:border-gray-100"
+                      ? "border-emerald-500 bg-emerald-50/80 shadow-premium ring-2 ring-emerald-500/20"
+                      : "border-slate-100 bg-white hover:border-emerald-200 hover:bg-slate-50"
                   )}
+                  style={{ pointerEvents: 'auto', WebkitTapHighlightColor: 'transparent' }}
                 >
                   <span
                     className={cn(
@@ -132,7 +196,7 @@ export function ProductDetailMeta({
                     ₦{getEffectivePrice(product.price, variant.price).toLocaleString()}
                   </span>
                 </button>
-              );
+                );
             })}
           </div>
         </div>

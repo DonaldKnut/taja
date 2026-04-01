@@ -171,7 +171,7 @@ export function AdvancedFooter() {
           <div className="col-span-full lg:col-span-4">
             <Logo size="lg" className="mb-8 invert opacity-90" />
             <p className="text-gray-400 font-medium leading-relaxed mb-8 max-w-sm">
-              The next evolution of Nigerian commerce. A neural marketplace built for curated discovery and secure, autonomous trade.
+              The best way to buy and sell in Lagos. A safe and easy marketplace built for everyone.
             </p>
 
             <div className="flex gap-4">

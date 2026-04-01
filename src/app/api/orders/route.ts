@@ -6,7 +6,7 @@ import Product from '@/models/Product';
 import Shop from '@/models/Shop';
 import User from '@/models/User';
 import { requireAuth } from '@/lib/middleware';
-import { notifyAdminsNewOrder } from '@/lib/notifications';
+import { notifyAdminsNewOrder, createNotification } from '@/lib/notifications';
 import { sendOrderConfirmationEmail } from '@/lib/email';
 
 
@@ -395,6 +395,18 @@ export async function POST(request: NextRequest) {
             shopName: shopDoc?.shopName,
             sellerName: sellerDoc?.fullName,
             totalNaira: total,
+          });
+
+          // 1b. Notify seller (in-app)
+          await createNotification({
+            userId: order.seller.toString(),
+            type: 'order',
+            title: 'New order received! 🛍️',
+            message: `${buyerDoc?.fullName || 'A buyer'} placed order #${order.orderNumber || order._id.toString().slice(-8)} worth ₦${total.toLocaleString()}. Payment confirmed — funds held in escrow.`,
+            link: `/seller/orders/${order._id}`,
+            actionUrl: `/seller/orders/${order._id}`,
+            priority: 'high',
+            metadata: { orderId: order._id.toString(), orderNumber: order.orderNumber },
           });
 
           // 2. Send buyer order confirmation email

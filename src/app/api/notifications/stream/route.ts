@@ -31,12 +31,12 @@ export async function GET(request: NextRequest) {
             const interval = setInterval(async () => {
                 try {
                     const newNotifications = await Notification.find({
-                        userId,
+                        user: userId,
                         createdAt: { $gt: lastChecked },
                     }).sort({ createdAt: -1 });
 
                     if (newNotifications.length > 0) {
-                        lastChecked = new Notifications[0].createdAt;
+                        lastChecked = newNotifications[0].createdAt;
                         controller.enqueue(
                             encoder.encode(`data: ${JSON.stringify({ type: "new_notifications", count: newNotifications.length })}\n\n`)
                         );

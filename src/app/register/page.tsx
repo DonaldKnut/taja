@@ -175,8 +175,8 @@ function RegisterForm() {
                   <div className="flex justify-center mb-4">
                     <Logo size="lg" variant="header" />
                   </div>
-                  <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">Expand Your Reach</h2>
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">Join the Elite Nigerian Marketplace</p>
+                  <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">Start Selling in Lagos</h2>
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">Join the best Lagos Marketplace</p>
                 </div>
 
                 <div className="space-y-6">
@@ -283,7 +283,7 @@ function RegisterForm() {
                 { title: "Rapid Onboarding", desc: "Get your store live in under 5 minutes.", icon: Rocket },
                 { title: "Escrow Included", desc: "Never worry about payment trust again.", icon: Shield },
                 { title: "Direct Support", desc: "24/7 dedicated help for account growth.", icon: LifeBuoy },
-                { title: "Vibrant Community", desc: "Connect with Nigeria's best sellers.", icon: Users },
+                { title: "Vibrant Community", desc: "Connect with the best sellers in Lagos.", icon: Users },
               ].map((item, i) => (
                 <div key={i} className="glass-card p-4 rounded-2xl border-gray-100 flex items-start gap-4 hover:-translate-y-1 transition-all">
                   <div className="h-9 w-9 rounded-xl bg-taja-light flex items-center justify-center shrink-0"><item.icon className="h-4 w-4 text-taja-primary" /></div>
@@ -307,7 +307,7 @@ function RegisterForm() {
                     <img src="https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/Portrait____Cooperate_headshot_qfzmsr.jpg" alt="User" className="h-full w-full object-cover" />
                   </div>
                 </div>
-                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Trusted by Nigerians</p>
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Trusted by Lagosians</p>
               </div>
               <div className="inline-flex items-center rounded-full bg-taja-light/30 px-4 py-2 border border-taja-primary/5">
                 <span className="text-[10px] font-black text-taja-primary uppercase tracking-widest">Presented by Antigravity Elite</span>

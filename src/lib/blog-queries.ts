@@ -87,3 +87,17 @@ export async function recordPostView(postId: string) {
   await connectDB();
   await BlogPost.updateOne({ _id: postId }, { $inc: { "metadata.views": 1 } });
 }
+
+/** Slugs + dates for sitemap.xml (published posts only) */
+export async function getPublishedBlogEntriesForSitemap() {
+  await connectDB();
+  const posts = await BlogPost.find({ status: "published" })
+    .select("slug updatedAt publishedAt")
+    .lean();
+  return posts.map((p) => ({
+    slug: p.slug as string,
+    lastModified: (p as { updatedAt?: Date; publishedAt?: Date }).updatedAt
+      || (p as { publishedAt?: Date }).publishedAt
+      || new Date(),
+  }));
+}

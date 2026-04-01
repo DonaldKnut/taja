@@ -47,9 +47,9 @@ export default async function BlogIndexPage({
   }
 
   return (
-    <main>
+    <main className="bg-white">
       <section className="relative pt-8 pb-16 sm:pt-12 sm:pb-24 overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-[480px] bg-gradient-to-b from-taja-light/80 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-[480px] bg-gradient-to-b from-taja-light/60 to-white pointer-events-none" />
         <Container size="lg" className="relative z-10 px-4 sm:px-6">
           <div className="max-w-3xl mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-taja-primary/20 bg-white/80 backdrop-blur px-4 py-2 mb-6 shadow-sm">

@@ -119,16 +119,16 @@ export default function HowItWorksPage() {
     },
     {
       number: "04",
-      title: "Emerald Security",
+      title: "Safe & Secure",
       description:
-        "Experience the peace of mind that comes with our secure payment and verified deliveries.",
+        "Shop with peace of mind. Your money is protected until your item arrives.",
       icon: Shield,
     },
     {
       number: "05",
-      title: "Premium Delivery",
+      title: "Fast Delivery",
       description:
-        "Receive your items through our reliable shipping network with real-time tracking.",
+        "Get your items delivered quickly anywhere in Lagos with real-time tracking.",
       icon: Smartphone,
     },
   ];
@@ -136,15 +136,15 @@ export default function HowItWorksPage() {
   const features = [
     {
       icon: Shield,
-      title: "Secure Escrow",
+      title: "Safe Payments",
       description:
-        "Full transaction protection with advanced encryption for every partner.",
+        "Your money is safe with us. We only pay the seller after you get your item.",
     },
     {
       icon: Truck,
-      title: "Express Logistics",
+      title: "Fast Delivery",
       description:
-        "Reliable shipping network covering Nigeria with precision and speed.",
+        "Reliable shipping anywhere in Lagos with speed and care.",
     },
     {
       icon: Zap,
@@ -236,47 +236,57 @@ export default function HowItWorksPage() {
         </Container>
       </nav>
 
-      {/* Hero Section */}
-      <Section className="relative pt-20 pb-12 overflow-hidden">
-        <Container size="lg">
+      {/* Cinematic Hero Section */}
+      <Section className="relative pt-24 pb-16 overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] pointer-events-none">
+          <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-taja-primary/5 blur-[120px] rounded-full animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-emerald-500/5 blur-[120px] rounded-full animate-pulse" />
+        </div>
+
+        <Container size="lg" className="relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="text-center max-w-5xl mx-auto"
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center max-w-6xl mx-auto"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-card border-white/60 text-taja-primary text-[10px] font-black uppercase tracking-[0.3em] mb-8"
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="inline-flex items-center gap-3 px-6 py-2 rounded-full glass-card border-white shadow-huge text-taja-primary text-[10px] sm:text-[11px] font-black uppercase tracking-[0.4em] mb-10"
             >
-              <Rocket className="h-3 w-3" />
-              <span>Modern Shopping</span>
+              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-taja-primary/10">
+                <Rocket className="h-3 w-3" />
+              </div>
+              <span>Modern Shopping Protocol</span>
             </motion.div>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-taja-secondary mb-8 leading-[1.1] tracking-tighter">
-              A New Standard in{" "}
-              <span className="text-white drop-shadow-[0_2px_2px_rgba(46,107,78,0.3)]">
-                Experience
-              </span>
+
+            <h1 className="text-5xl md:text-8xl lg:text-9xl font-black text-taja-secondary mb-10 leading-[0.9] tracking-tighter">
+              A New Standard <br className="hidden md:block" />
+              In <span className="text-transparent bg-clip-text bg-gradient-taja drop-shadow-sm">Experience.</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-500 mb-12 leading-relaxed max-w-3xl mx-auto font-medium">
-              Elevating Nigerian commerce with reliability, verified trust, and
-              super-premium technology designed for the modern era.
+
+            <p className="text-lg md:text-2xl text-gray-500/80 mb-14 leading-relaxed max-w-3xl mx-auto font-medium text-balance px-4 sm:px-0">
+              We are making shopping in Lagos easy and safe for everyone. <br className="hidden md:block" />
+              Buy and sell with confidence on Nigeria's most trusted marketplace.
             </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+
+            <div className="flex flex-col sm:flex-row gap-5 justify-center items-center px-4 sm:px-0">
               <Link
                 href="/register"
-                className="bg-taja-primary text-white px-10 py-5 rounded-full text-sm font-black uppercase tracking-[0.25em] shadow-emerald hover:shadow-emerald-hover transition-all flex items-center gap-3 active:scale-95"
+                className="group relative w-full sm:w-auto bg-taja-secondary text-white px-12 py-5 rounded-[2rem] text-xs font-black uppercase tracking-[0.3em] shadow-huge hover:shadow-premium-hover transition-all flex items-center justify-center gap-4 active:scale-95 overflow-hidden"
               >
-                Start Selling
-                <ArrowRight className="h-5 w-5" />
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-taja-primary opacity-0 group-hover:opacity-10 transition-opacity" />
+                Start Your Journey
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
                 href="/marketplace"
-                className="glass-card border-white/60 text-taja-secondary px-10 py-5 rounded-full text-sm font-black uppercase tracking-[0.25em] hover:bg-white/40 transition-all active:scale-95"
+                className="w-full sm:w-auto glass-card border-white/80 text-taja-secondary px-12 py-5 rounded-[2rem] text-xs font-black uppercase tracking-[0.3em] hover:bg-white transition-all flex items-center justify-center active:scale-95 shadow-premium"
               >
-                Explore Marketplace
+                Explore Market
               </Link>
             </div>
           </motion.div>
@@ -291,7 +301,7 @@ export default function HowItWorksPage() {
               How Taja Works
             </h2>
             <p className="text-3xl md:text-5xl font-black text-taja-secondary tracking-tight">
-              Simplified for Growth
+              Easy for Everyone
             </p>
           </div>
 
@@ -415,7 +425,7 @@ export default function HowItWorksPage() {
               Ready to Define the Future?
             </h2>
             <p className="text-xl text-white/70 mb-12 max-w-2xl mx-auto leading-relaxed">
-              Join Nigeria&apos;s most sophisticated commerce network. Start your shop
+              Join the best shopping community in Lagos. Start your shop
               quickly and grow with ease.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">

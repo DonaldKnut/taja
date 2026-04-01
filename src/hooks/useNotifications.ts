@@ -40,65 +40,59 @@ export function useNotifications() {
     }
   }, []);
 
-  // Initialize socket connection for real-time notifications
+  // Initialize SSE or Socket.io for real-time notifications
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (!token) return;
 
-    // Use the same origin for socket connection (Next.js handles it)
-    const socketUrl = typeof window !== "undefined" ? window.location.origin : "";
-    if (!socketUrl) return;
-
-    let newSocket: Socket | null = null;
+    let eventSource: EventSource | null = null;
     
     try {
-      newSocket = io(socketUrl, {
-        auth: { token },
-        transports: ["websocket", "polling"],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 5,
-      });
+      // Use SSE (Server-Sent Events) for light-weight real-time updates
+      // This is more reliable in many hosting environments than Socket.io
+      eventSource = new EventSource(`/api/notifications/stream`);
 
-      newSocket.on("connect", () => {
-        console.log("Socket connected for notifications");
-      });
-
-      newSocket.on("new_notification", (notification: Notification) => {
-        setNotifications((prev) => [notification, ...prev]);
-        setUnreadCount((prev) => prev + 1);
-        
-        // Show browser notification if permission granted
-        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-          new Notification(notification.title, {
-            body: notification.message,
-            icon: notification.imageUrl || "/favicon.ico",
-          });
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "new_notifications") {
+            // New items detected, refresh the list
+            fetchNotifications();
+          }
+        } catch (e) {
+          console.error("Failed to parse SSE data", e);
         }
-      });
+      };
 
-      newSocket.on("notifications_marked_read", () => {
-        fetchNotifications();
-      });
-
-      newSocket.on("disconnect", () => {
-        console.log("Socket disconnected");
-      });
-
-      newSocket.on("connect_error", (error) => {
-        console.log("Socket connection error:", error);
-        // Fallback to polling - already handled by fetchNotifications interval
-      });
-
-      setSocket(newSocket);
+      eventSource.onerror = (error) => {
+        console.warn("SSE connection error, falling back to polling", error);
+        if (eventSource) eventSource.close();
+      };
     } catch (error) {
-      console.error("Failed to initialize socket:", error);
+      console.error("Failed to initialize SSE:", error);
+    }
+
+    // Existing Socket.io initialization (as fallback)
+    const socketUrl = typeof window !== "undefined" ? window.location.origin : "";
+    let newSocket: Socket | null = null;
+    
+    if (socketUrl) {
+      try {
+        newSocket = io(socketUrl, {
+          auth: { token },
+          transports: ["websocket", "polling"],
+        });
+
+        newSocket.on("new_notification", () => fetchNotifications());
+        setSocket(newSocket);
+      } catch (e) {
+        console.error("Socket error", e);
+      }
     }
 
     return () => {
-      if (newSocket) {
-        newSocket.close();
-      }
+      if (eventSource) eventSource.close();
+      if (newSocket) newSocket.close();
     };
   }, [fetchNotifications]);
 
@@ -168,6 +162,18 @@ export function useNotifications() {
     }
   }, [notifications]);
 
+  const clearAll = useCallback(async () => {
+    try {
+      await api("/api/notifications/clear-all", {
+        method: "DELETE",
+      });
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to clear all notifications:", error);
+    }
+  }, []);
+
   return {
     notifications,
     unreadCount,
@@ -176,6 +182,7 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    clearAll,
   };
 }
 

@@ -28,7 +28,8 @@ This document explains how the backend environment variables have been mapped to
 
 ### Frontend URLs (Client-Side Accessible)
 These use `NEXT_PUBLIC_` prefix so they're accessible in the browser:
-- `NEXT_PUBLIC_SITE_URL` → `http://localhost:3000`
+- `NEXT_PUBLIC_SITE_URL` → `http://localhost:3000` (must match production domain for canonical URLs, Open Graph, and sitemap)
+- `NEXT_PUBLIC_SUPPORT_PHONE` → Optional (e.g. `+2348012345678`). If set, included in Organization JSON-LD for rich results; omit to avoid placeholder numbers in schema
 - `NEXT_PUBLIC_API_URL` → Empty (uses relative paths for internal API routes)
 - `NEXT_PUBLIC_SOCKET_URL` → `http://localhost:3000`
 

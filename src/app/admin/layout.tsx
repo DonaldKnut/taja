@@ -174,11 +174,36 @@ export default function AdminLayout({
     <div className="flex flex-col min-h-full pt-4 pb-6 px-4">
       {/* Branding for Mobile */}
       {mobile && (
-        <div className="flex items-center justify-between mb-10 px-2 text-white">
-          <Logo size="sm" href="/admin/dashboard" variant="header" />
-          <button onClick={() => setSidebarOpen(false)} className="p-2 text-white/70 hover:text-white">
-            <X className="h-6 w-6" />
-          </button>
+        <div className="space-y-6 mb-10">
+          <div className="flex items-center justify-between px-2 text-white">
+            <Logo size="sm" href="/admin/dashboard" variant="header" />
+            <button onClick={() => setSidebarOpen(false)} className="p-2 text-white/70 hover:text-white">
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+          
+          {/* Quick Utilities for Mobile */}
+          <div className="grid grid-cols-2 gap-3 px-2">
+            <button 
+              onClick={() => { setNotificationsOpen(true); setSidebarOpen(false); }}
+              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all relative group"
+            >
+              <Bell className="h-5 w-5 mb-2 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-black uppercase tracking-widest">Alerts</span>
+              {unreadCount > 0 && (
+                <span className="absolute top-3 right-3 h-4 w-4 bg-emerald-500 text-white text-[8px] font-black rounded-lg flex items-center justify-center border border-emerald-950">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+            <button 
+              onClick={() => { toggleCart(); setSidebarOpen(false); }}
+              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all group"
+            >
+              <ShoppingCart className="h-5 w-5 mb-2 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-black uppercase tracking-widest">Cart</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -405,28 +430,30 @@ export default function AdminLayout({
 
             {/* Right Icons */}
             <div className="flex items-center gap-2 sm:gap-4">
-              <button
-                onClick={() => setNotificationsOpen(true)}
-                className="p-3 text-gray-400 hover:text-emerald-500 bg-white border border-gray-100 hover:border-emerald-100 transition-all rounded-2xl relative shadow-sm"
-                aria-label="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-emerald-500 text-white text-[10px] font-black rounded-lg flex items-center justify-center border-2 border-white shadow-sm">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </button>
+              <div className="hidden sm:flex items-center gap-2 sm:gap-4">
+                <button
+                  onClick={() => setNotificationsOpen(true)}
+                  className="p-3 text-gray-400 hover:text-emerald-500 bg-white border border-gray-100 hover:border-emerald-100 transition-all rounded-2xl relative shadow-sm"
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-emerald-500 text-white text-[10px] font-black rounded-lg flex items-center justify-center border-2 border-white shadow-sm">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
 
-              <div className="flex relative">
-                <CartIcon
-                  className="p-3 text-gray-400 hover:text-emerald-500 bg-white border border-gray-100 hover:border-emerald-100 transition-all rounded-2xl shadow-sm"
-                  iconSize="h-5 w-5"
-                  badgeClassName="!h-5 !w-5 !text-[10px] !-top-1 !-right-1 bg-emerald-500 text-white border-2 border-white shadow-sm"
-                />
+                <div className="flex relative">
+                  <CartIcon
+                    className="p-3 text-gray-400 hover:text-emerald-500 bg-white border border-gray-100 hover:border-emerald-100 transition-all rounded-2xl shadow-sm"
+                    iconSize="h-5 w-5"
+                    badgeClassName="!h-5 !w-5 !text-[10px] !-top-1 !-right-1 bg-emerald-500 text-white border-2 border-white shadow-sm"
+                  />
+                </div>
+
+                <div className="h-8 w-px bg-gray-100 mx-2" />
               </div>
-
-              <div className="h-8 w-px bg-gray-100 mx-2 hidden sm:block" />
 
               <div className="flex items-center gap-3 pl-2 py-1.5 pr-1.5 rounded-2xl hover:bg-gray-50 transition-all group">
                 <div className="hidden sm:block text-right">

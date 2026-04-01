@@ -21,8 +21,6 @@ import { DashboardPreview } from "@/components/ui/DashboardPreview";
 import { HomepageRecommendations } from "@/components/homepage/HomepageRecommendations";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { StructuredData } from "@/components/StructuredData";
-import { generateStructuredData } from "@/lib/seo";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Container, Section } from "@/components/layout";
@@ -32,20 +30,6 @@ import { CorporateRegistry } from "@/components/homepage/CorporateRegistry";
 export default function HomePage() {
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
-  const websiteStructuredData = generateStructuredData({
-    type: "WebSite",
-    data: {},
-  });
-
-  const organizationStructuredData = generateStructuredData({
-    type: "Organization",
-    data: {
-      address: {
-        "@type": "PostalAddress",
-        addressCountry: "NG",
-      },
-    },
-  });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -78,8 +62,6 @@ export default function HomePage() {
 
   return (
     <>
-      <StructuredData data={websiteStructuredData} />
-      <StructuredData data={organizationStructuredData} />
       <div className="min-h-screen">
         {/* Navigation - Enhanced */}
         <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
@@ -331,8 +313,8 @@ export default function HomePage() {
                 </h1>
 
                 <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                  Taja transforms how Nigerians shop and sell. Forget chaotic DMs.
-                  Get a premium storefront, escrow protection, and advanced tools designed for growth.
+                  Taja is the marketplace to buy anything and sell anything online — built for Nigerian and African sellers
+                  and entrepreneurs. Get a storefront, trusted checkout, and tools that replace chaotic DMs.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-5 justify-center lg:justify-start items-center pt-4">
@@ -368,18 +350,18 @@ export default function HomePage() {
 
                 <div className="pt-10 flex flex-wrap items-center justify-center lg:justify-start gap-10">
                   <div className="flex flex-col items-center lg:items-start gap-1">
-                    <span className="text-2xl font-black text-taja-secondary">2,500+</span>
+                    <span className="text-2xl font-black text-taja-secondary">800+</span>
                     <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Verified Sellers</span>
                   </div>
                   <div className="h-10 w-px bg-gray-100 hidden sm:block" />
                   <div className="flex flex-col items-center lg:items-start gap-1">
-                    <span className="text-2xl font-black text-taja-secondary">₦25M+</span>
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Monthly GMV</span>
+                    <span className="text-2xl font-black text-taja-secondary">₦5M+</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Monthly Volume</span>
                   </div>
                   <div className="h-10 w-px bg-gray-100 hidden sm:block" />
                   <div className="flex flex-col items-center lg:items-start gap-1">
                     <span className="text-2xl font-black text-taja-secondary">99.9%</span>
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Uptime SLA</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Secure Uptime</span>
                   </div>
                 </div>
               </div>

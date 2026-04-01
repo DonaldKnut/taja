@@ -128,12 +128,12 @@ function SupportPageInner() {
   const selectedPriority = priorities.find((p) => p.value === formData.priority);
 
   return (
-    <div className="min-h-screen bg-[#020617]">
+    <div className="min-h-screen bg-white">
       {/* ── Background blobs ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-[700px] h-[700px] bg-taja-primary/8 rounded-full blur-[140px]" />
-        <div className="absolute top-1/2 -left-60 w-[500px] h-[500px] bg-indigo-500/8 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/3 w-[400px] h-[400px] bg-blue-500/6 rounded-full blur-[100px]" />
+        <div className="absolute -top-40 -right-40 w-[700px] h-[700px] bg-taja-primary/10 rounded-full blur-[140px]" />
+        <div className="absolute top-1/2 -left-60 w-[500px] h-[500px] bg-emerald-400/8 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-1/3 w-[400px] h-[400px] bg-taja-primary/5 rounded-full blur-[100px]" />
       </div>
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-12">
@@ -145,12 +145,12 @@ function SupportPageInner() {
         >
           <div className="flex items-center gap-2 mb-4">
             <div className="h-1 w-6 bg-taja-primary rounded-full" />
-            <p className="text-taja-primary text-[10px] font-black uppercase tracking-[0.3em]">Help Centre</p>
+            <p className="text-taja-primary text-[10px] font-black uppercase tracking-[0.3em]">Operations</p>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tighter leading-none italic mb-3">
+          <h1 className="text-4xl sm:text-5xl font-black text-taja-secondary tracking-tighter leading-none italic mb-3">
             How Can We<br />Help You?
           </h1>
-          <p className="text-slate-400 text-sm font-medium max-w-md leading-relaxed">
+          <p className="text-slate-500 text-sm font-medium max-w-md leading-relaxed">
             Create a support ticket and our team will respond within 24 hours. The more detail, the faster we help.
           </p>
         </motion.div>
@@ -161,13 +161,13 @@ function SupportPageInner() {
           className="grid grid-cols-3 gap-3 mb-8"
         >
           {[
-            { icon: Clock, label: "Avg. Response", value: "< 24 hrs", color: "text-amber-400", bg: "bg-amber-400/10" },
-            { icon: CheckCircle, label: "Issues Resolved", value: "98%", color: "text-emerald-400", bg: "bg-emerald-400/10" },
-            { icon: ShieldCheck, label: "Satisfaction", value: "4.9 / 5", color: "text-blue-400", bg: "bg-blue-400/10" },
+            { icon: Clock, label: "Avg. Response", value: "< 24 hrs", color: "text-amber-600", bg: "bg-amber-100" },
+            { icon: CheckCircle, label: "Issues Resolved", value: "98%", color: "text-taja-primary", bg: "bg-taja-light" },
+            { icon: ShieldCheck, label: "Satisfaction", value: "4.9 / 5", color: "text-taja-secondary", bg: "bg-emerald-100" },
           ].map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="relative p-4 rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden">
+              <div key={stat.label} className="relative p-4 rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
                 <div className={`h-8 w-8 rounded-xl ${stat.bg} flex items-center justify-center mb-2`}>
                   <Icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
@@ -185,19 +185,18 @@ function SupportPageInner() {
             custom={2} variants={fadeUp} initial="hidden" animate="show"
             className="lg:col-span-2"
           >
-            <div className="relative rounded-[2rem] bg-slate-950 border border-slate-800 overflow-hidden p-6 sm:p-8">
+            <div className="relative rounded-[2rem] bg-white border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-8">
               {/* Card decoration */}
               <div className="absolute -top-20 -right-20 w-64 h-64 bg-taja-primary/5 rounded-full blur-[80px] pointer-events-none" />
-              <div className="absolute inset-0 motif-blanc opacity-[0.02] pointer-events-none" />
 
               <div className="relative z-10">
                 {/* Card header */}
                 <div className="flex items-center gap-3 mb-8">
-                  <div className="h-10 w-10 rounded-2xl bg-taja-primary/10 border border-taja-primary/20 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-2xl bg-taja-light border border-taja-primary/20 flex items-center justify-center">
                     <MessageSquare className="h-5 w-5 text-taja-primary" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-black text-white tracking-tight">New Support Ticket</h2>
+                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">New Support Ticket</h2>
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Fill out the form below</p>
                   </div>
                 </div>
@@ -223,17 +222,17 @@ function SupportPageInner() {
                             }
                             className={`group relative p-3.5 rounded-2xl border-2 text-left transition-all duration-300 overflow-hidden ${selected
                                 ? `${colors.ring} ${colors.bg}`
-                                : "border-slate-800 bg-slate-900 hover:border-slate-700"
+                                : "border-slate-200 bg-slate-50 hover:border-slate-300"
                               }`}
                           >
                             <Icon
-                              className={`h-4 w-4 mb-2 transition-colors ${selected ? colors.icon : "text-slate-500 group-hover:text-slate-400"
+                              className={`h-4 w-4 mb-2 transition-colors ${selected ? colors.icon : "text-slate-500 group-hover:text-slate-600"
                                 }`}
                             />
-                            <div className={`font-black text-xs leading-tight ${selected ? "text-white" : "text-slate-400"}`}>
+                            <div className={`font-black text-xs leading-tight ${selected ? "text-taja-secondary" : "text-slate-600"}`}>
                               {cat.label}
                             </div>
-                            <div className="text-[10px] text-slate-600 mt-0.5 leading-tight">{cat.description}</div>
+                            <div className="text-[10px] text-slate-500 mt-0.5 leading-tight">{cat.description}</div>
                           </button>
                         );
                       })}
@@ -254,13 +253,13 @@ function SupportPageInner() {
                             type="button"
                             onClick={() => setFormData((prev) => ({ ...prev, priority: p.value }))}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-bold transition-all duration-200 ${selected
-                                ? "border-taja-primary bg-taja-primary/10 text-white"
-                                : "border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700"
+                                ? "border-taja-primary bg-taja-light text-taja-secondary"
+                                : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
                               }`}
                           >
                             <span className={`h-2 w-2 rounded-full ${p.dot} ${selected ? "" : "opacity-50"}`} />
                             {p.label}
-                            <span className={`text-[10px] font-medium ${selected ? "text-slate-300" : "text-slate-600"}`}>
+                            <span className={`text-[10px] font-medium ${selected ? "text-slate-600" : "text-slate-500"}`}>
                               — {p.description}
                             </span>
                           </button>
@@ -282,7 +281,7 @@ function SupportPageInner() {
                       required
                       maxLength={200}
                       placeholder="Brief description of your issue"
-                      className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-600 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-taja-primary/50 focus:ring-1 focus:ring-taja-primary/30 transition-all"
+                      className="w-full bg-white border border-slate-200 text-taja-secondary placeholder-slate-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-taja-primary focus:ring-1 focus:ring-taja-primary/30 transition-all"
                     />
                   </div>
 
@@ -298,7 +297,7 @@ function SupportPageInner() {
                       required
                       rows={6}
                       placeholder="Please provide as much detail as possible — order numbers, product names, screenshots or anything that can help us assist you faster."
-                      className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-600 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-taja-primary/50 focus:ring-1 focus:ring-taja-primary/30 transition-all resize-none"
+                      className="w-full bg-white border border-slate-200 text-taja-secondary placeholder-slate-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-taja-primary focus:ring-1 focus:ring-taja-primary/30 transition-all resize-none"
                     />
                     <p className="text-[10px] text-slate-600 mt-1.5 font-medium">
                       The more details you provide, the faster we can help you.
@@ -339,7 +338,7 @@ function SupportPageInner() {
                         const files = Array.from(e.target.files || []);
                         setAttachments(files.slice(0, 4));
                       }}
-                      className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-900 file:text-white file:font-bold hover:file:bg-slate-800"
+                      className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-taja-light file:text-taja-secondary file:font-bold hover:file:bg-emerald-100"
                     />
                     {attachments.length > 0 && (
                       <p className="text-[10px] text-slate-600 mt-2 font-medium">
@@ -349,11 +348,11 @@ function SupportPageInner() {
                   </div>
 
                   {/* ── Actions ── */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                     <button
                       type="button"
                       onClick={() => router.push("/support/tickets")}
-                      className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition-colors uppercase tracking-widest"
+                      className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-taja-primary transition-colors uppercase tracking-widest"
                     >
                       <FileText className="h-4 w-4" />
                       My Tickets
@@ -363,7 +362,7 @@ function SupportPageInner() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="group flex items-center gap-2.5 px-6 py-3 rounded-xl bg-taja-primary hover:bg-taja-primary/90 text-white text-sm font-black uppercase tracking-widest transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(255,42,109,0.3)] hover:shadow-[0_0_30px_rgba(255,42,109,0.5)]"
+                      className="group flex items-center gap-2.5 px-6 py-3 rounded-xl bg-taja-primary hover:bg-emerald-600 text-white text-sm font-black uppercase tracking-widest transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-premium hover:shadow-premium-hover"
                     >
                       {loading ? (
                         <>
@@ -389,14 +388,14 @@ function SupportPageInner() {
             className="space-y-4"
           >
             {/* Tips card */}
-            <div className="relative rounded-[2rem] bg-slate-950 border border-slate-800 overflow-hidden p-6">
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-[50px] pointer-events-none" />
+            <div className="relative rounded-[2rem] bg-white border border-slate-200 shadow-sm overflow-hidden p-6">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-taja-primary/10 rounded-full blur-[50px] pointer-events-none" />
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="h-8 w-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-indigo-400" />
+                  <div className="h-8 w-8 rounded-xl bg-taja-light border border-taja-primary/20 flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-taja-primary" />
                   </div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-tight">Tips for Faster Help</h3>
+                  <h3 className="text-sm font-black text-taja-secondary uppercase tracking-tight">Tips for Faster Help</h3>
                 </div>
                 <ul className="space-y-3">
                   {[
@@ -406,10 +405,10 @@ function SupportPageInner() {
                     "View all your tickets in My Tickets",
                   ].map((tip, i) => (
                     <li key={i} className="flex items-start gap-2.5">
-                      <div className="h-4 w-4 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                        <div className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                      <div className="h-4 w-4 rounded-full bg-taja-light flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="h-1.5 w-1.5 rounded-full bg-taja-primary" />
                       </div>
-                      <p className="text-xs text-slate-400 leading-relaxed">{tip}</p>
+                      <p className="text-xs text-slate-600 leading-relaxed">{tip}</p>
                     </li>
                   ))}
                 </ul>
@@ -417,14 +416,14 @@ function SupportPageInner() {
             </div>
 
             {/* Response time card */}
-            <div className="relative rounded-[2rem] bg-slate-950 border border-slate-800 overflow-hidden p-6">
-              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-500/8 rounded-full blur-[50px] pointer-events-none" />
+            <div className="relative rounded-[2rem] bg-white border border-slate-200 shadow-sm overflow-hidden p-6">
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-taja-primary/5 rounded-full blur-[50px] pointer-events-none" />
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                    <Zap className="h-4 w-4 text-emerald-400" />
+                  <div className="h-8 w-8 rounded-xl bg-taja-light border border-taja-primary/20 flex items-center justify-center">
+                    <Zap className="h-4 w-4 text-taja-primary" />
                   </div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-tight">Response Times</h3>
+                  <h3 className="text-sm font-black text-taja-secondary uppercase tracking-tight">Response Times</h3>
                 </div>
                 <div className="space-y-2.5">
                   {[
@@ -436,9 +435,9 @@ function SupportPageInner() {
                     <div key={row.priority} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${row.dot}`} />
-                        <span className="text-xs font-bold text-slate-400">{row.priority}</span>
+                        <span className="text-xs font-bold text-slate-600">{row.priority}</span>
                       </div>
-                      <span className="text-xs font-black text-white">{row.time}</span>
+                      <span className="text-xs font-black text-taja-secondary">{row.time}</span>
                     </div>
                   ))}
                 </div>
@@ -448,18 +447,18 @@ function SupportPageInner() {
             {/* View tickets CTA */}
             <button
               onClick={() => router.push("/support/tickets")}
-              className="group w-full flex items-center justify-between p-5 rounded-[2rem] bg-slate-950 border border-slate-800 hover:border-taja-primary/30 transition-all duration-300"
+              className="group w-full flex items-center justify-between p-5 rounded-[2rem] bg-white border border-slate-200 shadow-sm hover:border-taja-primary/40 hover:shadow-premium transition-all duration-300"
             >
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-taja-primary/10 border border-taja-primary/20 flex items-center justify-center">
+                <div className="h-9 w-9 rounded-xl bg-taja-light border border-taja-primary/20 flex items-center justify-center">
                   <FileText className="h-4.5 w-4.5 text-taja-primary" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-black text-white">My Tickets</p>
+                  <p className="text-sm font-black text-taja-secondary">My Tickets</p>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">View history</p>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-taja-primary transition-colors" />
+              <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-taja-primary transition-colors" />
             </button>
           </motion.div>
 
@@ -473,9 +472,9 @@ export default function SupportPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="relative w-12 h-12">
-            <div className="absolute inset-0 border-[3px] border-slate-800 rounded-full" />
+            <div className="absolute inset-0 border-[3px] border-slate-200 rounded-full" />
             <div className="absolute inset-0 border-[3px] border-taja-primary rounded-full border-t-transparent animate-spin" />
           </div>
         </div>

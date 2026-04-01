@@ -1,7 +1,7 @@
 {
-  "name": "Taja.Shop - Nigeria's Trusted Marketplace",
-  "short_name": "Taja.Shop",
-  "description": "Next-generation Nigerian e-commerce marketplace for thrift fashion, vintage items, and handmade crafts",
+  "name": "Taja.Shop — Buy & Sell Online",
+  "short_name": "Taja",
+  "description": "Marketplace for Nigerian and African sellers: buy anything, sell anything, open your shop, shop with confidence.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

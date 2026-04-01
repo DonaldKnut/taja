@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
       if (type === 'product') folder = 'products';
       else if (type === 'shop' || type === 'logo' || type === 'banner') folder = 'shops';
       else if (type === 'avatar' || type === 'cover') folder = 'avatars';
+      else if (type === 'journal' || type === 'blog') folder = 'journal';
 
       // Upload to R2
       const { url, key } = await uploadBufferToR2({

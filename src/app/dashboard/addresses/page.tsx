@@ -38,7 +38,7 @@ export default function AddressesPage() {
     line1: "",
     line2: "",
     city: "",
-    state: "",
+    state: "Lagos",
     country: "Nigeria",
     postalCode: "",
     type: "shipping",
@@ -311,12 +311,10 @@ export default function AddressesPage() {
                     </div>
                     <div className="group">
                       <label className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary mb-3 ml-1 group-focus-within:text-taja-primary transition-colors">State</label>
-                      <Input
-                        className="h-14 rounded-2xl bg-gray-50/50 border-gray-100 focus:bg-white text-sm font-medium focus:ring-taja-primary/10 transition-all px-6"
-                        placeholder="State Name"
-                        value={editing.state}
-                        onChange={(e) => setEditing({ ...editing, state: e.target.value })}
-                      />
+                      <div className="h-14 rounded-2xl bg-gray-100 border-gray-100 flex items-center px-6 text-sm font-bold text-taja-secondary opacity-70">
+                        Lagos
+                      </div>
+                      <p className="text-[9px] text-gray-400 mt-2 ml-1 italic font-bold uppercase tracking-widest">Only Lagos addresses are supported currently</p>
                     </div>
                   </div>
 

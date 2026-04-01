@@ -1,25 +1,18 @@
 import { generateMetadata as genMeta } from "@/lib/seo";
+import { SITE_KEYWORDS } from "@/lib/site-seo";
 
 export const metadata = genMeta({
-  title: "Marketplace - Browse Products",
+  title: "Marketplace — Buy Online from Verified Sellers",
   description:
-    "Browse thousands of unique products from verified Nigerian sellers. Find thrift fashion, vintage items, handmade crafts, and more on Taja.Shop marketplace.",
+    "Browse Taja.Shop marketplace: buy fashion, crafts, thrift, and more from verified Nigerian and African sellers. Search, compare, and shop with confidence.",
   url: "/marketplace",
   type: "website",
   keywords: [
-    "taja.shop marketplace",
-    "nigeria marketplace",
-    "online thrift store nigeria",
-    "thrift fashion nigeria",
-    "vintage clothes nigeria",
-    "second hand clothes nigeria",
-    "handmade crafts nigeria",
-    "buy and sell nigeria",
-    "lagos thrift store",
-    "abuja thrift fashion",
-    "online shopping nigeria",
-    "nigerian ecommerce",
-    "virtual try on nigeria",
+    ...SITE_KEYWORDS,
+    "browse marketplace",
+    "buy from sellers",
+    "verified sellers",
+    "virtual try on",
   ],
 });
 
