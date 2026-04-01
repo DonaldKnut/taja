@@ -104,8 +104,12 @@ export default function DashboardPage() {
   }, [viewMode]);
 
   useEffect(() => {
-    if (isAuthenticated && user?.role === "seller") {
-      router.replace("/seller/dashboard");
+    if (isAuthenticated && user) {
+      if (user.role === "seller") {
+        router.replace("/seller/dashboard");
+      } else {
+        router.replace("/dashboard/marketplace");
+      }
     }
   }, [user, isAuthenticated, router]);
 

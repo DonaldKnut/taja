@@ -43,18 +43,18 @@ import { cn } from "@/lib/utils";
 
 const navGroups = [
   {
-    label: "Explore",
+    label: "Main",
     items: [
       { name: "Marketplace", href: "/dashboard/marketplace", icon: ShoppingBag },
-      { name: "Try-On Studio", href: "/dashboard/try-on", icon: Sparkles },
+      { name: "Orders", href: "/dashboard/orders", icon: Package },
       { name: "Wishlist", href: "/dashboard/wishlist", icon: Heart },
+      { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
     ],
   },
   {
-    label: "Activity",
+    label: "Discover",
     items: [
-      { name: "Orders", href: "/dashboard/orders", icon: Package },
-      { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
+      { name: "Try-On Studio", href: "/dashboard/try-on", icon: Sparkles },
     ],
   },
   {
