@@ -43,17 +43,18 @@ import { cn } from "@/lib/utils";
 
 const navGroups = [
   {
-    label: "Main",
+    label: "Explore",
     items: [
-      { name: "Overview", href: "/dashboard", icon: Home },
-      { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
-      { name: "Orders", href: "/dashboard/orders", icon: Package },
+      { name: "Marketplace", href: "/dashboard/marketplace", icon: ShoppingBag },
+      { name: "Try-On Studio", href: "/dashboard/try-on", icon: Sparkles },
+      { name: "Wishlist", href: "/dashboard/wishlist", icon: Heart },
     ],
   },
   {
-    label: "Discover",
+    label: "Activity",
     items: [
-      { name: "Wishlist", href: "/dashboard/wishlist", icon: Heart },
+      { name: "Orders", href: "/dashboard/orders", icon: Package },
+      { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
     ],
   },
   {
@@ -236,12 +237,12 @@ export default function DashboardLayout({
       {/* Sidebar Footer */}
       <div className="p-4 border-t border-gray-100 space-y-3">
         <Link
-          href="/dashboard/marketplace"
+          href="/dashboard"
           onClick={onNavigate}
-          className="flex items-center justify-center gap-2 w-full py-3 bg-taja-primary text-white rounded-xl text-xs font-bold shadow-emerald hover:shadow-emerald-hover active:scale-[0.98] transition-all"
+          className="flex items-center justify-center gap-2 w-full py-3 bg-white text-taja-primary border border-taja-primary/20 rounded-xl text-xs font-bold hover:bg-taja-light/30 active:scale-[0.98] transition-all"
         >
-          <ShoppingBag className="h-4 w-4" />
-          Explore Marketplace
+          <Home className="h-4 w-4" />
+          Dashboard Overview
         </Link>
         <button
           onClick={() => {

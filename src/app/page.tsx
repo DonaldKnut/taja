@@ -350,18 +350,18 @@ export default function HomePage() {
 
                 <div className="pt-10 flex flex-wrap items-center justify-center lg:justify-start gap-10">
                   <div className="flex flex-col items-center lg:items-start gap-1">
-                    <span className="text-2xl font-black text-taja-secondary">800+</span>
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Verified Sellers</span>
+                    <span className="text-2xl font-black text-taja-secondary">Curated</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Premium Shops</span>
                   </div>
                   <div className="h-10 w-px bg-gray-100 hidden sm:block" />
                   <div className="flex flex-col items-center lg:items-start gap-1">
-                    <span className="text-2xl font-black text-taja-secondary">₦5M+</span>
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Monthly Volume</span>
+                    <span className="text-2xl font-black text-taja-secondary">₦1.5M+</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Verified Transactions</span>
                   </div>
                   <div className="h-10 w-px bg-gray-100 hidden sm:block" />
                   <div className="flex flex-col items-center lg:items-start gap-1">
-                    <span className="text-2xl font-black text-taja-secondary">99.9%</span>
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Secure Uptime</span>
+                    <span className="text-2xl font-black text-taja-secondary">100%</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center lg:text-left">Escrow Protection</span>
                   </div>
                 </div>
               </div>
