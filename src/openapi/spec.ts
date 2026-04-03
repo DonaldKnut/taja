@@ -32,7 +32,22 @@ export function getOpenApiDocument(serverUrl: string) {
         post: { tags: ['Auth'], summary: 'Email/password login', responses: { '200': { description: 'Tokens / user' } } },
       },
       '/api/auth/register': {
-        post: { tags: ['Auth'], summary: 'Register buyer/seller', responses: { '201': { description: 'Created' } } },
+        post: {
+          tags: ['Auth'],
+          summary: 'Register (email/password)',
+          description:
+            'Body: fullName, email, password, role (buyer|seller), optional referralCode. Phone is optional; add later via PUT /api/auth/profile after verify.',
+          responses: { '201': { description: 'Created; verify email next' } },
+        },
+      },
+      '/api/auth/verify-email': {
+        post: {
+          tags: ['Auth'],
+          summary: 'Verify email OTP',
+          description:
+            'Body: { email, code }. On success returns data.token, data.refreshToken, data.user (same shape as login) and sets session cookie. Mobile: store Bearer token.',
+          responses: { '200': { description: 'Verified + session' } },
+        },
       },
       '/api/auth/logout': {
         post: { tags: ['Auth'], summary: 'Invalidate session', responses: { '200': { description: 'OK' } } },

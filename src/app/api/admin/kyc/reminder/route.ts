@@ -47,31 +47,58 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const onboardingLink = "/onboarding/kyc";
+      // 24 Hour Rate Limit check
+      if (user.kyc?.lastKycReminderAt) {
+        const lastReminder = new Date(user.kyc.lastKycReminderAt);
+        const now = new Date();
+        const diffInHours = (now.getTime() - lastReminder.getTime()) / (1000 * 60 * 60);
+
+        if (diffInHours < 24) {
+          const remainingHours = Math.ceil(24 - diffInHours);
+          return NextResponse.json(
+            {
+              success: false,
+              message: `A reminder was already sent to this user today. Please wait ${remainingHours} more hours.`,
+            },
+            { status: 429 }
+          );
+        }
+      }
+
+      const onboardingPath = "/onboarding/kyc";
+      const baseUrl =
+        process.env.FRONTEND_URL ||
+        process.env.NEXTAUTH_URL ||
+        "https://tajaapp.shop";
+      
+      const onboardingLink = `${baseUrl}${onboardingPath}`;
       const notifTitle = title || "KYC Reminder";
+      
+      // Update message to include hardcoded link if template is default
       const notifMessage =
         message ||
-        `Hi ${user.fullName || "there"}, it looks like you haven't started your KYC yet. Please complete it here: ${onboardingLink}.`;
+        `Hi ${user.fullName || "there"}, it looks like you haven't started your KYC yet. Please complete it here: ${onboardingLink}. This helps you unlock full access to Taja.Shop.`;
 
       const notification = await Notification.create({
         user: userId,
         type: "system",
         title: notifTitle,
         message: notifMessage,
-        link: onboardingLink,
+        link: onboardingPath,
         priority: "normal",
         read: false,
         metadata: { kycReminder: true, previousKycStatus: "not_started" },
       });
 
+      // Update User tracking fields
+      await User.findByIdAndUpdate(userId, {
+        $inc: { "kyc.kycRemindersSent": 1 },
+        $set: { "kyc.lastKycReminderAt": new Date() },
+      });
+
       // Optional email (best-effort; never fail the request if email fails)
       if (user.email) {
         try {
-          const baseUrl =
-            process.env.FRONTEND_URL ||
-            process.env.NEXTAUTH_URL ||
-            "https://tajaapp.shop";
-
           await sendBroadcastEmail(
             user.email,
             notifTitle,
@@ -80,7 +107,7 @@ export async function POST(request: NextRequest) {
                 ${notifMessage}
               </p>
               <p style="margin-top:18px;">
-                <a href="${baseUrl}${onboardingLink}" style="display:inline-block;background:#0f172a;color:white;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:800;text-decoration:none;">
+                <a href="${onboardingLink}" style="display:inline-block;background:#0f172a;color:white;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:800;text-decoration:none;">
                   Start KYC
                 </a>
               </p>

@@ -19,7 +19,10 @@ interface User {
   accountStatus: string;
   kycStatus: string;
   kycSubmittedAt?: string;
+  kycRemindersSent?: number;
+  lastKycReminderAt?: string;
   avatar?: string;
+
   coverPhoto?: string;
   createdAt: string;
   lastLoginAt?: string;
@@ -241,9 +244,11 @@ export default function UserManagementPage() {
   const openKycReminderModal = (user: User) => {
     setEditingUser(null); // avoid overlapping modals
     setKycReminderUser(user);
+    const domain = window.location.origin; // Dynamically get current domain
     setKycReminderMessage(
-      `Hi ${user.fullName}, it looks like you haven't started your KYC yet.\n\nPlease complete it here: /onboarding/kyc.\n\nThis helps you unlock full access to Taja.Shop.`
+      `Hi ${user.fullName}, it looks like you haven't started your KYC yet.\n\nPlease complete it here: ${domain}/onboarding/kyc.\n\nThis helps you unlock full access to Taja.Shop.`
     );
+
   };
 
   const handleSendKycReminder = async () => {
@@ -409,9 +414,18 @@ export default function UserManagementPage() {
                         </span>
                       </td>
                       <td className="py-5 px-6 text-center">
-                        <span className={`inline-flex px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full ${getKycBadge(user.kycStatus)}`}>
-                          {formatKycStatusLabel(user.kycStatus)}
-                        </span>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`inline-flex px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full ${getKycBadge(user.kycStatus)}`}>
+                            {formatKycStatusLabel(user.kycStatus)}
+                          </span>
+                          {user.kycStatus === "not_started" && user.kycRemindersSent && user.kycRemindersSent > 0 ? (
+                            <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100/50">
+                              {user.kycRemindersSent} {user.kycRemindersSent === 1 ? 'Reminder' : 'Reminders'} 
+                              {user.lastKycReminderAt && ` (Last: ${new Date(user.lastKycReminderAt).toLocaleDateString()})`}
+                            </span>
+                          ) : null}
+                        </div>
+
                       </td>
                       <td className="py-5 px-10">
                         <div className="flex items-center justify-end gap-3">
@@ -471,8 +485,9 @@ export default function UserManagementPage() {
                 </div>
                 <button onClick={() => setEditingUser(null)} className="p-2 hover:bg-slate-50 rounded-full"><X className="h-5 w-5 text-slate-400" /></button>
               </div>
-              <div className="p-8 space-y-6">
+              <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
                 <div className="space-y-4">
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Full Name</label>
                     <Input value={editForm.fullName} onChange={(e) => setEditForm(prev => ({ ...prev, fullName: e.target.value }))} className="rounded-xl h-12 font-bold border-slate-100 bg-slate-50/50" />
@@ -609,7 +624,7 @@ export default function UserManagementPage() {
                 </button>
               </div>
 
-              <div className="p-8 space-y-6">
+              <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">
                     Reminder message

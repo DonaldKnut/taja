@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, LifeBuoy, Rocket, Users, Shield } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, LifeBuoy, Rocket, Users, Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Logo } from "@/components/ui/Logo";
@@ -11,7 +11,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
 import dynamic from "next/dynamic";
-import { normalizeNigerianPhone, isValidNigerianPhone } from "@/lib/utils";
 import { getAuthErrorMessage } from "@/lib/auth-messages";
 
 // Dynamically import OAuth button (client-only)
@@ -38,7 +37,6 @@ function RegisterForm() {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
     role: "buyer",
@@ -54,7 +52,6 @@ function RegisterForm() {
   const registerSchema = z.object({
     fullName: z.string().min(2, { message: "Enter your full name" }),
     email: z.string().email({ message: "Enter a valid email" }),
-    phone: z.string().min(1, { message: "Phone number is required" }).refine((val) => isValidNigerianPhone(val), { message: "Enter a valid Nigerian phone" }),
     password: z.string().regex(passwordRegex, { message: "Min 8 chars with uppercase, lowercase, number and special character" }),
     confirmPassword: z.string(),
     role: z.enum(["buyer", "seller"]),
@@ -81,12 +78,10 @@ function RegisterForm() {
     setLoading(true);
 
     try {
-      const normalizedPhone = normalizeNigerianPhone(formData.phone);
       const referralCode = searchParams.get("ref") || undefined;
       await register({
         fullName: formData.fullName,
         email: formData.email,
-        phone: normalizedPhone,
         password: formData.password,
         role: formData.role as "buyer" | "seller",
         referralCode: referralCode || undefined,
@@ -204,14 +199,6 @@ function RegisterForm() {
                           <Input id="email" name="email" type="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`pl-12 bg-white/50 border-gray-100 focus:bg-white focus:ring-taja-primary/20 rounded-2xl h-11 transition-all ${errors.email ? 'border-red-300 focus:ring-red-200' : ''}`} placeholder="john@example.com" />
                         </div>
                         {errors.email && <p className="text-[10px] text-red-500 font-medium mt-1 ml-1">{errors.email}</p>}
-                      </div>
-                      <div>
-                        <label htmlFor="phone" className="block text-[10px] font-black text-taja-secondary uppercase tracking-widest ml-1 mb-1.5">Phone Number</label>
-                        <div className="relative group">
-                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Phone className="h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" /></div>
-                          <Input id="phone" name="phone" type="tel" required value={formData.phone} onChange={handleChange} onBlur={handleBlur} className={`pl-12 bg-white/50 border-gray-100 focus:bg-white focus:ring-taja-primary/20 rounded-2xl h-11 transition-all ${errors.phone ? 'border-red-300 focus:ring-red-200' : ''}`} placeholder="08012345678" />
-                        </div>
-                        {errors.phone && <p className="text-[10px] text-red-500 font-medium mt-1 ml-1">{errors.phone}</p>}
                       </div>
                       <div>
                         <label htmlFor="role" className="block text-[10px] font-black text-taja-secondary uppercase tracking-widest ml-1 mb-1.5">I want to</label>

@@ -16,14 +16,14 @@ interface AuthContextType {
   logout: () => void;
   refreshUser: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
-  verifyEmail: (email: string, code: string) => Promise<void>;
+  verifyEmail: (email: string, code: string) => Promise<{ needsPhone: boolean }>;
   resendVerification: (email: string) => Promise<void>;
 }
 
 interface RegisterData {
   fullName: string;
   email: string;
-  phone: string;
+  phone?: string;
   password: string;
   role: UserRole;
   referralCode?: string;
@@ -321,18 +321,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Verify email function
   const verifyEmail = useCallback(async (email: string, code: string) => {
     try {
-      const response = await api("/api/auth/verify-email", {
+      const response = (await api("/api/auth/verify-email", {
         method: "POST",
         body: JSON.stringify({ email, code }),
-      });
+      })) as any;
 
       if (response?.success) {
         toast.success(response?.message || "Email verified successfully!");
-        // Refresh user data to get updated verification status
+        const data = response?.data;
+        if (data?.token && data?.user && typeof window !== "undefined") {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+          if (data.user.role) {
+            localStorage.setItem("role", data.user.role);
+          }
+          if (data.refreshToken) {
+            localStorage.setItem("refreshToken", data.refreshToken);
+          }
+          setUser(data.user);
+          return { needsPhone: !data.user?.phone };
+        }
         await refreshUser();
-      } else {
-        throw new Error(response?.message || "Verification failed");
+        return { needsPhone: true };
       }
+      throw new Error(response?.message || "Verification failed");
     } catch (error: any) {
       console.error("Email verification error:", error);
       toast.error(error?.message || "Failed to verify email. Please try again.");

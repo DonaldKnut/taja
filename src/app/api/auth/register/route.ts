@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
       referralCode,
     } = body;
 
-    // Validation
-    if (!fullName || !email || !phone || !password) {
+    // Validation (phone collected after email verification — web + mobile parity)
+    if (!fullName || !email || !password) {
       return NextResponse.json(
-        { success: false, message: "All fields are required" },
+        { success: false, message: "Full name, email, and password are required" },
         { status: 400 },
       );
     }
@@ -44,28 +44,15 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const emailNorm = email.toLowerCase().trim();
-    const phoneNorm = phone && typeof phone === "string" ? phone.trim() : "";
+    const phoneNorm =
+      phone && typeof phone === "string" && phone.trim()
+        ? phone.trim()
+        : "";
 
-    // Check which one is already used so we can tell the user
-    const [existingByEmail, existingByPhone] = await Promise.all([
-      emailNorm
-        ? User.findOne({ email: emailNorm }).select("_id").lean()
-        : Promise.resolve(null),
-      phoneNorm
-        ? User.findOne({ phone: phoneNorm }).select("_id").lean()
-        : Promise.resolve(null),
-    ]);
+    const existingByEmail = emailNorm
+      ? await User.findOne({ email: emailNorm }).select("_id").lean()
+      : null;
 
-    if (existingByEmail && existingByPhone) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "An account with this email and phone number already exists.",
-        },
-        { status: 400 },
-      );
-    }
     if (existingByEmail) {
       return NextResponse.json(
         {
@@ -76,15 +63,21 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    if (existingByPhone) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "An account with this phone number already exists. Try logging in or use a different phone number.",
-        },
-        { status: 400 },
-      );
+
+    if (phoneNorm) {
+      const existingByPhone = await User.findOne({ phone: phoneNorm })
+        .select("_id")
+        .lean();
+      if (existingByPhone) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "An account with this phone number already exists. Try logging in or use a different phone number.",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     // Check for duplicate phone (fraud detection) - already ruled out above, but keep for any edge case

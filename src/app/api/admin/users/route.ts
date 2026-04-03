@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
       const [users, total] = await Promise.all([
         User.find(query)
-          .select('fullName email phone role accountStatus kyc.status kyc.submittedAt createdAt lastLoginAt')
+          .select('fullName email phone role accountStatus kyc.status kyc.submittedAt kyc.kycRemindersSent kyc.lastKycReminderAt createdAt lastLoginAt')
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limit)
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          users: users.map((user) => ({
+          users: users.map((user: any) => ({
             _id: user._id,
             fullName: user.fullName,
             email: user.email,
@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
             accountStatus: user.accountStatus,
             kycStatus: user.kyc?.status || 'not_started',
             kycSubmittedAt: user.kyc?.submittedAt,
+            kycRemindersSent: user.kyc?.kycRemindersSent || 0,
+            lastKycReminderAt: user.kyc?.lastKycReminderAt,
             createdAt: user.createdAt,
             lastLoginAt: user.lastLoginAt,
           })),

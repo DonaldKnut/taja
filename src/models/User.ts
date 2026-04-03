@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IUser extends Document {
   fullName: string;
   email: string;
-  phone?: string; // optional for OAuth users; required for email sign-up
+  phone?: string; // optional at signup; collected after email verification (or OAuth completion flows)
   password: string;
   role: 'buyer' | 'seller' | 'admin';
   avatar?: string;
@@ -104,7 +104,10 @@ export interface IUser extends Document {
     };
     identityVerificationError?: string;
     identityVerificationProvider?: string;
+    kycRemindersSent?: number;
+    lastKycReminderAt?: Date;
   };
+
   roleSelected?: boolean;
   roleSelectionDate?: Date;
   lastLoginAt?: Date;
@@ -283,7 +286,10 @@ const UserSchema = new Schema<IUser>(
       },
       identityVerificationError: String,
       identityVerificationProvider: String,
+      kycRemindersSent: { type: Number, default: 0 },
+      lastKycReminderAt: Date,
     },
+
     roleSelected: {
       type: Boolean,
       default: false,

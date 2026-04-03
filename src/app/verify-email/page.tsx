@@ -10,8 +10,8 @@ import {
   RotateCcw,
   Sparkles,
   Lock,
-  CheckCircle,
   LifeBuoy,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -19,11 +19,17 @@ import { Logo } from "@/components/ui/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
+import { api } from "@/lib/api";
+import { normalizeNigerianPhone, isValidNigerianPhone } from "@/lib/utils";
+import { getAuthErrorMessage } from "@/lib/auth-messages";
 
 function VerifyEmailForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { verifyEmail, resendVerification } = useAuth();
+  const { verifyEmail, resendVerification, refreshUser } = useAuth();
+  const [step, setStep] = useState<"code" | "phone">("code");
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneError, setPhoneError] = useState<string | undefined>();
   const [formData, setFormData] = useState({
     email: searchParams.get("email") || "",
     code: "",
@@ -72,10 +78,13 @@ function VerifyEmailForm() {
     setLoading(true);
 
     try {
-      await verifyEmail(formData.email, formData.code);
+      const { needsPhone } = await verifyEmail(formData.email, formData.code);
       const redirect = searchParams.get("redirect") || "/dashboard";
-      toast.success("Email verified successfully!");
-      router.push(redirect);
+      if (needsPhone) {
+        setStep("phone");
+      } else {
+        router.push(redirect);
+      }
     } catch (error: any) {
       console.error("Verification error:", error);
     } finally {
@@ -117,6 +126,30 @@ function VerifyEmailForm() {
     }
   };
 
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const normalized = normalizeNigerianPhone(phoneInput.trim());
+    if (!isValidNigerianPhone(normalized)) {
+      setPhoneError("Enter a valid Nigerian phone number");
+      return;
+    }
+    setPhoneError(undefined);
+    setLoading(true);
+    try {
+      await api("/api/auth/profile", {
+        method: "PUT",
+        body: JSON.stringify({ phone: normalized }),
+      });
+      await refreshUser();
+      toast.success("Phone number saved");
+      router.push(searchParams.get("redirect") || "/dashboard");
+    } catch (error: any) {
+      toast.error(getAuthErrorMessage(error?.message || "Could not save phone number"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -127,6 +160,11 @@ function VerifyEmailForm() {
   const maskedEmail = formData.email
     ? formData.email.replace(/(.{2})(.*)(@.*)/, "$1***$3")
     : "";
+
+  const phoneNormalizedForValid =
+    phoneInput.trim() ? normalizeNigerianPhone(phoneInput.trim()) : "";
+  const phoneStepValid =
+    phoneInput.trim().length > 0 && isValidNigerianPhone(phoneNormalizedForValid);
 
   return (
     <div className="h-screen bg-white overflow-hidden md:h-[100dvh] relative">
@@ -148,129 +186,186 @@ function VerifyEmailForm() {
                     <Logo size="lg" variant="header" />
                   </div>
                   <div className="w-14 h-14 bg-taja-light rounded-2xl flex items-center justify-center mx-auto">
-                    <Mail className="h-7 w-7 text-taja-primary" />
+                    {step === "code" ? (
+                      <Mail className="h-7 w-7 text-taja-primary" />
+                    ) : (
+                      <Phone className="h-7 w-7 text-taja-primary" />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <h2 className="text-3xl font-black text-taja-secondary tracking-tighter">
-                      Check Your Inbox
+                      {step === "code" ? "Check Your Inbox" : "Add your number"}
                     </h2>
                     <p className="text-xs font-medium text-gray-400 max-w-xs mx-auto leading-relaxed">
-                      We sent a 6-digit code to{" "}
-                      {maskedEmail ? (
-                        <span className="text-taja-primary font-bold">{maskedEmail}</span>
+                      {step === "code" ? (
+                        <>
+                          We sent a 6-digit code to{" "}
+                          {maskedEmail ? (
+                            <span className="text-taja-primary font-bold">{maskedEmail}</span>
+                          ) : (
+                            "your email"
+                          )}
+                          . Enter it below to activate your account.
+                        </>
                       ) : (
-                        "your email"
+                        <>
+                          Email verified. Add a Nigerian phone number for orders and account
+                          recovery — same step as the Taja mobile app after signup.
+                        </>
                       )}
-                      . Enter it below to activate your account.
                     </p>
                   </div>
                 </div>
 
-                {/* Form */}
-                <form className="space-y-5" onSubmit={handleSubmit}>
-                  {/* Email */}
-                  <div>
-                    <label htmlFor="email" className="block text-[10px] font-black text-taja-secondary uppercase tracking-widest ml-1 mb-1.5">
-                      Email Address
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Mail className="h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" />
+                {step === "code" ? (
+                  <form className="space-y-5" onSubmit={handleSubmit}>
+                    <div>
+                      <label htmlFor="email" className="block text-[10px] font-black text-taja-secondary uppercase tracking-widest ml-1 mb-1.5">
+                        Email Address
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <Mail className="h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" />
+                        </div>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          autoComplete="email"
+                          required
+                          value={formData.email}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          className={`pl-12 bg-white/50 border-gray-100 focus:bg-white focus:ring-taja-primary/20 rounded-2xl h-11 transition-all ${errors.email ? "border-red-300 focus:ring-red-200" : ""}`}
+                          placeholder="john@example.com"
+                        />
                       </div>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        required
-                        value={formData.email}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        className={`pl-12 bg-white/50 border-gray-100 focus:bg-white focus:ring-taja-primary/20 rounded-2xl h-11 transition-all ${errors.email ? "border-red-300 focus:ring-red-200" : ""}`}
-                        placeholder="john@example.com"
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-[10px] text-red-500 font-medium mt-1 ml-1">
-                        {errors.email}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Verification Code */}
-                  <div>
-                    <label htmlFor="code" className="block text-[10px] font-black text-taja-secondary uppercase tracking-widest ml-1 mb-1.5">
-                      Verification Code
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Lock className="h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" />
-                      </div>
-                      <Input
-                        id="code"
-                        name="code"
-                        type="text"
-                        required
-                        maxLength={6}
-                        value={formData.code}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        className={`pl-12 bg-white/50 border-gray-100 focus:bg-white focus:ring-taja-primary/20 rounded-2xl h-11 text-lg font-mono tracking-[0.4em] transition-all ${errors.code ? "border-red-300 focus:ring-red-200" : ""}`}
-                        placeholder="000000"
-                      />
-                    </div>
-                    {errors.code && (
-                      <p className="text-[10px] text-red-500 font-medium mt-1 ml-1">
-                        {errors.code}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Resend Code */}
-                  <div className="glass-card rounded-2xl border-gray-100 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-taja-secondary">
-                          Didn't receive it?
+                      {errors.email && (
+                        <p className="text-[10px] text-red-500 font-medium mt-1 ml-1">
+                          {errors.email}
                         </p>
-                        <p className="text-[10px] text-gray-400 font-medium mt-0.5">
-                          Check spam or request a new code
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleResendCode}
-                        disabled={resending || countdown > 0}
-                        className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-taja-primary/20 text-taja-primary bg-taja-light/30 hover:bg-taja-light disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                      >
-                        {resending ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border-2 border-taja-primary/20 border-t-taja-primary" />
-                        ) : (
-                          <RotateCcw className="h-3 w-3" />
-                        )}
-                        {countdown > 0 ? `${countdown}s` : "Resend"}
-                      </button>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Submit */}
-                  <Button
-                    type="submit"
-                    disabled={loading || !isFormValid}
-                    className="w-full h-11 rounded-2xl shadow-premium hover:shadow-premium-hover flex items-center justify-center gap-2 group transition-all"
-                  >
-                    {loading ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white" />
-                    ) : (
-                      <>
-                        <span className="font-black uppercase tracking-widest text-xs">
-                          Verify & Continue
-                        </span>
-                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </Button>
-                </form>
+                    <div>
+                      <label htmlFor="code" className="block text-[10px] font-black text-taja-secondary uppercase tracking-widest ml-1 mb-1.5">
+                        Verification Code
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <Lock className="h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" />
+                        </div>
+                        <Input
+                          id="code"
+                          name="code"
+                          type="text"
+                          required
+                          maxLength={6}
+                          value={formData.code}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          className={`pl-12 bg-white/50 border-gray-100 focus:bg-white focus:ring-taja-primary/20 rounded-2xl h-11 text-lg font-mono tracking-[0.4em] transition-all ${errors.code ? "border-red-300 focus:ring-red-200" : ""}`}
+                          placeholder="000000"
+                        />
+                      </div>
+                      {errors.code && (
+                        <p className="text-[10px] text-red-500 font-medium mt-1 ml-1">
+                          {errors.code}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="glass-card rounded-2xl border-gray-100 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-taja-secondary">
+                            Didn't receive it?
+                          </p>
+                          <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                            Check spam or request a new code
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleResendCode}
+                          disabled={resending || countdown > 0}
+                          className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-taja-primary/20 text-taja-primary bg-taja-light/30 hover:bg-taja-light disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          {resending ? (
+                            <div className="animate-spin rounded-full h-3 w-3 border-2 border-taja-primary/20 border-t-taja-primary" />
+                          ) : (
+                            <RotateCcw className="h-3 w-3" />
+                          )}
+                          {countdown > 0 ? `${countdown}s` : "Resend"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={loading || !isFormValid}
+                      className="w-full h-11 rounded-2xl shadow-premium hover:shadow-premium-hover flex items-center justify-center gap-2 group transition-all"
+                    >
+                      {loading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white" />
+                      ) : (
+                        <>
+                          <span className="font-black uppercase tracking-widest text-xs">
+                            Verify & Continue
+                          </span>
+                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                ) : (
+                  <form className="space-y-5" onSubmit={handlePhoneSubmit}>
+                    <div>
+                      <label htmlFor="phone" className="block text-[10px] font-black text-taja-secondary uppercase tracking-widest ml-1 mb-1.5">
+                        Phone number
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <Phone className="h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" />
+                        </div>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          autoComplete="tel"
+                          required
+                          value={phoneInput}
+                          onChange={(e) => {
+                            setPhoneInput(e.target.value);
+                            if (phoneError) setPhoneError(undefined);
+                          }}
+                          className={`pl-12 bg-white/50 border-gray-100 focus:bg-white focus:ring-taja-primary/20 rounded-2xl h-11 transition-all ${phoneError ? "border-red-300 focus:ring-red-200" : ""}`}
+                          placeholder="08012345678"
+                        />
+                      </div>
+                      {phoneError && (
+                        <p className="text-[10px] text-red-500 font-medium mt-1 ml-1">{phoneError}</p>
+                      )}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={loading || !phoneStepValid}
+                      className="w-full h-11 rounded-2xl shadow-premium hover:shadow-premium-hover flex items-center justify-center gap-2 group transition-all"
+                    >
+                      {loading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white" />
+                      ) : (
+                        <>
+                          <span className="font-black uppercase tracking-widest text-xs">
+                            Continue to dashboard
+                          </span>
+                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                )}
 
                 {/* Footer Links */}
                 <div className="space-y-3 text-center">

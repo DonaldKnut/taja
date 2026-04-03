@@ -3,6 +3,7 @@ import connectDB from '@/lib/db';
 import User from '@/models/User';
 import { requireAuth } from '@/lib/middleware';
 import { handleDbError } from '@/lib/error-handler';
+import { normalizeNigerianPhone, isValidNigerianPhone } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,7 +58,28 @@ export async function PUT(request: NextRequest) {
 
       // Update allowed fields
       if (fullName) userDoc.fullName = fullName;
-      if (phone) userDoc.phone = phone;
+      if (phone !== undefined && phone !== null && String(phone).trim()) {
+        const normalized = normalizeNigerianPhone(String(phone).trim());
+        if (!isValidNigerianPhone(normalized)) {
+          return NextResponse.json(
+            { success: false, message: 'Please provide a valid Nigerian phone number' },
+            { status: 400 }
+          );
+        }
+        const taken = await User.findOne({
+          phone: normalized,
+          _id: { $ne: userDoc._id },
+        })
+          .select('_id')
+          .lean();
+        if (taken) {
+          return NextResponse.json(
+            { success: false, message: 'This phone number is already registered to another account' },
+            { status: 400 }
+          );
+        }
+        userDoc.phone = normalized;
+      }
       if (avatar) userDoc.avatar = avatar;
       if (preferences) {
         userDoc.preferences = {
