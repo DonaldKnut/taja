@@ -28,6 +28,15 @@ export function getOpenApiDocument(serverUrl: string) {
       { name: 'AI', description: 'AI-assisted seller features' },
     ],
     paths: {
+      '/api/v1/auth/google': {
+        post: {
+          tags: ['Auth'],
+          summary: 'Expo Google sign-in (ID token)',
+          description:
+            'Body: { idToken, role?: buyer|seller }. Verifies Google ID token (Web client audience). Same response shape as /api/auth/login.',
+          responses: { '200': { description: 'token, refreshToken, user' } },
+        },
+      },
       '/api/auth/login': {
         post: { tags: ['Auth'], summary: 'Email/password login', responses: { '200': { description: 'Tokens / user' } } },
       },

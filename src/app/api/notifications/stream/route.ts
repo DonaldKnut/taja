@@ -10,12 +10,12 @@ export const dynamic = "force-dynamic";
  * Server-Sent Events stream for live notifications
  */
 export async function GET(request: NextRequest) {
-    const auth = await authenticate(request);
-    if (!auth.authenticated) {
+    const { user, error } = await authenticate(request);
+    if (!user || error) {
         return new Response("Unauthorized", { status: 401 });
     }
 
-    const userId = auth.user.userId;
+    const userId = user.userId;
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({

@@ -1,16 +1,19 @@
-import { Resend } from "resend";
 import fs from "fs";
 import path from "path";
+import { deliverHtmlMail, isMailConfigured } from "@/lib/mail-delivery";
 
-// Initialize Resend only if API key is available
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
-
-// Email configuration - ready for plug-and-play with Resend
-const EMAIL_FROM =
-  process.env.EMAIL_FROM || process.env.RESEND_FROM || "onboarding@resend.dev";
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
+async function sendTransactionalMail(
+  to: string | string[],
+  subject: string,
+  html: string,
+  text?: string,
+) {
+  const result = await deliverHtmlMail({ to, subject, html, text });
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
+  return { success: true as const, data: { via: result.via } };
+}
 
 // Load email templates
 const loadTemplate = (templateName: string): string => {
@@ -59,7 +62,7 @@ const renderTemplate = (
 
 /**
  * Send email verification code
- * Requires RESEND_API_KEY to be set in environment variables
+ * Requires Resend and/or SMTP (see `src/lib/mail-delivery.ts`).
  * @param email - Recipient email address
  * @param name - Recipient name
  * @param code - 6-digit verification code
@@ -70,8 +73,8 @@ export async function sendVerificationEmail(
   name: string,
   code: string,
 ) {
-  if (!resend) {
-    console.warn("⚠️  RESEND_API_KEY not set. Email verification skipped.");
+  if (!isMailConfigured()) {
+    console.warn("⚠️  No mail transport (Resend/SMTP). Email verification skipped.");
     console.warn(`   Verification code for ${email}: ${code}`);
     return { success: false, error: "Email service not configured" };
   }
@@ -86,19 +89,11 @@ export async function sendVerificationEmail(
         "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
     });
 
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: email,
-      subject: "Verify your Taja.Shop email",
+    return await sendTransactionalMail(
+      email,
+      "Verify your Taja.Shop email",
       html,
-    });
-
-    if (error) {
-      console.error("Resend error:", error);
-      throw error;
-    }
-
-    return { success: true, data };
+    );
   } catch (error) {
     console.error("Send verification email error:", error);
     throw error;
@@ -106,8 +101,8 @@ export async function sendVerificationEmail(
 }
 
 export async function sendWelcomeEmail(email: string, name: string) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Welcome email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Welcome email skipped.");
     return { success: false, error: "Email service not configured" };
   }
   try {
@@ -122,19 +117,7 @@ export async function sendWelcomeEmail(email: string, name: string) {
         "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
     });
 
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: email,
-      subject: "Welcome to Taja.Shop!",
-      html,
-    });
-
-    if (error) {
-      console.error("Resend error:", error);
-      throw error;
-    }
-
-    return { success: true, data };
+    return await sendTransactionalMail(email, "Welcome to Taja.Shop!", html);
   } catch (error) {
     console.error("Send welcome email error:", error);
     throw error;
@@ -150,8 +133,8 @@ export async function sendSellerApprovedEmail(
   name: string,
   shopName?: string,
 ) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Seller-approved email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Seller-approved email skipped.");
     return { success: false, error: "Email service not configured" };
   }
 
@@ -194,19 +177,13 @@ export async function sendSellerApprovedEmail(
   `;
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
+    const r = await deliverHtmlMail({
       to: email,
       subject: "Your Taja.Shop seller account is live",
       html,
     });
-
-    if (error) {
-      console.error("Resend error (seller approved):", error);
-      return { success: false, error };
-    }
-
-    return { success: true, data };
+    if (!r.ok) return { success: false, error: r.error };
+    return { success: true, data: r };
   } catch (e) {
     console.error("Send seller approved email error:", e);
     return { success: false, error: e };
@@ -223,8 +200,8 @@ export async function sendAdminKycSubmittedEmail(
   submitterPhone?: string,
   businessName?: string,
 ) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Admin KYC-submitted email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Admin KYC-submitted email skipped.");
     return { success: false, error: "Email service not configured" };
   }
   const baseUrl =
@@ -247,17 +224,16 @@ export async function sendAdminKycSubmittedEmail(
 
   const adminEmail = process.env.ADMIN_EMAIL;
   if (adminEmail) {
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
+    const r = await deliverHtmlMail({
       to: adminEmail,
       subject: `[Taja.Shop] New KYC submission: ${submitterName}`,
       html,
     });
-    if (error) {
-      console.error("Resend error (admin KYC submitted):", error);
-      return { success: false, error };
+    if (!r.ok) {
+      console.error("Mail error (admin KYC submitted):", r.error);
+      return { success: false, error: r.error };
     }
-    return { success: true, data };
+    return { success: true, data: r };
   }
 
   try {
@@ -267,12 +243,14 @@ export async function sendAdminKycSubmittedEmail(
     const admins = await User.find({ role: "admin" }).select("email").lean();
     for (const admin of admins) {
       if (admin.email) {
-        await resend.emails.send({
-          from: EMAIL_FROM,
+        const r = await deliverHtmlMail({
           to: admin.email,
           subject: `[Taja.Shop] New KYC submission: ${submitterName}`,
           html,
         });
+        if (!r.ok) {
+          console.error("Mail error (admin KYC):", r.error);
+        }
       }
     }
     return { success: true, data: null };
@@ -291,8 +269,8 @@ export async function sendAdminNewShopEmail(
   ownerName: string,
   ownerEmail: string,
 ) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Admin new-shop email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Admin new-shop email skipped.");
     return { success: false, error: "Email service not configured" };
   }
   const baseUrl =
@@ -315,17 +293,16 @@ export async function sendAdminNewShopEmail(
 
   const adminEmail = process.env.ADMIN_EMAIL;
   if (adminEmail) {
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
+    const r = await deliverHtmlMail({
       to: adminEmail,
       subject: `[Taja.Shop] New shop: ${shopName} – under review`,
       html,
     });
-    if (error) {
-      console.error("Resend error (admin new shop):", error);
-      return { success: false, error };
+    if (!r.ok) {
+      console.error("Mail error (admin new shop):", r.error);
+      return { success: false, error: r.error };
     }
-    return { success: true, data };
+    return { success: true, data: r };
   }
 
   // No ADMIN_EMAIL: fetch admin emails from DB and send to each
@@ -336,12 +313,12 @@ export async function sendAdminNewShopEmail(
     const admins = await User.find({ role: "admin" }).select("email").lean();
     for (const admin of admins) {
       if (admin.email) {
-        await resend.emails.send({
-          from: EMAIL_FROM,
+        const r = await deliverHtmlMail({
           to: admin.email,
           subject: `[Taja.Shop] New shop: ${shopName} – under review`,
           html,
         });
+        if (!r.ok) console.error("Mail error (admin new shop loop):", r.error);
       }
     }
     return { success: true, data: null };
@@ -356,8 +333,8 @@ export async function sendPasswordResetEmail(
   name: string,
   resetToken: string,
 ) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Password reset email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Password reset email skipped.");
     return { success: false, error: "Email service not configured" };
   }
   try {
@@ -372,19 +349,11 @@ export async function sendPasswordResetEmail(
         "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
     });
 
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: email,
-      subject: "Reset your Taja.Shop password",
+    return await sendTransactionalMail(
+      email,
+      "Reset your Taja.Shop password",
       html,
-    });
-
-    if (error) {
-      console.error("Resend error:", error);
-      throw error;
-    }
-
-    return { success: true, data };
+    );
   } catch (error) {
     console.error("Send password reset email error:", error);
     throw error;
@@ -401,8 +370,8 @@ export async function sendBroadcastEmail(
   htmlMessage: string,
   recipientName?: string,
 ) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Broadcast email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Broadcast email skipped.");
     return { success: false, error: "Email service not configured" };
   }
   try {
@@ -417,18 +386,7 @@ export async function sendBroadcastEmail(
       </div>
     `;
 
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: email,
-      subject,
-      html,
-    });
-
-    if (error) {
-      console.error("Resend broadcast error:", error);
-      throw error;
-    }
-    return { success: true, data };
+    return await sendTransactionalMail(email, subject, html);
   } catch (error) {
     console.error("Send broadcast email error:", error);
     throw error;
@@ -462,8 +420,8 @@ export async function sendOrderConfirmationEmail(
   },
   orderId: string,
 ) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Order confirmation email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Order confirmation email skipped.");
     return { success: false, error: "Email service not configured" };
   }
   try {
@@ -490,19 +448,11 @@ export async function sendOrderConfirmationEmail(
         "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
     });
 
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: email,
-      subject: `Order Confirmed - #${orderNumber}`,
+    return await sendTransactionalMail(
+      email,
+      `Order Confirmed - #${orderNumber}`,
       html,
-    });
-
-    if (error) {
-      console.error("Resend error:", error);
-      throw error;
-    }
-
-    return { success: true, data };
+    );
   } catch (error) {
     console.error("Send order confirmation email error:", error);
     throw error;
@@ -537,8 +487,8 @@ export async function sendOrderShippedEmail(
     rating?: number;
   },
 ) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Order shipped email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Order shipped email skipped.");
     return { success: false, error: "Email service not configured" };
   }
   try {
@@ -567,19 +517,11 @@ export async function sendOrderShippedEmail(
         "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
     });
 
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: email,
-      subject: `Your Order is On Its Way! - #${orderNumber}`,
+    return await sendTransactionalMail(
+      email,
+      `Your Order is On Its Way! - #${orderNumber}`,
       html,
-    });
-
-    if (error) {
-      console.error("Resend error:", error);
-      throw error;
-    }
-
-    return { success: true, data };
+    );
   } catch (error) {
     console.error("Send order shipped email error:", error);
     throw error;
@@ -590,7 +532,7 @@ export async function sendOrderShippedEmail(
  * Support tickets: notify admins / assignee
  *
  * Env:
- * - RESEND_API_KEY (required to actually send)
+ * - Resend and/or SMTP (see `mail-delivery.ts`)
  * - EMAIL_FROM / RESEND_FROM (optional)
  * - ADMIN_EMAIL (optional single recipient override)
  * - FRONTEND_URL / NEXTAUTH_URL (optional for deep links)
@@ -628,8 +570,8 @@ export async function sendSupportTicketCreatedEmail(params: {
   requesterEmail?: string;
   assignedToEmail?: string | null;
 }) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Support ticket email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Support ticket email skipped.");
     return { success: false, error: "Email service not configured" };
   }
 
@@ -664,19 +606,16 @@ export async function sendSupportTicketCreatedEmail(params: {
     </div>
   `;
 
-  const { data, error } = await resend.emails.send({
-    from: EMAIL_FROM,
+  const r = await deliverHtmlMail({
     to,
     subject: `[Taja.Shop] New ticket ${params.ticketNumber}: ${params.subject}`,
     html,
   });
-
-  if (error) {
-    console.error("Resend error (support ticket created):", error);
-    return { success: false, error };
+  if (!r.ok) {
+    console.error("Mail error (support ticket created):", r.error);
+    return { success: false, error: r.error };
   }
-
-  return { success: true, data };
+  return { success: true, data: r };
 }
 
 export async function sendSupportTicketNewMessageEmail(params: {
@@ -688,8 +627,8 @@ export async function sendSupportTicketNewMessageEmail(params: {
   senderEmail?: string;
   assignedToEmail?: string | null;
 }) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Support message email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Support message email skipped.");
     return { success: false, error: "Email service not configured" };
   }
 
@@ -724,19 +663,16 @@ export async function sendSupportTicketNewMessageEmail(params: {
     </div>
   `;
 
-  const { data, error } = await resend.emails.send({
-    from: EMAIL_FROM,
+  const r = await deliverHtmlMail({
     to,
     subject: `[Taja.Shop] New message on ${params.ticketNumber}`,
     html,
   });
-
-  if (error) {
-    console.error("Resend error (support message):", error);
-    return { success: false, error };
+  if (!r.ok) {
+    console.error("Mail error (support message):", r.error);
+    return { success: false, error: r.error };
   }
-
-  return { success: true, data };
+  return { success: true, data: r };
 }
 
 export async function sendSupportTicketAssignedEmail(params: {
@@ -747,8 +683,8 @@ export async function sendSupportTicketAssignedEmail(params: {
   assigneeName?: string;
   assignedByName?: string;
 }) {
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set. Support assignment email skipped.");
+  if (!isMailConfigured()) {
+    console.warn("No mail transport (Resend/SMTP). Support assignment email skipped.");
     return { success: false, error: "Email service not configured" };
   }
 
@@ -769,17 +705,14 @@ export async function sendSupportTicketAssignedEmail(params: {
     </div>
   `;
 
-  const { data, error } = await resend.emails.send({
-    from: EMAIL_FROM,
+  const r = await deliverHtmlMail({
     to: params.assigneeEmail,
     subject: `[Taja.Shop] Assigned: ${params.ticketNumber}`,
     html,
   });
-
-  if (error) {
-    console.error("Resend error (support assignment):", error);
-    return { success: false, error };
+  if (!r.ok) {
+    console.error("Mail error (support assignment):", r.error);
+    return { success: false, error: r.error };
   }
-
-  return { success: true, data };
+  return { success: true, data: r };
 }

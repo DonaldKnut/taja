@@ -26,6 +26,20 @@ This document explains how the backend environment variables have been mapped to
 - `EMAIL_FROM` → `teams@tajaapp.shop` (mapped from backend's `RESEND_FROM`)
 - `RESEND_FROM` → Also included for compatibility
 
+**SMTP (Nodemailer) — optional, alongside Resend**
+
+If Resend fails or you prefer SMTP (e.g. Gmail, SendGrid SMTP, corporate relay), set:
+
+- `SMTP_HOST` — e.g. `smtp.gmail.com`
+- `SMTP_PORT` — default `587` (use `465` + `SMTP_SECURE=true` for SSL)
+- `SMTP_USER` — SMTP username (often full email)
+- `SMTP_PASS` — app password or SMTP password
+- `SMTP_SECURE` — `true` for port 465
+
+**`EMAIL_TRANSPORT`** (optional): `auto` (default: try Resend, then SMTP), `resend`, `smtp`, `smtp_first`.
+
+`EMAIL_FROM` must be a sender your SMTP provider allows (for Gmail, often matches `SMTP_USER`).
+
 ### Frontend URLs (Client-Side Accessible)
 These use `NEXT_PUBLIC_` prefix so they're accessible in the browser:
 - `NEXT_PUBLIC_SITE_URL` → `http://localhost:3000` (must match production domain for canonical URLs, Open Graph, and sitemap)
@@ -36,6 +50,7 @@ These use `NEXT_PUBLIC_` prefix so they're accessible in the browser:
 ### Google OAuth
 - `GOOGLE_CLIENT_ID` → Empty (needs to be filled from backend)
 - `GOOGLE_CLIENT_SECRET` → Empty (needs to be filled from backend)
+- `GOOGLE_WEB_CLIENT_ID` → Optional. OAuth **Web** client ID used as `audience` for Expo `POST /api/v1/auth/google` (same ID as expo-auth-session `webClientId`). If unset, `GOOGLE_CLIENT_ID` is used.
 - `GOOGLE_REDIRECT_URI` → `http://localhost:3000/api/auth/oauth/google/callback`
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` → Empty (needs to be filled for client-side OAuth)
 

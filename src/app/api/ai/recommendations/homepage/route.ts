@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { extractAccessTokenFromRequest } from '@/lib/auth-request-token';
 import { getHomepageRecommendations } from '@/lib/ai/recommendations';
 import Product from '@/models/Product';
 import '@/models/Shop'; // ensure Shop model is registered for populate('shop')
@@ -14,11 +15,10 @@ export async function GET(request: NextRequest) {
     // Try to get user ID from auth if available (optional)
     let userId: string | undefined;
     try {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
+      const token = extractAccessTokenFromRequest(request);
+      if (token) {
         const { verifyToken } = await import('@/lib/auth');
-        const decoded = await verifyToken(token);
+        const decoded = verifyToken(token);
         userId = decoded.userId;
       }
     } catch {

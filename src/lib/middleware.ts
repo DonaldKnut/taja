@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, JWTPayload } from '@/lib/auth';
 import User from '@/models/User';
 import connectDB from '@/lib/db';
+import { extractAccessTokenFromRequest } from '@/lib/auth-request-token';
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
@@ -15,13 +16,11 @@ export async function authenticate(
   request: NextRequest
 ): Promise<{ user: JWTPayload | null; error: string | null }> {
   try {
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = extractAccessTokenFromRequest(request);
+
+    if (!token) {
       return { user: null, error: 'No token provided' };
     }
-
-    const token = authHeader.substring(7);
     const decoded = verifyToken(token);
 
     // Verify user still exists and is active; use role from DB so Compass/DB updates apply without re-login

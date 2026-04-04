@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { extractAccessTokenFromRequest } from '@/lib/auth-request-token';
 import { getRecommendations, getHomepageRecommendations, recordProductView } from '@/lib/ai/recommendations';
 import { requireAuth } from '@/lib/middleware';
 import Product from '@/models/Product';
@@ -25,11 +26,10 @@ export async function GET(request: NextRequest) {
     // Get user ID from auth if available
     let userId: string | undefined;
     try {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
+      const token = extractAccessTokenFromRequest(request);
+      if (token) {
         const { verifyToken } = await import('@/lib/auth');
-        const decoded = await verifyToken(token);
+        const decoded = verifyToken(token);
         userId = decoded.userId;
       }
     } catch {
@@ -100,11 +100,10 @@ export async function GET_HOMEPAGE(request: NextRequest) {
   try {
     let userId: string | undefined;
     try {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
+      const token = extractAccessTokenFromRequest(request);
+      if (token) {
         const { verifyToken } = await import('@/lib/auth');
-        const decoded = await verifyToken(token);
+        const decoded = verifyToken(token);
         userId = decoded.userId;
       }
     } catch {
