@@ -115,11 +115,9 @@ export default function NewProductPage() {
   const [isVerifiedSeller, setIsVerifiedSeller] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingVariantImage, setUploadingVariantImage] = useState<number | null>(null);
-  const [analyzingImage, setAnalyzingImage] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [suggestingTags, setSuggestingTags] = useState(false);
   const [allCategories, setAllCategories] = useState<any[]>([]);
-  const [suggestedPrice, setSuggestedPrice] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -260,18 +258,11 @@ export default function NewProductPage() {
       });
 
       const uploadedUrls = await Promise.all(uploadPromises);
-      const isFirstImage = formData.images.length === 0;
-
       setFormData((prev) => ({
         ...prev,
         images: [...prev.images, ...uploadedUrls].slice(0, 8), // Max 8 images
       }));
       toast.success(`${uploadedUrls.length} image(s) uploaded successfully`);
-
-      // Auto-analyze the first image to fill fields
-      if (isFirstImage && uploadedUrls.length > 0) {
-        handleAnalyzeImage(uploadedUrls[0]);
-      }
     } catch (error: any) {
       console.error("Image upload error:", error);
       toast.error(error?.message || "Failed to upload images");
@@ -403,84 +394,6 @@ export default function NewProductPage() {
       toast.error(error?.message || "Failed to suggest tags");
     } finally {
       setSuggestingTags(false);
-    }
-  };
-
-  // AI: Analyze product image
-  const handleAnalyzeImage = async (imageUrl: string) => {
-    if (analyzingImage) return;
-
-    setAnalyzingImage(true);
-    const analysisToast = toast.loading("AI is analyzing your product image...");
-
-    try {
-      const response = await api("/api/ai/analyze-image", {
-        method: "POST",
-        body: JSON.stringify({ imageUrl }),
-      });
-
-      if (response?.analysis) {
-        const { analysis } = response;
-
-        // Smart Category Mapping
-        let matchedCategory = "";
-        if (analysis.category) {
-          const aiCat = analysis.category.toLowerCase();
-          const aiSub = (analysis.subcategory || "").toLowerCase();
-
-          // Try to find a match in system categories
-          const systemMatch = allCategories.find(cat =>
-            cat.name.toLowerCase() === aiCat ||
-            cat.name.toLowerCase() === aiSub ||
-            aiCat.includes(cat.name.toLowerCase()) ||
-            cat.name.toLowerCase().includes(aiCat)
-          );
-
-          if (systemMatch) {
-            matchedCategory = systemMatch._id || systemMatch.name;
-          }
-        }
-
-        // Auto-fill Title if empty
-        const newTitle = !formData.title.trim() && analysis.seoTitle ? analysis.seoTitle : formData.title;
-
-        // Auto-fill all fields
-        setFormData((prev) => ({
-          ...prev,
-          title: newTitle,
-          category: matchedCategory || prev.category,
-          description: analysis.description || prev.description,
-          specifications: {
-            ...prev.specifications,
-            color: analysis.attributes?.colors?.[0] || prev.specifications.color,
-            material: analysis.attributes?.materials?.[0] || prev.specifications.material,
-            gender: (analysis.attributes?.gender || "").toLowerCase() || prev.specifications.gender,
-            style: analysis.attributes?.style || prev.specifications.style,
-          },
-          seo: {
-            ...prev.seo,
-            tags: [...new Set([...prev.seo.tags, ...(analysis.tags || [])])].slice(0, 15),
-            metaTitle: analysis.seoTitle || prev.seo.metaTitle,
-            metaDescription: analysis.seoDescription || prev.seo.metaDescription,
-          },
-        }));
-
-        if (analysis.suggestedPriceRange) {
-          setSuggestedPrice(analysis.suggestedPriceRange);
-        }
-
-        toast.success("Magic! AI has auto-filled your product details.", { id: analysisToast });
-
-        // If we have a title but still no full description, trigger description generator
-        if (newTitle && (!analysis.description || analysis.description.length < 50)) {
-          handleGenerateDescription();
-        }
-      }
-    } catch (error: any) {
-      console.error("AI image analysis error:", error);
-      toast.error(error?.message || "AI was unable to analyze this image", { id: analysisToast });
-    } finally {
-      setAnalyzingImage(false);
     }
   };
 
@@ -733,7 +646,7 @@ export default function NewProductPage() {
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
                       Product Title *
                     </label>
-                    {(analyzingImage || generatingDescription) && (
+                    {generatingDescription && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -760,7 +673,7 @@ export default function NewProductPage() {
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
                       Description *
                     </label>
-                    {(analyzingImage || generatingDescription) && (
+                    {generatingDescription && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -783,21 +696,9 @@ export default function NewProductPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                   <div className="group space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                        Category *
-                      </label>
-                      {analyzingImage && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="flex items-center gap-1 text-[8px] font-black text-taja-primary uppercase tracking-widest bg-taja-primary/10 px-2 py-0.5 rounded-full"
-                        >
-                          <Sparkles className="h-2.5 w-2.5 animate-pulse" />
-                          AI Magic
-                        </motion.div>
-                      )}
-                    </div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                      Category *
+                    </label>
                     <select
                       name="category"
                       value={formData.category}
@@ -861,16 +762,6 @@ export default function NewProductPage() {
                         className="object-cover rounded-[28px]"
                       />
                       <div className="absolute inset-0 bg-taja-secondary/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
-                        {index === 0 && (
-                          <button
-                            type="button"
-                            onClick={() => handleAnalyzeImage(image)}
-                            className="w-full py-2 glass-card bg-taja-primary text-[9px] font-black uppercase tracking-widest text-white hover:bg-taja-primary/80 transition-all rounded-xl flex items-center justify-center gap-1"
-                          >
-                            <Sparkles className="h-3 w-3" />
-                            Analyze with AI
-                          </button>
-                        )}
                         {index !== 0 && (
                           <button
                             type="button"
@@ -1328,12 +1219,6 @@ export default function NewProductPage() {
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
               {formData.variants.length > 0 ? "Base price (₦) *" : "Price (₦) *"}
             </label>
-            {suggestedPrice && (
-              <div className="text-[8px] font-bold text-taja-primary bg-taja-primary/5 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                <Sparkles className="h-2 w-2" />
-                AI Suggests: {suggestedPrice}
-              </div>
-            )}
           </div>
           <input
             name="price"

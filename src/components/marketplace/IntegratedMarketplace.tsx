@@ -166,24 +166,14 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.5 }}
-                            className="flex items-center justify-center gap-8 pt-12"
+                            className="flex flex-col items-center justify-center gap-3 pt-12 px-4 text-center max-w-md mx-auto"
                         >
-                            <div className="flex -space-x-4">
-                                {[
-                                    "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/dele_mup0gl.png",
-                                    "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/LYNNPINNEDIT___mv5yne.jpg",
-                                    "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/Portrait____Cooperate_headshot_qfzmsr.jpg",
-                                    "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/sola_jbdewv.jpg"
-                                ].map((src, i) => (
-                                    <div key={i} className="h-12 w-12 rounded-full border-4 border-white bg-gray-100 shadow-xl overflow-hidden">
-                                        <img src={src} alt="Verified User" className="w-full h-full object-cover" />
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="text-left">
-                                <p className="text-xl font-black text-taja-secondary tracking-tight">10,000+</p>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Verified Users</p>
-                            </div>
+                            <p className="text-xl font-black text-taja-secondary tracking-tight leading-tight">
+                                Shop with confidence
+                            </p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">
+                                Secure checkout · Real sellers · Buyer protection
+                            </p>
                         </motion.div>
                     </motion.div>
                 ) : (
