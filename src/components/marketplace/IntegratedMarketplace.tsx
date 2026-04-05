@@ -158,7 +158,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         >
                             <h2 className="text-sm font-black text-taja-primary uppercase tracking-[0.4em]">Establish Trust</h2>
                             <h1 className="text-4xl md:text-6xl font-black text-taja-secondary tracking-tighter leading-none">
-                                Refining <br /> <span className="text-transparent bg-clip-text bg-gradient-taja">The Market.</span>
+                                Redefining <br /> <span className="text-transparent bg-clip-text bg-gradient-taja">Trust.</span>
                             </h1>
                         </motion.div>
 
@@ -181,8 +181,8 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                 ))}
                             </div>
                             <div className="text-left">
-                                <p className="text-xl font-black text-taja-secondary tracking-tight">150k+</p>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Verified Buyers</p>
+                                <p className="text-xl font-black text-taja-secondary tracking-tight">10,000+</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Verified Users</p>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -352,8 +352,8 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                     <Star className="w-4 h-4 fill-white" />
                                 </div>
                                 <div className="space-y-0.5">
-                                    <p className="text-[9px] font-black text-gray-400 tracking-widest uppercase">Balance</p>
-                                    <p className="text-sm font-black text-gray-900 tracking-tight">₦150k+</p>
+                                    <p className="text-[9px] font-black text-gray-400 tracking-widest uppercase">Wallet</p>
+                                    <p className="text-sm font-black text-gray-900 tracking-tight">₦12,450.00 <span className="text-[8px] text-taja-primary italic ml-1">Verified</span></p>
                                 </div>
                             </div>
                             <div className="bg-white/70 backdrop-blur-xl p-5 rounded-[2rem] shadow-premium flex items-center gap-4 border border-white/60">
@@ -362,7 +362,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-[9px] font-black text-gray-400 tracking-widest uppercase">Points</p>
-                                    <p className="text-sm font-black text-gray-900 tracking-tight">12.4k</p>
+                                    <p className="text-sm font-black text-gray-900 tracking-tight">2,850</p>
                                 </div>
                             </div>
                         </section>

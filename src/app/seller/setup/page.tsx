@@ -34,8 +34,6 @@ export default function SellerSetupPage() {
   const [loading, setLoading] = useState(false);
   const [checkingShop, setCheckingShop] = useState(true);
   const [generatingDescription, setGeneratingDescription] = useState(false);
-  const [suggestingShopNames, setSuggestingShopNames] = useState(false);
-  const [shopIdea, setShopIdea] = useState("");
   const [formData, setFormData] = useState({
     shopName: "",
     shopSlug: "",
@@ -132,56 +130,6 @@ export default function SellerSetupPage() {
       toast.success("Description generated. Feel free to edit it!");
     } finally {
       setGeneratingDescription(false);
-    }
-  };
-
-  const suggestShopNames = async () => {
-    if (!shopIdea.trim() && formData.categories.length === 0) {
-      toast.error("Type a short idea or pick at least one category first.");
-      return;
-    }
-    setSuggestingShopNames(true);
-    try {
-      const res = await api("/api/ai/shop-suggestions", {
-        method: "POST",
-        body: JSON.stringify({
-          idea: shopIdea,
-          categories: formData.categories,
-        }),
-      });
-      if ((res as any)?.success) {
-        const names: string[] = (res as any).names || [];
-        const tagline: string = (res as any).tagline || "";
-        if (!names.length && !tagline) {
-          toast.error("AI could not find good suggestions. Try rephrasing your idea.");
-          return;
-        }
-        setFormData((prev) => ({
-          ...prev,
-          shopName: prev.shopName || names[0] || prev.shopName,
-          shopSlug:
-            prev.shopSlug ||
-            (names[0]
-              ? names[0].toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, "_").substring(0, 30)
-              : prev.shopSlug),
-          description:
-            prev.description ||
-            (tagline
-              ? `${tagline}\n\n${prev.description || ""}`.trim()
-              : prev.description),
-        }));
-        if (names.length) {
-          toast.success("Shop name ideas added. You can tweak them.");
-        } else {
-          toast.success("Tagline added. You can tweak it.");
-        }
-      } else {
-        toast.error((res as any)?.message || "Failed to generate shop suggestions.");
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to generate shop suggestions.");
-    } finally {
-      setSuggestingShopNames(false);
     }
   };
 
@@ -282,7 +230,6 @@ export default function SellerSetupPage() {
                 </div>
 
                 {/* Shop Name + AI idea helper */}
-                <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-semibold text-taja-secondary mb-2">
                       Shop Name <span className="text-taja-primary">*</span>
@@ -296,36 +243,6 @@ export default function SellerSetupPage() {
                       className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-taja-secondary placeholder:text-gray-300 focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20 transition-all"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      Describe your shop idea (optional, powers AI helper)
-                    </label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <input
-                        type="text"
-                        value={shopIdea}
-                        onChange={(e) => setShopIdea(e.target.value)}
-                        placeholder="e.g., thrift clothes in Ibadan for students"
-                        className="flex-1 h-10 px-3 rounded-xl border border-gray-200 bg-white text-xs text-taja-secondary placeholder:text-gray-300 focus:outline-none focus:border-taja-primary/60 focus:ring-1 focus:ring-taja-primary/20 transition-all"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={suggestShopNames}
-                        disabled={suggestingShopNames}
-                        className="h-10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
-                      >
-                        {suggestingShopNames ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-3.5 w-3.5" />
-                        )}
-                        AI Name Ideas
-                      </Button>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Shop URL */}
                 <div>

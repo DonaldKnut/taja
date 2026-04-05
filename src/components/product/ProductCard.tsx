@@ -566,7 +566,7 @@ export function ProductCard({
       </div>
 
       <CardContent className="p-2 sm:p-4 flex flex-col justify-between flex-grow">
-        <div className="space-y-1 pr-12">
+        <div className="space-y-1 pr-3 sm:pr-12">
           {isInsideDashboard ? (
             <h3 className="text-sm font-bold text-gray-900 line-clamp-2 min-h-[2.5rem] leading-tight">
               {product.title}
@@ -588,7 +588,7 @@ export function ProductCard({
           </p>
 
           {showSellerRow && sellerName && (
-            <div className="flex items-center justify-between gap-2 mt-3 p-1.5 rounded-2xl border border-gray-50 bg-gray-50/30 group/seller-row">
+            <div className="mt-3 flex flex-col gap-2 rounded-2xl border border-gray-100/80 bg-gradient-to-b from-gray-50/50 to-gray-50/20 p-2.5 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-1.5 sm:from-transparent sm:to-transparent sm:shadow-none sm:border-gray-50 sm:bg-gray-50/30 group/seller-row">
               <button
                 type="button"
                 onClick={(e) => {
@@ -596,23 +596,23 @@ export function ProductCard({
                   e.stopPropagation();
                   setSellerPanelOpen(true);
                 }}
-                className="flex items-center gap-2 min-w-0"
+                className="flex w-full min-w-0 items-center gap-2.5 text-left sm:w-auto sm:flex-1 sm:gap-2"
               >
-                <div className="h-7 w-7 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100 sm:h-7 sm:w-7">
                   <Image
                     src={sellerAvatar}
                     alt={sellerName}
-                    width={28}
-                    height={28}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 640px) 36px, 28px"
+                    className="object-cover"
                   />
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-semibold text-gray-900 leading-tight line-clamp-1 group-hover/seller-row:text-emerald-700 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <span className="block text-[12px] font-semibold leading-snug text-gray-900 line-clamp-2 sm:text-[11px] sm:leading-tight sm:line-clamp-1 group-hover/seller-row:text-emerald-700 transition-colors">
                     {sellerName}
                   </span>
                   {shopName && (
-                    <span className="text-[9px] text-gray-400 uppercase tracking-widest leading-none truncate">
+                    <span className="mt-0.5 block text-[9px] font-bold uppercase tracking-widest text-gray-400 line-clamp-1">
                       {shopName}
                     </span>
                   )}
@@ -621,10 +621,11 @@ export function ProductCard({
               <Link
                 href={`/chat?seller=${(product.seller as any)?._id || product.seller}&product=${product._id}&shopId=${shop?._id}`}
                 onClick={(e) => e.stopPropagation()}
-                className="h-7 w-7 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all shrink-0 shadow-sm"
-                title="Message Seller"
+                className="flex h-9 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-gray-200/90 bg-white text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700 shadow-sm transition-all hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 active:scale-[0.98] sm:h-7 sm:w-7 sm:gap-0 sm:rounded-full sm:p-0 sm:text-gray-400 sm:hover:text-emerald-600"
+                title="Message seller"
               >
-                <MessageCircle className="h-3.5 w-3.5" />
+                <MessageCircle className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                <span className="sm:sr-only">Message</span>
               </Link>
             </div>
           )}
