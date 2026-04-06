@@ -9,6 +9,9 @@ interface AuthenticatedSocket {
 }
 
 export const setupSocketIO = (io: SocketIOServer) => {
+  // Expose io for API routes that need best-effort event emits.
+  (globalThis as any).__io = io;
+
   // Authentication middleware for socket connections
   io.use(async (socket: any, next) => {
     try {
