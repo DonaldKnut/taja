@@ -27,10 +27,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { sellerApi } from "@/lib/api";
+import { api, sellerApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import { InventoryAlerts } from "@/components/seller/InventoryAlerts";
+import { ShareShopButton } from "@/components/shop/ShareShopButton";
 
 interface DashboardStats {
   totalRevenue: number;
@@ -96,6 +97,7 @@ export default function SellerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [shopStatus, setShopStatus] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+  const [shopShare, setShopShare] = useState<{ shopSlug: string; shopName?: string } | null>(null);
 
   const kycStatus = user?.kyc?.status;
   const isVerifiedByKyc = kycStatus === "approved";
@@ -110,7 +112,10 @@ export default function SellerDashboardPage() {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await sellerApi.getDashboard();
+        const [response, myShop] = await Promise.all([
+          sellerApi.getDashboard(),
+          api("/api/shops/my").catch(() => null as any),
+        ]);
 
         if (response?.success && response?.data) {
           setStats(response.data.stats);
@@ -118,6 +123,9 @@ export default function SellerDashboardPage() {
           setTopProducts(response.data.topProducts || []);
           setShopStatus(response.data.shopStatus ?? null);
           setVerificationStatus(response.data.verificationStatus ?? null);
+        }
+        if (myShop?.success && myShop?.data?.shopSlug) {
+          setShopShare({ shopSlug: myShop.data.shopSlug, shopName: myShop.data.shopName });
         }
       } catch (error) {
         console.error("Failed to fetch seller dashboard:", error);
@@ -283,6 +291,13 @@ export default function SellerDashboardPage() {
           <p className="text-sm font-medium text-gray-500 tracking-wide flex items-center gap-2">
             Business Overview for <span className="text-taja-secondary font-black uppercase tracking-widest text-[10px]">{user?.fullName || "Operator"}</span> • Live
           </p>
+          {shopShare?.shopSlug && (
+            <ShareShopButton
+              shopSlug={shopShare.shopSlug}
+              shopName={shopShare.shopName || "my shop"}
+              className="pt-2"
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full lg:w-auto">

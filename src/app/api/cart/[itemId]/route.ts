@@ -6,6 +6,69 @@ import { requireAuth } from '@/lib/middleware';
 
 export const dynamic = 'force-dynamic';
 
+function resolveVariant(product: any, variantId?: string) {
+  if (!variantId) return null;
+  const variant = (product?.variants || []).find((v: any) => String(v?._id) === String(variantId));
+  return variant || null;
+}
+
+function getUnitPrice(product: any, variant: any) {
+  if (variant && typeof variant.price === 'number') return variant.price;
+  return product?.price || 0;
+}
+
+function getAvailableStock(product: any, variant: any) {
+  if (variant && typeof variant.stock === 'number') return variant.stock;
+  const track = product?.inventory?.trackQuantity !== false;
+  if (!track) return Number.MAX_SAFE_INTEGER;
+  return product?.inventory?.quantity ?? 0;
+}
+
+async function buildCartResponse(cart: any) {
+  const productIds = cart.items.map((i: any) => i.product);
+  const products = await Product.find({ _id: { $in: productIds } })
+    .select('title price images inventory variants status')
+    .lean();
+  const productMap = new Map(products.map((p: any) => [String(p._id), p]));
+
+  const items = cart.items.map((item: any) => {
+    const product = productMap.get(String(item.product));
+    const variant = resolveVariant(product, item.variantId);
+    const unitPrice = getUnitPrice(product, variant);
+    const stock = getAvailableStock(product, variant);
+    const moq = product?.inventory?.moq ?? 1;
+    return {
+      itemId: String(item._id),
+      productId: String(item.product),
+      title: variant?.name || product?.title || 'Product',
+      unitPrice,
+      quantity: item.quantity,
+      subtotal: unitPrice * item.quantity,
+      stock: Number.isFinite(stock) ? stock : 999999,
+      moq,
+      images: variant?.image ? [variant.image, ...(product?.images || [])] : (product?.images || []),
+      variantId: item.variantId || undefined,
+      variantName: item.variantName || variant?.name || undefined,
+    };
+  });
+
+  const subtotal = items.reduce((sum: number, i: any) => sum + i.subtotal, 0);
+  cart.totals.subtotal = subtotal;
+  cart.totals.total = subtotal + cart.totals.shipping + cart.totals.tax - cart.totals.discount;
+  await cart.save();
+
+  return {
+    success: true,
+    data: {
+      items,
+      totals: {
+        subtotal: cart.totals.subtotal,
+        total: cart.totals.total,
+      },
+    },
+  };
+}
+
 // PUT /api/cart/:itemId - Update cart item quantity
 export async function PUT(
   request: NextRequest,
@@ -14,11 +77,12 @@ export async function PUT(
   return requireAuth(async (req, user) => {
     try {
       const body = await request.json();
-      const { quantity } = body;
+      const { quantity } = body || {};
 
-      if (!quantity || quantity < 1) {
+      const normalizedQuantity = Number(quantity);
+      if (!Number.isInteger(normalizedQuantity) || normalizedQuantity < 1) {
         return NextResponse.json(
-          { success: false, message: 'Quantity must be at least 1' },
+          { success: false, message: 'Validation error: quantity must be >= 1' },
           { status: 400 }
         );
       }
@@ -45,33 +109,24 @@ export async function PUT(
 
       // Check stock
       const product = await Product.findById(item.product);
-      if (product && product.inventory.trackQuantity && product.inventory.quantity < quantity) {
+      const selectedVariant = resolveVariant(product, item.variantId);
+      const availableStock = getAvailableStock(product, selectedVariant);
+      if (availableStock < normalizedQuantity) {
         return NextResponse.json(
           { success: false, message: 'Insufficient stock' },
           { status: 400 }
         );
       }
-
-      item.quantity = quantity;
-
-      // Recalculate totals
-      let subtotal = 0;
-      for (const cartItem of cart.items) {
-        const prod = await Product.findById(cartItem.product);
-        if (prod) {
-          subtotal += prod.price * cartItem.quantity;
-        }
+      const moq = product?.inventory?.moq ?? 1;
+      if (normalizedQuantity < moq) {
+        return NextResponse.json(
+          { success: false, message: `Validation error: quantity must be >= ${moq}` },
+          { status: 400 }
+        );
       }
 
-      cart.totals.subtotal = subtotal;
-      cart.totals.total = subtotal + cart.totals.shipping + cart.totals.tax - cart.totals.discount;
-      await cart.save();
-
-      return NextResponse.json({
-        success: true,
-        message: 'Cart item updated',
-        data: cart,
-      });
+      item.quantity = normalizedQuantity;
+      return NextResponse.json(await buildCartResponse(cart));
     } catch (error: any) {
       console.error('Update cart item error:', error);
       return NextResponse.json(
@@ -101,24 +156,7 @@ export async function DELETE(
 
       cart.items = cart.items.filter((item: any) => item._id.toString() !== params.itemId);
 
-      // Recalculate totals
-      let subtotal = 0;
-      for (const item of cart.items) {
-        const product = await Product.findById(item.product);
-        if (product) {
-          subtotal += product.price * item.quantity;
-        }
-      }
-
-      cart.totals.subtotal = subtotal;
-      cart.totals.total = subtotal + cart.totals.shipping + cart.totals.tax - cart.totals.discount;
-      await cart.save();
-
-      return NextResponse.json({
-        success: true,
-        message: 'Item removed from cart',
-        data: cart,
-      });
+      return NextResponse.json(await buildCartResponse(cart));
     } catch (error: any) {
       console.error('Remove from cart error:', error);
       return NextResponse.json(

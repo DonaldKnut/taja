@@ -475,7 +475,8 @@ export const cartApi = {
   updateCartItem: (itemId: string, quantity: number) => api(`/api/cart/${itemId}`, { method: "PUT", body: JSON.stringify({ quantity }) }),
   removeFromCart: (itemId: string) => api(`/api/cart/${itemId}`, { method: "DELETE" }),
   clearCart: () => api("/api/cart", { method: "DELETE" }),
-  mergeCart: (items: Array<{ product: string; quantity: number }>) => api("/api/cart/merge", { method: "POST", body: JSON.stringify({ items }) }),
+  mergeCart: (items: Array<{ product: string; quantity: number; variantId?: string; variantName?: string }>) =>
+    api("/api/cart/merge", { method: "POST", body: JSON.stringify({ items }) }),
 };
 
 // Checkout API helpers

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { api, uploadShopImage } from "@/lib/api";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import { ShareShopButton } from "@/components/shop/ShareShopButton";
 
 const SOCIAL_KEYS = [
   { key: "instagram", label: "Instagram", placeholder: "@username or URL" },
@@ -35,6 +36,7 @@ export default function SellerShopEditPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [form, setForm] = useState({
+    shopSlug: "",
     shopName: "",
     description: "",
     about: "",
@@ -66,6 +68,7 @@ export default function SellerShopEditPage() {
         }
         const s = res.data;
         setForm({
+          shopSlug: s.shopSlug ?? "",
           shopName: s.shopName ?? "",
           description: s.description ?? "",
           about: s.about ?? "",
@@ -178,6 +181,11 @@ export default function SellerShopEditPage() {
           Shop profile
         </h1>
       </div>
+      {form.shopSlug && (
+        <div className="mb-6">
+          <ShareShopButton shopSlug={form.shopSlug} shopName={form.shopName || "my shop"} />
+        </div>
+      )}
 
       <motion.form
         initial={{ opacity: 0, y: 10 }}

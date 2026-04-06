@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
-import { Image as ImageIcon, MessageCircle, Paperclip, X } from "lucide-react";
+import { Image as ImageIcon, MessageCircle, Paperclip, Phone, X } from "lucide-react";
 import { api, supportApi, uploadSupportAttachment } from "@/lib/api";
 import { CartDrawer } from "@/components/cart";
 import { useMounted } from "@/hooks/useMounted";
@@ -29,6 +29,13 @@ export function FloatingCart() {
     { role: "assistant", content: "Welcome to Taja Support. Send a message and our team will reply shortly." },
   ]);
   const [isAuthed, setIsAuthed] = useState(false);
+  const supportWhatsAppUrl = (() => {
+    const raw = process.env.NEXT_PUBLIC_SUPPORT_PHONE?.trim();
+    if (!raw) return null;
+    const clean = raw.replace(/[^\d]/g, "");
+    if (!clean) return null;
+    return `https://wa.me/${clean}`;
+  })();
 
   const loadSupportThread = async () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -109,15 +116,30 @@ export function FloatingCart() {
 
   return (
     <>
-      {/* Floating Chat Button - Positioned higher to avoid bottom nav */}
-      <button
-        onClick={() => setChatOpen(true)}
-        className="fixed bottom-32 right-6 z-40 bg-white text-taja-secondary p-4 rounded-full shadow-premium hover:bg-gray-50 transition-all active:scale-95 border border-gray-100/50 flex items-center justify-center"
-        aria-label="Support chat"
-      >
-        <MessageCircle className="h-6 w-6" />
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-taja-primary rounded-full animate-pulse border-2 border-white"></span>
-      </button>
+      {/* Floating contact buttons: lifted above mobile bottom nav */}
+      <div className="fixed right-6 bottom-[8.5rem] md:bottom-6 z-40 flex flex-col gap-3">
+        {supportWhatsAppUrl && (
+          <a
+            href={supportWhatsAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-emerald-500 text-white p-4 rounded-full shadow-premium hover:bg-emerald-600 transition-all active:scale-95 border border-emerald-400/40 flex items-center justify-center"
+            aria-label="WhatsApp support"
+            title="WhatsApp support"
+          >
+            <Phone className="h-5 w-5" />
+          </a>
+        )}
+        <button
+          onClick={() => setChatOpen(true)}
+          className="relative bg-white text-taja-secondary p-4 rounded-full shadow-premium hover:bg-gray-50 transition-all active:scale-95 border border-gray-100/50 flex items-center justify-center"
+          aria-label="Support chat"
+          title="Support chat"
+        >
+          <MessageCircle className="h-6 w-6" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-taja-primary rounded-full animate-pulse border-2 border-white"></span>
+        </button>
+      </div>
 
       {/* Floating Action Button: Seller sees Shop button, Buyer sees Cart */}
 

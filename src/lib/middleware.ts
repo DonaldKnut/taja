@@ -19,7 +19,7 @@ export async function authenticate(
     const token = extractAccessTokenFromRequest(request);
 
     if (!token) {
-      return { user: null, error: 'No token provided' };
+      return { user: null, error: 'Unauthorized: missing token' };
     }
     const decoded = verifyToken(token);
 
@@ -44,7 +44,15 @@ export async function authenticate(
       error: null,
     };
   } catch (error: any) {
-    return { user: null, error: error.message || 'Invalid token' };
+    const message = error?.message || '';
+    if (
+      message === 'Invalid token' ||
+      message === 'Invalid or expired token' ||
+      /jwt/i.test(message)
+    ) {
+      return { user: null, error: 'Unauthorized: invalid token' };
+    }
+    return { user: null, error: message || 'Unauthorized: invalid token' };
   }
 }
 

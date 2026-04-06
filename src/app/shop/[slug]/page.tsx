@@ -41,6 +41,7 @@ import { generateShopStructuredData } from "@/lib/seo";
 import { CartIcon } from "@/components/cart";
 import { OffPlatformPaymentWarningModal } from "@/components/security/OffPlatformPaymentWarningModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { ShareShopButton } from "@/components/shop/ShareShopButton";
 
 interface Shop {
   _id: string;
@@ -451,6 +452,7 @@ export default function ShopPage() {
                 <div className="flex flex-wrap gap-3 shrink-0 items-center">
                   {isOwnerView ? (
                     <>
+                      <ShareShopButton shopSlug={shop.shopSlug} shopName={shop.shopName} />
                       <Link href={(user as any)?.role === "admin" ? "/admin/dashboard" : "/seller/dashboard"}>
                         <Button className="rounded-full px-8 h-12 shadow-sm bg-taja-secondary text-white font-black uppercase tracking-widest text-[10px] hover:bg-emerald-700 transition-colors">
                           <ShoppingBag className="h-4 w-4 mr-2" />

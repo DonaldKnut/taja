@@ -5,6 +5,8 @@ export interface ICart extends Document {
   items: Array<{
     product: mongoose.Types.ObjectId;
     quantity: number;
+    variantId?: string;
+    variantName?: string;
     addedAt: Date;
   }>;
   totals: {
@@ -40,6 +42,12 @@ const CartSchema = new Schema<ICart>(
           type: Number,
           required: true,
           min: 1,
+        },
+        variantId: {
+          type: String,
+        },
+        variantName: {
+          type: String,
         },
         addedAt: {
           type: Date,
