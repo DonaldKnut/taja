@@ -27,7 +27,17 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data: shop || null,
+        data: shop
+          ? {
+              ...shop,
+              categories: (shop as any).categories && (shop as any).categories.length > 0
+                ? (shop as any).categories
+                : (shop as any).category
+                  ? [(shop as any).category]
+                  : [],
+              categoryIds: ((shop as any).categoryIds || []).map((id: any) => id.toString()),
+            }
+          : null,
       });
     } catch (error: any) {
       console.error("[MY_SHOP] ❌ Error fetching shop:", {

@@ -17,6 +17,8 @@ export interface IShop extends Document {
    */
   tagline?: string;
   category?: string;
+  categories?: string[];
+  categoryIds?: mongoose.Types.ObjectId[];
   address: {
     addressLine1: string;
     addressLine2?: string;
@@ -151,6 +153,16 @@ const ShopSchema = new Schema<IShop>(
     },
     description: String,
     category: String,
+    categories: {
+      type: [String],
+      default: [],
+    },
+    categoryIds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Category',
+      },
+    ],
     address: {
       addressLine1: String,
       addressLine2: String,
@@ -252,6 +264,7 @@ const ShopSchema = new Schema<IShop>(
 ShopSchema.index({ owner: 1 });
 ShopSchema.index({ status: 1 });
 ShopSchema.index({ 'verification.status': 1 });
+ShopSchema.index({ categories: 1 });
 
 const Shop: Model<IShop> = mongoose.models.Shop || mongoose.model<IShop>('Shop', ShopSchema);
 

@@ -188,10 +188,11 @@ export default function SellerShopEditPage() {
       )}
 
       <motion.form
+        id="seller-shop-profile-form"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         onSubmit={handleSubmit}
-        className="space-y-10"
+        className="space-y-10 pb-28"
       >
         {/* Identity */}
         <section className="glass-card p-8 rounded-3xl border border-white/60 space-y-6">
@@ -351,16 +352,19 @@ export default function SellerShopEditPage() {
           </div>
         </section>
 
-        <div className="flex justify-end gap-4">
+      </motion.form>
+
+      <div className="fixed bottom-0 left-0 right-0 lg:left-80 z-40 border-t border-white/60 bg-white/90 backdrop-blur-xl">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex justify-end gap-3">
           <Link href="/seller/dashboard">
             <Button type="button" variant="outline" className="rounded-xl">Cancel</Button>
           </Link>
-          <Button type="submit" disabled={loading} className="rounded-xl gap-2">
+          <Button type="submit" form="seller-shop-profile-form" disabled={loading} className="rounded-xl gap-2">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Save shop profile
           </Button>
         </div>
-      </motion.form>
+      </div>
     </div>
   );
 }

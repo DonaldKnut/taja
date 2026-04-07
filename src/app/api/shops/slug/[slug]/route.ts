@@ -157,6 +157,12 @@ export async function GET(
     // Return shop with dynamic stats and products for full showroom
     const updatedShop = {
       ...shop,
+      categories: (shop as any).categories && (shop as any).categories.length > 0
+        ? (shop as any).categories
+        : (shop as any).category
+          ? [(shop as any).category]
+          : [],
+      categoryIds: ((shop as any).categoryIds || []).map((id: any) => id.toString()),
       avatar: (shop as any).avatar || shop.logo,
       coverImage: (shop as any).coverImage || shop.banner,
       verification: {

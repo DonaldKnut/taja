@@ -2,11 +2,131 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Shop from '@/models/Shop';
 import User from '@/models/User';
+import Category from '@/models/Category';
 import { requireAuth } from '@/lib/middleware';
 import { notifyAdminsNewShop } from '@/lib/notifications';
 import { sendAdminNewShopEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
+
+const normalizeCategoryName = (value: string) =>
+  value.replace(/\s+/g, ' ').trim();
+
+const normalizeCategoryKey = (value: string) =>
+  normalizeCategoryName(value).toLowerCase();
+
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const toSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
+const toDisplayName = (value: string) =>
+  normalizeCategoryName(value)
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+
+const normalizeCategoryInput = (input: unknown): string[] => {
+  if (!Array.isArray(input)) return [];
+  const dedup = new Map<string, string>();
+  for (const raw of input) {
+    if (typeof raw !== 'string') continue;
+    const normalized = normalizeCategoryName(raw);
+    if (!normalized) continue;
+    const key = normalizeCategoryKey(normalized);
+    if (!dedup.has(key)) {
+      dedup.set(key, normalized);
+    }
+  }
+  return Array.from(dedup.values());
+};
+
+const resolveCategoryCatalog = async (categories: string[]) => {
+  if (categories.length === 0) {
+    return { categories: [], categoryIds: [] as string[] };
+  }
+
+  const existing = await Category.find({
+    $or: categories.map((name) => ({ name: { $regex: `^${escapeRegex(name)}$`, $options: 'i' } })),
+  })
+    .select('_id name')
+    .lean();
+
+  const byKey = new Map<string, { _id: string; name: string }>();
+  for (const category of existing) {
+    byKey.set(normalizeCategoryKey(category.name), {
+      _id: category._id.toString(),
+      name: normalizeCategoryName(category.name),
+    });
+  }
+
+  const resolved: string[] = [];
+  const resolvedIds: string[] = [];
+
+  for (const rawName of categories) {
+    const key = normalizeCategoryKey(rawName);
+    let found = byKey.get(key);
+
+    if (!found) {
+      const displayName = toDisplayName(rawName);
+      const baseSlug = toSlug(displayName) || `category-${Date.now()}`;
+      const existingBySlug = await Category.findOne({ slug: baseSlug }).select('_id name').lean();
+
+      if (existingBySlug) {
+        found = {
+          _id: existingBySlug._id.toString(),
+          name: normalizeCategoryName(existingBySlug.name),
+        };
+      } else {
+        try {
+          const created = await Category.create({
+            name: displayName,
+            slug: baseSlug,
+            isActive: true,
+            sortOrder: 100,
+          });
+          found = {
+            _id: created._id.toString(),
+            name: normalizeCategoryName(created.name),
+          };
+        } catch (err: any) {
+          // Handle possible duplicate slug race by reading it back.
+          if (err?.code === 11000) {
+            const fallback = await Category.findOne({ slug: baseSlug }).select('_id name').lean();
+            if (fallback) {
+              found = {
+                _id: fallback._id.toString(),
+                name: normalizeCategoryName(fallback.name),
+              };
+            } else {
+              throw err;
+            }
+          } else {
+            throw err;
+          }
+        }
+      }
+
+      if (found) {
+        byKey.set(key, found);
+      }
+    }
+
+    if (found) {
+      resolved.push(found.name);
+      resolvedIds.push(found._id);
+    } else {
+      resolved.push(rawName);
+    }
+  }
+
+  return { categories: resolved, categoryIds: resolvedIds };
+};
 
 // GET /api/shops - Get all shops
 export async function GET(request: NextRequest) {
@@ -22,15 +142,23 @@ export async function GET(request: NextRequest) {
 
     const query: any = { status: 'active' };
 
+    const andFilters: any[] = [];
     if (search) {
-      query.$or = [
-        { shopName: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-      ];
+      andFilters.push({
+        $or: [
+          { shopName: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+        ],
+      });
     }
 
     if (category) {
-      query.category = category;
+      andFilters.push({
+        $or: [{ category }, { categories: category }],
+      });
+    }
+    if (andFilters.length > 0) {
+      query.$and = andFilters;
     }
 
     if (verified !== null) {
@@ -61,6 +189,12 @@ export async function GET(request: NextRequest) {
 
         return {
           ...shop,
+          categories: (shop as any).categories && (shop as any).categories.length > 0
+            ? (shop as any).categories
+            : (shop as any).category
+              ? [(shop as any).category]
+              : [],
+          categoryIds: ((shop as any).categoryIds || []).map((id: any) => id.toString()),
           stats: {
             ...shop.stats,
             totalProducts,
@@ -103,6 +237,7 @@ export async function POST(request: NextRequest) {
         about,
         tagline,
         category,
+        categories: categoriesInput,
         shopSlug,
         logo,
         banner,
@@ -146,6 +281,12 @@ export async function POST(request: NextRequest) {
 
       // Check if user is already KYC approved to auto-activate the shop
       const isAutoApproved = user.kyc?.status === 'approved';
+      const incomingCategories = normalizeCategoryInput(categoriesInput);
+      if (incomingCategories.length === 0 && typeof category === 'string' && normalizeCategoryName(category)) {
+        incomingCategories.push(normalizeCategoryName(category));
+      }
+      const resolvedCategories = await resolveCategoryCatalog(incomingCategories);
+      const primaryCategory = resolvedCategories.categories[0] || (typeof category === 'string' ? normalizeCategoryName(category) : undefined);
 
       const shop = await Shop.create({
         owner: user.userId,
@@ -154,7 +295,9 @@ export async function POST(request: NextRequest) {
         description,
         about,
         tagline,
-        category,
+        category: primaryCategory,
+        categories: resolvedCategories.categories,
+        categoryIds: resolvedCategories.categoryIds,
         logo,
         banner,
         avatar: avatar || logo,
@@ -201,7 +344,11 @@ export async function POST(request: NextRequest) {
         {
           success: true,
           message: 'Shop created successfully. It is now under review. You will not see the setup page again.',
-          data: shop,
+          data: {
+            ...shop.toObject(),
+            categories: (shop as any).categories || (shop.category ? [shop.category] : []),
+            categoryIds: ((shop as any).categoryIds || []).map((id: any) => id.toString()),
+          },
         },
         { status: 201 }
       );
