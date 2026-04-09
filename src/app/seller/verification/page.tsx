@@ -19,10 +19,10 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import toast from "react-hot-toast";
-import { API_BASE_URL, api } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface VerificationData {
@@ -165,8 +165,12 @@ export default function SellerVerificationPage() {
   const handleNINChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nin = e.target.value.replace(/\D/g, "").slice(0, 11);
     setVerificationData((prev) => ({ ...prev, nin }));
-    if (nin.length === 11) validateNIN(nin);
-    else setNinValidation({});
+    if (nin.length === 11) {
+      validateNIN(nin);
+    } else {
+      setNinValidation({});
+      updateStepCompletion("nin", false);
+    }
   };
 
   const handleFileUpload = async (file: File, type: keyof VerificationData["documents"]) => {
@@ -206,28 +210,30 @@ export default function SellerVerificationPage() {
     const requiredSteps = steps.filter((s) => s.required);
     const incompleteSteps = requiredSteps.filter((s) => !s.completed);
     if (incompleteSteps.length > 0) { toast.error("Please complete all required verification steps"); return; }
+    if (verificationData.businessType === "business" && !verificationData.businessName?.trim()) {
+      toast.error("Business name is required for business accounts");
+      return;
+    }
+    if (!verificationData.nin || verificationData.nin.length !== 11) {
+      toast.error("NIN must be 11 digits");
+      return;
+    }
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/users/kyc/submit`, {
+      const data = await api("/api/users/kyc/submit", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
-          businessName: verificationData.businessName || (verificationData.businessType === "business" ? "Business Account" : user?.fullName || "Individual Seller"),
+          businessName: verificationData.businessName?.trim() || (verificationData.businessType === "business" ? "Business Account" : user?.fullName || "Individual Seller"),
           businessType: verificationData.businessType === "business" ? "registered_business" : "individual",
           businessRegistrationNumber: undefined,
           idType: "national_id",
           idNumber: verificationData.nin,
           bankName: "Pending",
           accountNumber: "0000000000",
-          accountName: user?.fullName || "Pending",
-          bankVerificationNumber: undefined,
+          accountName: (user?.fullName || "Pending").trim(),
+          bankVerificationNumber: undefined, // optional
         }),
       });
-      const data = await response.json();
       if (data.success) {
         const nextBusinessType = verificationData.businessType === "business" ? "registered_business" : "individual";
         const previousBusinessType = ((user as any)?.kyc?.businessType || "individual") as "individual" | "registered_business";
@@ -244,7 +250,9 @@ export default function SellerVerificationPage() {
       } else {
         toast.error(data.message || "Verification submission failed");
       }
-    } catch { toast.error("Failed to submit verification"); } finally { setLoading(false); }
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to submit verification");
+    } finally { setLoading(false); }
   };
 
 

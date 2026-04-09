@@ -91,7 +91,14 @@ function KYCPageContent() {
   }, [kycStatus, router]);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    let nextValue = value;
+
+    // Keep numeric bank fields strictly numeric to avoid hidden validation failures.
+    if (field === "accountNumber" || field === "bankVerificationNumber") {
+      nextValue = String(value || "").replace(/\D/g, "");
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: nextValue }));
     if (field === "idType" || field === "idNumber") {
       setVerificationStatus({ verifying: false, verified: false });
     }
@@ -135,13 +142,46 @@ function KYCPageContent() {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      if (!formData.businessName || !formData.idNumber || !formData.bankName || !formData.accountNumber) {
-        toast.error("Please fill in all required fields");
+      const normalized = {
+        ...formData,
+        businessName: formData.businessName.trim(),
+        idNumber: formData.idNumber.trim(),
+        bankName: formData.bankName.trim(),
+        accountNumber: formData.accountNumber.trim(),
+        accountName: formData.accountName.trim(),
+        bankVerificationNumber: formData.bankVerificationNumber.trim(),
+      };
+
+      const requiredChecks = [
+        { key: "businessName", label: "Business Name", value: normalized.businessName },
+        { key: "idType", label: "ID Type", value: normalized.idType },
+        { key: "idNumber", label: "ID Number", value: normalized.idNumber },
+        { key: "bankName", label: "Bank Name", value: normalized.bankName },
+        { key: "accountNumber", label: "Account Number", value: normalized.accountNumber },
+        { key: "accountName", label: "Account Name", value: normalized.accountName },
+      ];
+
+      const missingFields = requiredChecks
+        .filter((field) => !field.value)
+        .map((field) => field.label);
+
+      if (missingFields.length > 0) {
+        toast.error(`Missing required field(s): ${missingFields.join(", ")}`);
         return;
       }
+
+      if (!/^\d{10}$/.test(normalized.accountNumber)) {
+        toast.error("Account Number must be exactly 10 digits");
+        return;
+      }
+      if (normalized.bankVerificationNumber && !/^\d{11}$/.test(normalized.bankVerificationNumber)) {
+        toast.error("BVN must be exactly 11 digits");
+        return;
+      }
+
       const response = await api("/api/users/kyc/submit", {
         method: "POST",
-        body: JSON.stringify({ ...formData, status: "pending" }),
+        body: JSON.stringify({ ...normalized, status: "pending" }),
       });
       if (response?.success) {
         const previousBusinessType = (user?.kyc?.businessType || "individual") as "individual" | "registered_business" | "cooperative";
@@ -400,7 +440,19 @@ function KYCPageContent() {
 
               <div className="flex gap-3 pt-2 border-t border-gray-100">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex items-center gap-2 rounded-xl h-12 px-6"><ChevronLeft className="h-4 w-4" />Back</Button>
-                <Button variant="gradient" onClick={() => setStep(3)} className="flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2">Continue<ChevronRight className="h-4 w-4" /></Button>
+                <Button
+                  variant="gradient"
+                  onClick={() => {
+                    if (!formData.idNumber.trim()) {
+                      toast.error("Please enter your ID number to continue");
+                      return;
+                    }
+                    setStep(3);
+                  }}
+                  className="flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2"
+                >
+                  Continue<ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           )}
@@ -414,11 +466,11 @@ function KYCPageContent() {
               </div>
 
               {[
-                { field: "bankName", label: "Bank Name", placeholder: "e.g., GTBank, Access Bank", required: true },
-                { field: "accountNumber", label: "Account Number", placeholder: "10-digit NUBAN", required: true },
-                { field: "accountName", label: "Account Name", placeholder: "As on bank records", required: true },
-                { field: "bankVerificationNumber", label: "BVN", placeholder: "11-digit BVN (optional, but recommended)", required: false },
-              ].map(({ field, label, placeholder, required }) => (
+                { field: "bankName", label: "Bank Name", placeholder: "e.g., GTBank, Access Bank", required: true, inputMode: "text", maxLength: undefined as number | undefined },
+                { field: "accountNumber", label: "Account Number", placeholder: "10-digit NUBAN", required: true, inputMode: "numeric", maxLength: 10 },
+                { field: "accountName", label: "Account Name", placeholder: "As on bank records", required: true, inputMode: "text", maxLength: undefined as number | undefined },
+                { field: "bankVerificationNumber", label: "BVN", placeholder: "11-digit BVN (optional, but recommended)", required: false, inputMode: "numeric", maxLength: 11 },
+              ].map(({ field, label, placeholder, required, inputMode, maxLength }) => (
                 <div key={field}>
                   <label className="block text-sm font-semibold text-taja-secondary mb-2">
                     {label} {required && <span className="text-taja-primary">*</span>}
@@ -427,6 +479,8 @@ function KYCPageContent() {
                     value={(formData as any)[field]}
                     onChange={(e) => handleInputChange(field, e.target.value)}
                     placeholder={placeholder}
+                    inputMode={inputMode as React.HTMLAttributes<HTMLInputElement>["inputMode"]}
+                    maxLength={maxLength}
                     className="h-12 rounded-xl border-gray-200 focus:border-taja-primary"
                   />
                 </div>

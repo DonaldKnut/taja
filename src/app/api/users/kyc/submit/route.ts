@@ -39,10 +39,42 @@ export async function POST(request: NextRequest) {
       verifyIdentity: shouldVerify = true, // Option to skip verification for testing
     } = body;
 
+    const normalized = {
+      businessName: String(businessName || '').trim(),
+      businessType,
+      businessRegistrationNumber: String(businessRegistrationNumber || '').trim(),
+      idType: String(idType || '').trim(),
+      idNumber: String(idNumber || '').trim(),
+      bankName: String(bankName || '').trim(),
+      accountNumber: String(accountNumber || '').replace(/\D/g, ''),
+      accountName: String(accountName || '').trim(),
+      bankVerificationNumber: String(bankVerificationNumber || '').replace(/\D/g, ''),
+      shouldVerify,
+    };
+
     // Validate required fields
-    if (!businessName || !idType || !idNumber || !bankName || !accountNumber || !accountName) {
+    if (
+      !normalized.businessName ||
+      !normalized.idType ||
+      !normalized.idNumber ||
+      !normalized.bankName ||
+      !normalized.accountNumber ||
+      !normalized.accountName
+    ) {
       return NextResponse.json(
         { success: false, message: 'Please fill in all required fields' },
+        { status: 400 }
+      );
+    }
+    if (!/^\d{10}$/.test(normalized.accountNumber)) {
+      return NextResponse.json(
+        { success: false, message: 'Account number must be exactly 10 digits' },
+        { status: 400 }
+      );
+    }
+    if (normalized.bankVerificationNumber && !/^\d{11}$/.test(normalized.bankVerificationNumber)) {
+      return NextResponse.json(
+        { success: false, message: 'BVN must be exactly 11 digits when provided' },
         { status: 400 }
       );
     }
@@ -58,15 +90,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Map frontend idType to verification service (e.g. national_id -> nin for Dojah)
-    const idTypeForVerify = (idType === 'national_id' ? 'nin' : idType) as 'nin' | 'passport' | 'voters_card' | 'drivers_license';
+    const idTypeForVerify = (
+      normalized.idType === 'national_id' ? 'nin' : normalized.idType
+    ) as 'nin' | 'passport' | 'voters_card' | 'drivers_license';
 
     // Verify identity document if enabled
     let verificationResult = null;
-    if (shouldVerify && process.env.ENABLE_IDENTITY_VERIFICATION !== 'false') {
+    if (normalized.shouldVerify && process.env.ENABLE_IDENTITY_VERIFICATION !== 'false') {
       try {
         verificationResult = await verifyIdentity({
           idType: idTypeForVerify,
-          idNumber,
+          idNumber: normalized.idNumber,
           firstName: userDoc.fullName?.split(' ')[0],
           lastName: userDoc.fullName?.split(' ').slice(1).join(' '),
           phoneNumber: userDoc.phone,
@@ -87,15 +121,15 @@ export async function POST(request: NextRequest) {
       ...userDoc.kyc,
       status: 'pending',
       submittedAt: new Date(),
-      businessName,
-      businessType: businessType || 'individual',
-      businessRegistrationNumber: businessRegistrationNumber || undefined,
-      idType,
-      idNumber,
-      bankName,
-      accountNumber,
-      accountName,
-      bankVerificationNumber: bankVerificationNumber || undefined,
+      businessName: normalized.businessName,
+      businessType: normalized.businessType || 'individual',
+      businessRegistrationNumber: normalized.businessRegistrationNumber || undefined,
+      idType: normalized.idType as 'national_id' | 'drivers_license' | 'passport' | 'voters_card',
+      idNumber: normalized.idNumber,
+      bankName: normalized.bankName,
+      accountNumber: normalized.accountNumber,
+      accountName: normalized.accountName,
+      bankVerificationNumber: normalized.bankVerificationNumber || undefined,
       // Store verification result
       identityVerified: verificationResult?.verified || false,
       identityVerificationData: verificationResult?.data || undefined,
@@ -109,7 +143,7 @@ export async function POST(request: NextRequest) {
       userDoc.fullName || 'Unknown',
       userDoc.email,
       userDoc.phone || undefined,
-      businessName
+      normalized.businessName
     ).catch((err) => console.error('Admin KYC email failed:', err));
 
     return NextResponse.json({
