@@ -33,6 +33,8 @@ import {
   MessageCircle,
   LayoutGrid,
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -42,6 +44,9 @@ import { NotificationsModal } from "@/components/NotificationsModal";
 import { SearchModal } from "@/components/SearchModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { CartIcon, useCartStore } from "@/components/cart";
+import { cn } from "@/lib/utils";
+
+const ADMIN_SIDEBAR_COLLAPSED_KEY = "taja_admin_sidebar_collapsed";
 
 const adminNavGroups = [
   {
@@ -92,6 +97,7 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileExpanded, setProfileExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -106,6 +112,28 @@ export default function AdminLayout({
     needsReply: 0,
     unassigned: 0,
   });
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(ADMIN_SIDEBAR_COLLAPSED_KEY) === "1") {
+        setSidebarCollapsed(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(ADMIN_SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
 
   // Lightweight support inbox counters (polling)
   // Counts are scoped to what admin can see (all tickets).
@@ -170,8 +198,10 @@ export default function AdminLayout({
     return "A";
   };
 
-  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
-    <div className="flex flex-col min-h-full pt-4 pb-6 px-4">
+  const SidebarContent = ({ mobile = false, collapsed = false }: { mobile?: boolean; collapsed?: boolean }) => {
+    const narrow = collapsed && !mobile;
+    return (
+    <div className={cn("flex flex-col min-h-full pt-4 pb-6", narrow ? "px-2" : "px-4")}>
       {/* Branding for Mobile */}
       {mobile && (
         <div className="space-y-6 mb-10">
@@ -208,12 +238,13 @@ export default function AdminLayout({
       )}
 
       {/* Admin profile section - Collapsible */}
-      <div className="mb-6">
-        <button
-          onClick={() => setProfileExpanded(!profileExpanded)}
-          className="w-full flex items-center justify-between p-4 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-3xl shadow-huge hover:bg-white/10 transition-colors"
-        >
-          <div className="flex items-center gap-4 text-left">
+      <div className={cn("mb-6", narrow && "mb-4")}>
+        {narrow ? (
+          <Link
+            href="/admin/settings"
+            title="Platform settings"
+            className="flex justify-center p-3 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-3xl hover:bg-white/10 transition-colors"
+          >
             <div className="relative h-12 w-12 rounded-2xl bg-emerald-500 p-0.5 flex-shrink-0">
               <div className="h-full w-full rounded-[14px] bg-slate-950 flex items-center justify-center text-sm font-black text-white overflow-hidden relative">
                 {user?.avatar ? (
@@ -223,28 +254,45 @@ export default function AdminLayout({
                 )}
               </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-black text-white tracking-tight truncate leading-none mb-1">
-                {user?.fullName || "System Manager"}
-              </p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400/80">
-                  System Administrator
+          </Link>
+        ) : (
+          <button
+            onClick={() => setProfileExpanded(!profileExpanded)}
+            className="w-full flex items-center justify-between p-4 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-3xl shadow-huge hover:bg-white/10 transition-colors"
+          >
+            <div className="flex items-center gap-4 text-left">
+              <div className="relative h-12 w-12 rounded-2xl bg-emerald-500 p-0.5 flex-shrink-0">
+                <div className="h-full w-full rounded-[14px] bg-slate-950 flex items-center justify-center text-sm font-black text-white overflow-hidden relative">
+                  {user?.avatar ? (
+                    <Image src={user.avatar} alt={user?.fullName || "Admin"} fill className="object-cover" unoptimized={user.avatar.startsWith("http")} />
+                  ) : (
+                    <span>{getUserInitials()}</span>
+                  )}
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-white tracking-tight truncate leading-none mb-1">
+                  {user?.fullName || "System Manager"}
                 </p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400/80">
+                    System Administrator
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-          <motion.div
-            animate={{ rotate: profileExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="h-5 w-5 text-white/40" />
-          </motion.div>
-        </button>
+            <motion.div
+              animate={{ rotate: profileExpanded ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="h-5 w-5 text-white/40" />
+            </motion.div>
+          </button>
+        )}
 
         <AnimatePresence>
-          {profileExpanded && (
+          {!narrow && profileExpanded && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
@@ -296,7 +344,9 @@ export default function AdminLayout({
       <nav className="flex-1 space-y-8 overflow-y-auto custom-scrollbar-visible pb-10">
         {adminNavGroups.map((group) => (
           <div key={group.label}>
-            <p className="px-4 mb-4 text-[9px] font-black uppercase tracking-[0.3em] text-white/30">{group.label}</p>
+            {!narrow && (
+              <p className="px-4 mb-4 text-[9px] font-black uppercase tracking-[0.3em] text-white/30">{group.label}</p>
+            )}
             <div className="space-y-1">
               {group.items.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -328,37 +378,43 @@ export default function AdminLayout({
                   <Link
                     key={item.name}
                     href={item.href}
+                    title={narrow ? displayName : undefined}
                     onClick={() => mobile && setSidebarOpen(false)}
-                    className={`group flex items-center justify-between px-5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${isActive
-                      ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                      : "text-white/40 hover:text-white hover:bg-white/5"
-                      }`}
+                    className={cn(
+                      "group flex rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+                      narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3.5",
+                      isActive
+                        ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                        : "text-white/40 hover:text-white hover:bg-white/5"
+                    )}
                   >
-                    <div className="flex items-center">
-                      <item.icon className={`mr-4 h-4 w-4 ${isActive ? "text-white" : "text-white/20 group-hover:text-emerald-400 transition-colors"}`} />
-                      {displayName}
+                    <div className={cn("flex items-center min-w-0", !narrow && "flex-1")}>
+                      <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-white/20 group-hover:text-emerald-400 transition-colors")} />
+                      {!narrow && displayName}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {supportBadges.length > 0 && (
-                        <div className="hidden xl:flex items-center gap-1.5">
-                          {supportBadges.slice(0, 2).map((b: any) => (
-                            <span
-                              key={b.label}
-                              className={`px-2 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest ${b.className}`}
-                              title={`${b.label}: ${b.value}`}
-                            >
-                              {b.value > 99 ? "99+" : b.value}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {isActive && (
-                        <motion.div
-                          layoutId={`activeNav${mobile ? "Mob" : "Desk"}`}
-                          className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"
-                        />
-                      )}
-                    </div>
+                    {!narrow && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        {supportBadges.length > 0 && (
+                          <div className="hidden xl:flex items-center gap-1.5">
+                            {supportBadges.slice(0, 2).map((b: any) => (
+                              <span
+                                key={b.label}
+                                className={`px-2 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest ${b.className}`}
+                                title={`${b.label}: ${b.value}`}
+                              >
+                                {b.value > 99 ? "99+" : b.value}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {isActive && (
+                          <motion.div
+                            layoutId={`activeNav${mobile ? "Mob" : "Desk"}`}
+                            className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"
+                          />
+                        )}
+                      </div>
+                    )}
                   </Link>
                 );
               })}
@@ -370,15 +426,20 @@ export default function AdminLayout({
       {/* Logout */}
       <div className="mt-auto px-2">
         <button
+          title={narrow ? "Logout" : undefined}
           onClick={() => { logout(); mobile && setSidebarOpen(false); }}
-          className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-red-400/60 hover:text-red-400 hover:bg-red-500/5 transition-all group"
+          className={cn(
+            "w-full rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-red-400/60 hover:text-red-400 hover:bg-red-500/5 transition-all group",
+            narrow ? "flex items-center justify-center p-3" : "flex items-center gap-4 px-5 py-4"
+          )}
         >
-          <LogOut className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          Logout
+          <LogOut className="h-4 w-4 shrink-0 group-hover:-translate-x-1 transition-transform" />
+          {!narrow && "Logout"}
         </button>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <ProtectedRoute requiredRole="admin">
@@ -491,21 +552,49 @@ export default function AdminLayout({
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
                   className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-emerald-950 border-r border-white/10 shadow-huge overflow-y-auto"
                 >
-                  <SidebarContent mobile />
+                  <SidebarContent mobile collapsed={false} />
                 </motion.div>
               </div>
             )}
           </AnimatePresence>
 
           {/* Desktop Sidebar */}
-          <aside className="hidden lg:flex lg:w-80 lg:flex-col lg:fixed lg:top-20 lg:bottom-0 lg:left-0 lg:z-[100] lg:pb-0">
-            <div className="flex-1 flex flex-col m-4 rounded-[2.5rem] bg-emerald-950/95 backdrop-blur-3xl border border-white/5 overflow-hidden shadow-huge">
-              <SidebarContent />
+          <aside
+            className={cn(
+              "hidden lg:flex lg:flex-col lg:fixed lg:top-20 lg:bottom-0 lg:left-0 lg:z-[100] lg:pb-0 transition-[width] duration-300 ease-out",
+              sidebarCollapsed ? "lg:w-20" : "lg:w-80"
+            )}
+          >
+            <div
+              className={cn(
+                "flex-1 flex flex-col min-h-0 rounded-[2.5rem] bg-emerald-950/95 backdrop-blur-3xl border border-white/5 overflow-hidden shadow-huge",
+                sidebarCollapsed ? "m-2" : "m-4"
+              )}
+            >
+              <div className="hidden lg:flex items-center justify-end px-2 pt-2 pb-1 shrink-0 border-b border-white/5">
+                <button
+                  type="button"
+                  onClick={toggleSidebarCollapsed}
+                  className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-expanded={!sidebarCollapsed}
+                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <SidebarContent collapsed={sidebarCollapsed} />
+              </div>
             </div>
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-1 lg:pl-80 overflow-y-auto relative scrollbar-hide">
+          <main
+            className={cn(
+              "flex-1 overflow-y-auto relative scrollbar-hide transition-[padding] duration-300 ease-out",
+              sidebarCollapsed ? "lg:pl-20" : "lg:pl-80"
+            )}
+          >
             <div className="h-full">
               {children}
             </div>

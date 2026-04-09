@@ -31,6 +31,8 @@ import {
   Heart,
   Settings,
   Home,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -44,8 +46,10 @@ import { NotificationsModal } from "@/components/NotificationsModal";
 import { SearchModal } from "@/components/SearchModal";
 import { api } from "@/lib/api";
 import { CartIcon, CartDrawer, useCartStore } from "@/components/cart";
+import { cn } from "@/lib/utils";
 
 const KYC_BANNER_SKIP_KEY = "taja_seller_kyc_banner_skipped";
+const SELLER_SIDEBAR_COLLAPSED_KEY = "taja_seller_sidebar_collapsed";
 
 const sellerNavigation = [
   { name: "Overview", href: "/seller/dashboard", icon: LayoutDashboard },
@@ -77,6 +81,7 @@ const managementNavigation = [
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -95,6 +100,28 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
   // Effective verification status: If KYC is approved, you are verified.
   const isFullyVerified = isVerifiedSeller;
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(SELLER_SIDEBAR_COLLAPSED_KEY) === "1") {
+        setSidebarCollapsed(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(SELLER_SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     const checkShopStatus = async () => {
@@ -152,8 +179,10 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     return <>{children}</>;
   }
 
-  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
-    <div className="flex flex-col min-h-full pt-2 pb-6 px-4">
+  const SidebarContent = ({ mobile = false, collapsed = false }: { mobile?: boolean; collapsed?: boolean }) => {
+    const narrow = collapsed && !mobile;
+    return (
+    <div className={cn("flex flex-col min-h-full pt-2 pb-6", narrow ? "px-2" : "px-4")}>
       {/* Branding for Mobile */}
       {mobile && (
         <div className="flex items-center justify-between mb-10 px-2">
@@ -165,8 +194,13 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       )}
 
       {/* User profile section */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
+      <div className={cn("mb-8", narrow && "mb-4")}>
+        <div
+          className={cn(
+            "rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md",
+            narrow ? "flex justify-center p-3" : "flex items-center gap-4 p-4"
+          )}
+        >
           <div className="relative h-12 w-12 rounded-2xl bg-gradient-taja p-0.5 flex-shrink-0">
             <div className="h-full w-full rounded-[14px] bg-taja-secondary flex items-center justify-center text-sm font-black text-white overflow-hidden relative">
               {user?.avatar ? (
@@ -176,65 +210,100 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
               )}
             </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-black text-white tracking-tight truncate">{user?.fullName || "Seller"}</p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
-                Active Seller
-              </p>
+          {!narrow && (
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-black text-white tracking-tight truncate">{user?.fullName || "Seller"}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                  Active Seller
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Create product CTA */}
-      <div className="mb-8">
+      <div className={cn("mb-8", narrow && "mb-4")}>
         {checkingShop ? (
           <div className="h-14 w-full bg-white/5 animate-pulse rounded-2xl" />
         ) : isUnderReview || !canAddProducts ? (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 space-y-3">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-[0.1em]">Restricted Access</span>
-            </div>
-            <p className="text-[11px] font-medium leading-relaxed opacity-80">
-              {kycPending
-                ? "Complete your identity verification to start selling."
-                : !hasShop
-                  ? "Set up your shop to start adding products."
-                  : "Your account credentials are valid. You can now publish assets."}
-            </p>
-            <div className="flex gap-2">
+          narrow ? (
+            <div className="flex flex-col gap-2">
               {kycPending && (
                 <Link
                   href="/onboarding/kyc"
+                  title="Start verification"
                   onClick={() => mobile && setSidebarOpen(false)}
-                  className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] bg-emerald-500 text-white hover:bg-emerald-400 transition-colors"
+                  className="flex items-center justify-center p-3 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-400 transition-colors shadow-emerald"
                 >
-                  Start Verification
+                  <ShieldCheck className="h-5 w-5" />
                 </Link>
               )}
               {!kycPending && !hasShop && (
                 <Link
                   href="/seller/setup"
+                  title="Shop setup"
                   onClick={() => mobile && setSidebarOpen(false)}
-                  className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] bg-white text-taja-secondary hover:bg-taja-light transition-colors"
+                  className="flex items-center justify-center p-3 rounded-2xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors"
                 >
-                  Open Shop Setup
+                  <Store className="h-5 w-5" />
                 </Link>
               )}
             </div>
-          </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-[0.1em]">Restricted Access</span>
+              </div>
+              <p className="text-[11px] font-medium leading-relaxed opacity-80">
+                {kycPending
+                  ? "Complete your identity verification to start selling."
+                  : !hasShop
+                    ? "Set up your shop to start adding products."
+                    : "Your account credentials are valid. You can now publish assets."}
+              </p>
+              <div className="flex gap-2">
+                {kycPending && (
+                  <Link
+                    href="/onboarding/kyc"
+                    onClick={() => mobile && setSidebarOpen(false)}
+                    className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] bg-emerald-500 text-white hover:bg-emerald-400 transition-colors"
+                  >
+                    Start Verification
+                  </Link>
+                )}
+                {!kycPending && !hasShop && (
+                  <Link
+                    href="/seller/setup"
+                    onClick={() => mobile && setSidebarOpen(false)}
+                    className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] bg-white text-taja-secondary hover:bg-taja-light transition-colors"
+                  >
+                    Open Shop Setup
+                  </Link>
+                )}
+              </div>
+            </div>
+          )
         ) : (
           <Link
             href="/seller/products/new"
+            title={narrow ? "New Product" : undefined}
             onClick={() => mobile && setSidebarOpen(false)}
-            className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-white text-taja-secondary rounded-2xl font-black uppercase tracking-[0.15em] shadow-premium hover:shadow-premium-hover hover:-translate-y-0.5 transition-all text-[11px]"
+            className={cn(
+              "group flex items-center justify-center bg-white text-taja-secondary rounded-2xl font-black uppercase tracking-[0.15em] shadow-premium hover:shadow-premium-hover hover:-translate-y-0.5 transition-all",
+              narrow ? "w-full px-3 py-3.5" : "gap-3 w-full px-6 py-4 text-[11px]"
+            )}
           >
-            <Plus className="h-4 w-4" />
-            New Product
-            <Sparkles className="h-4 w-4 text-taja-primary ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Plus className="h-4 w-4 shrink-0" />
+            {!narrow && (
+              <>
+                New Product
+                <Sparkles className="h-4 w-4 text-taja-primary ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              </>
+            )}
           </Link>
         )}
       </div>
@@ -243,7 +312,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       <nav className="flex-1 min-h-0 space-y-8 overflow-y-auto pb-10 custom-scrollbar pr-1">
         {/* Seller Section */}
         <div>
-          <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Seller Dashboard</p>
+          {!narrow && (
+            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Seller Dashboard</p>
+          )}
           <div className="space-y-1">
             {filteredSellerNav.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -251,17 +322,23 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                 <Link
                   key={item.name}
                   href={item.href}
+                  title={narrow ? item.name : undefined}
                   onClick={() => mobile && setSidebarOpen(false)}
-                  className={`group flex items-center justify-between px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${isActive
-                    ? "bg-taja-primary text-white shadow-emerald"
-                    : "text-white/40 hover:text-white hover:bg-white/5"
-                    }`}
+                  className={cn(
+                    "group flex rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+                    narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3",
+                    isActive
+                      ? "bg-taja-primary text-white shadow-emerald"
+                      : "text-white/40 hover:text-white hover:bg-white/5"
+                  )}
                 >
-                  <div className="flex items-center">
-                    <item.icon className={`mr-4 h-4 w-4 ${isActive ? "text-white" : "text-white/20 group-hover:text-taja-primary transition-colors"}`} />
-                    {item.name}
+                  <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
+                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-white/20 group-hover:text-taja-primary transition-colors")} />
+                    {!narrow && item.name}
                   </div>
-                  {isActive && <motion.div layoutId={`activeNav${mobile ? 'Mob' : 'Desk'}`} className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                  {isActive && !narrow && (
+                    <motion.div layoutId={`activeNav${mobile ? "Mob" : "Desk"}`} className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
+                  )}
                 </Link>
               );
             })}
@@ -270,7 +347,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
         {/* Buyer Section */}
         <div>
-          <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Account</p>
+          {!narrow && (
+            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Account</p>
+          )}
           <div className="space-y-1">
             {buyerNavigation.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -278,17 +357,23 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                 <Link
                   key={item.name}
                   href={item.href}
+                  title={narrow ? item.name : undefined}
                   onClick={() => mobile && setSidebarOpen(false)}
-                  className={`group flex items-center justify-between px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${isActive
-                    ? "bg-taja-primary text-white shadow-emerald"
-                    : "text-white/40 hover:text-white hover:bg-white/5"
-                    }`}
+                  className={cn(
+                    "group flex rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+                    narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3",
+                    isActive
+                      ? "bg-taja-primary text-white shadow-emerald"
+                      : "text-white/40 hover:text-white hover:bg-white/5"
+                  )}
                 >
-                  <div className="flex items-center">
-                    <item.icon className={`mr-4 h-4 w-4 ${isActive ? "text-white" : "text-white/20 group-hover:text-taja-primary transition-colors"}`} />
-                    {item.name}
+                  <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
+                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-white/20 group-hover:text-taja-primary transition-colors")} />
+                    {!narrow && item.name}
                   </div>
-                  {isActive && <motion.div layoutId={`activeNav${mobile ? 'Mob' : 'Desk'}`} className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                  {isActive && !narrow && (
+                    <motion.div layoutId={`activeNav${mobile ? "Mob" : "Desk"}`} className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
+                  )}
                 </Link>
               );
             })}
@@ -297,7 +382,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
         {/* Management Section */}
         <div>
-          <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Management</p>
+          {!narrow && (
+            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Management</p>
+          )}
           <div className="space-y-1">
             {filteredManagementNav.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -305,17 +392,23 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                 <Link
                   key={item.name}
                   href={item.href}
+                  title={narrow ? item.name : undefined}
                   onClick={() => mobile && setSidebarOpen(false)}
-                  className={`group flex items-center justify-between px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${isActive
-                    ? "bg-taja-primary text-white shadow-emerald"
-                    : "text-white/40 hover:text-white hover:bg-white/5"
-                    }`}
+                  className={cn(
+                    "group flex rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+                    narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3",
+                    isActive
+                      ? "bg-taja-primary text-white shadow-emerald"
+                      : "text-white/40 hover:text-white hover:bg-white/5"
+                  )}
                 >
-                  <div className="flex items-center">
-                    <item.icon className={`mr-4 h-4 w-4 ${isActive ? "text-white" : "text-white/20 group-hover:text-taja-primary transition-colors"}`} />
-                    {item.name}
+                  <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
+                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-white/20 group-hover:text-taja-primary transition-colors")} />
+                    {!narrow && item.name}
                   </div>
-                  {isActive && <motion.div layoutId={`activeNav${mobile ? 'Mob' : 'Desk'}`} className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                  {isActive && !narrow && (
+                    <motion.div layoutId={`activeNav${mobile ? "Mob" : "Desk"}`} className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
+                  )}
                 </Link>
               );
             })}
@@ -324,7 +417,8 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       </nav>
 
     </div>
-  );
+    );
+  };
 
   return (
     <ProtectedRoute requiredRole="seller">
@@ -535,21 +629,49 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
                   className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-taja-secondary border-r border-white/10 shadow-2xl overflow-y-auto"
                 >
-                  <SidebarContent mobile />
+                  <SidebarContent mobile collapsed={false} />
                 </motion.div>
               </div>
             )}
           </AnimatePresence>
 
-          {/* Desktop Sidebar - overflow-y-auto so full nav scrolls when needed */}
-          <aside className="hidden lg:flex lg:w-80 lg:flex-col lg:fixed lg:top-20 lg:bottom-0 lg:left-0 lg:z-[100] lg:pb-0">
-            <div className="flex-1 flex flex-col min-h-0 bg-taja-secondary/95 backdrop-blur-3xl border-r border-white/10 overflow-y-auto m-4 rounded-[40px] shadow-2xl relative z-10">
-              <SidebarContent />
+          {/* Desktop Sidebar - collapsible rail */}
+          <aside
+            className={cn(
+              "hidden lg:flex lg:flex-col lg:fixed lg:top-20 lg:bottom-0 lg:left-0 lg:z-[100] lg:pb-0 transition-[width] duration-300 ease-out",
+              sidebarCollapsed ? "lg:w-20" : "lg:w-80"
+            )}
+          >
+            <div
+              className={cn(
+                "flex-1 flex flex-col min-h-0 bg-taja-secondary/95 backdrop-blur-3xl border-r border-white/10 shadow-2xl relative z-10 overflow-hidden",
+                sidebarCollapsed ? "m-2 rounded-3xl" : "m-4 rounded-[40px]"
+              )}
+            >
+              <div className="hidden lg:flex items-center justify-end px-2 pt-2 pb-1 shrink-0 border-b border-white/5">
+                <button
+                  type="button"
+                  onClick={toggleSidebarCollapsed}
+                  className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-expanded={!sidebarCollapsed}
+                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <SidebarContent collapsed={sidebarCollapsed} />
+              </div>
             </div>
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 lg:pl-80 overflow-y-auto relative scrollbar-hide">
+          <main
+            className={cn(
+              "flex-1 overflow-y-auto relative scrollbar-hide transition-[padding] duration-300 ease-out",
+              sidebarCollapsed ? "lg:pl-20" : "lg:pl-80"
+            )}
+          >
             {/* Subtle Ambient Background Decorative Element */}
             <div className="fixed top-1/4 right-1/4 w-[600px] h-[600px] bg-taja-primary/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
             <div className="fixed bottom-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/5 blur-[100px] rounded-full -z-10 pointer-events-none" />

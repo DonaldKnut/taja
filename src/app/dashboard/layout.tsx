@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -22,6 +22,7 @@ import {
   Upload,
   Sparkles,
   ChevronRight,
+  ChevronLeft,
   Users,
   ChevronDown,
   Zap,
@@ -71,6 +72,8 @@ const navGroups = [
 // Flat list for mobile
 const allNavItems = navGroups.flatMap((g) => g.items);
 
+const DASHBOARD_SIDEBAR_COLLAPSED_KEY = "taja_dashboard_sidebar_collapsed";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -79,6 +82,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [profileCollapsed, setProfileCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,6 +94,28 @@ export default function DashboardLayout({
   const { toggleDrawer: toggleWishlist, items: wishlistItems } = useWishlistStore();
   const role = user?.role;
   const wishlistCount = wishlistItems.length;
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(DASHBOARD_SIDEBAR_COLLAPSED_KEY) === "1") {
+        setSidebarCollapsed(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(DASHBOARD_SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -116,51 +142,81 @@ export default function DashboardLayout({
     href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 
   /* ── Sidebar Content (shared between desktop & mobile) ── */
-  const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
-    <div className="h-full flex flex-col">
+  const SidebarContent = ({
+    onNavigate,
+    collapsed = false,
+  }: {
+    onNavigate?: () => void;
+    collapsed?: boolean;
+  }) => (
+    <div className="h-full flex flex-col min-w-0">
       {/* User & Admin block (collapsible) */}
-      <div className="px-5 mb-2">
-        <button
-          type="button"
-          onClick={() => setProfileCollapsed((c) => !c)}
-          className="w-full flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-taja-secondary/5 to-taja-primary/5 border border-white/60 hover:from-taja-secondary/10 hover:to-taja-primary/10 transition-colors text-left"
-        >
-          <div className="relative h-11 w-11 shrink-0 rounded-full border-2 border-taja-primary/30 bg-white shadow-sm flex items-center justify-center text-sm font-black text-taja-primary overflow-hidden">
-            {user?.avatar ? (
-              <Image
-                src={user.avatar}
-                alt={user.fullName || "User"}
-                fill
-                className="object-cover"
-                unoptimized={user.avatar.startsWith("http")}
-              />
-            ) : (
-              <span>{getUserInitials()}</span>
-            )}
-            <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-taja-primary border-2 border-white" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-taja-secondary truncate leading-none mb-0.5">
-              {user?.fullName || "User"}
-            </p>
-            {!profileCollapsed && (
-              <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
-            )}
-            {profileCollapsed && user?.role === "admin" && (
-              <p className="text-[10px] text-emerald-500/80 font-medium">Admin Dashboard</p>
-            )}
-          </div>
-          <motion.div
-            animate={{ rotate: profileCollapsed ? -90 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="shrink-0 text-gray-400"
+      <div className={cn("mb-2", collapsed ? "px-2 flex justify-center" : "px-5")}>
+        {collapsed ? (
+          <Link
+            href="/dashboard/profile"
+            onClick={onNavigate}
+            title={`${user?.fullName || "User"} — Profile`}
+            className="p-2 rounded-2xl bg-gradient-to-br from-taja-secondary/5 to-taja-primary/5 border border-white/60 hover:from-taja-secondary/10 hover:to-taja-primary/10 transition-colors flex justify-center"
           >
-            <ChevronDown className="h-5 w-5" />
-          </motion.div>
-        </button>
+            <div className="relative h-11 w-11 shrink-0 rounded-full border-2 border-taja-primary/30 bg-white shadow-sm flex items-center justify-center text-sm font-black text-taja-primary overflow-hidden">
+              {user?.avatar ? (
+                <Image
+                  src={user.avatar}
+                  alt={user.fullName || "User"}
+                  fill
+                  className="object-cover"
+                  unoptimized={user.avatar.startsWith("http")}
+                />
+              ) : (
+                <span>{getUserInitials()}</span>
+              )}
+              <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-taja-primary border-2 border-white" />
+            </div>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setProfileCollapsed((c) => !c)}
+            className="w-full flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-taja-secondary/5 to-taja-primary/5 border border-white/60 hover:from-taja-secondary/10 hover:to-taja-primary/10 transition-colors text-left"
+          >
+            <div className="relative h-11 w-11 shrink-0 rounded-full border-2 border-taja-primary/30 bg-white shadow-sm flex items-center justify-center text-sm font-black text-taja-primary overflow-hidden">
+              {user?.avatar ? (
+                <Image
+                  src={user.avatar}
+                  alt={user.fullName || "User"}
+                  fill
+                  className="object-cover"
+                  unoptimized={user.avatar.startsWith("http")}
+                />
+              ) : (
+                <span>{getUserInitials()}</span>
+              )}
+              <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-taja-primary border-2 border-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-taja-secondary truncate leading-none mb-0.5">
+                {user?.fullName || "User"}
+              </p>
+              {!profileCollapsed && (
+                <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
+              )}
+              {profileCollapsed && user?.role === "admin" && (
+                <p className="text-[10px] text-emerald-500/80 font-medium">Admin Dashboard</p>
+              )}
+            </div>
+            <motion.div
+              animate={{ rotate: profileCollapsed ? -90 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="shrink-0 text-gray-400"
+            >
+              <ChevronDown className="h-5 w-5" />
+            </motion.div>
+          </button>
+        )}
 
         <AnimatePresence initial={false}>
-          {!profileCollapsed && (
+          {!collapsed && !profileCollapsed && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
@@ -189,12 +245,14 @@ export default function DashboardLayout({
       </div>
 
       {/* Navigation Groups */}
-      <nav className="flex-1 overflow-y-auto px-4 space-y-6 scrollbar-hide pb-4">
+      <nav className={cn("flex-1 overflow-y-auto space-y-6 scrollbar-hide pb-4", collapsed ? "px-2" : "px-4")}>
         {navGroups.map((group) => (
           <div key={group.label}>
-            <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.25em] px-3 mb-2">
-              {group.label}
-            </p>
+            {!collapsed && (
+              <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.25em] px-3 mb-2">
+                {group.label}
+              </p>
+            )}
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const active = isActive(item.href);
@@ -202,29 +260,43 @@ export default function DashboardLayout({
                   <Link
                     key={item.name}
                     href={item.href}
+                    title={collapsed ? item.name : undefined}
                     onClick={onNavigate}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 group relative ${active
-                      ? "bg-taja-primary/10 text-taja-primary"
-                      : "text-gray-500 hover:text-taja-secondary hover:bg-gray-50"
-                      }`}
+                    className={cn(
+                      "rounded-xl text-[13px] font-semibold transition-all duration-200 group relative",
+                      collapsed
+                        ? "flex items-center justify-center px-2 py-3"
+                        : "flex items-center gap-3 px-3 py-2.5",
+                      active
+                        ? "bg-taja-primary/10 text-taja-primary"
+                        : "text-gray-500 hover:text-taja-secondary hover:bg-gray-50"
+                    )}
                   >
-                    {/* Active indicator bar */}
-                    {active && (
+                    {active && !collapsed && (
                       <motion.div
                         layoutId="sidebar-active"
                         className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-taja-primary"
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                       />
                     )}
+                    {active && collapsed && (
+                      <span className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-6 rounded-full bg-taja-primary" />
+                    )}
                     <item.icon
-                      className={`h-[18px] w-[18px] shrink-0 ${active
-                        ? "text-taja-primary"
-                        : "text-gray-400 group-hover:text-taja-primary transition-colors"
-                        }`}
+                      className={cn(
+                        "h-[18px] w-[18px] shrink-0",
+                        active
+                          ? "text-taja-primary"
+                          : "text-gray-400 group-hover:text-taja-primary transition-colors"
+                      )}
                     />
-                    <span className="truncate">{item.name}</span>
-                    {active && (
-                      <div className="ml-auto h-1.5 w-1.5 rounded-full bg-taja-primary animate-pulse" />
+                    {!collapsed && (
+                      <>
+                        <span className="truncate">{item.name}</span>
+                        {active && (
+                          <div className="ml-auto h-1.5 w-1.5 rounded-full bg-taja-primary animate-pulse" />
+                        )}
+                      </>
                     )}
                   </Link>
                 );
@@ -235,27 +307,35 @@ export default function DashboardLayout({
       </nav>
 
       {/* Sidebar Footer */}
-      <div className="p-4 border-t border-gray-100 space-y-3">
+      <div className={cn("border-t border-gray-100 space-y-3", collapsed ? "p-2" : "p-4 space-y-3")}>
         <Link
           href="/dashboard"
+          title={collapsed ? "Dashboard Overview" : undefined}
           onClick={onNavigate}
-          className="flex items-center justify-center gap-2 w-full py-3 bg-white text-taja-primary border border-taja-primary/20 rounded-xl text-xs font-bold hover:bg-taja-light/30 active:scale-[0.98] transition-all"
+          className={cn(
+            "w-full bg-white text-taja-primary border border-taja-primary/20 rounded-xl font-bold hover:bg-taja-light/30 active:scale-[0.98] transition-all",
+            collapsed ? "flex items-center justify-center p-3" : "flex items-center justify-center gap-2 py-3 text-xs"
+          )}
         >
-          <Home className="h-4 w-4" />
-          Dashboard Overview
+          <Home className="h-4 w-4 shrink-0" />
+          {!collapsed && "Dashboard Overview"}
         </Link>
         <button
+          title={collapsed ? "Sign out" : undefined}
           onClick={() => {
             onNavigate?.();
             handleLogout();
           }}
-          className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-[13px] font-semibold text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+          className={cn(
+            "w-full rounded-xl text-[13px] font-semibold text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all",
+            collapsed ? "flex items-center justify-center p-3" : "flex items-center gap-2 px-3 py-2.5"
+          )}
         >
-          <LogOut className="h-[18px] w-[18px]" />
-          Sign out
+          <LogOut className="h-[18px] w-[18px] shrink-0" />
+          {!collapsed && "Sign out"}
         </button>
       </div>
-    </div >
+    </div>
   );
 
   return (
@@ -473,7 +553,7 @@ export default function DashboardLayout({
                     </button>
                   </div>
                   <div className="h-[calc(100vh-64px)] overflow-y-auto">
-                    <SidebarContent onNavigate={() => setSidebarOpen(false)} />
+                    <SidebarContent onNavigate={() => setSidebarOpen(false)} collapsed={false} />
                   </div>
                 </motion.div>
               </div>
@@ -481,14 +561,41 @@ export default function DashboardLayout({
           </AnimatePresence>
 
           {/* ═══ Desktop Sidebar ═══ */}
-          <aside className="hidden lg:flex lg:w-[260px] lg:flex-col lg:fixed lg:inset-y-0 lg:top-16 z-30">
-            <div className="flex-1 flex flex-col bg-white border-r border-gray-100 overflow-hidden">
-              <SidebarContent />
+          <aside
+            className={cn(
+              "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:top-16 z-30 transition-[width] duration-300 ease-out",
+              sidebarCollapsed ? "lg:w-20" : "lg:w-[260px]"
+            )}
+          >
+            <div className="flex-1 flex flex-col min-h-0 bg-white border-r border-gray-100 overflow-hidden">
+              <div className="hidden lg:flex items-center justify-end border-b border-gray-50 px-1.5 py-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={toggleSidebarCollapsed}
+                  className="p-2 rounded-xl text-gray-400 hover:text-taja-primary hover:bg-gray-50 transition-colors"
+                  aria-expanded={!sidebarCollapsed}
+                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {sidebarCollapsed ? (
+                    <ChevronRight className="h-5 w-5" />
+                  ) : (
+                    <ChevronLeft className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <SidebarContent collapsed={sidebarCollapsed} />
+              </div>
             </div>
           </aside>
 
           {/* ═══ Main Content Area ═══ */}
-          <main className="flex-1 lg:pl-[260px] overflow-y-auto relative scrollbar-hide">
+          <main
+            className={cn(
+              "flex-1 overflow-y-auto relative scrollbar-hide transition-[padding] duration-300 ease-out",
+              sidebarCollapsed ? "lg:pl-20" : "lg:pl-[260px]"
+            )}
+          >
             <div className={cn(
               "min-h-full px-4 sm:px-8 py-8 max-w-6xl mx-auto",
               pathname.includes("/dashboard/marketplace") && "px-0 sm:px-0 py-0 max-w-none"
