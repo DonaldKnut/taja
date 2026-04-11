@@ -404,6 +404,17 @@ Keep it concise (2–4 short paragraphs), fair to buyer and seller, and suitable
 /**
  * Generate shop name and tagline suggestions from an idea and categories
  */
+/** Lightweight text generation for playground / health checks */
+export async function generateSimpleText(prompt: string): Promise<string> {
+  if (!genAI) {
+    throw new Error('Gemini API key not configured');
+  }
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  return response.text().trim();
+}
+
 export async function generateShopNameAndTagline(
   idea: string,
   categories: string[]

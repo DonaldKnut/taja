@@ -40,6 +40,37 @@ if (r2PublicBaseUrl) {
   }
 }
 
+// R2 S3 API hostname used when R2_PUBLIC_BASE_URL is unset (must match upload URL host for next/image)
+const r2AccountId = process.env.R2_ACCOUNT_ID;
+if (r2AccountId) {
+  const h = `${r2AccountId}.r2.cloudflarestorage.com`;
+  if (!r2ImagePatterns.some((p) => p.hostname === h)) {
+    r2ImagePatterns.push({
+      protocol: "https",
+      hostname: h,
+      pathname: "/**",
+    });
+  }
+}
+
+// Any Cloudflare R2 *.r2.dev public bucket (wildcard supported in Next 14.2+)
+if (!r2ImagePatterns.some((p) => p.hostname === "*.r2.dev")) {
+  r2ImagePatterns.push({
+    protocol: "https",
+    hostname: "*.r2.dev",
+    pathname: "/**",
+  });
+}
+
+// AWS S3 and compatible URLs (bucket.s3.region.amazonaws.com, etc.)
+if (!r2ImagePatterns.some((p) => p.hostname === "*.amazonaws.com")) {
+  r2ImagePatterns.push({
+    protocol: "https",
+    hostname: "*.amazonaws.com",
+    pathname: "/**",
+  });
+}
+
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
-import { Image as ImageIcon, MessageCircle, Paperclip, Phone, X } from "lucide-react";
+import { Image as ImageIcon, MessageCircle, Paperclip, X } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
 import { api, supportApi, uploadSupportAttachment } from "@/lib/api";
 import { CartDrawer } from "@/components/cart";
 import { useMounted } from "@/hooks/useMounted";
@@ -29,9 +30,9 @@ export function FloatingCart() {
     { role: "assistant", content: "Welcome to Taja Support. Send a message and our team will reply shortly." },
   ]);
   const [isAuthed, setIsAuthed] = useState(false);
+  /** E.164 digits only; defaults to marketplace WhatsApp when env is unset */
   const supportWhatsAppUrl = (() => {
-    const raw = process.env.NEXT_PUBLIC_SUPPORT_PHONE?.trim();
-    if (!raw) return null;
+    const raw = (process.env.NEXT_PUBLIC_SUPPORT_PHONE || "2349113547583").trim();
     const clean = raw.replace(/[^\d]/g, "");
     if (!clean) return null;
     return `https://wa.me/${clean}`;
@@ -117,28 +118,35 @@ export function FloatingCart() {
   return (
     <>
       {/* Floating contact buttons: lifted above mobile bottom nav */}
-      <div className="fixed right-6 bottom-[8.5rem] md:bottom-6 z-40 flex flex-col gap-3">
-        {supportWhatsAppUrl && (
-          <a
-            href={supportWhatsAppUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-emerald-500 text-white p-4 rounded-full shadow-premium hover:bg-emerald-600 transition-all active:scale-95 border border-emerald-400/40 flex items-center justify-center"
-            aria-label="WhatsApp support"
-            title="WhatsApp support"
+      <div className="fixed right-6 bottom-[8.5rem] md:bottom-6 z-40">
+        <div className="relative flex flex-col items-center">
+          {supportWhatsAppUrl && (
+            <a
+              href={supportWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute left-1/2 top-0 z-20 flex h-11 w-11 -translate-x-1/2 -translate-y-[42%] items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg ring-4 ring-white transition hover:bg-[#20BD5A] active:scale-95"
+              aria-label="Chat with us on WhatsApp"
+              title="Chat with us on WhatsApp"
+            >
+              <span className="pointer-events-none absolute right-0.5 top-0.5 flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-80" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+              </span>
+              <SiWhatsapp className="h-6 w-6 shrink-0" aria-hidden />
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={() => setChatOpen(true)}
+            className="relative bg-white text-taja-secondary rounded-full p-4 pt-5 shadow-premium hover:bg-gray-50 transition-all active:scale-95 border border-gray-100/50 flex items-center justify-center"
+            aria-label="Support chat"
+            title="Support chat"
           >
-            <Phone className="h-5 w-5" />
-          </a>
-        )}
-        <button
-          onClick={() => setChatOpen(true)}
-          className="relative bg-white text-taja-secondary p-4 rounded-full shadow-premium hover:bg-gray-50 transition-all active:scale-95 border border-gray-100/50 flex items-center justify-center"
-          aria-label="Support chat"
-          title="Support chat"
-        >
-          <MessageCircle className="h-6 w-6" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-taja-primary rounded-full animate-pulse border-2 border-white"></span>
-        </button>
+            <MessageCircle className="h-6 w-6" />
+            <span className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-taja-primary rounded-full animate-pulse border-2 border-white" />
+          </button>
+        </div>
       </div>
 
       {/* Floating Action Button: Seller sees Shop button, Buyer sees Cart */}

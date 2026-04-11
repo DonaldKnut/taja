@@ -313,8 +313,8 @@ export default function HomePage() {
                 </h1>
 
                 <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                  Taja is the marketplace to buy anything and sell anything online — built for Nigerian and African sellers
-                  and entrepreneurs. Get a storefront, trusted checkout, and tools that replace chaotic DMs.
+                  The marketplace for Nigeria and Africa: your storefront, trusted checkout, and tools that replace chaotic
+                  DMs.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-5 justify-center lg:justify-start items-center pt-4">

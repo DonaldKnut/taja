@@ -42,6 +42,12 @@ export async function uploadBufferToR2(options: {
     ? `${r2Config.publicBaseUrl.replace(/\/$/, '')}/${key}`
     : `https://${r2Config.accountId}.r2.cloudflarestorage.com/${r2Config.bucketName}/${key}`;
 
+  if (!r2Config.publicBaseUrl && process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[R2] R2_PUBLIC_BASE_URL is not set. Image URLs use the S3 API host; browsers often get 403 unless the bucket is public. Set R2_PUBLIC_BASE_URL to your r2.dev subdomain or custom domain (public read).'
+    );
+  }
+
   return { url, key };
 }
 
