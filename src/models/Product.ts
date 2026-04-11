@@ -1,4 +1,8 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, Model } from "mongoose";
+// Register refs before this model so populate() never throws "Schema hasn't been registered"
+import "./User";
+import "./Category";
+import "./Shop";
 
 export interface IProduct extends Document {
   seller: mongoose.Types.ObjectId;

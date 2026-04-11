@@ -1,4 +1,6 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, Model } from "mongoose";
+import "./User";
+import "./Category";
 
 export interface IShop extends Document {
   owner: mongoose.Types.ObjectId;

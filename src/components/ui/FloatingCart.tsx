@@ -9,6 +9,8 @@ import { CartDrawer } from "@/components/cart";
 import { useMounted } from "@/hooks/useMounted";
 import { motion, AnimatePresence } from "framer-motion";
 
+const WHATSAPP_HINT_SESSION_KEY = "taja_whatsapp_hint_dismissed";
+
 export function FloatingCart() {
   const mounted = useMounted();
   const { isOpen, toggleCart, _hasHydrated } = useCartStore();
@@ -30,6 +32,9 @@ export function FloatingCart() {
     { role: "assistant", content: "Welcome to Taja Support. Send a message and our team will reply shortly." },
   ]);
   const [isAuthed, setIsAuthed] = useState(false);
+  /** null until sessionStorage is read (avoids flash for dismissed users) */
+  const [whatsappHintOpen, setWhatsappHintOpen] = useState<boolean | null>(null);
+
   /** E.164 digits only; defaults to marketplace WhatsApp when env is unset */
   const supportWhatsAppUrl = (() => {
     const raw = (process.env.NEXT_PUBLIC_SUPPORT_PHONE || "2349113547583").trim();
@@ -113,40 +118,95 @@ export function FloatingCart() {
     return () => clearInterval(interval);
   }, [chatOpen, supportTicketId]);
 
+  useEffect(() => {
+    if (!mounted || typeof window === "undefined") return;
+    try {
+      setWhatsappHintOpen(sessionStorage.getItem(WHATSAPP_HINT_SESSION_KEY) !== "1");
+    } catch {
+      setWhatsappHintOpen(true);
+    }
+  }, [mounted]);
+
+  const dismissWhatsappHint = () => {
+    try {
+      sessionStorage.setItem(WHATSAPP_HINT_SESSION_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    setWhatsappHintOpen(false);
+  };
+
+  const showWhatsappHint = whatsappHintOpen === true;
+
   if (!mounted) return null;
 
   return (
     <>
-      {/* Floating contact buttons: lifted above mobile bottom nav */}
-      <div className="fixed right-6 bottom-[8.5rem] md:bottom-6 z-40">
-        <div className="relative flex flex-col items-center">
-          {supportWhatsAppUrl && (
+      {/* Floating contact buttons: WhatsApp above support; hint card beside WhatsApp; lifted above mobile bottom nav */}
+      <div className="fixed right-6 bottom-[8.5rem] md:bottom-6 z-40 flex flex-col items-center gap-3">
+        {supportWhatsAppUrl && (
+          <div className="relative flex shrink-0 items-center justify-center">
+            <AnimatePresence>
+              {showWhatsappHint && (
+                <motion.aside
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 8 }}
+                  transition={{ type: "spring", damping: 24, stiffness: 320 }}
+                  className="absolute right-full mr-3 top-1/2 z-50 w-[min(16rem,calc(100vw-5.5rem))] -translate-y-1/2 rounded-2xl border border-gray-200/80 bg-white p-3.5 pr-9 text-left shadow-xl shadow-black/10"
+                  role="dialog"
+                  aria-label="Chat with us on WhatsApp"
+                >
+                  <p className="text-sm font-black text-taja-secondary tracking-tight">Chat with us</p>
+                  <p className="mt-1 text-xs font-medium leading-snug text-gray-600">
+                    Tap the WhatsApp button — we usually reply quickly on WhatsApp.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      dismissWhatsappHint();
+                    }}
+                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <span
+                    className="pointer-events-none absolute -right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rotate-45 border-r border-t border-gray-200/80 bg-white"
+                    aria-hidden
+                  />
+                </motion.aside>
+              )}
+            </AnimatePresence>
             <a
               href={supportWhatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="absolute left-1/2 top-0 z-20 flex h-11 w-11 -translate-x-1/2 -translate-y-[42%] items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg ring-4 ring-white transition hover:bg-[#20BD5A] active:scale-95"
+              className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg ring-4 ring-white transition hover:bg-[#20BD5A] active:scale-95"
               aria-label="Chat with us on WhatsApp"
               title="Chat with us on WhatsApp"
+              onClick={() => dismissWhatsappHint()}
             >
-              <span className="pointer-events-none absolute right-0.5 top-0.5 flex h-2 w-2">
+              <span className="pointer-events-none absolute right-1 top-1 flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-80" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
               </span>
-              <SiWhatsapp className="h-6 w-6 shrink-0" aria-hidden />
+              <SiWhatsapp className="h-7 w-7 shrink-0" aria-hidden />
             </a>
-          )}
-          <button
-            type="button"
-            onClick={() => setChatOpen(true)}
-            className="relative bg-white text-taja-secondary rounded-full p-4 pt-5 shadow-premium hover:bg-gray-50 transition-all active:scale-95 border border-gray-100/50 flex items-center justify-center"
-            aria-label="Support chat"
-            title="Support chat"
-          >
-            <MessageCircle className="h-6 w-6" />
-            <span className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-taja-primary rounded-full animate-pulse border-2 border-white" />
-          </button>
-        </div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setChatOpen(true)}
+          className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-taja-secondary shadow-premium hover:bg-gray-50 transition-all active:scale-95 border border-gray-100/50"
+          aria-label="Support chat"
+          title="Support chat"
+        >
+          <MessageCircle className="h-6 w-6" />
+          <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-taja-primary animate-pulse" />
+        </button>
       </div>
 
       {/* Floating Action Button: Seller sees Shop button, Buyer sees Cart */}

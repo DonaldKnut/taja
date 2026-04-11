@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -26,6 +26,7 @@ import {
   LayoutGrid,
   TrendingUp,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -34,6 +35,8 @@ import toast from "react-hot-toast";
 import { api, sellerApi, shopsApi, uploadProductImage } from "@/lib/api";
 import { z } from "zod";
 import { ShopRequirementModal } from "@/components/shop/ShopRequirementModal";
+import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
+import { cn } from "@/lib/utils";
 
 // Zod schema for required publish fields
 const productPublishSchema = z.object({
@@ -118,6 +121,7 @@ export default function NewProductPage() {
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [suggestingTags, setSuggestingTags] = useState(false);
   const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -175,6 +179,12 @@ export default function NewProductPage() {
   const [tagInput, setTagInput] = useState("");
 
   const canAddProducts = hasShop && isVerifiedSeller;
+
+  const selectedCategoryLabel = useMemo(() => {
+    if (!formData.category) return "Select category";
+    const c = allCategories.find((x) => String(x._id) === String(formData.category));
+    return c ? categoryPickerLabel(c) : "Select category";
+  }, [formData.category, allCategories]);
 
   // Redirect if no shop or not verified — user shouldn't see this page until setup + verification are done
   useEffect(() => {
@@ -699,17 +709,17 @@ export default function NewProductPage() {
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
                       Category *
                     </label>
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleChange}
-                      className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-[11px] font-black uppercase tracking-[0.1em] text-taja-secondary appearance-none"
+                    <button
+                      type="button"
+                      onClick={() => setCategoryModalOpen(true)}
+                      className={cn(
+                        "w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-left text-sm font-black tracking-wide text-taja-secondary flex items-center justify-between gap-3",
+                        !formData.category && "text-gray-400"
+                      )}
                     >
-                      <option value="">Select category</option>
-                      {allCategories.map((cat) => (
-                        <option key={cat._id || cat.name} value={cat._id || cat.name}>{cat.name}</option>
-                      ))}
-                    </select>
+                      <span className="truncate">{selectedCategoryLabel}</span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                    </button>
                   </div>
 
                   <div className="group space-y-2">
@@ -1455,6 +1465,20 @@ export default function NewProductPage() {
         accept="image/*"
         onChange={(e) => e.target.files && handleImageUpload(e.target.files)}
         className="hidden"
+      />
+
+      <CategoryPickerModal
+        open={categoryModalOpen}
+        onClose={() => setCategoryModalOpen(false)}
+        categories={allCategories}
+        selectedId={formData.category}
+        onSelect={(id) => setFormData((prev) => ({ ...prev, category: id }))}
+        createEndpoint="/api/seller/categories"
+        onCategoryCreated={(cat) =>
+          setAllCategories((prev) =>
+            prev.some((x) => String(x._id) === String(cat._id)) ? prev : [...prev, cat]
+          )
+        }
       />
 
       <ShopRequirementModal open={!checkingShop && !hasShop} />

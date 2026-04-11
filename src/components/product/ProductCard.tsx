@@ -364,19 +364,20 @@ export function ProductCard({
   const sellerPanelContent = sellerPanelOpen && shopSlug && typeof document !== "undefined" && createPortal(
     <>
       <div
-        className="fixed inset-0 z-[42] bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm"
         onClick={() => setSellerPanelOpen(false)}
         aria-hidden
       />
-      <div className="fixed inset-x-0 bottom-0 z-[43]">
+      {/* Above MobileBottomNav (z-50); below cart drawer (z-[100]) */}
+      <div className="fixed inset-x-0 bottom-0 z-[91] flex justify-center px-2 pb-[env(safe-area-inset-bottom,0px)] pointer-events-none">
         <motion.div
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 24, stiffness: 220 }}
-          className="mx-auto max-w-md w-full rounded-t-3xl bg-white shadow-[0_-16px_40px_rgba(15,23,42,0.25)] border-t border-slate-100 overflow-hidden"
+          className="pointer-events-auto mx-auto max-h-[min(560px,82dvh)] max-w-md w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-white shadow-[0_-16px_40px_rgba(15,23,42,0.25)] border-t border-slate-100"
         >
-          <div className="px-5 pt-4 pb-5 space-y-4">
+          <div className="px-5 pt-4 pb-6 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">

@@ -8,7 +8,7 @@ import { ShoppingBag } from "lucide-react";
 import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
 import toast from "react-hot-toast";
 import { io, Socket } from "socket.io-client";
-import { API_BASE_URL, api, uploadProductImage } from "@/lib/api";
+import { api, uploadProductImage } from "@/lib/api";
 import {
   ChatComposer,
   ChatConversationHeader,
@@ -89,7 +89,10 @@ export default function ChatPage() {
 
     const token = localStorage.getItem("token");
     if (token) {
-      const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || API_BASE_URL, {
+      const socketUrl =
+        (process.env.NEXT_PUBLIC_SOCKET_URL || "").trim() ||
+        (typeof window !== "undefined" ? window.location.origin : "");
+      const newSocket = io(socketUrl, {
         auth: { token },
       });
       setSocket(newSocket);

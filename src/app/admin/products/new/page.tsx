@@ -20,10 +20,13 @@ import {
   X,
   LayoutGrid,
   Camera,
+  ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api, uploadProductImage } from "@/lib/api";
 import toast from "react-hot-toast";
+import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
+import { cn } from "@/lib/utils";
 
 interface Shop {
   _id: string;
@@ -54,6 +57,7 @@ export default function AdminProductsNewPage() {
   const [loading, setLoading] = useState(false);
   const [shops, setShops] = useState<Shop[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [form, setForm] = useState({
     shopId: shopIdFromUrl || "",
     title: "",
@@ -98,6 +102,12 @@ export default function AdminProductsNewPage() {
       }
     })();
   }, [shopIdFromUrl]);
+
+  const selectedCategoryLabel = useMemo(() => {
+    if (!form.category) return "Select category";
+    const c = categories.find((x) => String(x._id) === String(form.category));
+    return c ? categoryPickerLabel(c) : "Select category";
+  }, [form.category, categories]);
 
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
     e.preventDefault();
@@ -438,17 +448,17 @@ export default function AdminProductsNewPage() {
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
                       Category *
                     </label>
-                    <select
-                      required
-                      value={form.category}
-                      onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                      className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-[11px] font-black uppercase tracking-[0.1em] text-taja-secondary appearance-none"
+                    <button
+                      type="button"
+                      onClick={() => setCategoryModalOpen(true)}
+                      className={cn(
+                        "w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-sm font-black tracking-wide text-taja-secondary flex items-center justify-between gap-3 text-left",
+                        !form.category && "text-gray-400"
+                      )}
                     >
-                      <option value="">Select category</option>
-                      {categories.map((c) => (
-                        <option key={c._id} value={c._id}>{c.name}</option>
-                      ))}
-                    </select>
+                      <span className="truncate">{selectedCategoryLabel}</span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                    </button>
                   </div>
 
                   <div className="group space-y-2">
@@ -887,6 +897,20 @@ export default function AdminProductsNewPage() {
           </div>
         </div>
       </motion.div>
+
+      <CategoryPickerModal
+        open={categoryModalOpen}
+        onClose={() => setCategoryModalOpen(false)}
+        categories={categories}
+        selectedId={form.category}
+        onSelect={(id) => setForm((f) => ({ ...f, category: id }))}
+        createEndpoint="/api/categories"
+        onCategoryCreated={(cat) =>
+          setCategories((prev) =>
+            prev.some((x) => String(x._id) === String(cat._id)) ? prev : [...prev, cat as Category]
+          )
+        }
+      />
     </div>
   );
 }

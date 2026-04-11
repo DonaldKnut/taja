@@ -1,6 +1,14 @@
-// Use internal API routes (fullstack Next.js)
-// All API calls now go to internal Next.js API routes
-export const API_BASE_URL = typeof window !== 'undefined' ? '' : process.env.NEXT_PUBLIC_API_URL || '';
+// Fullstack Next.js: browser uses same-origin (empty base). Server-side fetch needs an absolute URL.
+function resolveApiBaseUrl(): string {
+  if (typeof window !== "undefined") return "";
+  const explicit = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/$/, "");
+  if (explicit) return explicit;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  const port = process.env.PORT || "3000";
+  return `http://127.0.0.1:${port}`;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 type Options = RequestInit & { auth?: string };
 
@@ -16,8 +24,12 @@ export class ApiError extends Error {
 }
 
 export async function api(path: string, opts: Options = {}) {
-  // Use internal routes - all paths should start with /api
-  const url = path.startsWith("http") ? path : path.startsWith("/api") ? path : `/api${path}`;
+  const relativePath = path.startsWith("http") ? path : path.startsWith("/api") ? path : `/api${path}`;
+  const fetchUrl =
+    !relativePath.startsWith("http") && typeof window === "undefined"
+      ? `${API_BASE_URL}${relativePath}`
+      : relativePath;
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(opts.headers as any),
@@ -37,19 +49,19 @@ export async function api(path: string, opts: Options = {}) {
   if (process.env.NODE_ENV === "development") {
     console.log("🌐 API Call:", {
       method: opts.method || "GET",
-      url: url,
-      path: path,
-      baseUrl: API_BASE_URL,
+      fetchUrl,
+      path,
+      serverOrigin: typeof window === "undefined" ? API_BASE_URL : "(same-origin)",
       hasToken: !!headers.Authorization,
     });
   }
 
   try {
-    const res = await fetch(url, { ...opts, headers, cache: "no-store" });
+    const res = await fetch(fetchUrl, { ...opts, headers, cache: "no-store" });
 
     if (process.env.NODE_ENV === "development") {
       console.log("📥 API Response:", {
-        url: url,
+        url: fetchUrl,
         status: res.status,
         statusText: res.statusText,
         ok: res.ok,

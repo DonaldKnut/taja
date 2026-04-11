@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -115,67 +114,72 @@ export function ProductPurchaseActions({
         )}
       </div>
 
-      <AnimatePresence>
-        <motion.div
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/80 backdrop-blur-xl border-t border-gray-100 p-4 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]"
-        >
-          <div className="max-w-7xl mx-auto flex items-center gap-3">
-            <Button
-              onClick={onAddToCart}
+      {/* Mobile: fixed strip sits above bottom nav (nav z-50); bottom offset clears nav + home indicator */}
+      <div
+        className="fixed inset-x-0 z-[60] md:hidden border-t border-gray-100 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.12)] backdrop-blur-xl"
+        style={{
+          /* Same stack as bottom nav: safe-area + one row (~nav py-3.5 + icon + label) */
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 3.35rem)",
+        }}
+      >
+        <div className="mx-auto flex max-w-7xl items-center gap-3">
+          <Button
+            onClick={onAddToCart}
             disabled={!canPurchase}
-              variant="outline"
-              className={cn(
-                "flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] border-gray-200",
-                (!canPurchase) && "opacity-50 cursor-not-allowed border-gray-100"
-              )}
-            >
-              {product.stock <= 0
-                ? "Sold Out"
-                : mustSelectVariant
-                  ? "Select Option"
-                  : "Add to Cart"}
-            </Button>
-            <Button
-              onClick={onBuyNow}
-            disabled={!canPurchase}
-              className={cn(
-                "flex-[2] rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700",
-                (!canPurchase) && "opacity-50 cursor-not-allowed grayscale"
-              )}
-            >
-              {product.stock <= 0
-                ? "Out of Stock"
-                : mustSelectVariant
-                  ? "Select Option"
-                  : "Buy Now"}
-            </Button>
-
-            {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-14 h-14 rounded-2xl p-0 flex items-center justify-center border-emerald-500/20 text-emerald-600"
-                onClick={() => {
-                  const url =
-                    getWhatsAppUrl(product.shop.socialLinks.whatsapp, {
-                      title: `Availability Inquiry: ${product.title}`,
-                      price: product.price,
-                    }) || null;
-                  if (url) {
-                    setPendingWhatsAppUrl(url);
-                    setWhatsappWarningOpen(true);
-                  }
-                }}
-              >
-                <MessageCircle className="w-6 h-6" />
-              </Button>
+            variant="outline"
+            className={cn(
+              "h-14 flex-1 rounded-2xl font-black uppercase tracking-widest text-[10px] border-gray-200",
+              !canPurchase && "cursor-not-allowed border-gray-100 opacity-50"
             )}
-          </div>
-          <div className="h-[env(safe-area-inset-bottom)]" />
-        </motion.div>
-      </AnimatePresence>
+          >
+            {product.stock <= 0
+              ? "Sold Out"
+              : mustSelectVariant
+                ? "Select Option"
+                : "Add to Cart"}
+          </Button>
+          <Button
+            onClick={onBuyNow}
+            disabled={!canPurchase}
+            className={cn(
+              "h-14 flex-[2] rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-premium bg-gradient-to-r from-taja-primary to-emerald-700",
+              !canPurchase && "cursor-not-allowed grayscale opacity-50"
+            )}
+          >
+            {product.stock <= 0
+              ? "Out of Stock"
+              : mustSelectVariant
+                ? "Select Option"
+                : "Buy Now"}
+          </Button>
+          {product.stock <= 0 && product.shop.socialLinks.whatsapp && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-14 w-14 shrink-0 rounded-2xl border-emerald-500/20 p-0 text-emerald-600"
+              onClick={() => {
+                const url =
+                  getWhatsAppUrl(product.shop.socialLinks.whatsapp, {
+                    title: `Availability Inquiry: ${product.title}`,
+                    price: product.price,
+                  }) || null;
+                if (url) {
+                  setPendingWhatsAppUrl(url);
+                  setWhatsappWarningOpen(true);
+                }
+              }}
+            >
+              <MessageCircle className="h-6 w-6" />
+            </Button>
+          )}
+        </div>
+        {mustSelectVariant && (
+          <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest text-amber-600">
+            Select an option before purchasing.
+          </p>
+        )}
+      </div>
+
       <OffPlatformPaymentWarningModal
         open={whatsappWarningOpen}
         onCancel={() => {

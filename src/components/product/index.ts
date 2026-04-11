@@ -16,6 +16,8 @@ export { ProductShopSummary } from "./ProductShopSummary";
 export type { ProductCardProps } from "./ProductCard";
 export type { ProductPriceProps } from "./ProductPrice";
 export type { ProductBadgeProps } from "./ProductBadge";
+export { CategoryPickerModal, categoryPickerLabel } from "./CategoryPickerModal";
+export type { CategoryPickerItem } from "./CategoryPickerModal";
 
 
 

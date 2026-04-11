@@ -1,4 +1,5 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+import "./registerModels";
 
 // Prefer standard URI (no SRV) when set — bypasses DNS querySrv which can fail on some networks/VPNs
 // No throw at import time so Vercel build can complete (env may be missing at build time).

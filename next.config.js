@@ -147,10 +147,10 @@ const nextConfig = {
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL || "https://tajaapp.shop",
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-    // Production: https://tajaapp-backend-nzkj.onrender.com
-    // Development: http://localhost:5000 (set via .env.local)
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "https://tajaapp-backend-nzkj.onrender.com",
-    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || "https://tajaapp-backend-nzkj.onrender.com",
+    // Fullstack on Vercel: leave unset so the app uses same-origin /api (see src/lib/api.ts).
+    // Set NEXT_PUBLIC_* only if you intentionally use a separate API or Socket host.
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "",
+    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || "",
   },
 };
 

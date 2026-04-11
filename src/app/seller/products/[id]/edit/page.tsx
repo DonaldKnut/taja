@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -28,6 +28,7 @@ import {
   Sparkles,
   DollarSign,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -38,6 +39,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Container } from "@/components/layout";
+import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -48,6 +50,7 @@ export default function EditProductPage() {
   const [fetching, setFetching] = useState(true);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -95,6 +98,12 @@ export default function EditProductPage() {
   });
 
   const [tagInput, setTagInput] = useState("");
+
+  const selectedCategoryLabel = useMemo(() => {
+    if (!formData.category) return "Select category";
+    const c = categories.find((x) => String(x._id) === String(formData.category));
+    return c ? categoryPickerLabel(c) : "Select category";
+  }, [formData.category, categories]);
   const [suggestedPrice, setSuggestedPrice] = useState("");
   const [analyzingPrice, setAnalyzingPrice] = useState(false);
 
@@ -105,7 +114,7 @@ export default function EditProductPage() {
         setFetching(true);
 
         // Fetch Categories
-        const categoriesRes = await api("/api/categories");
+        const categoriesRes = await api("/api/seller/categories");
         if (categoriesRes?.data) {
           setCategories(categoriesRes.data);
         }
@@ -600,17 +609,17 @@ export default function EditProductPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Category</label>
-                      <select
-                        name="category"
-                        value={formData.category}
-                        onChange={handleChange}
-                        className="w-full h-14 px-5 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all font-bold text-taja-secondary appearance-none"
+                      <button
+                        type="button"
+                        onClick={() => setCategoryModalOpen(true)}
+                        className={cn(
+                          "w-full h-14 px-5 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all font-bold text-taja-secondary flex items-center justify-between gap-2 text-left",
+                          !formData.category && "text-gray-400"
+                        )}
                       >
-                        <option value="">Select Category</option>
-                        {categories.map((cat) => (
-                          <option key={cat._id} value={cat._id}>{cat.name}</option>
-                        ))}
-                      </select>
+                        <span className="truncate">{selectedCategoryLabel}</span>
+                        <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                      </button>
                     </div>
 
                     <div>
@@ -1016,6 +1025,20 @@ export default function EditProductPage() {
         </div>
         <div className="h-[env(safe-area-inset-bottom)]" />
       </div>
+
+      <CategoryPickerModal
+        open={categoryModalOpen}
+        onClose={() => setCategoryModalOpen(false)}
+        categories={categories}
+        selectedId={formData.category}
+        onSelect={(id) => setFormData((prev) => ({ ...prev, category: id }))}
+        createEndpoint="/api/seller/categories"
+        onCategoryCreated={(cat) =>
+          setCategories((prev) =>
+            prev.some((x) => String(x._id) === String(cat._id)) ? prev : [...prev, cat]
+          )
+        }
+      />
     </div>
   );
 }
