@@ -52,6 +52,8 @@ export function CategoryPickerModal({
   const [newDescription, setNewDescription] = useState("");
   const [creating, setCreating] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const createSectionRef = useRef<HTMLDivElement>(null);
+  const newNameInputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -83,6 +85,16 @@ export function CategoryPickerModal({
       document.body.style.overflow = prev;
     };
   }, [open]);
+
+  /** Keep create fields on-screen and focusable (keyboard + small viewports) */
+  useEffect(() => {
+    if (!open || !showCreate) return;
+    const id = requestAnimationFrame(() => {
+      createSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      newNameInputRef.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open, showCreate]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -149,7 +161,7 @@ export function CategoryPickerModal({
   const panel = (
     <AnimatePresence>
       {open && (
-        <div key="category-picker-root" className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center sm:p-4">
+        <div key="category-picker-root" className="fixed inset-0 z-[10060] flex items-end justify-center sm:items-center sm:p-4">
           <motion.div
             role="presentation"
             initial={{ opacity: 0 }}
@@ -169,7 +181,7 @@ export function CategoryPickerModal({
             exit={{ opacity: 0, y: 16 }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
             className={cn(
-              "relative z-10 flex w-full max-h-[min(560px,88dvh)] flex-col overflow-hidden rounded-t-[28px] border border-white/70 bg-white shadow-2xl",
+              "relative z-10 flex w-full max-h-[min(85dvh,640px)] flex-col overflow-hidden rounded-t-[28px] border border-white/70 bg-white shadow-2xl",
               "sm:max-w-md sm:rounded-[24px]"
             )}
             onClick={(e) => e.stopPropagation()}
@@ -207,7 +219,8 @@ export function CategoryPickerModal({
               </div>
             </div>
 
-            <div className="min-h-[180px] flex-1 overflow-y-auto px-3 py-2 sm:px-4">
+            {/* Single scroll region: list + “add new” so expanded fields stay reachable on mobile */}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 sm:px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
               {filtered.length === 0 ? (
                 <p className="px-3 py-8 text-center text-sm font-medium text-slate-500">
                   No categories match &ldquo;{search.trim()}&rdquo;. Try another term or add a new category below.
@@ -240,42 +253,45 @@ export function CategoryPickerModal({
                   })}
                 </ul>
               )}
-            </div>
 
-            <div className="shrink-0 border-t border-slate-100 bg-slate-50/80 px-5 py-4 sm:px-6">
-              <button
-                type="button"
-                onClick={() => setShowCreate((s) => !s)}
-                className="flex w-full items-center justify-between rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-taja-primary/40 hover:bg-taja-primary/[0.03]"
+              <div
+                ref={createSectionRef}
+                className="mt-4 border-t border-slate-100 bg-slate-50/80 px-2 py-4 sm:px-3 -mx-1 sm:-mx-2 rounded-b-2xl"
               >
-                <span className="flex items-center gap-2 text-sm font-black text-slate-800">
-                  <Plus className="h-4 w-4 text-taja-primary" />
-                  Add new category
-                </span>
-                <ChevronDown
-                  className={cn("h-4 w-4 text-slate-400 transition-transform", showCreate && "rotate-180")}
-                />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreate((s) => !s)}
+                  className="flex w-full items-center justify-between rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-taja-primary/40 hover:bg-taja-primary/[0.03]"
+                >
+                  <span className="flex items-center gap-2 text-sm font-black text-slate-800">
+                    <Plus className="h-4 w-4 text-taja-primary" />
+                    Add new category
+                  </span>
+                  <ChevronDown
+                    className={cn("h-4 w-4 text-slate-400 transition-transform shrink-0", showCreate && "rotate-180")}
+                  />
+                </button>
 
-              <AnimatePresence initial={false}>
-                {showCreate && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-3 space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+                <AnimatePresence initial={false}>
+                  {showCreate && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.18 }}
+                      className="mt-3 space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                    >
                       <div>
                         <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-400">
                           Name *
                         </label>
                         <input
+                          ref={newNameInputRef}
                           type="text"
                           value={newName}
                           onChange={(e) => setNewName(e.target.value)}
                           placeholder="e.g. Organic skincare"
+                          autoComplete="off"
                           className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-taja-primary/50 focus:ring-2 focus:ring-taja-primary/15"
                         />
                       </div>
@@ -300,10 +316,10 @@ export function CategoryPickerModal({
                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         {creating ? "Creating…" : "Create & use"}
                       </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </motion.div>
         </div>

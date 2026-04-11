@@ -6,6 +6,7 @@ import {
   verifyGoogleIdTokenForExpo,
   type GoogleIdProfile,
 } from '@/lib/google-id-token-verify';
+import { applyGooglePictureToSellerShop } from '@/lib/oauthShopAvatar';
 
 export { verifyGoogleIdTokenForExpo, type GoogleIdProfile } from '@/lib/google-id-token-verify';
 
@@ -130,6 +131,14 @@ export async function signInWithGoogleIdToken(params: {
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
   await saveUser(user);
+
+  if (picture && user.role === 'seller') {
+    try {
+      await applyGooglePictureToSellerShop(user._id.toString(), picture);
+    } catch (e) {
+      console.error('Google mobile seller shop avatar sync:', e);
+    }
+  }
 
   return {
     token,

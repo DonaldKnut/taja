@@ -13,6 +13,7 @@ import {
   User,
   LogOut,
   LayoutDashboard,
+  Store,
 } from "lucide-react";
 import { BrandShowcase } from "@/components/ui/BrandShowcase";
 import { AdvancedFooter } from "@/components/ui/AdvancedFooter";
@@ -89,6 +90,12 @@ export default function HomePage() {
                   className="text-sm font-bold text-taja-secondary hover:text-taja-primary transition-colors tracking-tight"
                 >
                   Marketplace
+                </Link>
+                <Link
+                  href="/shops"
+                  className="text-sm font-bold text-taja-secondary hover:text-taja-primary transition-colors tracking-tight"
+                >
+                  Shops
                 </Link>
                 <Link
                   href="/blog"
@@ -203,6 +210,17 @@ export default function HomePage() {
                   <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
                 </Link>
                 <Link
+                  href="/shops"
+                  className="group flex items-center justify-between text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span className="flex items-center gap-2">
+                    <Store className="h-4 w-4 opacity-50" />
+                    Shops
+                  </span>
+                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                </Link>
+                <Link
                   href="/blog"
                   className="group flex items-center justify-between text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all"
                   onClick={() => setMobileOpen(false)}
@@ -241,12 +259,12 @@ export default function HomePage() {
                   </Link>
                   {user.role === "seller" && (
                     <Link
-                      href="/seller"
+                      href="/seller/shop/edit"
                       className="flex items-center gap-3 text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all"
                       onClick={() => setMobileOpen(false)}
                     >
                       <Shield className="h-5 w-5 opacity-50" />
-                      My Shop
+                      Shop profile
                     </Link>
                   )}
                 </div>

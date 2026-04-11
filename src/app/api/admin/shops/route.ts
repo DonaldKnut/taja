@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
         linkedin: socialLinks.linkedin?.trim() || undefined,
       } : undefined;
 
+      const hasExplicitAvatar = Boolean(logo?.trim() || avatar?.trim());
       const shop = await Shop.create({
         owner: ownerObjectId,
         shopName: shopName.trim(),
@@ -122,6 +123,7 @@ export async function POST(request: NextRequest) {
         banner: banner?.trim() || undefined,
         avatar: (avatar?.trim() || logo?.trim()) || undefined,
         coverImage: (coverImage?.trim() || banner?.trim()) || undefined,
+        shopAvatarCustom: hasExplicitAvatar,
         address: address && typeof address === 'object' && address.addressLine1
           ? {
               addressLine1: address.addressLine1.trim(),

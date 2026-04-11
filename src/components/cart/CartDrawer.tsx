@@ -75,7 +75,8 @@ export function CartDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className={cn(
-              "fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] transition-opacity",
+              /* Above AppHeader (z-[9999]) / mobile menu so close control is tappable */
+              "fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[10050] transition-opacity",
               overlayClassName
             )}
             onClick={onClose}
@@ -89,12 +90,12 @@ export function CartDrawer({
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className={cn(
-              "fixed right-0 top-0 h-full w-full max-w-[450px] bg-white shadow-2xl z-[201] flex flex-col overflow-hidden",
+              "fixed right-0 top-0 h-full w-full max-w-[450px] bg-white shadow-2xl z-[10051] flex flex-col overflow-hidden",
               className
             )}
           >
-            {/* Header */}
-            <div className="relative pt-8 pb-6 px-8 flex items-center justify-between">
+            {/* Header — safe-area + clear of any underlying sticky chrome */}
+            <div className="relative pt-[max(2rem,env(safe-area-inset-top,0px))] pb-6 px-8 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                   <ShoppingCart className="h-5 w-5 text-emerald-600" />
@@ -105,8 +106,9 @@ export function CartDrawer({
                 </div>
               </div>
               <button
+                type="button"
                 onClick={onClose}
-                className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 rounded-full transition-all text-gray-400 hover:text-gray-900"
+                className="relative z-10 w-11 h-11 flex items-center justify-center hover:bg-gray-50 rounded-full transition-all text-gray-400 hover:text-gray-900 touch-manipulation"
                 aria-label="Close cart"
               >
                 <X className="h-5 w-5" />
@@ -137,7 +139,7 @@ export function CartDrawer({
                   <div className="space-y-4 pb-4">
                     {items.map((item, index) => (
                       <motion.div
-                        key={item._id}
+                        key={`${item._id}:${item.variantId ?? "__default__"}:${index}`}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}

@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { Heart, Share2, Star, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPricing";
+import { ProductDetailTabs } from "./ProductDetailTabs";
 
 interface ProductDetailMetaProps {
   product: any;
@@ -12,6 +13,8 @@ interface ProductDetailMetaProps {
   isWishlisted: boolean;
   onShare: () => void;
   onToggleWishlist: () => void;
+  activeTab: "description" | "specifications";
+  setActiveTab: (tab: "description" | "specifications") => void;
 }
 
 export function ProductDetailMeta({
@@ -21,6 +24,8 @@ export function ProductDetailMeta({
   isWishlisted,
   onShare,
   onToggleWishlist,
+  activeTab,
+  setActiveTab,
 }: ProductDetailMetaProps) {
   const selectedVariant = product.variants?.find((v: any) => String(v._id || v.id || v.name) === String(selectedVariantId));
   const currentPrice = getEffectivePrice(product.price, selectedVariant?.price);
@@ -72,7 +77,16 @@ export function ProductDetailMeta({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <ProductDetailTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        description={product.description}
+        specifications={product.specifications}
+        compact
+      />
+
+      {/* Desktop: headline price under details; mobile uses fixed purchase bar */}
+      <div className="hidden lg:block space-y-2">
         <div className="flex items-baseline gap-4">
           <span className="text-4xl sm:text-5xl font-black text-taja-primary tracking-tighter">
             {showRange

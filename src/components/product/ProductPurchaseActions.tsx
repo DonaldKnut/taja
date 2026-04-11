@@ -4,10 +4,13 @@ import { MessageCircle, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPricing";
 import { OffPlatformPaymentWarningModal } from "@/components/security/OffPlatformPaymentWarningModal";
 
 interface ProductPurchaseActionsProps {
   product: any;
+  /** Used to show the live price in the mobile action bar */
+  selectedVariantId?: string | "standard" | null;
   quantity: number;
   setQuantity: (quantity: number) => void;
   onAddToCart: () => void;
@@ -19,6 +22,7 @@ interface ProductPurchaseActionsProps {
 
 export function ProductPurchaseActions({
   product,
+  selectedVariantId = "standard",
   quantity,
   setQuantity,
   onAddToCart,
@@ -32,6 +36,19 @@ export function ProductPurchaseActions({
 
   const mustSelectVariant = requiresVariantSelection && !isVariantSelected;
   const canPurchase = product.stock > 0 && !mustSelectVariant;
+
+  const selectedVariant = product.variants?.find(
+    (v: any) => String(v._id || v.id || v.name) === String(selectedVariantId)
+  );
+  const currentPrice = getEffectivePrice(product.price, selectedVariant?.price);
+  const currentCompareAtPrice = selectedVariant?.compareAtPrice ?? product.compareAtPrice;
+  const { minPrice, maxPrice } = getProductDisplayPriceRange(product);
+  const showRange = !selectedVariantId && !!maxPrice;
+  const mobilePriceLabel = mustSelectVariant
+    ? "Select an option"
+    : showRange
+      ? `From ₦${minPrice.toLocaleString()} – ₦${maxPrice.toLocaleString()}`
+      : `₦${currentPrice.toLocaleString()}`;
 
   return (
     <>
@@ -116,11 +133,21 @@ export function ProductPurchaseActions({
 
       {/* Mobile: flush on top of bottom nav; --mobile-bottom-nav-height is set by MobileBottomNav (measured) */}
       <div
-        className="fixed inset-x-0 z-[60] md:hidden border-t border-gray-100 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.12)] backdrop-blur-xl"
+        className="fixed inset-x-0 z-[60] md:hidden border-t border-gray-100 bg-white/95 px-4 pt-2 pb-3 shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.12)] backdrop-blur-xl"
         style={{
           bottom: "var(--mobile-bottom-nav-height, calc(env(safe-area-inset-bottom, 0px) + 3rem))",
         }}
       >
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <p className="text-lg font-black tracking-tight text-taja-primary">{mobilePriceLabel}</p>
+            {currentCompareAtPrice > currentPrice && (
+              <span className="text-xs text-gray-400 line-through">
+                ₦{Number(currentCompareAtPrice).toLocaleString()}
+              </span>
+            )}
+          </div>
+        </div>
         <div className="mx-auto flex max-w-7xl items-center gap-3">
           <Button
             onClick={onAddToCart}

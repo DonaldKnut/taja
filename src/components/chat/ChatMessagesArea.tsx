@@ -24,8 +24,7 @@ export function ChatMessagesArea({
 }: ChatMessagesAreaProps) {
   return (
     <div
-      className="flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 py-4 space-y-3 bg-gray-50/30"
-      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+      className="flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 py-4 space-y-3 bg-gray-50/30 pb-[calc(5.75rem+var(--mobile-bottom-nav-height,3.5rem))] md:pb-4"
     >
       {selectedChat.messages.length === 0 && (
         <div className="flex items-center justify-center h-full">

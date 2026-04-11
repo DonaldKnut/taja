@@ -51,8 +51,8 @@ export default function CartPage() {
         ) : (
           <>
             <div className="bg-white rounded-xl border border-gray-200 divide-y">
-              {items.map((item) => (
-                <div key={item._id} className="p-4">
+              {items.map((item, index) => (
+                <div key={`${item._id}:${item.variantId ?? "__default__"}:${index}`} className="p-4">
                   <CartItemRow item={item} formatPrice={(p) => `₦${p.toLocaleString()}`} />
                 </div>
               ))}

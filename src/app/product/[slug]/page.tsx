@@ -16,7 +16,6 @@ import { useWishlistStore, type WishlistItem } from "@/components/wishlist";
 import {
   ProductDetailGallery,
   ProductDetailMeta,
-  ProductDetailTabs,
   ProductPurchaseActions,
   ProductShopSummary,
 } from "@/components/product";
@@ -334,9 +333,12 @@ export default function ProductDetailPage() {
                 isWishlisted={isWishlisted}
                 onShare={handleShare}
                 onToggleWishlist={handleToggleWishlist}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
               />
               <ProductPurchaseActions
                 product={product}
+                selectedVariantId={selectedVariantId}
                 quantity={quantity}
                 setQuantity={setQuantity}
                 onAddToCart={handleAddToCart}
@@ -346,12 +348,6 @@ export default function ProductDetailPage() {
                 isVariantSelected={!!selectedVariantId}
               />
               <ProductShopSummary product={product} fallbackImage={fallbackImage} />
-              <ProductDetailTabs
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                description={product.description}
-                specifications={product.specifications}
-              />
             </div>
           </div>
 

@@ -41,13 +41,32 @@ export function useServerCartSync() {
             ? serverResponse.items
             : [];
 
-        // Always clear then rehydrate from server source of truth
-        clearCart();
+        // Merge duplicate server lines (same product + variant) so the client store stays one row per line
+        const mergedByLine = new Map<
+          string,
+          (typeof serverItems)[number] & { __qty: number }
+        >();
         for (const it of serverItems) {
           const productId = String(it.productId || it.product?._id || it.product || "");
           if (!productId) continue;
+          const variantId = it.variantId ? String(it.variantId) : "";
+          const key = `${productId}::${variantId}`;
+          const q = Number(it.quantity || 1);
+          const prev = mergedByLine.get(key);
+          if (prev) {
+            prev.__qty += q;
+          } else {
+            mergedByLine.set(key, { ...it, __qty: q });
+          }
+        }
+
+        // Always clear then rehydrate from server source of truth
+        clearCart();
+        for (const it of mergedByLine.values()) {
+          const productId = String(it.productId || it.product?._id || it.product || "");
+          if (!productId) continue;
           const variantId = it.variantId ? String(it.variantId) : undefined;
-          const initialQty = Number(it.quantity || 1);
+          const initialQty = Math.max(1, Number(it.__qty || 1));
           addItem({
             _id: productId,
             title: it.title || "Product",

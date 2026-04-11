@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Paperclip, Send } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ChatComposerProps {
   message: string;
@@ -28,8 +29,13 @@ export function ChatComposer({
 }: ChatComposerProps) {
   return (
     <div
-      className="flex-none w-full border-t border-gray-100 bg-white/95 backdrop-blur-sm p-2.5 sm:p-3 z-[60]"
-      style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+      className={cn(
+        "w-full flex-none border-t border-gray-100 bg-white/95 backdrop-blur-sm p-2.5 sm:p-3",
+        /* Mobile: flush on top of bottom nav (nav owns safe-area); md+ stays in document flow */
+        "max-md:fixed max-md:inset-x-0 max-md:z-[55] max-md:shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.08)]",
+        "max-md:bottom-[var(--mobile-bottom-nav-height,calc(env(safe-area-inset-bottom,0px)+3.5rem))]",
+        "md:relative md:bottom-auto md:z-auto md:shadow-none"
+      )}
     >
       {pendingAttachments.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2 px-1">

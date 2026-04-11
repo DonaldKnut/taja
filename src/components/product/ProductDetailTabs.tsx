@@ -8,6 +8,8 @@ interface ProductDetailTabsProps {
   setActiveTab: (tab: "description" | "specifications") => void;
   description?: string;
   specifications?: Record<string, any>;
+  /** Tighter spacing when placed directly under the product title */
+  compact?: boolean;
 }
 
 export function ProductDetailTabs({
@@ -15,9 +17,10 @@ export function ProductDetailTabs({
   setActiveTab,
   description,
   specifications,
+  compact = false,
 }: ProductDetailTabsProps) {
   return (
-    <div className="space-y-6 pt-6">
+    <div className={cn(compact ? "space-y-4 pt-0" : "space-y-6 pt-6")}>
       <div className="flex gap-8 border-b border-gray-100">
         <button
           onClick={() => setActiveTab("description")}

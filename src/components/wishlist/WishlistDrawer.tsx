@@ -69,7 +69,7 @@ export function WishlistDrawer() {
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[200] flex justify-end">
+                <div className="fixed inset-0 z-[10052] flex justify-end">
                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -88,7 +88,7 @@ export function WishlistDrawer() {
                         className="relative w-full max-w-md h-full bg-white shadow-huge flex flex-col"
                     >
                         {/* Header: Focused on clarity and branding */}
-                        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 bg-white z-10">
+                        <div className="flex items-center justify-between p-4 sm:p-6 pt-[max(1rem,env(safe-area-inset-top,0px))] border-b border-gray-100 bg-white z-10">
                             <div className="flex items-center gap-3">
                                 <div className="p-2.5 bg-rose-50 rounded-xl text-rose-500 hidden min-[400px]:block">
                                     <Heart className="h-5 w-5 fill-current" />

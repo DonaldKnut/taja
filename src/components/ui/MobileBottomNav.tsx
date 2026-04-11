@@ -148,32 +148,56 @@ export function MobileBottomNav() {
     >
       <div className="mx-auto max-w-7xl px-2">
         <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
-          {items.map((item, index) => {
+          {items.map((item) => {
             const active = isActive(pathname, item);
             const Icon = item.icon;
             const isPlus = item.label === "Plus";
             const isCart = item.label === "Cart";
+            const tooltip =
+              item.label === "Plus"
+                ? "Add a new product"
+                : item.label === "Cart"
+                  ? "Shopping cart"
+                  : item.label === "Wishlist"
+                    ? "Saved items"
+                    : item.label === "Marketplace"
+                      ? "Browse marketplace"
+                      : item.label === "Orders"
+                        ? "Your orders"
+                        : item.label === "Chat"
+                          ? "Messages"
+                          : item.label === "Wallet"
+                            ? "Seller wallet"
+                            : item.label === "Verify"
+                              ? "Complete verification"
+                              : item.label === "Login"
+                                ? "Sign in"
+                                : item.label === "Register"
+                                  ? "Create account"
+                                  : item.label;
 
             return (
               <Link
                 key={item.href + item.label}
                 href={item.href}
                 onClick={item.onClick}
-                className={`flex flex-col items-center justify-center gap-1 py-3.5 rounded-xl transition-colors ${isPlus
+                title={tooltip}
+                className={`flex flex-col items-center justify-center gap-0.5 py-2.5 sm:py-3.5 rounded-xl transition-colors touch-manipulation ${isPlus
                   ? "relative -mt-4"
                   : active
                     ? "text-taja-primary"
                     : "text-gray-500 hover:text-taja-secondary"
                   }`}
                 aria-current={active ? "page" : undefined}
+                aria-label={isPlus ? tooltip : undefined}
               >
                 {isPlus ? (
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-taja-primary text-white shadow-emerald">
-                    <Plus className="h-6 w-6" />
+                    <Plus className="h-6 w-6" aria-hidden />
                   </div>
                 ) : (
                   <div className="relative">
-                    <Icon className={`h-5 w-5 ${active ? "text-taja-primary" : "text-gray-400"}`} />
+                    <Icon className={`h-5 w-5 ${active ? "text-taja-primary" : "text-gray-400"}`} aria-hidden />
                     {isCart && cartCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center ring-2 ring-white">
                         {cartCount}
@@ -184,14 +208,13 @@ export function MobileBottomNav() {
                         {wishlistCount}
                       </span>
                     )}
-                    <span className="sr-only">{item.label}</span>
                   </div>
                 )}
-                {!isPlus && (
-                  <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-1 hidden min-[400px]:block translate-y-0.5">
-                    {item.label}
-                  </span>
-                )}
+                <span
+                  className={`max-w-[4.5rem] truncate text-center text-[8px] font-black uppercase tracking-tighter leading-tight mt-0.5 px-0.5 sm:text-[10px] sm:tracking-widest sm:max-w-none ${isPlus ? "text-taja-primary" : ""}`}
+                >
+                  {isPlus ? "Add" : item.label}
+                </span>
               </Link>
             );
           })}

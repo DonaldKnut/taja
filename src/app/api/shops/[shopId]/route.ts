@@ -277,9 +277,21 @@ export async function PUT(
         (shop as any).categoryIds = resolvedCategories.categoryIds;
         shop.category = resolvedCategories.categories[0] || (typeof category === 'string' ? normalizeCategoryName(category) : shop.category);
       }
-      if (logo) shop.logo = logo;
+      const prevLogo = shop.logo;
+      const prevAvatar = (shop as any).avatar as string | undefined;
+      if (logo !== undefined) {
+        if (logo && logo !== (prevLogo ?? '')) {
+          (shop as any).shopAvatarCustom = true;
+        }
+        if (logo) shop.logo = logo;
+      }
       if (banner) shop.banner = banner;
-      if (avatar) (shop as any).avatar = avatar;
+      if (avatar !== undefined) {
+        if (avatar && avatar !== (prevAvatar ?? '')) {
+          (shop as any).shopAvatarCustom = true;
+        }
+        if (avatar) (shop as any).avatar = avatar;
+      }
       if (coverImage) (shop as any).coverImage = coverImage;
       if (address) shop.address = { ...shop.address, ...address };
       if (socialLinks) (shop as any).socialLinks = { ...(shop as any).socialLinks, ...socialLinks };

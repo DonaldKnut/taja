@@ -130,10 +130,19 @@ export async function PUT(
       if (description !== undefined) updateData.description = description;
       if (about !== undefined) updateData.about = about;
       if (tagline !== undefined) updateData.tagline = tagline;
+      const prevLogo = (shop as any).logo;
+      const prevAvatar = (shop as any).avatar;
       if (logo !== undefined) updateData.logo = logo;
       if (banner !== undefined) updateData.banner = banner;
       if (avatar !== undefined) updateData.avatar = avatar;
       if (coverImage !== undefined) updateData.coverImage = coverImage;
+      const logoChanged =
+        logo !== undefined && (logo ?? '') !== (prevLogo ?? '');
+      const avatarChanged =
+        avatar !== undefined && (avatar ?? '') !== (prevAvatar ?? '');
+      if (logoChanged || avatarChanged) {
+        updateData.shopAvatarCustom = true;
+      }
       if (socialLinks) updateData.socialLinks = socialLinks;
       if (address) updateData.address = address;
 

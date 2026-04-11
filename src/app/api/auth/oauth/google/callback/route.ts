@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { connectDB, User } from '@/modules/db';
+import { applyGooglePictureToSellerShop } from '@/lib/oauthShopAvatar';
 import PlatformSettings from '@/models/PlatformSettings';
 import { generateToken, generateRefreshToken } from '@/lib/auth';
 import { sendWelcomeEmail } from '@/modules/email';
@@ -184,6 +185,14 @@ export async function GET(request: NextRequest) {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
     await saveUser(user);
+
+    if (picture && user.role === 'seller') {
+      try {
+        await applyGooglePictureToSellerShop(user._id.toString(), picture);
+      } catch (syncErr) {
+        console.error('OAuth seller shop avatar sync:', syncErr);
+      }
+    }
 
     // Determine redirect path based on user state
     let redirectPath = '/dashboard';

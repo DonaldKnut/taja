@@ -288,6 +288,20 @@ export async function POST(request: NextRequest) {
       const resolvedCategories = await resolveCategoryCatalog(incomingCategories);
       const primaryCategory = resolvedCategories.categories[0] || (typeof category === 'string' ? normalizeCategoryName(category) : undefined);
 
+      const bodyLogo = typeof logo === 'string' && logo.trim() ? logo.trim() : undefined;
+      const bodyAvatar = typeof avatar === 'string' && avatar.trim() ? avatar.trim() : undefined;
+      let effectiveLogo = bodyLogo;
+      let effectiveAvatar = bodyAvatar || bodyLogo;
+      if (!effectiveLogo && !effectiveAvatar) {
+        const ownerUser = await User.findById(user.userId).select('avatar').lean();
+        const a = ownerUser?.avatar;
+        if (typeof a === 'string' && a.trim()) {
+          effectiveLogo = a.trim();
+          effectiveAvatar = a.trim();
+        }
+      }
+      const shopAvatarCustom = Boolean(bodyLogo || bodyAvatar);
+
       const shop = await Shop.create({
         owner: user.userId,
         shopName,
@@ -298,10 +312,11 @@ export async function POST(request: NextRequest) {
         category: primaryCategory,
         categories: resolvedCategories.categories,
         categoryIds: resolvedCategories.categoryIds,
-        logo,
+        logo: effectiveLogo,
         banner,
-        avatar: avatar || logo,
+        avatar: effectiveAvatar || effectiveLogo,
         coverImage: coverImage || banner,
+        shopAvatarCustom,
         socialLinks,
         settings,
         policies,

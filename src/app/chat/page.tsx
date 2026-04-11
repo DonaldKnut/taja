@@ -457,7 +457,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="fixed inset-0 pb-[65px] md:pb-0 bg-gradient-to-br from-gray-50 via-white to-taja-primary/5 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-50 via-white to-taja-primary/5 flex flex-col overflow-hidden">
       <ChatSecurityWarningModal
         isOpen={showWarningModal}
         warningType={warningDetails.type}

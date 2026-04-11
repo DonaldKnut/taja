@@ -42,6 +42,11 @@ export interface IShop extends Document {
   avatar?: string;
   coverImage?: string;
   /**
+   * When true, shop logo/avatar were set explicitly (seller dashboard or admin);
+   * Google OAuth must not overwrite them on login.
+   */
+  shopAvatarCustom?: boolean;
+  /**
    * Social links rendered on the shop page
    */
   socialLinks?: {
@@ -177,6 +182,7 @@ const ShopSchema = new Schema<IShop>(
     banner: String,
     avatar: String,
     coverImage: String,
+    shopAvatarCustom: { type: Boolean, default: false },
     tagline: String,
     socialLinks: {
       instagram: String,
