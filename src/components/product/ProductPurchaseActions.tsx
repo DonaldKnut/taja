@@ -114,12 +114,11 @@ export function ProductPurchaseActions({
         )}
       </div>
 
-      {/* Mobile: fixed strip sits above bottom nav (nav z-50); bottom offset clears nav + home indicator */}
+      {/* Mobile: flush on top of bottom nav; --mobile-bottom-nav-height is set by MobileBottomNav (measured) */}
       <div
         className="fixed inset-x-0 z-[60] md:hidden border-t border-gray-100 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.12)] backdrop-blur-xl"
         style={{
-          /* Same stack as bottom nav: safe-area + one row (~nav py-3.5 + icon + label) */
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 3.35rem)",
+          bottom: "var(--mobile-bottom-nav-height, calc(env(safe-area-inset-bottom, 0px) + 3rem))",
         }}
       >
         <div className="mx-auto flex max-w-7xl items-center gap-3">

@@ -3,6 +3,7 @@
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLayoutEffect, useRef, useCallback } from "react";
 import {
   Compass,
   Plus,
@@ -50,7 +51,7 @@ export function MobileBottomNav() {
     "/auth/oauth-success",
     "/verify-email",
   ];
-  if (hiddenPrefixes.some((p) => pathname.startsWith(p))) return null;
+  const hidden = hiddenPrefixes.some((p) => pathname.startsWith(p));
 
   const role = user?.role;
 
@@ -107,8 +108,40 @@ export function MobileBottomNav() {
 
   const items = !isAuthenticated ? unauthItems : role === "seller" ? finalSellerItems : buyerItems;
 
+  const navRef = useRef<HTMLElement | null>(null);
+
+  const publishNavHeight = useCallback(() => {
+    const el = navRef.current;
+    if (!el) return;
+    document.documentElement.style.setProperty(
+      "--mobile-bottom-nav-height",
+      `${el.offsetHeight}px`
+    );
+  }, []);
+
+  useLayoutEffect(() => {
+    if (hidden) {
+      document.documentElement.style.removeProperty("--mobile-bottom-nav-height");
+      return;
+    }
+    const el = navRef.current;
+    if (!el) return;
+    publishNavHeight();
+    const ro = new ResizeObserver(() => publishNavHeight());
+    ro.observe(el);
+    window.addEventListener("resize", publishNavHeight);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", publishNavHeight);
+      document.documentElement.style.removeProperty("--mobile-bottom-nav-height");
+    };
+  }, [hidden, publishNavHeight, items.length, cartCount, wishlistCount]);
+
+  if (hidden) return null;
+
   return (
     <nav
+      ref={navRef}
       className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-white/60 bg-white/80 backdrop-blur-xl"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Mobile bottom navigation"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
@@ -122,6 +122,9 @@ import {
 
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { api } from "@/lib/api";
+import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
+import { cn } from "@/lib/utils";
 
 interface MediaFile {
   id: string;
@@ -279,6 +282,13 @@ export default function AdvancedProductUploadPage() {
     value: "",
   });
   const [previewMode, setPreviewMode] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+
+  const selectedCategoryLabel = useMemo(() => {
+    if (!formData.category) return "Select category";
+    const c = categories.find((x) => String(x._id) === String(formData.category));
+    return c ? categoryPickerLabel(c as { _id: string; name: string; parent?: unknown }) : "Select category";
+  }, [formData.category, categories]);
 
   const steps = [
     { id: 1, title: "Basic Info", description: "Product details and category" },
@@ -297,14 +307,15 @@ export default function AdvancedProductUploadPage() {
   useEffect(() => {
     if (formData.category) {
       loadSubcategories(formData.category);
+    } else {
+      setSubcategories([]);
     }
   }, [formData.category]);
 
   const loadCategories = async () => {
     try {
-      const response = await fetch("/api/categories");
-      const data = await response.json();
-      if (data.success) {
+      const data = await api("/api/seller/categories");
+      if (data?.success && Array.isArray(data.data)) {
         setCategories(data.data);
       }
     } catch (error) {
@@ -567,23 +578,18 @@ export default function AdvancedProductUploadPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="category">Category *</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) =>
-                    handleInputChange("category", value)
-                  }
+                <button
+                  type="button"
+                  id="category"
+                  onClick={() => setCategoryModalOpen(true)}
+                  className={cn(
+                    "mt-1 flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    !formData.category && "text-muted-foreground"
+                  )}
                 >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category._id} value={category._id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <span className="truncate text-left font-medium">{selectedCategoryLabel}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                </button>
               </div>
 
               <div>
@@ -1494,6 +1500,26 @@ export default function AdvancedProductUploadPage() {
           </div>
         </div>
       </div>
+
+      <CategoryPickerModal
+        open={categoryModalOpen}
+        onClose={() => setCategoryModalOpen(false)}
+        categories={categories as { _id: string; name: string; parent?: unknown }[]}
+        selectedId={formData.category}
+        onSelect={(id) =>
+          setFormData((prev) => ({
+            ...prev,
+            category: id,
+            subcategory: "",
+          }))
+        }
+        createEndpoint="/api/seller/categories"
+        onCategoryCreated={(cat) =>
+          setCategories((prev) =>
+            prev.some((x) => String(x._id) === String(cat._id)) ? prev : [...prev, cat as Category]
+          )
+        }
+      />
     </div>
   );
 }

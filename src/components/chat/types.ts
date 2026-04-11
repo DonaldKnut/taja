@@ -25,6 +25,7 @@ export interface ChatThread {
   participants: ChatUser[];
   product?: {
     _id: string;
+    slug?: string;
     title: string;
     images: string[];
     price: number;

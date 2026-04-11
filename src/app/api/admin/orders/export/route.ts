@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
         "Tax",
         "Discount",
         "Total",
+        "Delivery Zone",
+        "Delivery Quote Estimate",
+        "Delivery Quote Version",
       ];
 
       const rows = orders.map((o: any) => [
@@ -84,6 +87,9 @@ export async function GET(request: NextRequest) {
         o.totals?.tax,
         o.totals?.discount,
         o.totals?.total,
+        o.deliveryQuoteSnapshot?.zoneLabel,
+        o.deliveryQuoteSnapshot?.isEstimate ? "yes" : "",
+        o.deliveryQuoteSnapshot?.version,
       ]);
 
       const csv = [header, ...rows]

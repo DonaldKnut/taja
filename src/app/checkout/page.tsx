@@ -201,6 +201,12 @@ export default function CheckoutPage() {
   const [subtotal, setSubtotal] = useState(0);
   const [deliverySlots, setDeliverySlots] = useState<Array<any>>([]);
   const [selectedDeliverySlotId, setSelectedDeliverySlotId] = useState<string>("");
+  const [shippingCost, setShippingCost] = useState(4000);
+  const [shippingQuoteMeta, setShippingQuoteMeta] = useState<{
+    zone?: string;
+    note?: string;
+    estimate?: boolean;
+  } | null>(null);
 
   // ── Load addresses on mount ──────────────────────────────────────────────
   const loadAddresses = async () => {
@@ -223,6 +229,47 @@ export default function CheckoutPage() {
     const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     setSubtotal(cartTotal);
   }, [cartItems]);
+
+  // Lagos zone quote (matches server order totals)
+  useEffect(() => {
+    const addr = addresses.find((a) => a._id === selectedAddress);
+    if (!addr) {
+      setShippingCost(4000);
+      setShippingQuoteMeta(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api("/api/delivery/lagos-quote", {
+          method: "POST",
+          body: JSON.stringify({
+            addressLine1: addr.addressLine1,
+            addressLine2: addr.addressLine2 || "",
+            city: addr.city,
+            state: addr.state,
+          }),
+        });
+        if (cancelled) return;
+        if (res?.success && res.data && typeof res.data.priceNgn === "number") {
+          setShippingCost(res.data.priceNgn);
+          setShippingQuoteMeta({
+            zone: res.data.zoneLabel,
+            note: res.data.buyerNote,
+            estimate: !!res.data.isEstimate,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setShippingCost(4000);
+          setShippingQuoteMeta(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAddress, addresses]);
 
   useEffect(() => {
     const loadSlots = async () => {
@@ -259,7 +306,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const shippingCost = 2500;
   const tax = Math.round(subtotal * 0.075); // 7.5% VAT to match backend
   const orderTotal = subtotal + shippingCost + tax;
 
@@ -629,9 +675,24 @@ export default function CheckoutPage() {
                       <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Subtotal</span>
                       <span className="font-bold text-taja-secondary">{formatCurrency(subtotal)}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Shipping</span>
-                      <span className="font-bold text-taja-secondary">{formatCurrency(shippingCost)}</span>
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest block">
+                          Shipping
+                        </span>
+                        {shippingQuoteMeta?.zone && (
+                          <span className="text-[9px] font-bold text-gray-400 mt-1 block leading-snug">
+                            {shippingQuoteMeta.zone}
+                            {shippingQuoteMeta.estimate ? " · estimate" : ""}
+                          </span>
+                        )}
+                        {shippingQuoteMeta?.note && (
+                          <span className="text-[8px] font-medium text-gray-400 mt-1 block leading-relaxed">
+                            {shippingQuoteMeta.note}
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-bold text-taja-secondary shrink-0">{formatCurrency(shippingCost)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">VAT (7.5%)</span>

@@ -154,6 +154,16 @@ interface Order {
     discount: number;
     total: number;
   };
+  deliveryQuoteSnapshot?: {
+    version?: string;
+    zoneLabel?: string;
+    priceNgn?: number;
+    isEstimate?: boolean;
+    buyerNote?: string;
+    matchedAlias?: string;
+    kind?: string;
+    quotedAt?: string;
+  };
   shippingAddress: {
     fullName?: string;
     phone?: string;
@@ -537,6 +547,23 @@ export default function OrderDetailPage() {
                     <span className="text-gray-400 font-medium">Delivery fee</span>
                     <span className="text-taja-secondary font-black">{formatCurrency(order.totals.shipping || order.totals.shippingCost || 0)}</span>
                   </div>
+                  {order.deliveryQuoteSnapshot && (
+                    <div className="rounded-2xl bg-slate-50/80 border border-slate-100 px-4 py-3 text-[11px] text-slate-600 leading-relaxed">
+                      <p className="font-black text-slate-800 text-[10px] uppercase tracking-widest mb-1">
+                        Lagos delivery zone
+                      </p>
+                      <p className="font-bold text-slate-700">{order.deliveryQuoteSnapshot.zoneLabel}</p>
+                      {order.deliveryQuoteSnapshot.isEstimate && (
+                        <p className="text-[10px] text-amber-700 font-semibold mt-1">Estimate — final timing may be confirmed with dispatch.</p>
+                      )}
+                      {order.deliveryQuoteSnapshot.buyerNote && (
+                        <p className="text-[10px] text-slate-500 mt-1">{order.deliveryQuoteSnapshot.buyerNote}</p>
+                      )}
+                      {order.deliveryQuoteSnapshot.version && (
+                        <p className="text-[9px] text-slate-400 mt-2 font-mono">Quote {order.deliveryQuoteSnapshot.version}</p>
+                      )}
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-400 font-medium">Tax (7.5%)</span>
                     <span className="text-taja-secondary font-black">{formatCurrency(order.totals.tax)}</span>

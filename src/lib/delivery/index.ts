@@ -15,6 +15,12 @@
 import * as gokada from "./gokada";
 import * as kwik from "./kwik";
 
+export {
+  quoteLagosDeliveryAddress,
+  LAGOS_DELIVERY_ENGINE_VERSION,
+} from "./lagosPartnerQuote";
+export type { LagosDeliveryQuote, LagosQuoteKind } from "./lagosPartnerQuote";
+
 export type DeliveryProvider = "gokada" | "kwik" | "auto";
 
 export interface DeliveryAddress {

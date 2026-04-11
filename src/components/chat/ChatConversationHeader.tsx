@@ -100,14 +100,17 @@ export function ChatConversationHeader({
       )}
 
       {selectedChat.product && (
-        <div className="px-3 sm:px-4 py-2.5 border-b border-gray-100 bg-gray-50/50 shrink-0">
+        <div className="px-3 sm:px-4 py-2.5 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/90 to-white shrink-0 ring-1 ring-emerald-100/80">
+          <p className="text-[10px] font-black uppercase tracking-wide text-emerald-800 mb-1.5">
+            You are messaging about this listing
+          </p>
           <div className="flex items-center gap-3">
             <Image
               src={selectedChat.product.images[0]}
               alt={selectedChat.product.title}
               width={40}
               height={40}
-              className="rounded-lg object-cover shrink-0"
+              className="rounded-lg object-cover shrink-0 ring-2 ring-white shadow-sm"
             />
             <div className="flex-1 min-w-0">
               <h4 className="text-xs font-bold text-taja-secondary truncate">
@@ -117,11 +120,17 @@ export function ChatConversationHeader({
                 ₦{selectedChat.product.price.toLocaleString()}
               </p>
             </div>
-            <Link href={`/product/${selectedChat.product._id}`}>
-              <Button size="sm" className="rounded-lg text-[10px] font-bold h-8 px-3 shrink-0">
-                View
+            {selectedChat.product.slug ? (
+              <Link href={`/product/${selectedChat.product.slug}`}>
+                <Button size="sm" className="rounded-lg text-[10px] font-bold h-8 px-3 shrink-0">
+                  View listing
+                </Button>
+              </Link>
+            ) : (
+              <Button size="sm" disabled className="rounded-lg text-[10px] font-bold h-8 px-3 shrink-0 opacity-60">
+                View listing
               </Button>
-            </Link>
+            )}
           </div>
         </div>
       )}

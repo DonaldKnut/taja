@@ -60,6 +60,19 @@ const renderTemplate = (
   return rendered;
 };
 
+function escapeHtml(s: string): string {
+  if (s === undefined || s === null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function formatNgn(n: number): string {
+  return Math.round(Number(n) || 0).toLocaleString("en-NG");
+}
+
 /**
  * Send email verification code
  * Requires Resend and/or SMTP (see `src/lib/mail-delivery.ts`).
@@ -394,7 +407,8 @@ export async function sendBroadcastEmail(
 }
 
 /**
- * Send order confirmation email to buyer
+ * Send order confirmation / receipt email to buyer (order lines, VAT, totals, Paystack ref).
+ * Paystack emails payment proof; this is the marketplace order receipt.
  */
 export async function sendOrderConfirmationEmail(
   email: string,
@@ -409,6 +423,7 @@ export async function sendOrderConfirmationEmail(
   subtotal: number,
   shipping: number,
   discount: number,
+  tax: number,
   total: number,
   shippingAddress: {
     fullName: string;
@@ -419,6 +434,11 @@ export async function sendOrderConfirmationEmail(
     phone: string;
   },
   orderId: string,
+  receiptExtras?: {
+    paymentReference?: string;
+    deliveryZoneLabel?: string;
+    deliveryIsEstimate?: boolean;
+  },
 ) {
   if (!isMailConfigured()) {
     console.warn("No mail transport (Resend/SMTP). Order confirmation email skipped.");
@@ -430,28 +450,120 @@ export async function sendOrderConfirmationEmail(
       process.env.NEXTAUTH_URL ||
       "https://tajaapp.shop";
     const orderUrl = `${baseUrl}/dashboard/orders/${orderId}`;
+    const logoUrl =
+      process.env.LOGO_URL ||
+      "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png";
+    const fallbackImg = logoUrl;
+
+    const itemsHtml = items
+      .map((item) => {
+        const lineTotal = item.price * item.quantity;
+        const img = escapeHtml(item.image?.trim() ? item.image : fallbackImg);
+        const name = escapeHtml(item.name);
+        return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;border-bottom:1px solid #e2e8f0;padding-bottom:16px;">
+                  <tr>
+                    <td style="width:80px;vertical-align:top;">
+                      <img src="${img}" alt="${name}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;" />
+                    </td>
+                    <td style="padding-left:16px;vertical-align:top;">
+                      <p style="margin:0 0 4px;color:#022c22;font-size:14px;font-weight:700;">${name}</p>
+                      <p style="margin:0 0 4px;color:#64748b;font-size:12px;">Qty: ${item.quantity} · Unit ₦${formatNgn(item.price)}</p>
+                      <p style="margin:0;color:#059669;font-size:14px;font-weight:700;">Line total ₦${formatNgn(lineTotal)}</p>
+                    </td>
+                  </tr>
+                </table>`;
+      })
+      .join("");
+
+    const discountRowHtml =
+      discount > 0
+        ? `<tr>
+                    <td style="padding:8px 0;color:#64748b;font-size:14px;">Discount</td>
+                    <td style="padding:8px 0;text-align:right;color:#059669;font-size:14px;font-weight:600;">-₦${formatNgn(discount)}</td>
+                  </tr>`
+        : "";
+
+    const taxRowHtml =
+      tax > 0
+        ? `<tr>
+                    <td style="padding:8px 0;color:#64748b;font-size:14px;">VAT (7.5%)</td>
+                    <td style="padding:8px 0;text-align:right;color:#022c22;font-size:14px;font-weight:600;">₦${formatNgn(tax)}</td>
+                  </tr>`
+        : "";
+
+    const zone = receiptExtras?.deliveryZoneLabel?.trim();
+    const shippingZoneHtml = zone
+      ? `<tr>
+                    <td colspan="2" style="padding:0 0 8px;color:#64748b;font-size:12px;line-height:1.5;">
+                      Delivery zone: <strong style="color:#022c22;">${escapeHtml(zone)}</strong>${receiptExtras?.deliveryIsEstimate ? " (estimate)" : ""}
+                    </td>
+                  </tr>`
+      : "";
+
+    const ref = receiptExtras?.paymentReference?.trim();
+    const receiptMetaHtml = ref
+      ? `<div style="background-color:#f1f5f9;border-radius:16px;padding:16px 20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+              <p style="margin:0;color:#475569;font-size:13px;line-height:1.6;">
+                <strong style="color:#022c22;">Payment reference (Paystack):</strong> ${escapeHtml(ref)}
+              </p>
+            </div>`
+      : "";
+
+    const line2 = shippingAddress.addressLine2?.trim();
+    const shippingAddressHtml = `<p style="margin:0 0 4px;color:#022c22;font-size:14px;font-weight:700;">${escapeHtml(shippingAddress.fullName)}</p>
+                <p style="margin:0 0 4px;color:#64748b;font-size:14px;">${escapeHtml(shippingAddress.addressLine1)}</p>
+                ${line2 ? `<p style="margin:0 0 4px;color:#64748b;font-size:14px;">${escapeHtml(line2)}</p>` : ""}
+                <p style="margin:0 0 4px;color:#64748b;font-size:14px;">${escapeHtml(shippingAddress.city)}, ${escapeHtml(shippingAddress.state)}</p>
+                <p style="margin:0;color:#64748b;font-size:14px;">Phone: ${escapeHtml(shippingAddress.phone)}</p>`;
 
     const template = loadTemplate("order-confirmation");
     const html = renderTemplate(template, {
-      customerName,
-      orderNumber,
-      items,
-      subtotal,
-      shipping,
-      discount,
-      total,
-      shippingAddress,
+      customerName: escapeHtml(customerName),
+      orderNumber: escapeHtml(orderNumber),
+      itemsHtml,
+      receiptMetaHtml,
+      shippingZoneHtml,
+      taxRowHtml,
+      discountRowHtml,
+      subtotalFormatted: formatNgn(subtotal),
+      shippingFormatted: formatNgn(shipping),
+      totalFormatted: formatNgn(total),
+      shippingAddressHtml,
       orderUrl,
       year: new Date().getFullYear(),
-      logoUrl:
-        process.env.LOGO_URL ||
-        "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
+      logoUrl,
     });
+
+    const textLines = [
+      `Taja.Shop — Order receipt`,
+      `Order #${orderNumber}`,
+      ``,
+      `Hi ${customerName},`,
+      ``,
+      `Items:`,
+      ...items.map(
+        (i) =>
+          `- ${i.name} × ${i.quantity} @ ₦${formatNgn(i.price)} → line ₦${formatNgn(i.price * i.quantity)}`,
+      ),
+      ``,
+      `Subtotal: ₦${formatNgn(subtotal)}`,
+      `Shipping: ₦${formatNgn(shipping)}`,
+      ...(zone ? [`Delivery zone: ${zone}${receiptExtras?.deliveryIsEstimate ? " (estimate)" : ""}`] : []),
+      ...(tax > 0 ? [`VAT (7.5%): ₦${formatNgn(tax)}`] : []),
+      ...(discount > 0 ? [`Discount: -₦${formatNgn(discount)}`] : []),
+      `Total: ₦${formatNgn(total)}`,
+      ``,
+      `Ship to: ${shippingAddress.fullName}, ${shippingAddress.addressLine1}${line2 ? `, ${line2}` : ""}, ${shippingAddress.city}, ${shippingAddress.state}. Phone: ${shippingAddress.phone}`,
+      ...(ref ? [`Paystack reference: ${ref}`] : []),
+      ``,
+      `View order: ${orderUrl}`,
+    ];
 
     return await sendTransactionalMail(
       email,
-      `Order Confirmed - #${orderNumber}`,
+      `Your order receipt — #${orderNumber}`,
       html,
+      textLines.join("\n"),
     );
   } catch (error) {
     console.error("Send order confirmation email error:", error);

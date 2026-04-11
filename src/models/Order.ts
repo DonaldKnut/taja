@@ -51,6 +51,17 @@ export interface IOrder extends Document {
   payoutStatus?: 'pending' | 'processing' | 'completed' | 'failed';
   payoutCompletedAt?: Date;
   refundReason?: string;
+  /** Snapshot of Lagos zone engine quote at checkout (audit / ops). */
+  deliveryQuoteSnapshot?: {
+    version: string;
+    zoneLabel: string;
+    priceNgn: number;
+    isEstimate: boolean;
+    buyerNote?: string;
+    matchedAlias?: string;
+    kind: string;
+    quotedAt?: Date;
+  };
   // Seller-managed delivery
   delivery: {
     // Tracking information provided by seller
@@ -204,6 +215,16 @@ const OrderSchema = new Schema<IOrder>(
     },
     payoutCompletedAt: Date,
     refundReason: String,
+    deliveryQuoteSnapshot: {
+      version: String,
+      zoneLabel: String,
+      priceNgn: Number,
+      isEstimate: Boolean,
+      buyerNote: String,
+      matchedAlias: String,
+      kind: String,
+      quotedAt: Date,
+    },
     delivery: {
       trackingNumber: String,
       carrier: String,

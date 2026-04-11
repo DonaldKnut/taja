@@ -112,15 +112,23 @@ export async function POST(request: NextRequest) {
       const participantIds = Array.from(pIds).sort();
 
       const groupMode = isGroup || participantIds.length > 2;
+      const productRef = product ? (product as { _id: unknown })._id : null;
 
       let chat;
 
       // Only lookup existing 1-on-1 chats if it's not explicitly a new group chat request
       if (!groupMode) {
-        chat = await Chat.findOne({
+        const threadQuery: Record<string, unknown> = {
           participants: { $all: participantIds, $size: participantIds.length },
           shop: shop._id,
-        })
+        };
+        // One thread per listing when buyer opens chat from a product; generic thread when no product
+        if (productRef) {
+          threadQuery.product = productRef;
+        } else {
+          threadQuery.product = null;
+        }
+        chat = await Chat.findOne(threadQuery)
           .populate('participants', 'fullName avatar')
           .populate('product', 'title images price slug')
           .populate('shop', 'shopName shopSlug')
@@ -130,7 +138,7 @@ export async function POST(request: NextRequest) {
       if (!chat) {
         const newChat = await Chat.create({
           participants: participantIds,
-          product: productId || undefined,
+          product: productRef || undefined,
           shop: shop._id,
           isGroup: groupMode,
           name: name || undefined,

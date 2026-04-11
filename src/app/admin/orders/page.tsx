@@ -42,6 +42,12 @@ interface Order {
     totals: {
         total: number;
     };
+    deliveryQuoteSnapshot?: {
+        zoneLabel?: string;
+        priceNgn?: number;
+        isEstimate?: boolean;
+        version?: string;
+    };
     status: string;
     paymentStatus: string;
     escrowStatus?: string;
@@ -324,6 +330,7 @@ export default function AdminOrdersPage() {
                                     <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Reference</th>
                                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Patron</th>
                                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Merchant</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Delivery zone</th>
                                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Protected Value (NGN)</th>
                                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment</th>
                                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Escrow</th>
@@ -335,11 +342,11 @@ export default function AdminOrdersPage() {
                             <tbody className="divide-y divide-gray-100">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={9} className="px-6 py-12 text-center text-gray-500 italic">Loading orders...</td>
+                                        <td colSpan={10} className="px-6 py-12 text-center text-gray-500 italic">Loading orders...</td>
                                     </tr>
                                 ) : orders.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="px-6 py-12 text-center text-gray-500 italic">No orders found matching your criteria</td>
+                                        <td colSpan={10} className="px-6 py-12 text-center text-gray-500 italic">No orders found matching your criteria</td>
                                     </tr>
                                 ) : (
                                     orders.map((order) => (
@@ -358,6 +365,20 @@ export default function AdminOrdersPage() {
                                                     <span className="text-sm font-black text-slate-900 tracking-tight">{order.shop?.shopName || 'Marketplace Item'}</span>
                                                     <span className="text-[10px] font-black text-emerald-600 tracking-widest uppercase">{order.seller.fullName}</span>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-5 max-w-[140px]">
+                                                {order.deliveryQuoteSnapshot?.zoneLabel ? (
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-xs font-bold text-slate-800 leading-tight line-clamp-2" title={order.deliveryQuoteSnapshot.zoneLabel}>
+                                                            {order.deliveryQuoteSnapshot.zoneLabel}
+                                                        </span>
+                                                        {order.deliveryQuoteSnapshot.isEstimate && (
+                                                            <span className="text-[9px] font-black uppercase tracking-wider text-amber-600">Est.</span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs font-bold text-slate-300">—</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-5">
                                                 <span className="text-sm font-black text-slate-900">₦{order.totals.total.toLocaleString()}</span>

@@ -8,6 +8,7 @@ import User from '@/models/User';
 import { requireAuth } from '@/lib/middleware';
 import { notifyAdminsNewOrder, createNotification } from '@/lib/notifications';
 import { sendOrderConfirmationEmail } from '@/lib/email';
+import { quoteLagosDeliveryAddress } from '@/lib/delivery/lagosPartnerQuote';
 
 
 export const dynamic = 'force-dynamic';
@@ -165,14 +166,7 @@ export async function POST(request: NextRequest) {
 
         sellerId = product.seller.toString();
         shopId = product.shop?.toString() || null;
-        // Update product stock
-        if (product.inventory.trackQuantity) {
-          product.inventory.quantity -= item.quantity;
-          if (product.inventory.quantity <= 0) {
-            product.status = 'out_of_stock';
-          }
-          await product.save();
-        }
+        // Stock is decremented only after payment verification (see below).
       }
 
       // If no product-level shipping, use shop delivery configuration (once per order)
@@ -225,6 +219,28 @@ export async function POST(request: NextRequest) {
             }
           }
         }
+      }
+
+      // Lagos zone table: single platform-aligned fee (overrides product/shop shipping for Lagos)
+      let deliveryQuoteSnapshot: Record<string, unknown> | undefined;
+      const lagosQuote = quoteLagosDeliveryAddress({
+        addressLine1: resolvedShippingAddress.addressLine1,
+        addressLine2: resolvedShippingAddress.addressLine2,
+        city: resolvedShippingAddress.city,
+        state: resolvedShippingAddress.state,
+      });
+      if (lagosQuote) {
+        shipping = lagosQuote.priceNgn;
+        deliveryQuoteSnapshot = {
+          version: lagosQuote.version,
+          zoneLabel: lagosQuote.zoneLabel,
+          priceNgn: lagosQuote.priceNgn,
+          isEstimate: lagosQuote.isEstimate,
+          buyerNote: lagosQuote.buyerNote,
+          matchedAlias: lagosQuote.matchedAlias,
+          kind: lagosQuote.kind,
+          quotedAt: new Date(),
+        };
       }
 
       // Validate and attach selected delivery slot (optional)
@@ -280,7 +296,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const tax = subtotal * 0.075; // 7.5% VAT (Nigeria)
+      const tax = Math.round(subtotal * 0.075); // 7.5% VAT — match checkout rounding
       const discount = 0; // TODO: Apply coupon if provided
       const total = subtotal + shipping + tax - discount;
 
@@ -358,6 +374,7 @@ export async function POST(request: NextRequest) {
           discount,
           total,
         },
+        ...(deliveryQuoteSnapshot ? { deliveryQuoteSnapshot } : {}),
         status: 'processing', // Orders are immediately processing after payment
         paymentStatus: 'paid',
         paymentReference,
@@ -416,7 +433,11 @@ export async function POST(request: NextRequest) {
               buyerDoc.fullName || 'Customer',
               order.orderNumber || order._id.toString().slice(-8),
               orderItems.map(i => ({ name: i.title, quantity: i.quantity, price: i.price, image: i.image || '' })),
-              subtotal, shipping, discount, total,
+              subtotal,
+              shipping,
+              discount,
+              tax,
+              total,
               {
                 fullName: resolvedShippingAddress.fullName || '',
                 addressLine1: resolvedShippingAddress.addressLine1 || '',
@@ -426,6 +447,17 @@ export async function POST(request: NextRequest) {
                 phone: resolvedShippingAddress.phone || '',
               },
               order._id.toString(),
+              {
+                paymentReference,
+                deliveryZoneLabel:
+                  typeof deliveryQuoteSnapshot?.zoneLabel === 'string'
+                    ? deliveryQuoteSnapshot.zoneLabel
+                    : undefined,
+                deliveryIsEstimate:
+                  typeof deliveryQuoteSnapshot?.isEstimate === 'boolean'
+                    ? deliveryQuoteSnapshot.isEstimate
+                    : undefined,
+              },
             ).catch((e: any) => console.error('Buyer confirmation email error:', e));
           }
 

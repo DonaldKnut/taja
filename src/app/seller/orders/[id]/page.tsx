@@ -488,6 +488,25 @@ export default function SellerOrderDetailPage() {
                     <span className="text-gray-400 font-medium">Logistics Fee</span>
                     <span className="text-taja-secondary font-black">{formatCurrency(order.totals.shipping || order.totals.shippingCost || 0)}</span>
                   </div>
+                  {order.deliveryQuoteSnapshot && (
+                    <div className="rounded-2xl bg-emerald-50/40 border border-emerald-100/80 px-4 py-3 text-[11px] text-slate-600 leading-relaxed">
+                      <p className="font-black text-slate-800 text-[10px] uppercase tracking-widest mb-1">
+                        Buyer delivery zone (checkout)
+                      </p>
+                      <p className="font-bold text-slate-700">{order.deliveryQuoteSnapshot.zoneLabel}</p>
+                      {order.deliveryQuoteSnapshot.matchedAlias && (
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          Matched: <span className="font-mono">{order.deliveryQuoteSnapshot.matchedAlias}</span>
+                        </p>
+                      )}
+                      {order.deliveryQuoteSnapshot.isEstimate && (
+                        <p className="text-[10px] text-amber-800 font-semibold mt-1">Flagged as estimate at checkout.</p>
+                      )}
+                      {order.deliveryQuoteSnapshot.version && (
+                        <p className="text-[9px] text-slate-400 mt-2 font-mono">{order.deliveryQuoteSnapshot.version}</p>
+                      )}
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-400 font-medium">Tax</span>
                     <span className="text-taja-secondary font-black">{formatCurrency(order.totals.tax)}</span>
