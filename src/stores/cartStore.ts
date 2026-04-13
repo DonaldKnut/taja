@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { toast } from "react-hot-toast";
+import { cartVariantKey, sameCartLine } from "@/lib/cartLineIdentity";
 
 export interface CartItem {
   _id: string;
@@ -56,8 +57,10 @@ export const useCartStore = create<CartStore>()(
 
       addItem: (item) => {
         const itemStock = item.stock ?? 999;
-        const existingItem = get().items.find(
-          (i) => i._id === item._id && i.variantId === item.variantId
+        const vk = cartVariantKey(item.variantId);
+        const storedVariantId = vk === "" ? undefined : String(item.variantId).trim();
+        const existingItem = get().items.find((i) =>
+          sameCartLine(i._id, i.variantId, item._id, item.variantId)
         );
 
         if (existingItem) {
@@ -68,8 +71,8 @@ export const useCartStore = create<CartStore>()(
           const newQuantity = Math.min(existingItem.quantity + 1, itemStock);
           set({
             items: get().items.map((i) =>
-              i._id === item._id && i.variantId === item.variantId
-                ? { ...i, quantity: newQuantity }
+              sameCartLine(i._id, i.variantId, item._id, item.variantId)
+                ? { ...i, quantity: newQuantity, variantId: storedVariantId ?? i.variantId }
                 : i
             ),
           });
@@ -78,7 +81,10 @@ export const useCartStore = create<CartStore>()(
           const initialQuantity = Math.min(item.moq || 1, itemStock);
           if (initialQuantity > 0 && itemStock > 0) {
             set({
-              items: [...get().items, { ...item, stock: itemStock, quantity: initialQuantity }],
+              items: [
+                ...get().items,
+                { ...item, variantId: storedVariantId, stock: itemStock, quantity: initialQuantity },
+              ],
             });
             // Open cart when adding first item
             set({ isOpen: true });
@@ -90,12 +96,12 @@ export const useCartStore = create<CartStore>()(
 
       removeItem: (id: string, variantId?: string) => {
         set({
-          items: get().items.filter((i) => !(i._id === id && i.variantId === variantId)),
+          items: get().items.filter((i) => !sameCartLine(i._id, i.variantId, id, variantId)),
         });
       },
 
       updateQuantity: (id: string, variantId: string | undefined, quantity: number) => {
-        const item = get().items.find(i => i._id === id && i.variantId === variantId);
+        const item = get().items.find((i) => sameCartLine(i._id, i.variantId, id, variantId));
         if (!item) return;
 
         if (quantity < item.moq) {
@@ -113,7 +119,7 @@ export const useCartStore = create<CartStore>()(
 
         set({
           items: get().items.map((i) =>
-            i._id === id && i.variantId === variantId ? { ...i, quantity: finalQuantity } : i
+            sameCartLine(i._id, i.variantId, id, variantId) ? { ...i, quantity: finalQuantity } : i
           ),
         });
       },

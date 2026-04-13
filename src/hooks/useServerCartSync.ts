@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { cartApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { cartVariantKey } from "@/lib/cartLineIdentity";
 
 export function useServerCartSync() {
   const { user, isAuthenticated } = useAuth();
@@ -49,8 +50,7 @@ export function useServerCartSync() {
         for (const it of serverItems) {
           const productId = String(it.productId || it.product?._id || it.product || "");
           if (!productId) continue;
-          const variantId = it.variantId ? String(it.variantId) : "";
-          const key = `${productId}::${variantId}`;
+          const key = `${productId}::${cartVariantKey(it.variantId)}`;
           const q = Number(it.quantity || 1);
           const prev = mergedByLine.get(key);
           if (prev) {
@@ -65,7 +65,8 @@ export function useServerCartSync() {
         for (const it of mergedByLine.values()) {
           const productId = String(it.productId || it.product?._id || it.product || "");
           if (!productId) continue;
-          const variantId = it.variantId ? String(it.variantId) : undefined;
+          const vk = cartVariantKey(it.variantId);
+          const variantId = vk === "" ? undefined : String(it.variantId).trim();
           const initialQty = Math.max(1, Number(it.__qty || 1));
           addItem({
             _id: productId,

@@ -4,6 +4,13 @@ import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingBag, Package, AlertCircle } from "lucide-react";
 import { useCartStore, type CartItem as CartItemType } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
+
+function formatSellerLabel(seller: string | undefined): string {
+  const s = (seller || "").trim();
+  if (!s) return "Shop";
+  if (/^[a-f\d]{24}$/i.test(s)) return "Shop";
+  return s;
+}
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -130,7 +137,9 @@ export function CartItem({
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate max-w-[100px]">{item.seller}</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate max-w-[100px]">
+                {formatSellerLabel(item.seller)}
+              </span>
               <div className="flex items-center gap-2">
                 <div className="w-1 h-1 rounded-full bg-slate-200" />
                 <div className="flex items-center gap-1">

@@ -207,7 +207,7 @@ export function ProductCard({
       price: getEffectivePrice(product.price, variant?.price),
       images: (variant as any)?.image ? [(variant as any).image, ...(product.images || [])] : product.images,
       quantity: 1,
-      seller: typeof product.seller === 'string' ? product.seller : product.seller?._id,
+      seller: shopName,
       shopSlug: shopSlug,
       moq: product.inventory?.moq || product.moq || 1,
       stock: variant?.stock ?? (product.inventory?.quantity ?? product.stock ?? 999),

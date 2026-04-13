@@ -4,6 +4,7 @@ import connectDB from '@/lib/db';
 import Cart from '@/models/Cart';
 import Product from '@/models/Product';
 import { requireAuth } from '@/lib/middleware';
+import { cartVariantKey, compactCartDocumentItems } from '@/lib/cartLineIdentity';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +33,8 @@ function getAvailableStock(product: any, variant: any) {
 async function buildCartResponse(cart: any) {
   const productIds = cart.items.map((i: any) => i.product);
   const products = await Product.find({ _id: { $in: productIds } })
-    .select('title price images inventory variants status')
+    .select('title price images inventory variants status shop')
+    .populate('shop', 'shopName shopSlug')
     .lean();
   const productMap = new Map(products.map((p: any) => [String(p._id), p]));
 
@@ -42,6 +44,9 @@ async function buildCartResponse(cart: any) {
     const unitPrice = getUnitPrice(product, variant);
     const stock = getAvailableStock(product, variant);
     const moq = product?.inventory?.moq ?? 1;
+    const shop = product?.shop && typeof product.shop === 'object' ? (product.shop as any) : null;
+    const seller = shop?.shopName || '';
+    const shopSlug = shop?.shopSlug || '';
     return {
       itemId: String(item._id),
       productId: String(item.product),
@@ -54,6 +59,8 @@ async function buildCartResponse(cart: any) {
       images: variant?.image ? [variant.image, ...(product?.images || [])] : (product?.images || []),
       variantId: item.variantId || undefined,
       variantName: item.variantName || variant?.name || undefined,
+      seller,
+      shopSlug,
     };
   });
 
@@ -94,6 +101,14 @@ export async function GET(request: NextRequest) {
             total: 0,
           },
         });
+      }
+
+      if (cart.items?.length) {
+        const compacted = compactCartDocumentItems(cart.items as any[]);
+        if (compacted.length !== cart.items.length) {
+          cart.set('items', compacted);
+          await cart.save();
+        }
       }
 
       return NextResponse.json(await buildCartResponse(cart));
@@ -191,11 +206,11 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Check if product already in cart
+      // Check if product already in cart (same logical variant: omit / standard / '' match)
       const existingItem = cart.items.find(
         (item: any) =>
           item.product.toString() === String(productId) &&
-          String(item.variantId || '') === String(variantId || '')
+          cartVariantKey(item.variantId) === cartVariantKey(variantId)
       );
 
       if (existingItem) {
@@ -208,10 +223,11 @@ export async function POST(request: NextRequest) {
         }
         existingItem.quantity = nextQuantity;
       } else {
+        const normalizedVid = cartVariantKey(variantId);
         cart.items.push({
           product: productId,
           quantity: normalizedQuantity,
-          variantId: variantId || undefined,
+          variantId: normalizedVid === '' ? undefined : String(variantId).trim(),
           variantName: variantName || selectedVariant?.name || undefined,
           addedAt: new Date(),
         });

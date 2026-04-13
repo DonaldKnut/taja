@@ -27,7 +27,8 @@ function getAvailableStock(product: any, variant: any) {
 async function buildCartResponse(cart: any) {
   const productIds = cart.items.map((i: any) => i.product);
   const products = await Product.find({ _id: { $in: productIds } })
-    .select('title price images inventory variants status')
+    .select('title price images inventory variants status shop')
+    .populate('shop', 'shopName shopSlug')
     .lean();
   const productMap = new Map(products.map((p: any) => [String(p._id), p]));
 
@@ -37,6 +38,9 @@ async function buildCartResponse(cart: any) {
     const unitPrice = getUnitPrice(product, variant);
     const stock = getAvailableStock(product, variant);
     const moq = product?.inventory?.moq ?? 1;
+    const shop = product?.shop && typeof product.shop === 'object' ? (product.shop as any) : null;
+    const seller = shop?.shopName || '';
+    const shopSlug = shop?.shopSlug || '';
     return {
       itemId: String(item._id),
       productId: String(item.product),
@@ -49,6 +53,8 @@ async function buildCartResponse(cart: any) {
       images: variant?.image ? [variant.image, ...(product?.images || [])] : (product?.images || []),
       variantId: item.variantId || undefined,
       variantName: item.variantName || variant?.name || undefined,
+      seller,
+      shopSlug,
     };
   });
 
