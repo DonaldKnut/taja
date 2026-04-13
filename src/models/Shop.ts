@@ -115,6 +115,13 @@ export interface IShop extends Document {
     cancellations?: string;
     [key: string]: any;
   };
+  taxProfile?: {
+    vatStatus?: 'unknown' | 'not_registered' | 'registered';
+    vatNumber?: string;
+    firsTin?: string;
+    collectVat?: boolean;
+    vatRate?: number;
+  };
   verification: {
     status: 'pending' | 'verified' | 'rejected';
     verifiedAt?: Date;
@@ -230,6 +237,17 @@ const ShopSchema = new Schema<IShop>(
       returns: String,
       shipping: String,
       cancellations: String,
+    },
+    taxProfile: {
+      vatStatus: {
+        type: String,
+        enum: ['unknown', 'not_registered', 'registered'],
+        default: 'unknown',
+      },
+      vatNumber: String,
+      firsTin: String,
+      collectVat: { type: Boolean, default: true },
+      vatRate: { type: Number, default: 0.075, min: 0, max: 1 },
     },
     verification: {
       status: {

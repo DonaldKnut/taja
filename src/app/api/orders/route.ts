@@ -9,6 +9,8 @@ import { requireAuth } from '@/lib/middleware';
 import { notifyAdminsNewOrder, createNotification } from '@/lib/notifications';
 import { sendOrderConfirmationEmail } from '@/lib/email';
 import { quoteLagosDeliveryAddress } from '@/lib/delivery/lagosPartnerQuote';
+import { calculateVatAmount } from '@/lib/tax';
+import { writeAuditLog } from '@/lib/audit';
 
 
 export const dynamic = 'force-dynamic';
@@ -296,7 +298,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const tax = Math.round(subtotal * 0.075); // 7.5% VAT — match checkout rounding
+      const shopForTax = shopId ? await Shop.findById(shopId).select('taxProfile').lean() : null;
+      const taxContext = calculateVatAmount(subtotal, shopForTax as any);
+      const tax = taxContext.tax;
       const discount = 0; // TODO: Apply coupon if provided
       const total = subtotal + shipping + tax - discount;
 
@@ -388,6 +392,26 @@ export async function POST(request: NextRequest) {
             slotMaxOrders: Number(selectedSlot.maxOrders || 0),
           }
           : undefined,
+      });
+
+      await writeAuditLog({
+        request,
+        actorUserId: user.userId,
+        actorRole: user.role,
+        action: 'order.create',
+        entityType: 'order',
+        entityId: String(order._id),
+        metadata: {
+          orderNumber: order.orderNumber,
+          shopId,
+          subtotal,
+          shipping,
+          tax,
+          total,
+          vatApplied: taxContext.appliesVat,
+          vatStatus: taxContext.vatStatus,
+          vatRate: taxContext.vatRate,
+        },
       });
 
       // ── Fire post-order notifications asynchronously ─────────────────────

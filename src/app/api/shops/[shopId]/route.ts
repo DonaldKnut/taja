@@ -3,6 +3,8 @@ import connectDB from '@/lib/db';
 import Shop from '@/models/Shop';
 import Category from '@/models/Category';
 import { requireAuth } from '@/lib/middleware';
+import { sanitizeShopTaxProfile } from '@/lib/tax';
+import { writeAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -242,6 +244,7 @@ export async function PUT(
         socialLinks,
         settings,
         policies,
+        taxProfile,
       } = body;
 
       if (shopSlug && shopSlug !== shop.shopSlug) {
@@ -297,8 +300,31 @@ export async function PUT(
       if (socialLinks) (shop as any).socialLinks = { ...(shop as any).socialLinks, ...socialLinks };
       if (settings) (shop as any).settings = { ...(shop as any).settings, ...settings };
       if (policies) (shop as any).policies = { ...(shop as any).policies, ...policies };
+      if (taxProfile) {
+        const sanitizedTaxProfile = sanitizeShopTaxProfile(taxProfile);
+        if (sanitizedTaxProfile) {
+          (shop as any).taxProfile = {
+            ...((shop as any).taxProfile || {}),
+            ...sanitizedTaxProfile,
+          };
+        }
+      }
 
       await shop.save();
+
+      await writeAuditLog({
+        request,
+        actorUserId: user.userId,
+        actorRole: user.role,
+        action: 'shop.update',
+        entityType: 'shop',
+        entityId: String(shop._id),
+        metadata: {
+          shopName: shop.shopName,
+          shopSlug: shop.shopSlug,
+          vatStatus: (shop as any).taxProfile?.vatStatus || 'unknown',
+        },
+      });
 
       return NextResponse.json({
         success: true,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Product from '@/models/Product';
 import { requireRole, authenticate } from '@/lib/middleware';
+import { writeAuditLog } from '@/lib/audit';
 import '@/models/Shop'; // ensure Shop model is registered for populate('shop')
 import '@/models/User'; // ensure User model is registered for populate('seller')
 import '@/models/Category'; // ensure Category model is registered for populate('category')
@@ -220,6 +221,22 @@ export async function POST(request: NextRequest) {
         seo: seo || { tags: [] },
         status,
         variants: variants || [],
+      });
+
+      await writeAuditLog({
+        request,
+        actorUserId: user.userId,
+        actorRole: user.role,
+        action: 'product.create',
+        entityType: 'product',
+        entityId: String(product._id),
+        metadata: {
+          shopId: String(userShop._id),
+          title: product.title,
+          status: product.status,
+          imageCount: Array.isArray(product.images) ? product.images.length : 0,
+          videoCount: Array.isArray((product as any).videos) ? (product as any).videos.length : 0,
+        },
       });
 
       return NextResponse.json(

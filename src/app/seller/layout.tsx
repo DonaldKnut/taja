@@ -543,7 +543,13 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                             <div className="w-14 h-14 rounded-2xl bg-gradient-taja p-0.5 flex-shrink-0">
                               <div className="h-full w-full rounded-[14px] bg-taja-secondary flex items-center justify-center text-sm font-black text-white overflow-hidden relative">
                                 {user?.avatar ? (
-                                  <Image src={user.avatar} alt="Ibrahim Openiyi" fill className="object-cover" />
+                                  <Image
+                                    src={user.avatar}
+                                    alt={user?.fullName ? `${user.fullName} profile photo` : "Profile photo"}
+                                    fill
+                                    className="object-cover"
+                                    unoptimized={user.avatar.startsWith("http")}
+                                  />
                                 ) : (
                                   <span>{getUserInitials()}</span>
                                 )}

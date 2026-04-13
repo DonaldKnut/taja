@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { getProductDisplayPriceRange } from "@/lib/productPricing";
 import { Button } from "@/components/ui/Button";
+import { getProductPath } from "@/lib/productLinks";
 
 interface Product {
   _id: string;
@@ -157,7 +158,7 @@ export function HomepageRecommendations() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
                   >
-                    <Link href={`/product/${product.slug}`} className="group block">
+                    <Link href={getProductPath(product as any)} className="group block">
                       <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 mb-3">
                         <Image
                           src={product.images?.[0] || "/placeholder.jpg"}

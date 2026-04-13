@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Check, Info, Store, Trash2, X, Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { ChatThread, ChatUser } from "./types";
+import { getProductPath } from "@/lib/productLinks";
 
 interface ChatConversationHeaderProps {
   selectedChat: ChatThread;
@@ -120,8 +121,8 @@ export function ChatConversationHeader({
                 ₦{selectedChat.product.price.toLocaleString()}
               </p>
             </div>
-            {selectedChat.product.slug ? (
-              <Link href={`/product/${selectedChat.product.slug}`}>
+            {selectedChat.product ? (
+              <Link href={getProductPath(selectedChat.product as any)}>
                 <Button size="sm" className="rounded-lg text-[10px] font-bold h-8 px-3 shrink-0">
                   View listing
                 </Button>

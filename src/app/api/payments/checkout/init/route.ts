@@ -7,6 +7,7 @@ import Shop from "@/models/Shop";
 import User from "@/models/User";
 import Order from "@/models/Order";
 import { v4 as uuidv4 } from "uuid";
+import { calculateVatAmount } from "@/lib/tax";
 
 export const dynamic = "force-dynamic";
 
@@ -179,7 +180,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const tax = subtotal * 0.075;
+      const shopForTax = shopId ? await Shop.findById(shopId).select("taxProfile").lean() : null;
+      const tax = calculateVatAmount(subtotal, shopForTax as any).tax;
       const discount = 0; // TODO: couponCode implementation
       const totalNaira = subtotal + shipping + tax - discount;
       const totalKobo = Math.round(totalNaira * 100);

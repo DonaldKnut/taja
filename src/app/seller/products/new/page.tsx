@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import toast from "react-hot-toast";
-import { api, sellerApi, shopsApi, uploadProductImage } from "@/lib/api";
+import { api, sellerApi, shopsApi, uploadProductImage, uploadProductVideo } from "@/lib/api";
 import { z } from "zod";
 import { ShopRequirementModal } from "@/components/shop/ShopRequirementModal";
 import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
@@ -117,6 +117,7 @@ export default function NewProductPage() {
   const [hasShop, setHasShop] = useState(false);
   const [isVerifiedSeller, setIsVerifiedSeller] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVideos, setUploadingVideos] = useState(false);
   const [uploadingVariantImage, setUploadingVariantImage] = useState<number | null>(null);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [suggestingTags, setSuggestingTags] = useState(false);
@@ -132,6 +133,7 @@ export default function NewProductPage() {
     compareAtPrice: "",
     currency: "NGN",
     images: [] as string[],
+    videos: [] as { url: string; type: "video"; thumbnail?: string; duration?: number }[],
     specifications: {
       brand: "",
       size: "",
@@ -285,6 +287,39 @@ export default function NewProductPage() {
     setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleVideoUpload = async (files: FileList) => {
+    if (files.length === 0) return;
+    setUploadingVideos(true);
+    try {
+      const availableSlots = Math.max(0, 2 - formData.videos.length);
+      if (availableSlots <= 0) {
+        toast.error("You can add up to 2 product videos");
+        return;
+      }
+      const selected = Array.from(files).slice(0, availableSlots);
+      const uploadedUrls = await Promise.all(selected.map((file) => uploadProductVideo(file)));
+      setFormData((prev) => ({
+        ...prev,
+        videos: [
+          ...prev.videos,
+          ...uploadedUrls.map((url) => ({ url, type: "video" as const })),
+        ].slice(0, 2),
+      }));
+      toast.success(`${uploadedUrls.length} video(s) uploaded`);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to upload video");
+    } finally {
+      setUploadingVideos(false);
+    }
+  };
+
+  const removeVideo = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      videos: prev.videos.filter((_, i) => i !== index),
     }));
   };
 
@@ -522,6 +557,7 @@ export default function NewProductPage() {
           : undefined,
         currency: formData.currency,
         images: formData.images,
+        videos: formData.videos,
         specifications: formData.specifications,
         inventory: {
           quantity: formData.inventory.quantity,
@@ -830,6 +866,45 @@ export default function NewProductPage() {
                 <p className="text-[10px] font-bold text-taja-primary leading-relaxed text-center uppercase tracking-widest">
                   Tip: The first image is the star of the show. Aim for high-resolution, cinematic shots.
                 </p>
+              </div>
+            </motion.section>
+
+            <motion.section variants={item} className="glass-panel p-10 border-white/60 rounded-[40px]">
+              <div className="flex items-center justify-between mb-8">
+                <div className="space-y-1">
+                  <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Video Proof</h3>
+                  <p className="text-2xl font-black text-taja-secondary tracking-tighter italic">Product Videos (Optional)</p>
+                </div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{formData.videos.length} / 2</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {formData.videos.map((video, index) => (
+                  <div key={`${video.url}-${index}`} className="relative rounded-3xl overflow-hidden border border-gray-100 bg-black/90">
+                    <video src={video.url} controls className="w-full h-56 object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => removeVideo(index)}
+                      className="absolute top-3 right-3 p-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                {formData.videos.length < 2 && (
+                  <label className="h-56 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-taja-primary hover:text-taja-primary transition-all cursor-pointer">
+                    {uploadingVideos ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6" />}
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      {uploadingVideos ? "Uploading..." : "Add Video (MP4/WEBM/MOV, max 80MB)"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => e.target.files && handleVideoUpload(e.target.files)}
+                    />
+                  </label>
+                )}
               </div>
             </motion.section>
 

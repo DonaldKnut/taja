@@ -24,6 +24,7 @@ import {
   AlertCircle,
   Clock,
   BoxSelect,
+  Link2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -35,9 +36,11 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import { ConfirmModal } from "@/components/modal/ConfirmModal";
+import { getAbsoluteProductUrl, getProductPath } from "@/lib/productLinks";
 
 interface SellerProduct {
   id: string;
+  slug?: string;
   title: string;
   price: number;
   stock: number;
@@ -124,6 +127,7 @@ export default function SellerProductsPage() {
           const productsArray = Array.isArray(response.data) ? response.data : response.data.products || [];
           const transformedProducts = productsArray.map((product: any) => ({
             id: product._id || product.id,
+            slug: product.slug || "",
             title: product.title || product.name || "Unknown Product",
             price: product.price || 0,
             stock: product.inventory?.quantity || product.stock || 0,
@@ -179,6 +183,16 @@ export default function SellerProductsPage() {
       toast.success("Product removed successfully");
     } catch (error: any) {
       toast.error("Action failed: " + (error?.message || "Please try again later"));
+    }
+  };
+
+  const copyProductLink = async (product: SellerProduct) => {
+    try {
+      const url = getAbsoluteProductUrl({ id: product.id, slug: product.slug });
+      await navigator.clipboard.writeText(url);
+      toast.success("Product link copied");
+    } catch {
+      toast.error("Could not copy link");
     }
   };
 
@@ -433,9 +447,12 @@ export default function SellerProductsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Link href={`/product/${product.id}`} target="_blank" className="p-3 text-gray-400 hover:text-taja-primary glass-card border-white/60 hover:bg-white transition-all rounded-2xl">
+                      <Link href={getProductPath({ id: product.id, slug: product.slug })} target="_blank" className="p-3 text-gray-400 hover:text-taja-primary glass-card border-white/60 hover:bg-white transition-all rounded-2xl">
                         <Eye className="h-4 w-4" />
                       </Link>
+                      <button onClick={() => copyProductLink(product)} className="p-3 text-gray-400 hover:text-taja-primary glass-card border-white/60 hover:bg-white transition-all rounded-2xl">
+                        <Link2 className="h-4 w-4" />
+                      </button>
                       <Link href={`/seller/products/${product.id}/edit`} className="p-3 text-gray-400 hover:text-taja-primary glass-card border-white/60 hover:bg-white transition-all rounded-2xl">
                         <Edit className="h-4 w-4" />
                       </Link>
@@ -491,6 +508,9 @@ export default function SellerProductsPage() {
                         <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> {product.sales}</span>
                       </div>
                       <div className="flex items-center gap-2">
+                        <button onClick={() => copyProductLink(product)} className="p-2 text-gray-400 hover:text-taja-primary glass-card border-white/60 hover:bg-white transition-all rounded-xl">
+                          <Link2 className="h-3.5 w-3.5" />
+                        </button>
                         <Link href={`/seller/products/${product.id}/edit`} className="p-2 text-gray-400 hover:text-taja-primary glass-card border-white/60 hover:bg-white transition-all rounded-xl">
                           <Edit className="h-3.5 w-3.5" />
                         </Link>

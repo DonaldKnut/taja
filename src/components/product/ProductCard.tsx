@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle } from "lucide-react";
+import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, PlayCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ImageSlider } from "@/components/ui/ImageSlider";
 import { ProductPrice } from "./ProductPrice";
@@ -18,6 +18,7 @@ import { motion } from "framer-motion";
 import { useCartStore } from "@/stores/cartStore";
 import { useWishlistStore, WishlistItem } from "@/components/wishlist";
 import { toast } from "react-hot-toast";
+import { getAbsoluteProductUrl, getProductPath } from "@/lib/productLinks";
 
 export interface ProductCardProps {
   product: Product;
@@ -64,6 +65,8 @@ export function ProductCard({
   const [optionsPanelPosition, setOptionsPanelPosition] = useState<{ top: number; left: number; width: number } | null>(null);
   const [sellerPanelOpen, setSellerPanelOpen] = useState(false);
   const [showBubbles, setShowBubbles] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useLayoutEffect(() => {
     if (!optionsOpen || typeof document === "undefined") return;
@@ -132,6 +135,15 @@ export function ProductCard({
     (shop as any)?.address?.state,
   ].filter(Boolean);
   const images = product?.images?.length ? product.images : [fallbackImage];
+  const productPath = getProductPath(product as any);
+  const previewVideoUrl = (() => {
+    const raw = (product as any)?.videos;
+    if (!Array.isArray(raw) || raw.length === 0) return "";
+    const first = raw[0];
+    if (typeof first === "string") return first;
+    if (first && typeof first === "object" && typeof first.url === "string") return first.url;
+    return "";
+  })();
 
   // Derive seller display for dashboard marketplace
   const sellerUser = (typeof product.seller === "object" ? product.seller : undefined) as any | undefined;
@@ -151,6 +163,18 @@ export function ProductCard({
   const handleClick = () => {
     if (onClick) {
       onClick(product);
+    }
+  };
+
+  const handleCopyProductLink = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const url = getAbsoluteProductUrl(product as any);
+      await navigator.clipboard.writeText(url);
+      toast.success("Product link copied");
+    } catch {
+      toast.error("Could not copy product link");
     }
   };
 
@@ -196,6 +220,18 @@ export function ProductCard({
   useEffect(() => {
     setLiveLikesCount(Number((product as any)?.likes ?? 0));
   }, [product?._id, (product as any)?.likes]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !previewVideoUrl) return;
+    if (isHovered) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+      video.currentTime = 0;
+    }
+  }, [isHovered, previewVideoUrl]);
 
   const handleQuickAdd = (e: React.MouseEvent, variant?: any) => {
     e.preventDefault();
@@ -491,6 +527,8 @@ export function ProductCard({
       initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={cn("group/card flex flex-col h-full bg-white rounded-[2rem] border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
     >
       {optionsPanelContent}
@@ -508,7 +546,7 @@ export function ProductCard({
             />
           </div>
         ) : (
-          <Link href={`/product/${product.slug}`} onClick={handleClick} className="block w-full h-full">
+          <Link href={productPath} onClick={handleClick} className="block w-full h-full">
             <ImageSlider
               images={images}
               alt={product.title}
@@ -518,6 +556,26 @@ export function ProductCard({
               showArrows={true}
             />
           </Link>
+        )}
+        {previewVideoUrl && (
+          <>
+            <video
+              ref={videoRef}
+              src={previewVideoUrl}
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              className={cn(
+                "absolute inset-0 h-full w-full object-cover pointer-events-none transition-opacity duration-300",
+                isHovered ? "opacity-100" : "opacity-0"
+              )}
+            />
+            <div className="absolute left-4 bottom-4 z-10 px-2.5 py-1.5 rounded-full bg-black/60 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 pointer-events-none">
+              <PlayCircle className="h-3.5 w-3.5" />
+              Video Preview
+            </div>
+          </>
         )}
 
         {/* Wishlist Button Overlay */}
@@ -557,10 +615,19 @@ export function ProductCard({
             </button>
           </div>
         )}
+        <div className="absolute top-4 left-4 z-10">
+          <button
+            onClick={handleCopyProductLink}
+            className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-900 shadow-sm border border-white/40 active:scale-90 transition-all"
+            title="Copy product link"
+          >
+            <Link2 className="h-4.5 w-4.5" />
+          </button>
+        </div>
 
         {/* Condition/New Badge */}
         {product.condition === 'new' && (
-          <div className="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-full z-10">
+          <div className="absolute top-4 left-[3.25rem] px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-full z-10">
             NEW
           </div>
         )}
@@ -573,7 +640,7 @@ export function ProductCard({
               {product.title}
             </h3>
           ) : (
-            <Link href={`/product/${product.slug}`} onClick={handleClick} className="block">
+            <Link href={productPath} onClick={handleClick} className="block">
               <h3 className="text-sm font-bold text-gray-900 group-hover/card:text-blue-600 transition-colors line-clamp-2 min-h-[2.5rem] leading-tight">
                 {product.title}
               </h3>

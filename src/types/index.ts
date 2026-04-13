@@ -90,6 +90,15 @@ export interface Product {
   maxPrice?: number;
   compareAtPrice?: number;
   images: string[];
+  videos?: Array<
+    | string
+    | {
+        url: string;
+        thumbnail?: string;
+        duration?: number;
+        type?: "video";
+      }
+  >;
   category: string;
   subcategory?: string;
   condition: "new" | "like-new" | "good" | "fair";

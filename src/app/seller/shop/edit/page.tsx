@@ -11,6 +11,7 @@ import {
   Link2,
   Upload,
   Save,
+  BadgePercent,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { api, uploadShopImage } from "@/lib/api";
@@ -53,6 +54,9 @@ export default function SellerShopEditPage() {
     linkedin: "",
     returnPolicy: "",
     responseTime: "",
+    vatStatus: "unknown",
+    vatNumber: "",
+    firsTin: "",
   });
 
   useEffect(() => {
@@ -85,6 +89,9 @@ export default function SellerShopEditPage() {
           linkedin: s.socialLinks?.linkedin ?? "",
           returnPolicy: s.settings?.returnPolicy ?? "",
           responseTime: s.settings?.responseTime ?? "",
+          vatStatus: s.taxProfile?.vatStatus ?? "unknown",
+          vatNumber: s.taxProfile?.vatNumber ?? "",
+          firsTin: s.taxProfile?.firsTin ?? "",
         });
       } catch (e: any) {
         if (!cancelled) toast.error(e?.message ?? "Failed to load shop");
@@ -143,6 +150,11 @@ export default function SellerShopEditPage() {
             if (!r && !t) return undefined;
             return { ...(r ? { returnPolicy: r } : {}), ...(t ? { responseTime: t } : {}) };
           })(),
+          taxProfile: {
+            vatStatus: form.vatStatus || "unknown",
+            vatNumber: form.vatNumber.trim() || undefined,
+            firsTin: form.firsTin.trim() || undefined,
+          },
         }),
       });
       if (res?.success) {
@@ -349,6 +361,49 @@ export default function SellerShopEditPage() {
               className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:border-taja-primary focus:ring-0 text-sm"
               placeholder="e.g. within-24-hours"
             />
+          </div>
+          <div className="pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-2 mb-3">
+              <BadgePercent className="h-4 w-4 text-taja-primary" />
+              <p className="text-xs font-bold text-gray-500">VAT / FIRS Profile</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">VAT status</label>
+                <select
+                  value={form.vatStatus}
+                  onChange={(e) => setForm((f) => ({ ...f, vatStatus: e.target.value }))}
+                  className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white focus:border-taja-primary focus:ring-0 text-sm"
+                >
+                  <option value="unknown">Not sure yet</option>
+                  <option value="not_registered">Not VAT-registered</option>
+                  <option value="registered">VAT-registered</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">VAT number</label>
+                <input
+                  type="text"
+                  value={form.vatNumber}
+                  onChange={(e) => setForm((f) => ({ ...f, vatNumber: e.target.value }))}
+                  className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:border-taja-primary focus:ring-0 text-sm"
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">FIRS TIN</label>
+                <input
+                  type="text"
+                  value={form.firsTin}
+                  onChange={(e) => setForm((f) => ({ ...f, firsTin: e.target.value }))}
+                  className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:border-taja-primary focus:ring-0 text-sm"
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2">
+              VAT is only applied at checkout when your shop is marked VAT-registered.
+            </p>
           </div>
         </section>
 

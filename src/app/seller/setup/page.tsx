@@ -14,6 +14,7 @@ import {
   Tag,
   Building2,
   Settings2,
+  BadgePercent,
 } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants/categories";
 import { Button } from "@/components/ui/Button";
@@ -43,6 +44,11 @@ export default function SellerSetupPage() {
       businessType: "individual" as "individual" | "business",
       businessName: "",
       businessAddress: "",
+    },
+    taxProfile: {
+      vatStatus: "unknown" as "unknown" | "not_registered" | "registered",
+      vatNumber: "",
+      firsTin: "",
     },
     socialLinks: {
       instagram: "",
@@ -351,6 +357,59 @@ export default function SellerSetupPage() {
                     </div>
                   </>
                 )}
+
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+                  <div className="flex items-start gap-2 mb-3">
+                    <BadgePercent className="h-4 w-4 text-amber-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-taja-secondary">VAT / FIRS (Optional at setup)</p>
+                      <p className="text-xs text-gray-600">
+                        Add this now if you are VAT-registered. You can always update it later.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-taja-secondary mb-2">VAT Status</label>
+                      <select
+                        name="taxProfile.vatStatus"
+                        value={formData.taxProfile.vatStatus}
+                        onChange={handleChange}
+                        className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20 text-sm transition-all"
+                      >
+                        <option value="unknown">Not sure yet</option>
+                        <option value="not_registered">Not VAT-registered</option>
+                        <option value="registered">VAT-registered</option>
+                      </select>
+                    </div>
+                    {formData.taxProfile.vatStatus === "registered" && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-semibold text-taja-secondary mb-2">VAT Number</label>
+                          <input
+                            name="taxProfile.vatNumber"
+                            type="text"
+                            value={formData.taxProfile.vatNumber}
+                            onChange={handleChange}
+                            className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20 text-sm transition-all"
+                            placeholder="Your VAT registration number"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-taja-secondary mb-2">FIRS TIN</label>
+                          <input
+                            name="taxProfile.firsTin"
+                            type="text"
+                            value={formData.taxProfile.firsTin}
+                            onChange={handleChange}
+                            className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20 text-sm transition-all"
+                            placeholder="Tax Identification Number (TIN)"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
 
                 {/* Social Links */}
                 <div>

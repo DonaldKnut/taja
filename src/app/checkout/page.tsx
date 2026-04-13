@@ -202,6 +202,8 @@ export default function CheckoutPage() {
   const [deliverySlots, setDeliverySlots] = useState<Array<any>>([]);
   const [selectedDeliverySlotId, setSelectedDeliverySlotId] = useState<string>("");
   const [shippingCost, setShippingCost] = useState(4000);
+  const [vatRate, setVatRate] = useState(0.075);
+  const [vatApplies, setVatApplies] = useState(false);
   const [shippingQuoteMeta, setShippingQuoteMeta] = useState<{
     zone?: string;
     note?: string;
@@ -277,7 +279,18 @@ export default function CheckoutPage() {
         if (!cartItems.length) return;
         const productRes: any = await fetch(`/api/products/${encodeURIComponent(cartItems[0]._id)}`).then(r => r.json());
         const sid = productRes?.data?.shop?._id || null;
-        if (!sid) return;
+        if (!sid) {
+          setVatApplies(false);
+          return;
+        }
+        const shopRes: any = await fetch(`/api/shops/${encodeURIComponent(sid)}`).then((r) => r.json());
+        const taxProfile = shopRes?.data?.taxProfile || {};
+        const status = String(taxProfile?.vatStatus || "unknown");
+        const collectVat = taxProfile?.collectVat !== false;
+        const rate = Number(taxProfile?.vatRate);
+        setVatRate(Number.isFinite(rate) && rate >= 0 && rate <= 1 ? rate : 0.075);
+        setVatApplies(status === "registered" && collectVat);
+
         const slotsRes: any = await fetch(`/api/shops/${encodeURIComponent(sid)}/delivery-slots`).then(r => r.json());
         if (slotsRes?.success && Array.isArray(slotsRes?.data)) setDeliverySlots(slotsRes.data);
       } catch { /* silent */ }
@@ -306,7 +319,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const tax = Math.round(subtotal * 0.075); // 7.5% VAT to match backend
+  const tax = vatApplies ? Math.round(subtotal * vatRate) : 0;
   const orderTotal = subtotal + shippingCost + tax;
 
   // ── Place order → Paystack ───────────────────────────────────────────────
@@ -695,7 +708,9 @@ export default function CheckoutPage() {
                       <span className="font-bold text-taja-secondary shrink-0">{formatCurrency(shippingCost)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">VAT (7.5%)</span>
+                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                        VAT ({(vatRate * 100).toFixed(1)}%)
+                      </span>
                       <span className="font-bold text-taja-secondary">{formatCurrency(tax)}</span>
                     </div>
 

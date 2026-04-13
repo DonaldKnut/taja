@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import toast from "react-hot-toast";
-import { api, sellerApi, uploadProductImage } from "@/lib/api";
+import { api, sellerApi, uploadProductImage, uploadProductVideo } from "@/lib/api";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -49,6 +49,7 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVideos, setUploadingVideos] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
@@ -62,6 +63,7 @@ export default function EditProductPage() {
     compareAtPrice: "",
     currency: "NGN",
     images: [] as string[],
+    videos: [] as { url: string; type: "video"; thumbnail?: string; duration?: number }[],
     specifications: {} as Record<string, any>,
     inventory: {
       quantity: 1,
@@ -146,6 +148,9 @@ export default function EditProductPage() {
           compareAtPrice: productData.compareAtPrice || productData.originalPrice ? String(productData.compareAtPrice || productData.originalPrice) : "",
           currency: productData.currency || "NGN",
           images: productData.images || [],
+          videos: (productData.videos || []).map((v: any) =>
+            typeof v === "string" ? { url: v, type: "video" as const } : { ...v, type: "video" as const }
+          ),
           specifications: productData.specifications || {},
           inventory: {
             quantity: productData.inventory?.quantity ?? productData.stock ?? 1,
@@ -287,6 +292,39 @@ export default function EditProductPage() {
     }));
   };
 
+  const handleVideoUpload = async (files: FileList) => {
+    if (files.length === 0) return;
+    setUploadingVideos(true);
+    try {
+      const availableSlots = Math.max(0, 2 - formData.videos.length);
+      if (availableSlots <= 0) {
+        toast.error("You can add up to 2 videos");
+        return;
+      }
+      const selected = Array.from(files).slice(0, availableSlots);
+      const uploadedUrls = await Promise.all(selected.map((file) => uploadProductVideo(file)));
+      setFormData((prev) => ({
+        ...prev,
+        videos: [
+          ...prev.videos,
+          ...uploadedUrls.map((url) => ({ url, type: "video" as const })),
+        ].slice(0, 2),
+      }));
+      toast.success(`${uploadedUrls.length} video(s) uploaded`);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to upload video");
+    } finally {
+      setUploadingVideos(false);
+    }
+  };
+
+  const removeVideo = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      videos: prev.videos.filter((_, i) => i !== index),
+    }));
+  };
+
   const setMainImage = (index: number) => {
     if (index === 0) return;
     setFormData((prev) => {
@@ -359,6 +397,7 @@ export default function EditProductPage() {
         compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : undefined,
         currency: formData.currency,
         images: formData.images,
+        videos: formData.videos,
         specifications: formData.specifications,
         inventory: {
           quantity: Number(formData.inventory.quantity),
@@ -551,6 +590,42 @@ export default function EditProductPage() {
                       )}
                     </button>
                   )}
+                </div>
+
+                <div className="mt-8 border-t border-gray-100 pt-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Product videos</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{formData.videos.length} / 2</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {formData.videos.map((video, index) => (
+                      <div key={`${video.url}-${index}`} className="relative rounded-3xl overflow-hidden border border-gray-100 bg-black">
+                        <video src={video.url} controls className="w-full h-48 object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => removeVideo(index)}
+                          className="absolute top-3 right-3 p-2 bg-red-500 rounded-xl text-white"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {formData.videos.length < 2 && (
+                      <label className="h-48 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-taja-primary hover:text-taja-primary transition-all cursor-pointer">
+                        {uploadingVideos ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+                        <span className="text-[10px] font-black uppercase tracking-widest">
+                          {uploadingVideos ? "Uploading..." : "Add video (max 80MB)"}
+                        </span>
+                        <input
+                          type="file"
+                          accept="video/mp4,video/webm,video/quicktime"
+                          className="hidden"
+                          multiple
+                          onChange={(e) => e.target.files && handleVideoUpload(e.target.files)}
+                        />
+                      </label>
+                    )}
+                  </div>
                 </div>
 
                 <input

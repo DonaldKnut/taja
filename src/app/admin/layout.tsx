@@ -35,6 +35,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -62,6 +63,7 @@ const adminNavGroups = [
       { name: "User Management", href: "/admin/users", icon: Users },
       { name: "Identity Verification", href: "/admin/kyc", icon: ShieldCheck },
       { name: "Message Audit Logs", href: "/admin/chats", icon: MessageCircle },
+      { name: "Legal Audit Logs", href: "/admin/audit-logs", icon: ClipboardList },
     ],
   },
   {

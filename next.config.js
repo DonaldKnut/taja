@@ -135,9 +135,10 @@ const nextConfig = {
         hostname: "via.placeholder.com",
         pathname: "/**",
       },
+      // Google profile photos (OAuth `picture`) may be served from lh3, lh4, etc.
       {
         protocol: "https",
-        hostname: "lh3.googleusercontent.com",
+        hostname: "*.googleusercontent.com",
         pathname: "/**",
       },
       // Add all R2 image patterns

@@ -314,6 +314,31 @@ export async function uploadProductImage(file: File): Promise<string> {
   return data.data.url || data.data;
 }
 
+// Upload API helper for product videos
+export async function uploadProductVideo(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("type", "product-video");
+
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new ApiError(data.message || data.error || "Video upload failed", response.status, data);
+  }
+  return data.data.url || data.data;
+}
+
 // Upload API helper for profile avatar
 export async function uploadAvatar(file: File): Promise<string> {
   const formData = new FormData();

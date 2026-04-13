@@ -6,6 +6,7 @@ import Shop from '@/models/Shop';
 import { authenticate, requireAuth } from '@/lib/middleware';
 import '@/models/Category'; // Ensure Category model is registered for populate('category')
 import { notifyOwnerViewAlert } from '@/lib/notifications';
+import { writeAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -173,6 +174,21 @@ export async function PUT(
         await Product.updateOne({ _id: product._id }, { $unset: { maxPrice: 1 } });
       }
 
+      await writeAuditLog({
+        request,
+        actorUserId: user.userId,
+        actorRole: user.role,
+        action: 'product.update',
+        entityType: 'product',
+        entityId: String(product._id),
+        metadata: {
+          status: product.status,
+          price: product.price,
+          imageCount: Array.isArray(product.images) ? product.images.length : 0,
+          videoCount: Array.isArray((product as any).videos) ? (product as any).videos.length : 0,
+        },
+      });
+
       return NextResponse.json({
         success: true,
         message: 'Product updated successfully',
@@ -221,6 +237,16 @@ export async function DELETE(
       // Soft delete
       product.status = 'deleted';
       await product.save();
+
+      await writeAuditLog({
+        request,
+        actorUserId: user.userId,
+        actorRole: user.role,
+        action: 'product.delete',
+        entityType: 'product',
+        entityId: String(product._id),
+        metadata: { slug: product.slug, title: product.title },
+      });
 
       return NextResponse.json({
         success: true,

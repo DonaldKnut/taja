@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Sparkles, TrendingUp, ShoppingBag, Loader2, ChevronRight, Zap } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatCurrency, cn } from "@/lib/utils";
+import { getProductPath } from "@/lib/productLinks";
 
 interface Recommendation {
   productId: string;
@@ -143,7 +144,7 @@ export function AIRecommendations({
             transition={{ delay: idx * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
             <Link
-              href={`/product/${rec.product.slug}`}
+              href={getProductPath(rec.product as any)}
               className="group block"
             >
               <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden bg-gray-50 mb-5 border border-white/40 shadow-premium transition-all duration-700 group-hover:shadow-premium-hover group-hover:-translate-y-2">

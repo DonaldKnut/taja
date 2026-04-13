@@ -6,6 +6,8 @@ import Category from '@/models/Category';
 import { requireAuth } from '@/lib/middleware';
 import { notifyAdminsNewShop } from '@/lib/notifications';
 import { sendAdminNewShopEmail } from '@/lib/email';
+import { sanitizeShopTaxProfile } from '@/lib/tax';
+import { writeAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -246,6 +248,7 @@ export async function POST(request: NextRequest) {
         socialLinks,
         settings,
         policies,
+        taxProfile,
       } = body;
 
       if (!shopName || !shopSlug) {
@@ -301,6 +304,7 @@ export async function POST(request: NextRequest) {
         }
       }
       const shopAvatarCustom = Boolean(bodyLogo || bodyAvatar);
+      const sanitizedTaxProfile = sanitizeShopTaxProfile(taxProfile);
 
       const shop = await Shop.create({
         owner: user.userId,
@@ -320,6 +324,7 @@ export async function POST(request: NextRequest) {
         socialLinks,
         settings,
         policies,
+        ...(sanitizedTaxProfile ? { taxProfile: sanitizedTaxProfile } : {}),
         verification: {
           status: isAutoApproved ? 'verified' : 'pending',
           verifiedAt: isAutoApproved ? new Date() : undefined,
@@ -354,6 +359,20 @@ export async function POST(request: NextRequest) {
         console.error('Failed to notify admins of new shop:', notifyErr);
         // Don't fail the request; shop is already created
       }
+
+      await writeAuditLog({
+        request,
+        actorUserId: user.userId,
+        actorRole: user.role,
+        action: 'shop.create',
+        entityType: 'shop',
+        entityId: String(shop._id),
+        metadata: {
+          shopName: shop.shopName,
+          shopSlug: shop.shopSlug,
+          vatStatus: (shop as any).taxProfile?.vatStatus || 'unknown',
+        },
+      });
 
       return NextResponse.json(
         {
