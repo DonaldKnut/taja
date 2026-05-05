@@ -193,10 +193,13 @@ const ShopSchema = new Schema<IShop>(
     tagline: String,
     socialLinks: {
       instagram: String,
+      tiktok: String,
       whatsapp: String,
       twitter: String,
       facebook: String,
       website: String,
+      youtube: String,
+      linkedin: String,
     },
     settings: {
       responseTime: String,

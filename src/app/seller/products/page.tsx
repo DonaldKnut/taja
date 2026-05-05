@@ -25,6 +25,7 @@ import {
   Clock,
   BoxSelect,
   Link2,
+  Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -80,6 +81,8 @@ export default function SellerProductsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [importingCsv, setImportingCsv] = useState(false);
+  const [validatingCsv, setValidatingCsv] = useState(false);
 
   const isUnderReview = user?.accountStatus === "under_review";
   const kycStatus = user?.kyc?.status;
@@ -186,6 +189,94 @@ export default function SellerProductsPage() {
     }
   };
 
+  const downloadCsvTemplate = () => {
+    const header = "title,description,category,price,images,videos,stock,shippingCost,weight,status";
+    const row1 = "\"Classic Tee\",\"Premium cotton t-shirt\",\"fashion-clothing\",8500,\"https://example.com/img1.jpg|https://example.com/img2.jpg\",\"https://example.com/video1.mp4\",20,1500,0.4,active";
+    const row2 = "\"Wireless Earbuds\",\"Noise-cancelling earbuds\",\"electronics\",42000,\"https://example.com/earbuds.jpg\",\"\",10,2500,0.2,draft";
+    const csv = [header, row1, row2].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "seller-product-import-template.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadErrorReport = (errors: Array<{ row: number; message: string }>) => {
+    if (!errors.length) return;
+    const csv = ["row,message", ...errors.map((e) => `${e.row},"${String(e.message).replace(/"/g, '""')}"`)].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "product-import-errors.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCsvImport = async (file: File | null, dryRun = false) => {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      toast.error("Please select a .csv file");
+      return;
+    }
+    if (dryRun) setValidatingCsv(true);
+    else setImportingCsv(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("dryRun", dryRun ? "true" : "false");
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/seller/products/import-csv", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      }).then((r) => r.json());
+      if (res?.success) {
+        const imported = Number(res?.data?.imported || 0);
+        const wouldCreate = Number(res?.data?.wouldCreate || 0);
+        const failed = Number(res?.data?.failed || 0);
+        if (dryRun) {
+          toast.success(`Validation done: ${wouldCreate} ready${failed ? `, ${failed} issues` : ""}`);
+        } else {
+          toast.success(`CSV import done: ${imported} imported${failed ? `, ${failed} failed` : ""}`);
+          const response = await sellerApi.getProducts({ limit: 100 });
+          const productsArray = Array.isArray(response?.data) ? response.data : response?.data?.products || [];
+          const transformedProducts = productsArray.map((product: any) => ({
+            id: product._id || product.id,
+            slug: product.slug || "",
+            title: product.title || product.name || "Unknown Product",
+            price: product.price || 0,
+            stock: product.inventory?.quantity || product.stock || 0,
+            status: product.status || "draft",
+            category: typeof product.category === 'object' ? product.category?.name : product.category || "Uncategorized",
+            updatedAt: product.updatedAt || new Date().toISOString(),
+            image: product.images?.[0] || product.image || "/placeholder-product.jpg",
+            views: product.views || 0,
+            likes: product.likes || 0,
+            sales: product.sales || 0,
+          }));
+          setProducts(transformedProducts);
+        }
+        if (failed > 0 && Array.isArray(res?.data?.errors)) {
+          downloadErrorReport(res.data.errors);
+        }
+      } else {
+        toast.error(res?.message || (dryRun ? "CSV validation failed" : "CSV import failed"));
+      }
+    } catch (error: any) {
+      toast.error(error?.message || (dryRun ? "CSV validation failed" : "CSV import failed"));
+    } finally {
+      setImportingCsv(false);
+      setValidatingCsv(false);
+    }
+  };
+
   const copyProductLink = async (product: SellerProduct) => {
     try {
       const url = getAbsoluteProductUrl({ id: product.id, slug: product.slug });
@@ -283,13 +374,57 @@ export default function SellerProductsPage() {
               </span>
             </div>
           ) : (
-            <Link href="/seller/products/new">
-              <Button className="rounded-2xl px-8 h-12 text-[11px] font-black uppercase tracking-[0.2em] shadow-premium hover:shadow-premium-hover transition-all group">
-                <Plus className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform" />
-                New Product
-                <Sparkles className="ml-3 h-4 w-4 text-white/50" />
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  disabled={importingCsv || validatingCsv}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    e.currentTarget.value = "";
+                    void handleCsvImport(file);
+                  }}
+                />
+                <span className="inline-flex items-center rounded-2xl px-4 h-12 border border-white/60 text-[10px] font-black uppercase tracking-[0.15em] text-taja-secondary bg-white/60 hover:bg-white transition-all">
+                  <Upload className="mr-2 h-4 w-4" />
+                  {importingCsv ? "Importing..." : "Import CSV"}
+                </span>
+              </label>
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  disabled={importingCsv || validatingCsv}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    e.currentTarget.value = "";
+                    void handleCsvImport(file, true);
+                  }}
+                />
+                <span className="inline-flex items-center rounded-2xl px-4 h-12 border border-white/60 text-[10px] font-black uppercase tracking-[0.15em] text-taja-secondary bg-white/60 hover:bg-white transition-all">
+                  <Search className="mr-2 h-4 w-4" />
+                  {validatingCsv ? "Validating..." : "Validate CSV"}
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={downloadCsvTemplate}
+                className="inline-flex items-center rounded-2xl px-4 h-12 border border-white/60 text-[10px] font-black uppercase tracking-[0.15em] text-taja-secondary bg-white/60 hover:bg-white transition-all"
+              >
+                <ArrowRight className="mr-2 h-4 w-4" />
+                CSV Template
+              </button>
+              <Link href="/seller/products/new">
+                <Button className="rounded-2xl px-8 h-12 text-[11px] font-black uppercase tracking-[0.2em] shadow-premium hover:shadow-premium-hover transition-all group">
+                  <Plus className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform" />
+                  New Product
+                  <Sparkles className="ml-3 h-4 w-4 text-white/50" />
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </motion.div>

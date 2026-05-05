@@ -80,6 +80,8 @@ export default function EditProductPage() {
       },
       freeShipping: false,
       shippingCost: "",
+      lagosMainlandDelivery: "",
+      lagosIslandDelivery: "",
       processingTime: "1-2-days" as "1-2-days" | "3-5-days" | "1-week" | "2-weeks",
     },
     seo: {
@@ -163,6 +165,14 @@ export default function EditProductPage() {
             dimensions: productData.shipping?.dimensions || { length: 0, width: 0, height: 0 },
             freeShipping: productData.shipping?.freeShipping || false,
             shippingCost: productData.shipping?.shippingCost ? String(productData.shipping.shippingCost) : "",
+            lagosMainlandDelivery:
+              productData.shipping?.lagosMainlandDelivery != null
+                ? String(productData.shipping.lagosMainlandDelivery)
+                : "",
+            lagosIslandDelivery:
+              productData.shipping?.lagosIslandDelivery != null
+                ? String(productData.shipping.lagosIslandDelivery)
+                : "",
             processingTime: productData.shipping?.processingTime || "1-2-days",
           },
           seo: {
@@ -302,6 +312,11 @@ export default function EditProductPage() {
         return;
       }
       const selected = Array.from(files).slice(0, availableSlots);
+      const oversized = selected.find((f) => f.size > 20 * 1024 * 1024);
+      if (oversized) {
+        toast.error("Each video must be 20MB or less");
+        return;
+      }
       const uploadedUrls = await Promise.all(selected.map((file) => uploadProductVideo(file)));
       setFormData((prev) => ({
         ...prev,
@@ -414,6 +429,20 @@ export default function EditProductPage() {
           },
           freeShipping: formData.shipping.freeShipping,
           shippingCost: formData.shipping.shippingCost ? parseFloat(formData.shipping.shippingCost) : 0,
+          lagosMainlandDelivery:
+            formData.shipping.lagosMainlandDelivery.trim() === ""
+              ? null
+              : (() => {
+                  const n = parseFloat(formData.shipping.lagosMainlandDelivery);
+                  return Number.isFinite(n) && n >= 0 ? n : null;
+                })(),
+          lagosIslandDelivery:
+            formData.shipping.lagosIslandDelivery.trim() === ""
+              ? null
+              : (() => {
+                  const n = parseFloat(formData.shipping.lagosIslandDelivery);
+                  return Number.isFinite(n) && n >= 0 ? n : null;
+                })(),
           processingTime: formData.shipping.processingTime,
         },
         seo: {
@@ -614,7 +643,7 @@ export default function EditProductPage() {
                       <label className="h-48 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-taja-primary hover:text-taja-primary transition-all cursor-pointer">
                         {uploadingVideos ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
                         <span className="text-[10px] font-black uppercase tracking-widest">
-                          {uploadingVideos ? "Uploading..." : "Add video (max 80MB)"}
+                          {uploadingVideos ? "Uploading..." : "Add video (max 20MB)"}
                         </span>
                         <input
                           type="file"
@@ -1024,15 +1053,41 @@ export default function EditProductPage() {
 
                     <AnimatePresence>
                       {!formData.shipping.freeShipping && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2 block">Delivery Fee (₦)</label>
-                          <Input
-                            name="shipping.shippingCost"
-                            type="number"
-                            value={formData.shipping.shippingCost}
-                            onChange={handleChange}
-                            className="rounded-xl h-12 bg-white/5 border-white/10 text-white font-black"
-                          />
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4">
+                          <div>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2 block">Delivery Fee (₦)</label>
+                            <Input
+                              name="shipping.shippingCost"
+                              type="number"
+                              value={formData.shipping.shippingCost}
+                              onChange={handleChange}
+                              className="rounded-xl h-12 bg-white/5 border-white/10 text-white font-black"
+                            />
+                          </div>
+                          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 space-y-2">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-emerald-900">Lagos mainland / island (₦ per unit)</p>
+                            <p className="text-[8px] text-gray-500 leading-relaxed">Optional. Overrides platform Lagos fees when both bands are detectable from the address.</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input
+                                name="shipping.lagosMainlandDelivery"
+                                type="number"
+                                min={0}
+                                placeholder="Mainland"
+                                value={formData.shipping.lagosMainlandDelivery}
+                                onChange={handleChange}
+                                className="rounded-lg h-10 bg-white/5 border-white/10 text-xs font-bold"
+                              />
+                              <Input
+                                name="shipping.lagosIslandDelivery"
+                                type="number"
+                                min={0}
+                                placeholder="Island"
+                                value={formData.shipping.lagosIslandDelivery}
+                                onChange={handleChange}
+                                className="rounded-lg h-10 bg-white/5 border-white/10 text-xs font-bold"
+                              />
+                            </div>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>

@@ -8,7 +8,11 @@ import User from '@/models/User';
 import { requireAuth } from '@/lib/middleware';
 import { notifyAdminsNewOrder, createNotification } from '@/lib/notifications';
 import { sendOrderConfirmationEmail } from '@/lib/email';
-import { quoteLagosDeliveryAddress } from '@/lib/delivery/lagosPartnerQuote';
+import {
+  sumLineShippingBeforeShopTiers,
+  finalizeLagosShippingNaira,
+  type CheckoutShippingLine,
+} from '@/lib/delivery/checkoutShipping';
 import { calculateVatAmount } from '@/lib/tax';
 import { writeAuditLog } from '@/lib/audit';
 
@@ -124,9 +128,7 @@ export async function POST(request: NextRequest) {
 
       // Validate products and calculate totals
       let subtotal = 0;
-      let shipping = 0;
-      // Sum of product.shipping.weight * quantity (in kg) for this order
-      let totalWeightKg = 0;
+      const shippingLines: CheckoutShippingLine[] = [];
       const orderItems: any[] = [];
       let sellerId: string | null = null;
       let shopId: string | null = null;
@@ -150,13 +152,17 @@ export async function POST(request: NextRequest) {
 
         const itemTotal = product.price * item.quantity;
         subtotal += itemTotal;
-        // Product-level shipping: use shippingCost per unit or free
-        const itemShipping =
-          (product.shipping?.freeShipping ? 0 : product.shipping?.shippingCost || 0) * item.quantity;
-        shipping += itemShipping;
-        // Track total order weight in kg for shop-level delivery fee tiers
-        const itemWeightKg = (product.shipping?.weight || 0) * item.quantity;
-        totalWeightKg += itemWeightKg;
+        const sh: any = product.shipping || {};
+        shippingLines.push({
+          quantity: item.quantity,
+          shipping: {
+            freeShipping: !!sh.freeShipping,
+            shippingCost: typeof sh.shippingCost === 'number' ? sh.shippingCost : 0,
+            weight: typeof sh.weight === 'number' ? sh.weight : 0,
+            lagosMainlandDelivery: sh.lagosMainlandDelivery,
+            lagosIslandDelivery: sh.lagosIslandDelivery,
+          },
+        });
 
         orderItems.push({
           product: product._id,
@@ -170,6 +176,21 @@ export async function POST(request: NextRequest) {
         shopId = product.shop?.toString() || null;
         // Stock is decremented only after payment verification (see below).
       }
+
+      const addrParts = {
+        addressLine1: resolvedShippingAddress.addressLine1,
+        addressLine2: resolvedShippingAddress.addressLine2,
+        city: resolvedShippingAddress.city,
+        state: resolvedShippingAddress.state,
+      };
+      const {
+        shipping: preShopShipping,
+        anySellerLagosRates,
+        lagosQuote,
+        totalWeightKg,
+      } = sumLineShippingBeforeShopTiers(shippingLines, addrParts);
+
+      let shipping = preShopShipping;
 
       // If no product-level shipping, use shop delivery configuration (once per order)
       if (shipping === 0 && shopId) {
@@ -223,27 +244,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Lagos zone table: single platform-aligned fee (overrides product/shop shipping for Lagos)
       let deliveryQuoteSnapshot: Record<string, unknown> | undefined;
-      const lagosQuote = quoteLagosDeliveryAddress({
-        addressLine1: resolvedShippingAddress.addressLine1,
-        addressLine2: resolvedShippingAddress.addressLine2,
-        city: resolvedShippingAddress.city,
-        state: resolvedShippingAddress.state,
+      const finalized = finalizeLagosShippingNaira({
+        preliminaryShipping: shipping,
+        anySellerLagosRates,
+        lagosQuote,
       });
-      if (lagosQuote) {
-        shipping = lagosQuote.priceNgn;
-        deliveryQuoteSnapshot = {
-          version: lagosQuote.version,
-          zoneLabel: lagosQuote.zoneLabel,
-          priceNgn: lagosQuote.priceNgn,
-          isEstimate: lagosQuote.isEstimate,
-          buyerNote: lagosQuote.buyerNote,
-          matchedAlias: lagosQuote.matchedAlias,
-          kind: lagosQuote.kind,
-          quotedAt: new Date(),
-        };
-      }
+      shipping = finalized.shipping;
+      deliveryQuoteSnapshot = finalized.deliveryQuoteSnapshot;
 
       // Validate and attach selected delivery slot (optional)
       let selectedSlot: any = null;

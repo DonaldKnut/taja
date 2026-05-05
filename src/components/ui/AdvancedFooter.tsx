@@ -214,6 +214,25 @@ export function AdvancedFooter() {
           </div>
         </div>
 
+        {/* Payments */}
+        <div className="mb-20 p-8 rounded-[32px] border border-white/10 bg-white/[0.04] text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-500 mb-4">Payments we accept</p>
+          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3">
+            <span className="inline-flex items-center gap-2 text-sm font-bold text-white">
+              <CreditCard className="h-4 w-4 text-taja-primary" />
+              Paystack
+            </span>
+            {["Visa", "Mastercard", "Verve", "Bank transfer"].map((label) => (
+              <span key={label} className="text-xs font-semibold text-gray-400">
+                {label}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] text-gray-500 mt-4 max-w-xl mx-auto leading-relaxed">
+            Checkout is processed securely through Paystack. Buyers can pay with major cards (Visa, Mastercard), Verve, and bank transfer where Paystack enables it for your session.
+          </p>
+        </div>
+
         {/* Stats & Trust Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-24">
           {stats.map((stat, i) => (

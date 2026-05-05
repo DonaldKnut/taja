@@ -138,6 +138,16 @@ export function FloatingCart() {
 
   const showWhatsappHint = whatsappHintOpen === true;
 
+  // Auto-dismiss hint after a delay
+  useEffect(() => {
+    if (showWhatsappHint) {
+      const timer = setTimeout(() => {
+        dismissWhatsappHint();
+      }, 12000); // Dismiss after 12 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [showWhatsappHint]);
+
   if (!mounted) return null;
 
   return (

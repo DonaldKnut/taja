@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -189,9 +189,13 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const cartItems = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
+  const removeLocalCartItem = useCartStore((state) => state.removeItem);
 
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [removingLineKey, setRemovingLineKey] = useState<string | null>(null);
+  const pendingRemovalTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const pendingRemovalItems = useRef<Record<string, (typeof cartItems)[number]>>({});
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
@@ -243,14 +247,21 @@ export default function CheckoutPage() {
     let cancelled = false;
     (async () => {
       try {
+        const payload: Record<string, unknown> = {
+          addressLine1: addr.addressLine1,
+          addressLine2: addr.addressLine2 || "",
+          city: addr.city,
+          state: addr.state,
+        };
+        if (cartItems.length > 0) {
+          payload.items = cartItems.map((item) => ({
+            productId: item._id,
+            quantity: item.quantity,
+          }));
+        }
         const res = await api("/api/delivery/lagos-quote", {
           method: "POST",
-          body: JSON.stringify({
-            addressLine1: addr.addressLine1,
-            addressLine2: addr.addressLine2 || "",
-            city: addr.city,
-            state: addr.state,
-          }),
+          body: JSON.stringify(payload),
         });
         if (cancelled) return;
         if (res?.success && res.data && typeof res.data.priceNgn === "number") {
@@ -271,7 +282,7 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedAddress, addresses]);
+  }, [selectedAddress, addresses, cartItems]);
 
   useEffect(() => {
     const loadSlots = async () => {
@@ -318,6 +329,99 @@ export default function CheckoutPage() {
       setDeletingId(null);
     }
   };
+
+  const handleUndoRemoveSummaryItem = (lineKey: string) => {
+    const timer = pendingRemovalTimers.current[lineKey];
+    const removed = pendingRemovalItems.current[lineKey];
+    if (!timer || !removed) return;
+    clearTimeout(timer);
+    delete pendingRemovalTimers.current[lineKey];
+    delete pendingRemovalItems.current[lineKey];
+
+    const existing = useCartStore.getState().items.find(
+      (i) => String(i._id) === String(removed._id) && String(i.variantId || "") === String(removed.variantId || "")
+    );
+    if (!existing) {
+      useCartStore.getState().addItem({
+        _id: removed._id,
+        title: removed.title,
+        price: removed.price,
+        images: removed.images,
+        seller: removed.seller,
+        shopSlug: removed.shopSlug,
+        moq: removed.moq,
+        stock: removed.stock,
+        variantId: removed.variantId,
+        variantName: removed.variantName,
+      });
+      useCartStore.getState().updateQuantity(removed._id, removed.variantId, removed.quantity);
+    }
+    setRemovingLineKey((current) => (current === lineKey ? null : current));
+    toast.success("Item restored");
+  };
+
+  const handleRemoveSummaryItem = async (item: (typeof cartItems)[number]) => {
+    const variantKey = item.variantId ? String(item.variantId) : "";
+    const lineKey = `${item._id}::${variantKey}`;
+    setRemovingLineKey(lineKey);
+
+    // Optimistic local removal for fast UX.
+    removeLocalCartItem(item._id, item.variantId);
+    pendingRemovalItems.current[lineKey] = item;
+
+    const timer = setTimeout(async () => {
+      try {
+        const serverCart: any = await cartApi.getCart();
+        const serverItems = Array.isArray(serverCart?.data?.items)
+          ? serverCart.data.items
+          : [];
+
+        const matchingItemIds = serverItems
+          .filter((serverItem: any) => {
+            const productId = String(serverItem.productId || "");
+            const serverVariant = serverItem.variantId ? String(serverItem.variantId) : "";
+            return productId === String(item._id) && serverVariant === variantKey;
+          })
+          .map((serverItem: any) => String(serverItem.itemId))
+          .filter(Boolean);
+
+        if (matchingItemIds.length > 0) {
+          await Promise.all(matchingItemIds.map((itemId: string) => cartApi.removeFromCart(itemId)));
+        }
+      } catch {
+        toast.error("Could not sync cart removal. Please refresh.");
+      } finally {
+        delete pendingRemovalTimers.current[lineKey];
+        delete pendingRemovalItems.current[lineKey];
+        setRemovingLineKey((current) => (current === lineKey ? null : current));
+      }
+    }, 5000);
+
+    pendingRemovalTimers.current[lineKey] = timer;
+    toast((t) => (
+      <span className="flex items-center gap-2">
+        Item removed.
+        <button
+          type="button"
+          onClick={() => {
+            toast.dismiss(t.id);
+            handleUndoRemoveSummaryItem(lineKey);
+          }}
+          className="text-taja-primary font-black uppercase tracking-widest text-[10px]"
+        >
+          Undo
+        </button>
+      </span>
+    ), { duration: 5000 });
+  };
+
+  useEffect(() => {
+    return () => {
+      Object.values(pendingRemovalTimers.current).forEach((timer) => clearTimeout(timer));
+      pendingRemovalTimers.current = {};
+      pendingRemovalItems.current = {};
+    };
+  }, []);
 
   const tax = vatApplies ? Math.round(subtotal * vatRate) : 0;
   const orderTotal = subtotal + shippingCost + tax;
@@ -660,7 +764,7 @@ export default function CheckoutPage() {
                   {/* Items */}
                   <div className="space-y-4 mb-8 max-h-[260px] overflow-y-auto no-scrollbar pr-1">
                     {cartItems.map((item) => (
-                      <div key={item._id} className="flex gap-4">
+                      <div key={`${item._id}-${item.variantId || "base"}`} className="flex gap-4">
                         <div className="h-16 w-16 rounded-2xl overflow-hidden relative shrink-0 border border-gray-100">
                           <Image src={item.images[0] || "/placeholder.jpg"} alt={item.title} fill className="object-cover" />
                         </div>
@@ -676,6 +780,19 @@ export default function CheckoutPage() {
                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                             {item.quantity} × {formatCurrency(item.price)}
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSummaryItem(item)}
+                            disabled={removingLineKey === `${item._id}::${item.variantId ? String(item.variantId) : ""}`}
+                            className="mt-2 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 disabled:opacity-50"
+                          >
+                            {removingLineKey === `${item._id}::${item.variantId ? String(item.variantId) : ""}` ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                            Remove
+                          </button>
                         </div>
                         <p className="font-black text-taja-secondary text-xs shrink-0">{formatCurrency(item.price * item.quantity)}</p>
                       </div>

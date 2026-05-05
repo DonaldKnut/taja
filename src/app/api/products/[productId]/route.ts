@@ -125,6 +125,18 @@ export async function PUT(
           (v: any) => v && typeof v.name === 'string' && v.name.trim().length > 0
         );
       }
+      if (Array.isArray(body.videos) && body.videos.length > 2) {
+        return NextResponse.json(
+          { success: false, message: 'Maximum 2 videos are allowed per product' },
+          { status: 400 }
+        );
+      }
+      if (Array.isArray(body.videos)) {
+        body.videos = body.videos
+          .map((v: any) => (typeof v === 'string' ? { url: v, type: 'video' as const } : v))
+          .filter((v: any) => v && typeof v.url === 'string')
+          .slice(0, 2);
+      }
       const allowedFields = [
         'title',
         'description',
@@ -154,7 +166,17 @@ export async function PUT(
               ? (product[field] as any).toObject()
               : (product as any)[field];
 
-            (product as any)[field] = { ...existingValue, ...body[field] };
+            const merged = { ...existingValue, ...body[field] };
+            if (field === 'shipping' && body.shipping && typeof body.shipping === 'object') {
+              const inc = body.shipping as Record<string, unknown>;
+              if ('lagosMainlandDelivery' in inc && inc.lagosMainlandDelivery === null) {
+                delete (merged as any).lagosMainlandDelivery;
+              }
+              if ('lagosIslandDelivery' in inc && inc.lagosIslandDelivery === null) {
+                delete (merged as any).lagosIslandDelivery;
+              }
+            }
+            (product as any)[field] = merged;
           } else if (field === 'specifications') {
             // Specifications is a Map, should be replaced entirely or merged carefully
             // Replacing entirely is safer if the user sends the full set

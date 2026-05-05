@@ -72,6 +72,12 @@ export interface IProduct extends Document {
     costPerKg?: number;
     /** Optional: tiered delivery by max weight (kg) => cost in Naira */
     weightTiers?: Array<{ maxWeightKg: number; costNaira: number }>;
+    /**
+     * Optional Lagos-specific delivery (₦ per unit) when the drop-off matches our zone detector.
+     * If set, overrides platform Lagos table for that line item (still uses address text to pick island vs mainland band).
+     */
+    lagosMainlandDelivery?: number;
+    lagosIslandDelivery?: number;
     processingTime: '1-2-days' | '3-5-days' | '1-week' | '2-weeks';
   };
   specifications: Record<string, any>;
@@ -200,6 +206,8 @@ const ProductSchema = new Schema<IProduct>(
       weightTiers: [
         { maxWeightKg: Number, costNaira: Number },
       ],
+      lagosMainlandDelivery: { type: Number, min: 0 },
+      lagosIslandDelivery: { type: Number, min: 0 },
       processingTime: {
         type: String,
         enum: ['1-2-days', '3-5-days', '1-week', '2-weeks'],

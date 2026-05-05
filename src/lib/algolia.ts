@@ -14,8 +14,9 @@ import algoliasearch from 'algoliasearch';
 const appId = process.env.ALGOLIA_APP_ID;
 const apiKey = process.env.ALGOLIA_API_KEY;
 const searchKey = process.env.ALGOLIA_SEARCH_KEY;
+const shouldWarnAlgolia = process.env.NODE_ENV === 'development';
 
-if (!appId || !apiKey) {
+if ((!appId || !apiKey) && shouldWarnAlgolia) {
   console.warn('Algolia credentials not configured. Search will be disabled.');
 }
 
@@ -152,7 +153,9 @@ export const PRODUCT_INDEX_SETTINGS = {
  */
 export async function configureProductIndex(): Promise<void> {
   if (!algoliaClient) {
-    console.warn('Algolia not configured, skipping index configuration');
+    if (shouldWarnAlgolia) {
+      console.warn('Algolia not configured, skipping index configuration');
+    }
     return;
   }
 
@@ -257,7 +260,9 @@ function getPriceRange(price: number): string {
  */
 export async function syncProductToAlgolia(product: any): Promise<void> {
   if (!algoliaClient) {
-    console.warn('Algolia not configured, skipping product sync');
+    if (shouldWarnAlgolia) {
+      console.warn('Algolia not configured, skipping product sync');
+    }
     return;
   }
 
@@ -277,7 +282,9 @@ export async function syncProductToAlgolia(product: any): Promise<void> {
  */
 export async function syncProductsToAlgolia(products: any[]): Promise<void> {
   if (!algoliaClient) {
-    console.warn('Algolia not configured, skipping product sync');
+    if (shouldWarnAlgolia) {
+      console.warn('Algolia not configured, skipping product sync');
+    }
     return;
   }
 
@@ -300,7 +307,9 @@ export async function syncProductsToAlgolia(products: any[]): Promise<void> {
  */
 export async function deleteProductFromAlgolia(productId: string): Promise<void> {
   if (!algoliaClient) {
-    console.warn('Algolia not configured, skipping product delete');
+    if (shouldWarnAlgolia) {
+      console.warn('Algolia not configured, skipping product delete');
+    }
     return;
   }
 
@@ -319,7 +328,9 @@ export async function deleteProductFromAlgolia(productId: string): Promise<void>
  */
 export async function clearAlgoliaIndex(): Promise<void> {
   if (!algoliaClient) {
-    console.warn('Algolia not configured, skipping index clear');
+    if (shouldWarnAlgolia) {
+      console.warn('Algolia not configured, skipping index clear');
+    }
     return;
   }
 

@@ -8,6 +8,11 @@ import User from "@/models/User";
 import Order from "@/models/Order";
 import { v4 as uuidv4 } from "uuid";
 import { calculateVatAmount } from "@/lib/tax";
+import {
+  sumLineShippingBeforeShopTiers,
+  finalizeLagosShippingNaira,
+  type CheckoutShippingLine,
+} from "@/lib/delivery/checkoutShipping";
 
 export const dynamic = "force-dynamic";
 
@@ -64,8 +69,7 @@ export async function POST(request: NextRequest) {
       }
 
       let subtotal = 0;
-      let shipping = 0;
-      let totalWeightKg = 0;
+      const shippingLines: CheckoutShippingLine[] = [];
       let shopId: string | null = null;
 
       for (const item of items) {
@@ -87,13 +91,35 @@ export async function POST(request: NextRequest) {
         const itemTotal = product.price * item.quantity;
         subtotal += itemTotal;
 
-        const itemShipping =
-          (product.shipping?.freeShipping ? 0 : product.shipping?.shippingCost || 0) * item.quantity;
-        shipping += itemShipping;
+        const sh: any = product.shipping || {};
+        shippingLines.push({
+          quantity: item.quantity,
+          shipping: {
+            freeShipping: !!sh.freeShipping,
+            shippingCost: typeof sh.shippingCost === "number" ? sh.shippingCost : 0,
+            weight: typeof sh.weight === "number" ? sh.weight : 0,
+            lagosMainlandDelivery: sh.lagosMainlandDelivery,
+            lagosIslandDelivery: sh.lagosIslandDelivery,
+          },
+        });
 
-        totalWeightKg += (product.shipping?.weight || 0) * item.quantity;
         shopId = product.shop?.toString() || shopId;
       }
+
+      const addrParts = {
+        addressLine1: resolvedShippingAddress.addressLine1,
+        addressLine2: resolvedShippingAddress.addressLine2,
+        city: resolvedShippingAddress.city,
+        state: resolvedShippingAddress.state,
+      };
+      const {
+        shipping: preShopShipping,
+        anySellerLagosRates,
+        lagosQuote,
+        totalWeightKg,
+      } = sumLineShippingBeforeShopTiers(shippingLines, addrParts);
+
+      let shipping = preShopShipping;
 
       if (shipping === 0 && shopId) {
         const shop = await Shop.findById(shopId).select("settings").lean();
@@ -134,6 +160,13 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+
+      const finShip = finalizeLagosShippingNaira({
+        preliminaryShipping: shipping,
+        anySellerLagosRates,
+        lagosQuote,
+      });
+      shipping = finShip.shipping;
 
       if (deliverySlotId && shopId) {
         const shop: any = await Shop.findById(shopId).select("settings.deliverySlots").lean();

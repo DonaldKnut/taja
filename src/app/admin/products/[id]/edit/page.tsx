@@ -77,6 +77,8 @@ export default function AdminEditProductPage() {
             },
             freeShipping: false,
             shippingCost: "",
+            lagosMainlandDelivery: "",
+            lagosIslandDelivery: "",
             processingTime: "1-2-days" as "1-2-days" | "3-5-days" | "1-week" | "2-weeks",
         },
         seo: {
@@ -158,6 +160,14 @@ export default function AdminEditProductPage() {
                         dimensions: productData.shipping?.dimensions || { length: 0, width: 0, height: 0 },
                         freeShipping: productData.shipping?.freeShipping || false,
                         shippingCost: productData.shipping?.shippingCost ? String(productData.shipping.shippingCost) : "",
+                        lagosMainlandDelivery:
+                            productData.shipping?.lagosMainlandDelivery != null
+                                ? String(productData.shipping.lagosMainlandDelivery)
+                                : "",
+                        lagosIslandDelivery:
+                            productData.shipping?.lagosIslandDelivery != null
+                                ? String(productData.shipping.lagosIslandDelivery)
+                                : "",
                         processingTime: productData.shipping?.processingTime || "1-2-days",
                     },
                     seo: {
@@ -370,6 +380,20 @@ export default function AdminEditProductPage() {
                     },
                     freeShipping: formData.shipping.freeShipping,
                     shippingCost: formData.shipping.shippingCost ? parseFloat(formData.shipping.shippingCost) : 0,
+                    lagosMainlandDelivery:
+                        formData.shipping.lagosMainlandDelivery.trim() === ""
+                            ? null
+                            : (() => {
+                                const n = parseFloat(formData.shipping.lagosMainlandDelivery);
+                                return Number.isFinite(n) && n >= 0 ? n : null;
+                            })(),
+                    lagosIslandDelivery:
+                        formData.shipping.lagosIslandDelivery.trim() === ""
+                            ? null
+                            : (() => {
+                                const n = parseFloat(formData.shipping.lagosIslandDelivery);
+                                return Number.isFinite(n) && n >= 0 ? n : null;
+                            })(),
                     processingTime: formData.shipping.processingTime,
                 },
                 seo: {
@@ -780,6 +804,33 @@ export default function AdminEditProductPage() {
                                             />
                                         </div>
                                     </div>
+
+                                    {!formData.shipping.freeShipping && (
+                                        <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 space-y-3">
+                                            <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">Lagos delivery bands (₦ / unit)</p>
+                                            <p className="text-[9px] text-slate-600 leading-relaxed">Optional. When set, overrides the platform Lagos table for this product using the buyer&apos;s address (mainland vs island &amp; premium).</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    name="shipping.lagosMainlandDelivery"
+                                                    value={formData.shipping.lagosMainlandDelivery}
+                                                    onChange={handleChange}
+                                                    placeholder="Mainland"
+                                                    className="rounded-xl h-12 font-bold border-slate-100"
+                                                />
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    name="shipping.lagosIslandDelivery"
+                                                    value={formData.shipping.lagosIslandDelivery}
+                                                    onChange={handleChange}
+                                                    placeholder="Island & premium"
+                                                    className="rounded-xl h-12 font-bold border-slate-100"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                                         <input

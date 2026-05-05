@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
         maxPrice,
         compareAtPrice,
         images,
+        videos,
         inventory,
         stock,
         shipping,
@@ -108,6 +109,12 @@ export async function POST(request: NextRequest) {
         variants,
         status = 'active',
       } = body;
+      if (Array.isArray(videos) && videos.length > 2) {
+        return NextResponse.json(
+          { success: false, message: 'Maximum 2 videos are allowed per product' },
+          { status: 400 }
+        );
+      }
 
       if (!shopId || !title || !description || !category || price == null || !images?.length) {
         return NextResponse.json(
@@ -156,6 +163,12 @@ export async function POST(request: NextRequest) {
         maxPrice: maxPrice != null ? Number(maxPrice) : undefined,
         compareAtPrice: compareAtPrice != null ? Number(compareAtPrice) : undefined,
         images,
+        videos: Array.isArray(videos)
+          ? videos
+              .map((v: any) => (typeof v === 'string' ? { url: v, type: 'video' as const } : v))
+              .filter((v: any) => v && typeof v.url === 'string')
+              .slice(0, 2)
+          : [],
         inventory: {
           // Accept both inventory.quantity and legacy stock field.
           quantity: safeInventoryQty,
@@ -168,6 +181,14 @@ export async function POST(request: NextRequest) {
           dimensions: shipping?.dimensions ?? { length: 0, width: 0, height: 0 },
           freeShipping: shipping?.freeShipping ?? false,
           shippingCost: shipping?.shippingCost ?? 0,
+          lagosMainlandDelivery:
+            shipping?.lagosMainlandDelivery != null && Number.isFinite(Number(shipping.lagosMainlandDelivery))
+              ? Number(shipping.lagosMainlandDelivery)
+              : undefined,
+          lagosIslandDelivery:
+            shipping?.lagosIslandDelivery != null && Number.isFinite(Number(shipping.lagosIslandDelivery))
+              ? Number(shipping.lagosIslandDelivery)
+              : undefined,
           processingTime: shipping?.processingTime ?? '3-5-days',
         },
         specifications: specifications || {},

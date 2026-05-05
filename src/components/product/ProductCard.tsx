@@ -4,9 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, PlayCircle } from "lucide-react";
+import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, PlayCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
-import { ImageSlider } from "@/components/ui/ImageSlider";
 import { ProductPrice } from "./ProductPrice";
 import { ShopLink } from "../shop/ShopLink";
 import { formatCurrency } from "@/lib/utils";
@@ -66,6 +65,7 @@ export function ProductCard({
   const [sellerPanelOpen, setSellerPanelOpen] = useState(false);
   const [showBubbles, setShowBubbles] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [mediaIndex, setMediaIndex] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useLayoutEffect(() => {
@@ -135,6 +135,19 @@ export function ProductCard({
     (shop as any)?.address?.state,
   ].filter(Boolean);
   const images = product?.images?.length ? product.images : [fallbackImage];
+  const videoItems = (() => {
+    const raw = (product as any)?.videos;
+    if (!Array.isArray(raw)) return [] as string[];
+    return raw
+      .map((v: any) => (typeof v === "string" ? v : v?.url))
+      .filter((url: any) => typeof url === "string" && url.trim().length > 0)
+      .slice(0, 2);
+  })();
+  const mediaItems: Array<{ type: "image" | "video"; src: string }> = [
+    ...images.map((src) => ({ type: "image" as const, src })),
+    ...videoItems.map((src) => ({ type: "video" as const, src })),
+  ];
+  const activeMedia = mediaItems[Math.max(0, Math.min(mediaIndex, mediaItems.length - 1))] || { type: "image" as const, src: fallbackImage };
   const productPath = getProductPath(product as any);
   const previewVideoUrl = (() => {
     const raw = (product as any)?.videos;
@@ -159,6 +172,19 @@ export function ProductCard({
     (product as any)?.shop?.sellerAvatar ||
     shop?.logo ||
     fallbackImage;
+
+  const resolvedSellerId =
+    sellerUser?._id ||
+    (typeof product.seller === "string" ? product.seller : undefined) ||
+    shopOwner?._id ||
+    (shop && typeof shop.owner === "string" ? shop.owner : undefined) ||
+    (product as any)?.shop?.ownerId ||
+    "";
+
+  const resolvedShopId =
+    shop?._id ||
+    (typeof product.shop === "string" ? product.shop : undefined) ||
+    "";
 
   const handleClick = () => {
     if (onClick) {
@@ -222,16 +248,21 @@ export function ProductCard({
   }, [product?._id, (product as any)?.likes]);
 
   useEffect(() => {
+    setMediaIndex(0);
+  }, [product?._id]);
+
+  useEffect(() => {
     const video = videoRef.current;
-    if (!video || !previewVideoUrl) return;
-    if (isHovered) {
+    const shouldPlay = activeMedia.type === "video" && isHovered;
+    if (!video || activeMedia.type !== "video") return;
+    if (shouldPlay) {
       video.currentTime = 0;
       video.play().catch(() => {});
     } else {
       video.pause();
       video.currentTime = 0;
     }
-  }, [isHovered, previewVideoUrl]);
+  }, [isHovered, activeMedia.type, activeMedia.src]);
 
   const handleQuickAdd = (e: React.MouseEvent, variant?: any) => {
     e.preventDefault();
@@ -499,7 +530,7 @@ export function ProductCard({
 
             <div className="flex flex-col gap-2 pt-2">
               <Link
-                href={`/chat?seller=${(product.seller as any)?._id || product.seller}&product=${product._id}&shopId=${shop?._id}`}
+                href={`/chat?seller=${resolvedSellerId}&product=${product._id}&shopId=${resolvedShopId}`}
                 className="inline-flex items-center justify-center w-full h-11 rounded-2xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-[0.22em] gap-2 hover:bg-emerald-700 transition-colors"
                 onClick={() => setSellerPanelOpen(false)}
               >
@@ -536,45 +567,83 @@ export function ProductCard({
       <div className="relative aspect-square overflow-hidden bg-gray-50 rounded-t-[2rem]">
         {isInsideDashboard ? (
           <div className="block w-full h-full">
-            <ImageSlider
-              images={images}
-              alt={product.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
-              fillContainer
-              showDots={false}
-              showArrows={true}
-            />
+            {activeMedia.type === "video" ? (
+              <video
+                ref={videoRef}
+                key={activeMedia.src}
+                src={activeMedia.src}
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
+              />
+            ) : (
+              <Image
+                src={activeMedia.src}
+                alt={product.title}
+                fill
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
+              />
+            )}
           </div>
         ) : (
           <Link href={productPath} onClick={handleClick} className="block w-full h-full">
-            <ImageSlider
-              images={images}
-              alt={product.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
-              fillContainer
-              showDots={false}
-              showArrows={true}
-            />
+            {activeMedia.type === "video" ? (
+              <video
+                ref={videoRef}
+                key={activeMedia.src}
+                src={activeMedia.src}
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
+              />
+            ) : (
+              <Image
+                src={activeMedia.src}
+                alt={product.title}
+                fill
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
+              />
+            )}
           </Link>
         )}
-        {previewVideoUrl && (
+        {activeMedia.type === "video" && (
           <>
-            <video
-              ref={videoRef}
-              src={previewVideoUrl}
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              className={cn(
-                "absolute inset-0 h-full w-full object-cover pointer-events-none transition-opacity duration-300",
-                isHovered ? "opacity-100" : "opacity-0"
-              )}
-            />
             <div className="absolute left-4 bottom-4 z-10 px-2.5 py-1.5 rounded-full bg-black/60 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 pointer-events-none">
               <PlayCircle className="h-3.5 w-3.5" />
               Video Preview
             </div>
+          </>
+        )}
+        {mediaItems.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMediaIndex((idx) => (idx - 1 + mediaItems.length) % mediaItems.length);
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
+              aria-label="Previous media"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMediaIndex((idx) => (idx + 1) % mediaItems.length);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
+              aria-label="Next media"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </>
         )}
 
@@ -687,7 +756,7 @@ export function ProductCard({
                 </div>
               </button>
               <Link
-                href={`/chat?seller=${(product.seller as any)?._id || product.seller}&product=${product._id}&shopId=${shop?._id}`}
+                href={`/chat?seller=${resolvedSellerId}&product=${product._id}&shopId=${resolvedShopId}`}
                 onClick={(e) => e.stopPropagation()}
                 className="flex h-9 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-gray-200/90 bg-white text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700 shadow-sm transition-all hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 active:scale-[0.98] sm:h-7 sm:w-7 sm:gap-0 sm:rounded-full sm:p-0 sm:text-gray-400 sm:hover:text-emerald-600"
                 title="Message seller"

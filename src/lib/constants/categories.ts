@@ -9,6 +9,7 @@ import {
     Palette,
     Gem,
     ShoppingBag,
+    Car,
 } from "lucide-react";
 
 export const CATEGORIES = [
@@ -16,6 +17,7 @@ export const CATEGORIES = [
     { label: "Electronics", icon: Smartphone, slug: "electronics" },
     { label: "Home & Living", icon: Home, slug: "home-living" },
     { label: "Beauty & Personal Care", icon: Sparkles, slug: "beauty-personal-care" },
+    { label: "Cars & Automobiles", icon: Car, slug: "cars-automobiles" },
     { label: "Sports & Fitness", icon: Dumbbell, slug: "sports-fitness" },
     { label: "Accessories", icon: Watch, slug: "accessories" },
     { label: "Books & Media", icon: BookOpen, slug: "books-media" },

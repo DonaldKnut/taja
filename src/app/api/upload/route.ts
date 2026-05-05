@@ -38,14 +38,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Validate file size (images: 10MB, product videos: 80MB)
-      const maxSize = isProductVideo ? 80 * 1024 * 1024 : 10 * 1024 * 1024;
+      // Validate file size (images: 10MB, product videos: 20MB)
+      const maxSize = isProductVideo ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
       if (file.size > maxSize) {
         return NextResponse.json(
           {
             success: false,
             message: isProductVideo
-              ? 'Video size exceeds 80MB limit'
+              ? 'Video size exceeds 20MB limit'
               : 'File size exceeds 10MB limit',
           },
           { status: 400 }

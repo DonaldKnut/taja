@@ -159,6 +159,8 @@ export default function NewProductPage() {
       freeShipping: false,
       shippingCost: "",
       costPerKg: "",
+      lagosMainlandDelivery: "",
+      lagosIslandDelivery: "",
       processingTime: "1-2-days",
     },
     seo: {
@@ -300,6 +302,11 @@ export default function NewProductPage() {
         return;
       }
       const selected = Array.from(files).slice(0, availableSlots);
+      const oversized = selected.find((f) => f.size > 20 * 1024 * 1024);
+      if (oversized) {
+        toast.error("Each video must be 20MB or less");
+        return;
+      }
       const uploadedUrls = await Promise.all(selected.map((file) => uploadProductVideo(file)));
       setFormData((prev) => ({
         ...prev,
@@ -570,6 +577,22 @@ export default function NewProductPage() {
           freeShipping: formData.shipping.freeShipping,
           shippingCost: formData.shipping.shippingCost ? parseFloat(formData.shipping.shippingCost) : 0,
           costPerKg: formData.shipping.costPerKg ? parseFloat(formData.shipping.costPerKg) : undefined,
+          ...(formData.shipping.lagosMainlandDelivery.trim() !== ""
+            ? (() => {
+                const n = parseFloat(formData.shipping.lagosMainlandDelivery);
+                return typeof n === "number" && Number.isFinite(n) && n >= 0
+                  ? { lagosMainlandDelivery: n }
+                  : {};
+              })()
+            : {}),
+          ...(formData.shipping.lagosIslandDelivery.trim() !== ""
+            ? (() => {
+                const n = parseFloat(formData.shipping.lagosIslandDelivery);
+                return typeof n === "number" && Number.isFinite(n) && n >= 0
+                  ? { lagosIslandDelivery: n }
+                  : {};
+              })()
+            : {}),
           processingTime: formData.shipping.processingTime,
         },
         seo: formData.seo,
@@ -894,7 +917,7 @@ export default function NewProductPage() {
                   <label className="h-56 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-taja-primary hover:text-taja-primary transition-all cursor-pointer">
                     {uploadingVideos ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6" />}
                     <span className="text-[10px] font-black uppercase tracking-widest">
-                      {uploadingVideos ? "Uploading..." : "Add Video (MP4/WEBM/MOV, max 80MB)"}
+                      {uploadingVideos ? "Uploading..." : "Add Video (MP4/WEBM/MOV, max 20MB)"}
                     </span>
                     <input
                       type="file"
@@ -1436,6 +1459,42 @@ export default function NewProductPage() {
                 placeholder="Optional: logistics-style pricing"
                 className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
               />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3"
+            >
+              <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">Lagos: mainland vs island (optional)</p>
+              <p className="text-[9px] text-gray-600 leading-relaxed">
+                Set both to override the default Lagos table for this item. Checkout picks <strong>mainland</strong> or <strong>island &amp; premium</strong> from the buyer&apos;s address. Leave blank to use the flat fee above or platform zones.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="group space-y-1">
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Mainland (₦ / unit)</label>
+                  <input
+                    name="shipping.lagosMainlandDelivery"
+                    type="number"
+                    min="0"
+                    value={formData.shipping.lagosMainlandDelivery}
+                    onChange={handleChange}
+                    placeholder="e.g. 2500"
+                    className="w-full h-12 px-4 glass-card border-white/60 bg-white/40 focus:bg-white rounded-xl text-sm font-bold text-taja-secondary"
+                  />
+                </div>
+                <div className="group space-y-1">
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Island &amp; premium (₦ / unit)</label>
+                  <input
+                    name="shipping.lagosIslandDelivery"
+                    type="number"
+                    min="0"
+                    value={formData.shipping.lagosIslandDelivery}
+                    onChange={handleChange}
+                    placeholder="e.g. 4500"
+                    className="w-full h-12 px-4 glass-card border-white/60 bg-white/40 focus:bg-white rounded-xl text-sm font-bold text-taja-secondary"
+                  />
+                </div>
+              </div>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Weight (kg)</label>

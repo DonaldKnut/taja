@@ -17,6 +17,7 @@ import {
   Info,
   Globe,
   Palette,
+  Plus,
 } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants/categories";
 import { Button } from "@/components/ui/Button";
@@ -48,6 +49,8 @@ export default function NewShopPage() {
     logo: "",
     banner: "",
   });
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [newCatInput, setNewCatInput] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -89,6 +92,29 @@ export default function NewShopPage() {
         ? prev.categories.filter((c) => c !== category)
         : [...prev.categories, category],
     }));
+  };
+  
+  const handleAddCustomCategory = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const val = newCatInput.trim();
+    if (!val) return;
+    
+    // Check if already exists in CATEGORIES or customCategories
+    const alreadyExists = CATEGORIES.some(c => c.label.toLowerCase() === val.toLowerCase()) || 
+                          customCategories.some(c => c.toLowerCase() === val.toLowerCase());
+    
+    if (alreadyExists) {
+      toast.error("Category already exists");
+      return;
+    }
+
+    setCustomCategories(prev => [...prev, val]);
+    setFormData(prev => ({
+      ...prev,
+      categories: [...prev.categories, val]
+    }));
+    setNewCatInput("");
+    toast.success(`"${val}" added and selected!`);
   };
 
   const handleImageUpload = async (file: File, type: "logo" | "banner") => {
@@ -424,7 +450,64 @@ export default function NewShopPage() {
                     })}
                   </div>
 
-                  {formData.categories.length > 0 && (
+                  <div className="pt-4 border-t border-gray-100">
+                      <label className="block text-sm font-semibold text-taja-secondary mb-3">
+                        Can't find your category? Add it here:
+                      </label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={newCatInput}
+                          onChange={(e) => setNewCatInput(e.target.value)}
+                          placeholder="e.g., Vintage Collectibles"
+                          className="h-11 rounded-xl"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCustomCategory();
+                            }
+                          }}
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => handleAddCustomCategory()}
+                          className="h-11 rounded-xl px-4 border-taja-primary/30 text-taja-primary hover:bg-taja-primary hover:text-white transition-all"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Show Custom Categories in the grid too */}
+                    {customCategories.length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your Added Categories</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {customCategories.map((cat) => {
+                            const selected = formData.categories.includes(cat);
+                            return (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => handleCategoryChange(cat)}
+                                className={`relative flex items-center gap-2.5 p-3.5 rounded-xl border-2 text-sm font-semibold transition-all duration-200 text-left group ${catBtnClass(selected)}`}
+                              >
+                                <Sparkles className={`h-4 w-4 ${selected ? "text-taja-primary" : "text-gray-400"}`} />
+                                <span className="leading-tight text-[11px] font-black uppercase tracking-tight">{cat}</span>
+                                {selected && (
+                                  <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-taja-primary flex items-center justify-center">
+                                    <Check className="h-2.5 w-2.5 text-white" />
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {formData.categories.length > 0 && (
                     <div className="flex flex-wrap gap-2 p-3 bg-taja-light rounded-xl">
                       {formData.categories.map((cat) => (
                         <span key={cat} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-white border border-taja-primary/20 text-taja-secondary rounded-full font-medium shadow-sm">

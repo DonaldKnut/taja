@@ -29,12 +29,14 @@ const StatCard = ({
   icon: Icon,
   change,
   color = "blue",
+  onClick,
 }: {
   title: string;
   value: string | number;
   icon: any;
   change?: number;
   color?: string;
+  onClick?: () => void;
 }) => {
   const colorClasses = {
     blue: "text-blue-600 bg-blue-50 border-blue-100",
@@ -45,7 +47,18 @@ const StatCard = ({
   };
 
   return (
-    <Card className="rounded-[2.5rem] border-slate-100 shadow-sm hover:shadow-huge transition-all duration-500 group overflow-hidden">
+    <Card
+      className={`rounded-[2.5rem] border-slate-100 shadow-sm hover:shadow-huge transition-all duration-500 group overflow-hidden ${onClick ? "cursor-pointer" : ""}`}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      } : undefined}
+    >
       <CardContent className="p-8">
         <div className="flex items-start justify-between mb-8">
           <div className={`p-4 rounded-2xl border ${colorClasses[color as keyof typeof colorClasses]} group-hover:scale-110 transition-transform shadow-sm`}>
@@ -268,6 +281,7 @@ export default function AdminDashboard() {
           value={(stats?.shops.total ?? 0).toLocaleString()}
           icon={Store}
           color="green"
+          onClick={() => router.push("/admin/storefronts")}
         />
         <StatCard
           title="Inventory"

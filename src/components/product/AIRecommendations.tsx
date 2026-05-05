@@ -152,7 +152,7 @@ export function AIRecommendations({
                   src={rec.product.images?.[0] || "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png"}
                   alt={rec.product.title}
                   fill
-                  className="object-cover transition-transform duration-[2.5s] ease-out group-hover:scale-105"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   sizes="(max-width: 768px) 50vw, 25vw"
                 />
 

@@ -11,6 +11,9 @@ import {
   Check,
   MessageSquare,
   Instagram,
+  Music2,
+  Plus,
+  X,
   Tag,
   Building2,
   Settings2,
@@ -35,6 +38,8 @@ export default function SellerSetupPage() {
   const [loading, setLoading] = useState(false);
   const [checkingShop, setCheckingShop] = useState(true);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [newCatInput, setNewCatInput] = useState("");
   const [formData, setFormData] = useState({
     shopName: "",
     shopSlug: "",
@@ -52,6 +57,7 @@ export default function SellerSetupPage() {
     },
     socialLinks: {
       instagram: "",
+      tiktok: "",
       whatsapp: "",
       twitter: "",
       facebook: "",
@@ -82,6 +88,26 @@ export default function SellerSetupPage() {
         ? prev.categories.filter((c) => c !== category)
         : [...prev.categories, category],
     }));
+  };
+
+  const handleAddCustomCategory = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const val = newCatInput.trim();
+    if (!val) return;
+    const alreadyExists =
+      CATEGORIES.some((c) => c.label.toLowerCase() === val.toLowerCase()) ||
+      customCategories.some((c) => c.toLowerCase() === val.toLowerCase());
+    if (alreadyExists) {
+      toast.error("Category already exists");
+      return;
+    }
+    setCustomCategories((prev) => [...prev, val]);
+    setFormData((prev) => ({
+      ...prev,
+      categories: prev.categories.includes(val) ? prev.categories : [...prev.categories, val],
+    }));
+    setNewCatInput("");
+    toast.success(`“${val}” added and selected.`);
   };
 
   // One shop per user: if they already have a shop, redirect to dashboard (under review)
@@ -305,6 +331,76 @@ export default function SellerSetupPage() {
                       );
                     })}
                   </div>
+
+                  <div className="mt-5 pt-5 border-t border-gray-100">
+                    <label className="block text-sm font-semibold text-taja-secondary mb-2">Add your own category</label>
+                    <div className="flex gap-2">
+                      <input
+                        value={newCatInput}
+                        onChange={(e) => setNewCatInput(e.target.value)}
+                        placeholder="e.g., Baby & Kids"
+                        className="flex-1 h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddCustomCategory();
+                          }
+                        }}
+                      />
+                      <Button type="button" variant="outline" onClick={() => handleAddCustomCategory()} className="h-11 px-4 rounded-xl shrink-0 border-taja-primary/30 text-taja-primary">
+                        <Plus className="h-4 w-4 mr-1 inline" />
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+
+                  {customCategories.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Your categories</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {customCategories.map((cat) => {
+                          const selected = formData.categories.includes(cat);
+                          return (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => handleCategoryChange(cat)}
+                              className={`relative flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-medium transition-all text-left ${selected ? "border-taja-primary bg-taja-primary/10 text-taja-secondary shadow-premium" : "border-gray-200 hover:border-taja-primary/40 text-gray-600"}`}
+                            >
+                              <Sparkles className={`h-4 w-4 ${selected ? "text-taja-primary" : "text-gray-400"}`} />
+                              <span className="leading-tight text-[11px] font-black uppercase tracking-tight">{cat}</span>
+                              {selected && (
+                                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-taja-primary flex items-center justify-center">
+                                  <Check className="h-2.5 w-2.5 text-white" />
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4 p-3 bg-taja-light rounded-xl border border-taja-primary/10">
+                      {formData.categories.map((cat) => (
+                        <span
+                          key={cat}
+                          className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-white border border-taja-primary/15 text-taja-secondary rounded-full font-medium"
+                        >
+                          {cat}
+                          <button
+                            type="button"
+                            onClick={() => handleCategoryChange(cat)}
+                            className="ml-0.5 text-gray-400 hover:text-rose-500 transition-colors"
+                            aria-label={`Remove ${cat}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-2 border-t border-gray-100">
@@ -427,6 +523,14 @@ export default function SellerSetupPage() {
                       <input name="socialLinks.instagram" type="text" value={formData.socialLinks.instagram} onChange={handleChange}
                         className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20 text-sm transition-all"
                         placeholder="your_handle (no @)" />
+                    </div>
+                    <div>
+                      <label className="flex items-center gap-1.5 text-sm font-semibold text-taja-secondary mb-2">
+                        <Music2 className="h-4 w-4 text-slate-800" /> TikTok
+                      </label>
+                      <input name="socialLinks.tiktok" type="text" value={formData.socialLinks.tiktok} onChange={handleChange}
+                        className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-taja-primary focus:ring-2 focus:ring-taja-primary/20 text-sm transition-all"
+                        placeholder="@username or profile URL" />
                     </div>
                     <div>
                       <label className="flex items-center gap-1.5 text-sm font-semibold text-taja-secondary mb-2">

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import './BlogCategory';
 
 export interface IBlogPost extends Document {
   title: string;

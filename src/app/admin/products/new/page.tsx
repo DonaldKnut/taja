@@ -17,13 +17,14 @@ import {
   CheckCircle,
   AlertTriangle,
   Upload,
+  Video,
   X,
   LayoutGrid,
   Camera,
   ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { api, uploadProductImage } from "@/lib/api";
+import { api, uploadProductImage, uploadProductVideo } from "@/lib/api";
 import toast from "react-hot-toast";
 import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
 import { cn } from "@/lib/utils";
@@ -74,10 +75,14 @@ export default function AdminProductsNewPage() {
   const [shipping, setShipping] = useState({
     weight: "",
     shippingCost: "",
+    lagosMainlandDelivery: "",
+    lagosIslandDelivery: "",
     freeShipping: false,
   });
   const [imageList, setImageList] = useState<string[]>([]);
+  const [videoList, setVideoList] = useState<{ url: string }[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVideos, setUploadingVideos] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [uploadingVariantImage, setUploadingVariantImage] = useState<number | null>(null);
   const variantImageInputRef = useRef<HTMLInputElement>(null);
@@ -124,6 +129,14 @@ export default function AdminProductsNewPage() {
     setLoading(true);
     try {
       const parsedStock = Math.max(0, parseInt(form.stock, 10) || 0);
+      const lagosMain =
+        shipping.lagosMainlandDelivery.trim() !== ""
+          ? parseFloat(shipping.lagosMainlandDelivery)
+          : undefined;
+      const lagosIsle =
+        shipping.lagosIslandDelivery.trim() !== ""
+          ? parseFloat(shipping.lagosIslandDelivery)
+          : undefined;
       const res = await api("/api/admin/products", {
         method: "POST",
         body: JSON.stringify({
@@ -134,6 +147,7 @@ export default function AdminProductsNewPage() {
           price: parseFloat(form.price),
           compareAtPrice: form.compareAtPrice ? parseFloat(form.compareAtPrice) : undefined,
           images,
+          videos: videoList.map((v) => ({ url: v.url, type: "video" as const })),
           condition: form.condition,
           // Send inventory explicitly so API persists quantity correctly.
           inventory: {
@@ -148,6 +162,12 @@ export default function AdminProductsNewPage() {
             weight: shipping.weight ? parseFloat(shipping.weight) : 0,
             shippingCost: shipping.shippingCost ? parseFloat(shipping.shippingCost) : 0,
             freeShipping: shipping.freeShipping,
+            ...(typeof lagosMain === "number" && Number.isFinite(lagosMain) && lagosMain >= 0
+              ? { lagosMainlandDelivery: lagosMain }
+              : {}),
+            ...(typeof lagosIsle === "number" && Number.isFinite(lagosIsle) && lagosIsle >= 0
+              ? { lagosIslandDelivery: lagosIsle }
+              : {}),
           },
           variants: form.variants.map((v) => ({
             ...v,
@@ -205,6 +225,39 @@ export default function AdminProductsNewPage() {
 
   const removeImage = (index: number) => {
     setImageList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleVideoUpload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const room = Math.max(0, 2 - videoList.length);
+    const picked = Array.from(files)
+      .filter((f) => f.type.startsWith("video/"))
+      .slice(0, room);
+    const oversized = picked.find((f) => f.size > 20 * 1024 * 1024);
+    if (oversized) {
+      toast.error("Each video must be 20MB or less");
+      return;
+    }
+    if (picked.length === 0) {
+      toast.error("Select video files only (MP4, WebM, MOV). Max 2 videos.");
+      return;
+    }
+    setUploadingVideos(true);
+    try {
+      const urls = await Promise.all(picked.map((file) => uploadProductVideo(file)));
+      setVideoList((prev) =>
+        [...prev, ...urls.map((url) => ({ url }))].slice(0, 2)
+      );
+      toast.success(`${urls.length} video(s) uploaded`);
+    } catch (err: any) {
+      toast.error(err?.message || "Video upload failed");
+    } finally {
+      setUploadingVideos(false);
+    }
+  };
+
+  const removeVideo = (index: number) => {
+    setVideoList((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addVariant = () => {
@@ -561,6 +614,51 @@ export default function AdminProductsNewPage() {
                   />
                   <p className="text-[9px] font-bold text-gray-400 ml-1 mt-1">Paste direct image links, one per line. These are added to uploaded images.</p>
                 </div>
+
+                <div className="pt-4 border-t border-white/10">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 block mb-2">
+                    Product videos (optional)
+                  </label>
+                  <label className="flex flex-col items-center justify-center w-full min-h-[120px] border-2 border-dashed border-white/40 rounded-2xl cursor-pointer hover:border-taja-primary/50 hover:bg-white/10 transition-all bg-white/5">
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handleVideoUpload(e.target.files)}
+                      disabled={uploadingVideos || videoList.length >= 2}
+                    />
+                    {uploadingVideos ? (
+                      <div className="flex flex-col items-center gap-2 py-6">
+                        <Loader2 className="h-8 w-8 animate-spin text-taja-primary" />
+                        <span className="text-[10px] font-bold text-taja-primary uppercase tracking-widest">Uploading video…</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 py-6">
+                        <Video className="h-7 w-7 text-taja-primary" />
+                        <span className="text-[10px] font-black text-taja-secondary uppercase tracking-widest">Add up to 2 short clips</span>
+                        <span className="text-[9px] font-bold text-gray-400">MP4, WebM, MOV · max 20MB each</span>
+                      </div>
+                    )}
+                  </label>
+                  {videoList.length > 0 && (
+                    <ul className="mt-3 space-y-2">
+                      {videoList.map((v, i) => (
+                        <li key={v.url} className="flex items-center justify-between gap-2 rounded-xl bg-white/10 border border-white/20 px-3 py-2 text-[10px] font-mono text-taja-secondary truncate">
+                          <span className="truncate">{v.url}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeVideo(i)}
+                            className="shrink-0 p-1 rounded-lg text-rose-500 hover:bg-rose-500/10"
+                            aria-label="Remove video"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             </motion.section>
 
@@ -798,6 +896,41 @@ export default function AdminProductsNewPage() {
                     Enable Free Shipping
                   </label>
                 </div>
+
+                {!shipping.freeShipping && (
+                  <div className="space-y-3 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/15">
+                    <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">
+                      Lagos delivery bands (optional)
+                    </p>
+                    <p className="text-[9px] text-gray-600 leading-relaxed">
+                      When set, these override the platform Lagos table for this product. We detect <strong>mainland</strong> vs <strong>island &amp; premium</strong> routes from the buyer&apos;s address (same logic as checkout).
+                    </p>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="group space-y-1">
+                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Mainland (₦ / unit)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={shipping.lagosMainlandDelivery}
+                          onChange={(e) => setShipping((s) => ({ ...s, lagosMainlandDelivery: e.target.value }))}
+                          className="w-full h-12 px-4 glass-card border-white/60 bg-white/40 rounded-xl text-sm font-bold"
+                          placeholder="e.g., 2500"
+                        />
+                      </div>
+                      <div className="group space-y-1">
+                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Island &amp; premium corridor (₦ / unit)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={shipping.lagosIslandDelivery}
+                          onChange={(e) => setShipping((s) => ({ ...s, lagosIslandDelivery: e.target.value }))}
+                          className="w-full h-12 px-4 glass-card border-white/60 bg-white/40 rounded-xl text-sm font-bold"
+                          placeholder="e.g., 4500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.section>
 

@@ -193,7 +193,9 @@ export default function ShopPage() {
       } catch (error: any) {
         console.error("Error fetching shop:", error);
         setError(error.message || "Failed to load shop");
-        toast.error("Failed to load shop");
+        if (error.status !== 404) {
+          toast.error("Failed to load shop");
+        }
       } finally {
         setLoading(false);
       }

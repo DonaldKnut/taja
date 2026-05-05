@@ -124,6 +124,18 @@ export async function POST(request: NextRequest) {
         shop,
         variants,
       } = body;
+      const normalizedVideos = Array.isArray(videos)
+        ? videos
+            .map((v: any) => (typeof v === 'string' ? { url: v, type: 'video' as const } : v))
+            .filter((v: any) => v && typeof v.url === 'string')
+            .slice(0, 2)
+        : [];
+      if (Array.isArray(videos) && videos.length > 2) {
+        return NextResponse.json(
+          { success: false, message: 'Maximum 2 videos are allowed per product' },
+          { status: 400 }
+        );
+      }
 
       if (!title || !description || !category || !price || !images || images.length === 0) {
         return NextResponse.json(
@@ -201,7 +213,7 @@ export async function POST(request: NextRequest) {
         maxPrice,
         compareAtPrice,
         images,
-        videos: videos || [],
+        videos: normalizedVideos,
         inventory: {
           quantity: inventory?.quantity || 0,
           sku: inventory?.sku,
@@ -215,6 +227,14 @@ export async function POST(request: NextRequest) {
           shippingCost: shipping?.shippingCost || 0,
           costPerKg: shipping?.costPerKg,
           weightTiers: shipping?.weightTiers,
+          lagosMainlandDelivery:
+            shipping?.lagosMainlandDelivery != null && Number.isFinite(Number(shipping.lagosMainlandDelivery))
+              ? Number(shipping.lagosMainlandDelivery)
+              : undefined,
+          lagosIslandDelivery:
+            shipping?.lagosIslandDelivery != null && Number.isFinite(Number(shipping.lagosIslandDelivery))
+              ? Number(shipping.lagosIslandDelivery)
+              : undefined,
           processingTime: shipping?.processingTime || '3-5-days',
         },
         specifications: specifications || {},

@@ -53,7 +53,7 @@ export function ProductDetailGallery({
                 src={product.images[selectedImageIndex]}
                 alt={product.title}
                 fill
-                className="object-cover transition-transform duration-[2s] group-hover:scale-105"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
                 priority
                 sizes="(max-width: 1024px) 100vw, 60vw"
               />
