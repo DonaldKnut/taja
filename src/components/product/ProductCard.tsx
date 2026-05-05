@@ -19,6 +19,20 @@ import { useWishlistStore, WishlistItem } from "@/components/wishlist";
 import { toast } from "react-hot-toast";
 import { getAbsoluteProductUrl, getProductPath } from "@/lib/productLinks";
 
+const normalizeMediaUrl = (value: unknown): string | null => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://")
+  ) {
+    return trimmed;
+  }
+  return null;
+};
+
 export interface ProductCardProps {
   product: Product;
   variant?: "default" | "minimal" | "emphasis_modal";
@@ -66,6 +80,7 @@ export function ProductCard({
   const [showBubbles, setShowBubbles] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [mediaIndex, setMediaIndex] = useState(0);
+  const [failedMedia, setFailedMedia] = useState<Set<string>>(new Set());
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useLayoutEffect(() => {
@@ -134,19 +149,27 @@ export function ProductCard({
     (shop as any)?.address?.city,
     (shop as any)?.address?.state,
   ].filter(Boolean);
-  const images = product?.images?.length ? product.images : [fallbackImage];
+  const normalizedImages = Array.isArray(product?.images)
+    ? product.images
+        .map((src) => normalizeMediaUrl(src))
+        .filter((src): src is string => Boolean(src))
+    : [];
+  const images = normalizedImages.length
+    ? normalizedImages
+    : [fallbackImage];
   const videoItems = (() => {
     const raw = (product as any)?.videos;
     if (!Array.isArray(raw)) return [] as string[];
     return raw
-      .map((v: any) => (typeof v === "string" ? v : v?.url))
-      .filter((url: any) => typeof url === "string" && url.trim().length > 0)
+      .map((v: any) => normalizeMediaUrl(typeof v === "string" ? v : v?.url))
+      .filter((url): url is string => Boolean(url))
       .slice(0, 2);
   })();
-  const mediaItems: Array<{ type: "image" | "video"; src: string }> = [
+  const mediaItemsRaw: Array<{ type: "image" | "video"; src: string }> = [
     ...images.map((src) => ({ type: "image" as const, src })),
     ...videoItems.map((src) => ({ type: "video" as const, src })),
   ];
+  const mediaItems = mediaItemsRaw.filter((item) => !failedMedia.has(item.src));
   const activeMedia = mediaItems[Math.max(0, Math.min(mediaIndex, mediaItems.length - 1))] || { type: "image" as const, src: fallbackImage };
   const productPath = getProductPath(product as any);
   const previewVideoUrl = (() => {
@@ -249,6 +272,7 @@ export function ProductCard({
 
   useEffect(() => {
     setMediaIndex(0);
+    setFailedMedia(new Set());
   }, [product?._id]);
 
   useEffect(() => {
@@ -583,6 +607,13 @@ export function ProductCard({
                 src={activeMedia.src}
                 alt={product.title}
                 fill
+                onError={() =>
+                  setFailedMedia((prev) => {
+                    const next = new Set(prev);
+                    next.add(activeMedia.src);
+                    return next;
+                  })
+                }
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             )}
@@ -605,6 +636,13 @@ export function ProductCard({
                 src={activeMedia.src}
                 alt={product.title}
                 fill
+                onError={() =>
+                  setFailedMedia((prev) => {
+                    const next = new Set(prev);
+                    next.add(activeMedia.src);
+                    return next;
+                  })
+                }
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             )}

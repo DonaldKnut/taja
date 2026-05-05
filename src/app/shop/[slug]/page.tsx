@@ -27,6 +27,8 @@ import {
   ExternalLink,
   MapPin,
   TrendingUp,
+  Camera,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -119,6 +121,8 @@ export default function ShopPage() {
   const [activeTab, setActiveTab] = useState<"products" | "about" | "reviews">("products");
   const [whatsappWarningOpen, setWhatsappWarningOpen] = useState(false);
   const [pendingWhatsAppUrl, setPendingWhatsAppUrl] = useState<string | null>(null);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Format WhatsApp URL
   const getWhatsAppUrl = (whatsapp: string, message?: string) => {
@@ -242,6 +246,51 @@ export default function ShopPage() {
       } else {
         toast.error(error.message || "Failed to update follow status");
       }
+    }
+  };
+
+  const handleShopImageUpload = async (file: File, type: "logo" | "banner") => {
+    if (!shop?._id) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be 5MB or less");
+      return;
+    }
+
+    const setUploading = type === "banner" ? setUploadingBanner : setUploadingLogo;
+    try {
+      setUploading(true);
+      const { uploadShopImage } = await import("@/lib/api");
+      const url = await uploadShopImage(file, type);
+      const payload =
+        type === "banner"
+          ? { banner: url, coverImage: url }
+          : { logo: url, avatar: url };
+
+      const res = await shopsApi.update(shop._id, payload);
+      if (!res?.success) {
+        toast.error(res?.message || "Failed to update shop image");
+        return;
+      }
+
+      setShop((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...(type === "banner"
+                ? { banner: url, coverImage: url }
+                : { logo: url, avatar: url }),
+            }
+          : prev
+      );
+      toast.success(type === "banner" ? "Cover photo updated" : "Profile picture updated");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to upload image");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -372,6 +421,27 @@ export default function ShopPage() {
             )}
             {/* Dark cinematic overlay — keeps banner vivid, no white wash */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-black/10" />
+            {isOwnerView && (
+              <label className="absolute top-6 right-6 z-[100] cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.currentTarget.value = "";
+                    if (file) void handleShopImageUpload(file, "banner");
+                  }}
+                  disabled={uploadingBanner}
+                />
+                <div className="bg-taja-secondary/45 hover:bg-taja-secondary/65 backdrop-blur-xl text-white border border-white/20 px-4 h-10 rounded-2xl flex items-center gap-2 shadow-huge transition-all">
+                  {uploadingBanner ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+                    {uploadingBanner ? "Uploading..." : "Edit Cover"}
+                  </span>
+                </div>
+              </label>
+            )}
           </div>
         </section>
 
@@ -408,6 +478,27 @@ export default function ShopPage() {
                     <div className="absolute -bottom-1 -right-1 bg-taja-primary text-white p-2 rounded-lg shadow-lg border-2 border-white">
                       <CheckCircle className="h-3.5 w-3.5" />
                     </div>
+                  )}
+                  {isOwnerView && (
+                    <label className="absolute -top-2 -left-2 z-40 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.currentTarget.value = "";
+                          if (file) void handleShopImageUpload(file, "logo");
+                        }}
+                        disabled={uploadingLogo}
+                      />
+                      <div className="h-9 px-3 rounded-xl bg-white/95 border border-gray-200 text-taja-secondary shadow-sm flex items-center gap-1.5 hover:bg-white transition-all">
+                        {uploadingLogo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                        <span className="text-[9px] font-black uppercase tracking-widest">
+                          {uploadingLogo ? "..." : "Edit"}
+                        </span>
+                      </div>
+                    </label>
                   )}
                 </div>
 

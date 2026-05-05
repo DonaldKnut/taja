@@ -6,6 +6,20 @@ import { requireRole } from '@/lib/middleware';
 
 export const dynamic = 'force-dynamic';
 
+const normalizeMediaUrl = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://')
+  ) {
+    return trimmed;
+  }
+  return null;
+};
+
 // GET /api/admin/products - Get all products with filters
 export async function GET(request: NextRequest) {
   return requireRole(['admin'])(async (req, user) => {
@@ -109,6 +123,12 @@ export async function POST(request: NextRequest) {
         variants,
         status = 'active',
       } = body;
+      const normalizedImages = Array.isArray(images)
+        ? images
+            .map((img: unknown) => normalizeMediaUrl(img))
+            .filter((img): img is string => Boolean(img))
+            .slice(0, 10)
+        : [];
       if (Array.isArray(videos) && videos.length > 2) {
         return NextResponse.json(
           { success: false, message: 'Maximum 2 videos are allowed per product' },
@@ -116,7 +136,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!shopId || !title || !description || !category || price == null || !images?.length) {
+      if (!shopId || !title || !description || !category || price == null || normalizedImages.length === 0) {
         return NextResponse.json(
           { success: false, message: 'Missing required fields: shopId, title, description, category, price, images' },
           { status: 400 }
@@ -162,11 +182,16 @@ export async function POST(request: NextRequest) {
         price: Number(price),
         maxPrice: maxPrice != null ? Number(maxPrice) : undefined,
         compareAtPrice: compareAtPrice != null ? Number(compareAtPrice) : undefined,
-        images,
+        images: normalizedImages,
         videos: Array.isArray(videos)
           ? videos
-              .map((v: any) => (typeof v === 'string' ? { url: v, type: 'video' as const } : v))
-              .filter((v: any) => v && typeof v.url === 'string')
+              .map((v: any) => {
+                const normalizedUrl = normalizeMediaUrl(typeof v === 'string' ? v : v?.url);
+                return normalizedUrl
+                  ? { ...(typeof v === 'object' && v ? v : {}), url: normalizedUrl, type: 'video' as const }
+                  : null;
+              })
+              .filter((v): v is { url: string; type: 'video' } => Boolean(v))
               .slice(0, 2)
           : [],
         inventory: {

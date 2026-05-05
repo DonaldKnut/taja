@@ -9,6 +9,20 @@ import '@/models/Category'; // ensure Category model is registered for populate(
 
 export const dynamic = 'force-dynamic';
 
+const normalizeMediaUrl = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://')
+  ) {
+    return trimmed;
+  }
+  return null;
+};
+
 // GET /api/products - Get all products
 export async function GET(request: NextRequest) {
   try {
@@ -124,10 +138,19 @@ export async function POST(request: NextRequest) {
         shop,
         variants,
       } = body;
+      const normalizedImages = Array.isArray(images)
+        ? images
+            .map((img: unknown) => normalizeMediaUrl(img))
+            .filter((img): img is string => Boolean(img))
+            .slice(0, 8)
+        : [];
       const normalizedVideos = Array.isArray(videos)
         ? videos
-            .map((v: any) => (typeof v === 'string' ? { url: v, type: 'video' as const } : v))
-            .filter((v: any) => v && typeof v.url === 'string')
+            .map((v: any) => {
+              const normalizedUrl = normalizeMediaUrl(typeof v === 'string' ? v : v?.url);
+              return normalizedUrl ? { ...(typeof v === 'object' && v ? v : {}), url: normalizedUrl, type: 'video' as const } : null;
+            })
+            .filter((v): v is { url: string; type: 'video' } => Boolean(v))
             .slice(0, 2)
         : [];
       if (Array.isArray(videos) && videos.length > 2) {
@@ -137,7 +160,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!title || !description || !category || !price || !images || images.length === 0) {
+      if (!title || !description || !category || !price || normalizedImages.length === 0) {
         return NextResponse.json(
           { success: false, message: 'Missing required fields' },
           { status: 400 }
@@ -212,7 +235,7 @@ export async function POST(request: NextRequest) {
         price,
         maxPrice,
         compareAtPrice,
-        images,
+        images: normalizedImages,
         videos: normalizedVideos,
         inventory: {
           quantity: inventory?.quantity || 0,

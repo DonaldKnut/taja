@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Shop from "@/models/Shop";
 import Product from "@/models/Product";
+import User from "@/models/User";
 import { requireRole } from "@/lib/middleware";
 
 export const dynamic = "force-dynamic";
@@ -13,12 +14,29 @@ export async function GET(request: NextRequest) {
       await connectDB();
       const search = (request.nextUrl.searchParams.get("search") || "").trim();
       const limit = Math.min(Number(request.nextUrl.searchParams.get("limit") || 100), 300);
+      const baseUrl =
+        process.env.NEXTAUTH_URL ||
+        process.env.FRONTEND_URL ||
+        "https://tajaapp.shop";
 
       const query: Record<string, unknown> = {};
       if (search) {
+        const matchedOwners = await User.find(
+          {
+            $or: [
+              { fullName: { $regex: search, $options: "i" } },
+              { email: { $regex: search, $options: "i" } },
+            ],
+          },
+          { _id: 1 }
+        )
+          .limit(200)
+          .lean();
+        const ownerIds = matchedOwners.map((u: any) => u._id);
         query.$or = [
           { shopName: { $regex: search, $options: "i" } },
           { shopSlug: { $regex: search, $options: "i" } },
+          ...(ownerIds.length ? [{ owner: { $in: ownerIds } }] : []),
         ];
       }
 
@@ -56,6 +74,14 @@ export async function GET(request: NextRequest) {
                 email: shop.owner.email || "",
               }
             : null,
+          links: {
+            live: `${baseUrl.replace(/\/$/, "")}/shop/${shop.shopSlug}`,
+            shopEdit: `/admin/shops/${String(shop._id)}/edit`,
+            addProduct: `/admin/products/new?shopId=${String(shop._id)}`,
+            ownerLookup: shop.owner?.email
+              ? `/admin/users?search=${encodeURIComponent(shop.owner.email)}`
+              : "/admin/users",
+          },
         })),
       });
     } catch (error: any) {

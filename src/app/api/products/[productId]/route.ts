@@ -10,6 +10,20 @@ import { writeAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
+const normalizeMediaUrl = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://')
+  ) {
+    return trimmed;
+  }
+  return null;
+};
+
 // GET /api/products/:productId - Get product by ID or slug
 export async function GET(
   request: NextRequest,
@@ -133,9 +147,20 @@ export async function PUT(
       }
       if (Array.isArray(body.videos)) {
         body.videos = body.videos
-          .map((v: any) => (typeof v === 'string' ? { url: v, type: 'video' as const } : v))
-          .filter((v: any) => v && typeof v.url === 'string')
+          .map((v: any) => {
+            const normalizedUrl = normalizeMediaUrl(typeof v === 'string' ? v : v?.url);
+            return normalizedUrl
+              ? { ...(typeof v === 'object' && v ? v : {}), url: normalizedUrl, type: 'video' as const }
+              : null;
+          })
+          .filter((v): v is { url: string; type: 'video' } => Boolean(v))
           .slice(0, 2);
+      }
+      if (Array.isArray(body.images)) {
+        body.images = body.images
+          .map((img: unknown) => normalizeMediaUrl(img))
+          .filter((img): img is string => Boolean(img))
+          .slice(0, 8);
       }
       const allowedFields = [
         'title',
