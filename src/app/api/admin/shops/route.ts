@@ -7,18 +7,29 @@ import { requireRole } from '@/lib/middleware';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/admin/shops - List all shops (admin only). Used for dropdowns e.g. when admin adds a product.
+ * GET /api/admin/shops - List shops (admin only).
+ * Query: page (default 1), limit (default 500, max 500) — omit limit or use high limit for dropdowns (e.g. add product).
  */
 export async function GET(request: NextRequest) {
   return requireRole(['admin'])(async () => {
     try {
       await connectDB();
-      const limit = Math.min(parseInt(request.nextUrl.searchParams.get('limit') || '500'), 500);
-      const shops = await Shop.find({})
-        .populate('owner', 'fullName email')
-        .sort({ createdAt: -1 })
-        .limit(limit)
-        .lean();
+      const { searchParams } = request.nextUrl;
+      const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+      const limitRaw = parseInt(searchParams.get('limit') || '500', 10);
+      const limit = Math.min(Math.max(1, limitRaw), 500);
+      const skip = (page - 1) * limit;
+
+      const [shops, total] = await Promise.all([
+        Shop.find({})
+          .populate('owner', 'fullName email')
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Shop.countDocuments({}),
+      ]);
+
       return NextResponse.json({
         success: true,
         data: shops.map((s: any) => ({
@@ -28,6 +39,12 @@ export async function GET(request: NextRequest) {
           status: s.status,
           owner: s.owner,
         })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / limit)),
+        },
       });
     } catch (error: any) {
       console.error('GET admin shops error:', error);

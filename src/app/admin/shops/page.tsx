@@ -17,27 +17,59 @@ interface ShopRow {
   owner?: { _id: string; fullName?: string; email?: string };
 }
 
+const PAGE_SIZE = 15;
+
 export default function AdminShopsPage() {
   const [loading, setLoading] = useState(true);
   const [shops, setShops] = useState<ShopRow[]>([]);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  } | null>(null);
   const [acting, setActing] = useState<string | null>(null);
   const [messagingShop, setMessagingShop] = useState<ShopRow | null>(null);
   const [messageText, setMessageText] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
 
-  const fetchShops = async () => {
+  const fetchShops = async (pageArg: number) => {
     try {
-      const res = await api("/api/admin/shops");
-      if (res?.success && Array.isArray(res.data)) setShops(res.data);
+      setLoading(true);
+      const q = new URLSearchParams({
+        page: String(pageArg),
+        limit: String(PAGE_SIZE),
+      });
+      const res = await api(`/api/admin/shops?${q}`);
+      if (res?.success && Array.isArray(res.data)) {
+        if (res.data.length === 0 && pageArg > 1) {
+          await fetchShops(pageArg - 1);
+          return;
+        }
+        setShops(res.data);
+        setPage(pageArg);
+        if (res.pagination && typeof res.pagination.total === "number") {
+          setPagination(res.pagination);
+        } else {
+          setPagination({
+            page: pageArg,
+            limit: PAGE_SIZE,
+            total: res.data.length,
+            totalPages: 1,
+          });
+        }
+      }
     } catch {
       setShops([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchShops();
+    fetchShops(1);
   }, []);
 
   const handleDeleteShop = async (shopId: string, shopName: string) => {
@@ -47,7 +79,7 @@ export default function AdminShopsPage() {
       const res = await api(`/api/admin/shops/${shopId}`, { method: "DELETE" });
       if (res?.success) {
         toast.success("Shop banned and products suspended");
-        await fetchShops();
+        await fetchShops(page);
       } else {
         toast.error(res?.message || "Failed to ban shop");
       }
@@ -67,7 +99,7 @@ export default function AdminShopsPage() {
       });
       if (res?.success) {
         toast.success(action === "suspend" ? "Shop suspended" : "Shop activated");
-        await fetchShops();
+        await fetchShops(page);
       } else {
         toast.error(res?.message || "Failed to update shop");
       }
@@ -165,8 +197,8 @@ export default function AdminShopsPage() {
         <CardHeader className="border-b border-slate-100 bg-slate-50/30">
           <CardTitle className="text-slate-900 font-black tracking-tight">All shops</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
+        <CardContent className="p-0 relative">
+          {loading && shops.length === 0 ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
@@ -180,7 +212,12 @@ export default function AdminShopsPage() {
               </Link>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 relative">
+              {loading ? (
+                <div className="absolute inset-0 z-10 flex items-start justify-center pt-24 bg-white/60 backdrop-blur-[1px] pointer-events-none">
+                  <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                </div>
+              ) : null}
               {shops.map((shop) => (
                 <div
                   key={shop._id}
@@ -273,6 +310,40 @@ export default function AdminShopsPage() {
               ))}
             </div>
           )}
+          {!loading && pagination && pagination.totalPages > 1 ? (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 border-t border-slate-100 bg-slate-50/40">
+              <p className="text-xs font-bold text-slate-500">
+                Showing {(pagination.page - 1) * pagination.limit + 1}–
+                {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total.toLocaleString()}{" "}
+                shops
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1 || loading}
+                  onClick={() => fetchShops(page - 1)}
+                  className="rounded-xl font-black uppercase tracking-widest text-[10px]"
+                >
+                  Previous
+                </Button>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
+                  Page {pagination.page} / {pagination.totalPages}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= pagination.totalPages || loading}
+                  onClick={() => fetchShops(page + 1)}
+                  className="rounded-xl font-black uppercase tracking-widest text-[10px]"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Shield,
+  ShieldCheck,
   Truck,
   Users,
   Star,
+  Clock,
   ArrowRight,
   Menu,
   X,
@@ -355,14 +357,22 @@ export default function HomePage() {
                 </div>
 
                 {/* Trust Indicators - Integrated */}
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8 text-[11px] font-bold uppercase tracking-widest text-taja-primary/60 pt-4">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    <span>Secure Escrow Payments</span>
+                <div className="grid grid-cols-2 md:flex md:flex-row items-start justify-center lg:justify-start gap-x-4 gap-y-6 md:gap-8 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-taja-primary/70 pt-6">
+                  <div className="flex flex-col md:flex-row items-center md:items-start gap-2 text-center md:text-left">
+                    <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-500" />
+                    <span className="leading-snug max-w-[120px] md:max-w-none">Verified Merchant Network</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Truck className="h-4 w-4" />
-                    <span>Nationwide Delivery</span>
+                  <div className="flex flex-col md:flex-row items-center md:items-start gap-2 text-center md:text-left">
+                    <Shield className="h-5 w-5 shrink-0 text-emerald-500" />
+                    <span className="leading-snug max-w-[120px] md:max-w-none">Secure Escrow Payments</span>
+                  </div>
+                  <div className="flex flex-col md:flex-row items-center md:items-start gap-2 text-center md:text-left">
+                    <Truck className="h-5 w-5 shrink-0 text-emerald-500" />
+                    <span className="leading-snug max-w-[120px] md:max-w-none">Express Nationwide Shipping</span>
+                  </div>
+                  <div className="flex flex-col md:flex-row items-center md:items-start gap-2 text-center md:text-left">
+                    <Clock className="h-5 w-5 shrink-0 text-emerald-500" />
+                    <span className="leading-snug max-w-[120px] md:max-w-none">24/7 Dedicated Support</span>
                   </div>
                 </div>
 

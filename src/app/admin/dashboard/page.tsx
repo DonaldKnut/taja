@@ -288,42 +288,49 @@ export default function AdminDashboard() {
           value={(stats?.products.total ?? 0).toLocaleString()}
           icon={Package}
           color="purple"
+          onClick={() => router.push("/admin/overview/inventory")}
         />
         <StatCard
           title="Total Revenue"
           value={`₦${stats?.revenue.total ? (stats.revenue.total / 1000000).toFixed(1) : "0"}M`}
           icon={DollarSign}
           color="green"
+          onClick={() => router.push("/admin/overview/revenue")}
         />
         <StatCard
           title="Verification Requests"
           value={(stats?.kyc.pending ?? 0).toLocaleString()}
           icon={Clock}
           color="yellow"
+          onClick={() => router.push("/admin/overview/verification")}
         />
         <StatCard
           title="Store Reviews"
           value={(stats?.shops?.pending ?? 0).toLocaleString()}
           icon={Store}
           color="yellow"
+          onClick={() => router.push("/admin/overview/store-reviews")}
         />
         <StatCard
           title="Banned Users"
           value={(stats?.users.banned ?? 0).toLocaleString()}
           icon={AlertTriangle}
           color="red"
+          onClick={() => router.push("/admin/overview/banned-users")}
         />
         <StatCard
           title="Funds in Escrow"
           value={`₦${stats?.escrow?.heldAmount ? (stats.escrow.heldAmount / 1_000_000).toFixed(2) : "0"}M`}
           icon={DollarSign}
           color="purple"
+          onClick={() => router.push("/admin/overview/escrow")}
         />
         <StatCard
           title="Orders Held"
           value={(stats?.escrow?.ordersHeldCount ?? 0).toLocaleString()}
           icon={Clock}
           color="yellow"
+          onClick={() => router.push("/admin/overview/orders-held")}
         />
       </div>
 
