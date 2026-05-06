@@ -516,10 +516,16 @@ export default function AdminStorefrontsPage() {
       </section>
 
       {nudgeModalOpen && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-[120]">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={closeNudgeModal} />
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="w-full max-w-xl rounded-[2.5rem] bg-white shadow-huge border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-start sm:items-center justify-center p-3 sm:p-4">
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="nudge-modal-title"
+                className="w-full max-w-xl rounded-[2rem] sm:rounded-[2.5rem] bg-white shadow-huge border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] flex flex-col"
+              >
               <div className="p-8 border-b border-slate-50 flex items-start justify-between bg-slate-50/50">
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-2xl bg-slate-950 flex items-center justify-center shadow-sm">
@@ -529,7 +535,7 @@ export default function AdminStorefrontsPage() {
                     <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">
                       {nudgeMode === "single" ? "Seller nudge" : "Bulk nudge"}
                     </p>
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                    <h3 id="nudge-modal-title" className="text-2xl font-black text-slate-900 tracking-tight">
                       {nudgeMode === "single"
                         ? `Nudge ${nudgeTarget?.shopName || "storefront"}`
                         : "Nudge low-product storefronts"}
@@ -545,7 +551,7 @@ export default function AdminStorefrontsPage() {
                 </button>
               </div>
 
-              <div className="p-8 space-y-6">
+              <div className="p-8 space-y-6 overflow-y-auto">
                 {nudgeMode === "single" && nudgeTarget && (
                   <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-sm text-slate-700 flex items-center justify-between">
                     <div>
@@ -585,6 +591,7 @@ export default function AdminStorefrontsPage() {
                     value={nudgeMinTarget}
                     onChange={(e) => setNudgeMinTarget(Math.max(1, Number(e.target.value || 1)))}
                     className="rounded-xl h-12 border-slate-200 bg-slate-50"
+                    autoFocus
                   />
                 </div>
 
@@ -602,7 +609,7 @@ export default function AdminStorefrontsPage() {
                 </div>
               </div>
 
-              <div className="p-6 border-t border-slate-50 flex items-center justify-end gap-3 bg-slate-50/50">
+              <div className="p-6 border-t border-slate-50 flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
                 <Button variant="outline" className="rounded-xl h-12 px-6 font-black uppercase tracking-widest text-[10px] border-slate-200 hover:bg-slate-100" onClick={closeNudgeModal}>
                   Cancel
                 </Button>
@@ -618,6 +625,7 @@ export default function AdminStorefrontsPage() {
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {historyOpenForShop && (
