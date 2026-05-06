@@ -21,7 +21,10 @@ import {
   Loader2,
   Zap,
   ShieldCheck,
-  MoreVertical
+  MoreVertical,
+  Pencil,
+  Check,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -51,6 +54,9 @@ export default function TicketDetailPage() {
   const [satisfactionRating, setSatisfactionRating] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -125,6 +131,29 @@ export default function TicketDetailPage() {
       toast.error(error.message || "Transmission failed");
     } finally {
       setSending(false);
+    }
+  };
+
+  const saveEditedMessage = async () => {
+    if (!editingMessageId || !editingContent.trim()) return;
+    try {
+      setSavingEdit(true);
+      const res = await supportApi.editMessage(params.id as string, {
+        messageId: editingMessageId,
+        content: editingContent.trim(),
+      });
+      if (res.success) {
+        setEditingMessageId(null);
+        setEditingContent("");
+        await fetchTicket({ background: true });
+        toast.success("Message updated");
+      } else {
+        toast.error(res.message || "Failed to update message");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update message");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -225,10 +254,13 @@ export default function TicketDetailPage() {
                 <AnimatePresence initial={false}>
                   {ticket.messages?.map((msg: any, idx: number) => {
                     const isStaff = msg.senderRole === "admin" || msg.senderRole === "seller" || msg.senderRole === "system";
+                    const isOwnMessage = msg.sender && String(msg.sender._id || msg.sender) === String(ticket.user?._id);
+                    const canEdit = !isStaff && msg.senderRole !== "system" && isOwnMessage;
+                    const isEditing = editingMessageId === String(msg._id);
                     
                     return (
                       <motion.div
-                        key={idx}
+                        key={msg._id || idx}
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         className={cn("flex gap-5", isStaff ? "flex-row" : "flex-row-reverse")}
@@ -261,12 +293,54 @@ export default function TicketDetailPage() {
                                    : msg.sender?.fullName || (isStaff ? "Taja Specialist" : "Account Owner")}
                                </p>
                              </div>
-                             <div className="text-[15px] font-medium leading-relaxed whitespace-pre-wrap selection:bg-taja-primary/20">
-                               {msg.content}
-                             </div>
+                             {isEditing ? (
+                               <div className="space-y-3">
+                                 <textarea
+                                   value={editingContent}
+                                   onChange={(e) => setEditingContent(e.target.value)}
+                                   rows={4}
+                                   className="w-full rounded-2xl p-3 bg-white text-gray-900 border border-gray-200"
+                                 />
+                                 <div className="flex items-center gap-2">
+                                   <Button size="sm" onClick={saveEditedMessage} disabled={savingEdit || !editingContent.trim()}>
+                                     <Check className="h-4 w-4 mr-1" /> Save
+                                   </Button>
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     onClick={() => {
+                                       setEditingMessageId(null);
+                                       setEditingContent("");
+                                     }}
+                                   >
+                                     <X className="h-4 w-4 mr-1" /> Cancel
+                                   </Button>
+                                 </div>
+                               </div>
+                             ) : (
+                               <div className="text-[15px] font-medium leading-relaxed whitespace-pre-wrap selection:bg-taja-primary/20">
+                                 {msg.content}
+                               </div>
+                             )}
+                             {!isEditing && canEdit ? (
+                               <div className="mt-3 flex justify-end">
+                                 <button
+                                   type="button"
+                                   onClick={() => {
+                                     setEditingMessageId(String(msg._id));
+                                     setEditingContent(String(msg.content || ""));
+                                   }}
+                                   className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-taja-primary"
+                                 >
+                                   <Pencil className="h-3.5 w-3.5" />
+                                   Edit
+                                 </button>
+                               </div>
+                             ) : null}
                           </div>
                           <p className="px-6 text-[9px] font-bold text-gray-300 uppercase tracking-widest">
                             {timeAgo(msg.createdAt)}
+                            {msg.editedAt ? " • edited" : ""}
                           </p>
                         </div>
                       </motion.div>

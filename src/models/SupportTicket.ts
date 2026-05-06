@@ -36,6 +36,8 @@ export interface ISupportTicket extends Document {
     }>;
     isInternal?: boolean; // Internal notes visible only to staff
     createdAt: Date;
+    editedAt?: Date;
+    editedBy?: mongoose.Types.ObjectId;
   }>;
   attachments?: Array<{
     url: string;
@@ -159,6 +161,11 @@ const SupportTicketSchema = new Schema<ISupportTicket>(
         createdAt: {
           type: Date,
           default: Date.now,
+        },
+        editedAt: Date,
+        editedBy: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
         },
       },
     ],

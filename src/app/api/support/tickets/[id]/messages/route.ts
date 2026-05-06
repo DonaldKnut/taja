@@ -221,6 +221,92 @@ export async function POST(
   })(request);
 }
 
+// PUT /api/support/tickets/:id/messages - Edit a ticket message
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  return requireAuth(async (req, user) => {
+    try {
+      await connectDB();
+
+      const ticket = await SupportTicket.findById(params.id);
+      if (!ticket) {
+        return NextResponse.json(
+          { success: false, message: 'Ticket not found' },
+          { status: 404 }
+        );
+      }
+
+      const isOwner = ticket.user.toString() === user.userId;
+      const isAdmin = user.role === 'admin';
+      const isAssigned = ticket.assignedTo?.toString() === user.userId;
+      if (!isOwner && !isAdmin && !isAssigned) {
+        return NextResponse.json(
+          { success: false, message: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+
+      const body = await request.json();
+      const { messageId, content } = body || {};
+      if (!messageId || !content || !String(content).trim()) {
+        return NextResponse.json(
+          { success: false, message: 'messageId and content are required' },
+          { status: 400 }
+        );
+      }
+
+      const idx = (ticket.messages || []).findIndex((m: any) => String(m._id) === String(messageId));
+      if (idx < 0) {
+        return NextResponse.json(
+          { success: false, message: 'Message not found' },
+          { status: 404 }
+        );
+      }
+
+      const msg: any = ticket.messages[idx];
+      if (msg.senderRole === 'system') {
+        return NextResponse.json(
+          { success: false, message: 'System messages cannot be edited' },
+          { status: 400 }
+        );
+      }
+
+      const isMessageSender = msg.sender && String(msg.sender) === user.userId;
+      if (!isAdmin && !isMessageSender) {
+        return NextResponse.json(
+          { success: false, message: 'You can only edit your own messages' },
+          { status: 403 }
+        );
+      }
+
+      msg.content = String(content).trim();
+      msg.editedAt = new Date();
+      msg.editedBy = new mongoose.Types.ObjectId(user.userId);
+
+      await ticket.save();
+      await ticket.populate('messages.sender', 'fullName email avatar');
+
+      const updated = ticket.messages.find((m: any) => String(m._id) === String(messageId));
+      return NextResponse.json({
+        success: true,
+        message: 'Message updated successfully',
+        data: updated,
+      });
+    } catch (error: any) {
+      console.error('Edit message error:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message || 'Failed to edit message',
+        },
+        { status: 500 }
+      );
+    }
+  })(request);
+}
+
 
 
 

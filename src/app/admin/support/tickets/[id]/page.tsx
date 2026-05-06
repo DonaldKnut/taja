@@ -16,6 +16,9 @@ import {
   Paperclip,
   Loader2,
   FileIcon,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -51,6 +54,9 @@ export default function AdminTicketDetailPage() {
 
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchTicket = async () => {
@@ -148,6 +154,26 @@ export default function AdminTicketDetailPage() {
       toast.error(e.message || "Failed to send message");
     } finally {
       setSending(false);
+    }
+  };
+
+  const saveEditedMessage = async () => {
+    if (!editingMessageId || !editingContent.trim()) return;
+    try {
+      setSavingEdit(true);
+      const res = await supportApi.editMessage(ticketId!, {
+        messageId: editingMessageId,
+        content: editingContent.trim(),
+      });
+      if (!res.success) throw new Error(res.message || "Failed to update message");
+      setEditingMessageId(null);
+      setEditingContent("");
+      await fetchTicket();
+      toast.success("Message updated");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to update message");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -295,8 +321,10 @@ export default function AdminTicketDetailPage() {
                 ticket.messages.map((msg: any, idx: number) => {
                   const isStaff = msg.senderRole === "admin" || msg.senderRole === "seller" || msg.senderRole === "system";
                   const isSystem = msg.senderRole === "system";
+                  const canEdit = !isSystem;
+                  const isEditing = editingMessageId === String(msg._id);
                   return (
-                    <div key={idx} className={cn("flex flex-col", isStaff ? "items-end" : "items-start")}>
+                    <div key={msg._id || idx} className={cn("flex flex-col", isStaff ? "items-end" : "items-start")}>
                       <div className={cn(
                         "flex gap-3 max-w-[85%] mb-1",
                         isStaff ? "flex-row-reverse" : "flex-row"
@@ -341,7 +369,51 @@ export default function AdminTicketDetailPage() {
                             )}
                           </div>
                           
-                          <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                          {isEditing ? (
+                            <div className="space-y-3">
+                              <textarea
+                                value={editingContent}
+                                onChange={(e) => setEditingContent(e.target.value)}
+                                rows={4}
+                                className="w-full rounded-2xl p-3 bg-white text-gray-900 border border-gray-200"
+                              />
+                              <div className="flex items-center gap-2 justify-end">
+                                <Button size="sm" onClick={saveEditedMessage} disabled={savingEdit || !editingContent.trim()}>
+                                  <Check className="h-4 w-4 mr-1" /> Save
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingMessageId(null);
+                                    setEditingContent("");
+                                  }}
+                                >
+                                  <X className="h-4 w-4 mr-1" /> Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                          )}
+                          {!isEditing && canEdit ? (
+                            <div className="mt-3 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingMessageId(String(msg._id));
+                                  setEditingContent(String(msg.content || ""));
+                                }}
+                                className={cn(
+                                  "inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest",
+                                  isStaff ? "text-slate-300 hover:text-emerald-300" : "text-slate-400 hover:text-emerald-600"
+                                )}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Edit
+                              </button>
+                            </div>
+                          ) : null}
                           
                           {msg.attachments && msg.attachments.length > 0 && (
                             <div className="mt-3 grid gap-2">
@@ -374,6 +446,7 @@ export default function AdminTicketDetailPage() {
                       </div>
                       <div className="text-[10px] font-bold text-slate-400 mt-1 px-11 uppercase tracking-widest">
                         {timeAgo(msg.createdAt)}
+                        {msg.editedAt ? " • edited" : ""}
                       </div>
                     </div>
                   );

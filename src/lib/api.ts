@@ -656,6 +656,10 @@ export const supportApi = {
     attachments?: Array<{ url: string; filename: string; type: string; size: number }>;
     isInternal?: boolean;
   }) => api(`/api/support/tickets/${ticketId}/messages`, { method: "POST", body: JSON.stringify(data) }),
+  editMessage: (ticketId: string, data: {
+    messageId: string;
+    content: string;
+  }) => api(`/api/support/tickets/${ticketId}/messages`, { method: "PUT", body: JSON.stringify(data) }),
   getChatThread: () => api("/api/support/chat-thread", { method: "POST" }),
   markSeen: (ticketId: string) => api(`/api/support/tickets/${ticketId}/seen`, { method: "POST" }),
 };

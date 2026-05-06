@@ -19,7 +19,10 @@ import {
   RefreshCw,
   Loader2,
   ShieldCheck,
-  Zap
+  Zap,
+  Pencil,
+  Check,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -48,6 +51,9 @@ export default function SellerTicketDetailPage() {
   const [message, setMessage] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -122,6 +128,29 @@ export default function SellerTicketDetailPage() {
       toast.error(error.message || "Transmission failed");
     } finally {
       setSending(false);
+    }
+  };
+
+  const saveEditedMessage = async () => {
+    if (!editingMessageId || !editingContent.trim()) return;
+    try {
+      setSavingEdit(true);
+      const res = await supportApi.editMessage(params.id as string, {
+        messageId: editingMessageId,
+        content: editingContent.trim(),
+      });
+      if (res.success) {
+        setEditingMessageId(null);
+        setEditingContent("");
+        await fetchTicket({ background: true });
+        toast.success("Message updated");
+      } else {
+        toast.error(res.message || "Failed to update message");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update message");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -203,12 +232,12 @@ export default function SellerTicketDetailPage() {
                   {ticket.messages?.map((msg: any, idx: number) => {
                     const isStaff = msg.senderRole === "admin" || msg.senderRole === "system";
                     const isSelf = msg.senderRole === "seller" || msg.sender?._id === ticket.user?._id;
-                    // Note: If the seller is the requester, they are "Self". 
-                    // If it's another seller (assigned staff), they might be "Staff".
+                    const canEdit = !isStaff && msg.senderRole !== "system" && isSelf;
+                    const isEditing = editingMessageId === String(msg._id);
                     
                     return (
                       <motion.div
-                        key={idx}
+                        key={msg._id || idx}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className={cn("flex gap-5", isStaff ? "flex-row-reverse" : "flex-row")}
@@ -241,10 +270,52 @@ export default function SellerTicketDetailPage() {
                                </p>
                                {isStaff && <Zap className="w-3 h-3 text-taja-primary fill-taja-primary" />}
                             </div>
-                            <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                            {isEditing ? (
+                              <div className="space-y-3">
+                                <textarea
+                                  value={editingContent}
+                                  onChange={(e) => setEditingContent(e.target.value)}
+                                  rows={4}
+                                  className="w-full rounded-2xl p-3 bg-white text-gray-900 border border-gray-200"
+                                />
+                                <div className="flex items-center gap-2 justify-end">
+                                  <Button size="sm" onClick={saveEditedMessage} disabled={savingEdit || !editingContent.trim()}>
+                                    <Check className="h-4 w-4 mr-1" /> Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingMessageId(null);
+                                      setEditingContent("");
+                                    }}
+                                  >
+                                    <X className="h-4 w-4 mr-1" /> Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                            )}
+                            {!isEditing && canEdit ? (
+                              <div className="mt-3 flex justify-start">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingMessageId(String(msg._id));
+                                    setEditingContent(String(msg.content || ""));
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gray-300 hover:text-taja-primary"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  Edit
+                                </button>
+                              </div>
+                            ) : null}
                           </div>
                           <p className="px-4 text-[9px] font-black text-gray-300 uppercase tracking-widest">
                             {timeAgo(msg.createdAt)}
+                            {msg.editedAt ? " • edited" : ""}
                           </p>
                         </div>
                       </motion.div>
