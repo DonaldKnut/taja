@@ -23,6 +23,16 @@ export class ApiError extends Error {
   }
 }
 
+async function readResponsePayload(response: Response): Promise<any> {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}
+
 export async function api(path: string, opts: Options = {}) {
   const relativePath = path.startsWith("http") ? path : path.startsWith("/api") ? path : `/api${path}`;
   const fetchUrl =
@@ -332,9 +342,14 @@ export async function uploadProductVideo(file: File): Promise<string> {
     body: formData,
   });
 
-  const data = await response.json();
+  const data = await readResponsePayload(response);
   if (!response.ok) {
-    throw new ApiError(data.message || data.error || "Video upload failed", response.status, data);
+    const rawMessage = data?.message || data?.error || "Video upload failed";
+    const message =
+      typeof rawMessage === "string" && /request entity too large|payload too large/i.test(rawMessage)
+        ? "Video is too large for this upload endpoint. Try a smaller file or stronger compression."
+        : rawMessage;
+    throw new ApiError(message, response.status, data);
   }
   return data.data.url || data.data;
 }

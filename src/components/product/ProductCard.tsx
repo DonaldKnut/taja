@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, PlayCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, PlayCircle, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ProductPrice } from "./ProductPrice";
 import { ShopLink } from "../shop/ShopLink";
@@ -18,6 +18,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { useWishlistStore, WishlistItem } from "@/components/wishlist";
 import { toast } from "react-hot-toast";
 import { getAbsoluteProductUrl, getProductPath } from "@/lib/productLinks";
+import { useAuth } from "@/contexts/AuthContext";
 
 const normalizeMediaUrl = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
@@ -70,6 +71,7 @@ export function ProductCard({
   isInsideDashboard = false,
   showSellerRow = false,
 }: ProductCardProps) {
+  const { user } = useAuth();
   const addItem = useCartStore((state) => state.addItem);
   const { items: wishlistItems, toggleWishlistItem } = useWishlistStore();
   const [liveLikesCount, setLiveLikesCount] = useState(Number((product as any)?.likes ?? 0));
@@ -166,8 +168,8 @@ export function ProductCard({
       .slice(0, 2);
   })();
   const mediaItemsRaw: Array<{ type: "image" | "video"; src: string }> = [
-    ...images.map((src) => ({ type: "image" as const, src })),
     ...videoItems.map((src) => ({ type: "video" as const, src })),
+    ...images.map((src) => ({ type: "image" as const, src })),
   ];
   const mediaItems = mediaItemsRaw.filter((item) => !failedMedia.has(item.src));
   const activeMedia = mediaItems[Math.max(0, Math.min(mediaIndex, mediaItems.length - 1))] || { type: "image" as const, src: fallbackImage };
@@ -277,10 +279,9 @@ export function ProductCard({
 
   useEffect(() => {
     const video = videoRef.current;
-    const shouldPlay = activeMedia.type === "video" && isHovered;
+    const shouldPlay = activeMedia.type === "video";
     if (!video || activeMedia.type !== "video") return;
     if (shouldPlay) {
-      video.currentTime = 0;
       video.play().catch(() => {});
     } else {
       video.pause();
@@ -731,10 +732,23 @@ export function ProductCard({
             <Link2 className="h-4.5 w-4.5" />
           </button>
         </div>
+        {user?.role === "admin" && (
+          <div className="absolute top-4 left-[3.25rem] z-10">
+            <Link
+              href={`/admin/products/${product._id}/edit`}
+              onClick={(e) => e.stopPropagation()}
+              className="h-10 px-3 rounded-full bg-white/80 backdrop-blur-md border border-white/40 shadow-sm inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-900"
+              title="Edit product"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit
+            </Link>
+          </div>
+        )}
 
         {/* Condition/New Badge */}
         {product.condition === 'new' && (
-          <div className="absolute top-4 left-[3.25rem] px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-full z-10">
+          <div className={`absolute top-4 ${user?.role === "admin" ? "left-[8.5rem]" : "left-[3.25rem]"} px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-full z-10`}>
             NEW
           </div>
         )}
