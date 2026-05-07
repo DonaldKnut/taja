@@ -26,13 +26,14 @@ import {
     AlertCircle,
     ShieldAlert,
     Loader2,
-    ChevronDown
+    ChevronDown,
+    Video
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import toast from "react-hot-toast";
-import { api, sellerApi, uploadProductImage } from "@/lib/api";
+import { api, sellerApi, uploadProductImage, uploadProductVideo } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Container } from "@/components/layout";
@@ -46,6 +47,7 @@ export default function AdminEditProductPage() {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [uploadingImages, setUploadingImages] = useState(false);
+    const [uploadingVideos, setUploadingVideos] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
     const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
@@ -61,6 +63,7 @@ export default function AdminEditProductPage() {
         compareAtPrice: "",
         currency: "NGN",
         images: [] as string[],
+        videos: [] as { url: string; type: "video"; thumbnail?: string; duration?: number }[],
         specifications: {} as Record<string, any>,
         inventory: {
             quantity: 1,
@@ -148,6 +151,9 @@ export default function AdminEditProductPage() {
                     compareAtPrice: productData.compareAtPrice || productData.originalPrice ? String(productData.compareAtPrice || productData.originalPrice) : "",
                     currency: productData.currency || "NGN",
                     images: productData.images || [],
+                    videos: (productData.videos || []).map((v: any) =>
+                        typeof v === "string" ? { url: v, type: "video" as const } : { ...v, type: "video" as const }
+                    ),
                     specifications: productData.specifications || {},
                     inventory: {
                         quantity: productData.inventory?.quantity ?? productData.stock ?? 1,
@@ -266,6 +272,44 @@ export default function AdminEditProductPage() {
         }));
     };
 
+    const handleVideoUpload = async (files: FileList) => {
+        if (files.length === 0) return;
+        setUploadingVideos(true);
+        try {
+            const availableSlots = Math.max(0, 2 - formData.videos.length);
+            if (availableSlots <= 0) {
+                toast.error("You can add up to 2 videos");
+                return;
+            }
+            const selected = Array.from(files).slice(0, availableSlots);
+            const oversized = selected.find((f) => f.size > 20 * 1024 * 1024);
+            if (oversized) {
+                toast.error("Each video must be 20MB or less");
+                return;
+            }
+            const uploadedUrls = await Promise.all(selected.map((file) => uploadProductVideo(file)));
+            setFormData((prev) => ({
+                ...prev,
+                videos: [
+                    ...prev.videos,
+                    ...uploadedUrls.map((url) => ({ url, type: "video" as const })),
+                ].slice(0, 2),
+            }));
+            toast.success(`${uploadedUrls.length} video(s) uploaded`);
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to upload video");
+        } finally {
+            setUploadingVideos(false);
+        }
+    };
+
+    const removeVideo = (index: number) => {
+        setFormData((prev) => ({
+            ...prev,
+            videos: prev.videos.filter((_, i) => i !== index),
+        }));
+    };
+
     const setMainImage = (index: number) => {
         if (index === 0) return;
         setFormData((prev) => {
@@ -364,6 +408,7 @@ export default function AdminEditProductPage() {
                 compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : undefined,
                 currency: formData.currency,
                 images: formData.images,
+                videos: formData.videos,
                 specifications: formData.specifications,
                 inventory: {
                     quantity: Number(formData.inventory.quantity),
@@ -477,12 +522,12 @@ export default function AdminEditProductPage() {
                             </div>
 
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-                                <div>
-                                    <h1 className="text-3xl md:text-5xl font-black tracking-tighter leading-none mb-4">
+                                <div className="max-w-4xl">
+                                    <h1 className="text-3xl md:text-6xl font-black tracking-tighter leading-[0.95] mb-4 text-white drop-shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
                                         Edit: {formData.title || "Product"}
                                     </h1>
-                                    <p className="text-slate-400 font-bold text-sm max-w-2xl">
-                                        You are editing this product for <span className="text-emerald-400">{productOwner?.shopName || productOwner?.fullName || "the seller"}</span>.
+                                    <p className="text-slate-200/95 font-black text-base max-w-3xl leading-relaxed bg-white/5 border border-white/10 rounded-2xl px-5 py-4 backdrop-blur-sm">
+                                        You are editing this product for <span className="text-emerald-300">{productOwner?.shopName || productOwner?.fullName || "the seller"}</span>.
                                         Changes are saved to the live listing when you click Save.
                                     </p>
                                 </div>
@@ -590,6 +635,50 @@ export default function AdminEditProductPage() {
                                     onChange={(e) => e.target.files && handleImageUpload(e.target.files)}
                                     className="hidden"
                                 />
+
+                                <div className="mt-8 pt-8 border-t border-slate-100 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-slate-900 rounded-xl">
+                                                <Video className="w-5 h-5 text-emerald-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Product videos</p>
+                                                <p className="text-xs font-bold text-slate-500">Showcase motion and details (max 2)</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{formData.videos.length} / 2</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {formData.videos.map((video, index) => (
+                                            <div key={`${video.url}-${index}`} className="relative rounded-3xl overflow-hidden border border-slate-100 bg-black">
+                                                <video src={video.url} controls className="w-full h-48 object-contain" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeVideo(index)}
+                                                    className="absolute top-2 right-2 p-2 bg-rose-500 rounded-xl text-white hover:bg-rose-600 transition-colors"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {formData.videos.length < 2 && (
+                                            <label className="h-48 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-slate-400 hover:border-emerald-300 hover:text-emerald-500 transition-colors cursor-pointer bg-slate-50/40">
+                                                <Video className="w-8 h-8" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                                    {uploadingVideos ? "Uploading..." : "Add video (max 20MB)"}
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    accept="video/mp4,video/webm,video/quicktime"
+                                                    multiple
+                                                    className="hidden"
+                                                    onChange={(e) => e.target.files && handleVideoUpload(e.target.files)}
+                                                />
+                                            </label>
+                                        )}
+                                    </div>
+                                </div>
                             </section>
 
                             {/* Content Section */}
