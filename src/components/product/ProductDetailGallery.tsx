@@ -41,7 +41,7 @@ export function ProductDetailGallery({
   return (
     <>
       {showMobile && (
-        <div className="lg:hidden sticky top-16 z-20 w-full relative aspect-square bg-slate-50 overflow-hidden">
+        <div className="lg:hidden sticky top-12 sm:top-16 z-20 w-full relative aspect-square bg-slate-50 overflow-hidden">
           {activeMedia.type === "video" ? (
             <video
               key={activeMedia.src}

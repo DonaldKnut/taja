@@ -83,6 +83,7 @@ export function ProductCard({
   const [sellerPanelOpen, setSellerPanelOpen] = useState(false);
   const [showBubbles, setShowBubbles] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isTouchActive, setIsTouchActive] = useState(false);
   const [canHover, setCanHover] = useState(false);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [failedMedia, setFailedMedia] = useState<Set<string>>(new Set());
@@ -324,7 +325,10 @@ export function ProductCard({
 
   useEffect(() => {
     const video = videoRef.current;
-    const shouldPlay = activeMedia.type === "video" && isHovered && canHover;
+    const shouldPlay =
+      activeMedia.type === "video" &&
+      isNearViewport &&
+      ((canHover && isHovered) || (!canHover && isTouchActive));
     if (!video || activeMedia.type !== "video") return;
     if (shouldPlay) {
       if (activeCardVideo && activeCardVideo !== video) {
@@ -345,9 +349,12 @@ export function ProductCard({
         activeCardVideo = null;
       }
     };
-  }, [isHovered, canHover, activeMedia.type, activeMedia.src]);
+  }, [isHovered, isTouchActive, canHover, isNearViewport, activeMedia.type, activeMedia.src]);
 
-  const shouldPlayActiveVideo = activeMedia.type === "video" && isHovered && canHover && isNearViewport;
+  const shouldPlayActiveVideo =
+    activeMedia.type === "video" &&
+    isNearViewport &&
+    ((canHover && isHovered) || (!canHover && isTouchActive));
   const videoPoster = activeMedia.poster || images[0] || fallbackImage;
 
   const handleQuickAdd = (e: React.MouseEvent, variant?: any) => {
@@ -647,6 +654,9 @@ export function ProductCard({
       viewport={{ once: true }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={() => setIsTouchActive(true)}
+      onTouchEnd={() => setIsTouchActive(false)}
+      onTouchCancel={() => setIsTouchActive(false)}
       className={cn("group/card flex flex-col h-full bg-white rounded-[2rem] border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
     >
       {optionsPanelContent}
