@@ -91,14 +91,13 @@ export function CartItem({
   const content = (
     <div
       className={cn(
-        "group relative flex items-center gap-5 p-4 rounded-[1.75rem] border border-gray-50 bg-white hover:border-emerald-100 hover:bg-emerald-50/10 transition-all duration-500",
+        "group relative flex items-center gap-3 sm:gap-5 p-3 sm:p-4 rounded-[1.75rem] border border-gray-50 bg-white hover:border-emerald-100 hover:bg-emerald-50/10 transition-all duration-500",
         className
       )}
     >
       {/* Image */}
       <div
-        className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-gray-50 shadow-sm group-hover:shadow-md transition-all duration-500"
-        style={{ width: imageSize, height: imageSize }}
+        className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-gray-50 shadow-sm group-hover:shadow-md transition-all duration-500 w-16 h-16 min-[400px]:w-20 min-[400px]:h-20 sm:w-[90px] sm:h-[90px]"
       >
         {item.images && item.images[0] ? (
           <Image
@@ -106,11 +105,11 @@ export function CartItem({
             alt={item.title}
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-110"
-            sizes={`${imageSize}px`}
+            sizes="(max-width: 400px) 64px, (max-width: 640px) 80px, 90px"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-300">
-            <ShoppingBag className="h-8 w-8" />
+            <ShoppingBag className="h-6 w-6 sm:h-8 sm:w-8" />
           </div>
         )}
       </div>
@@ -155,7 +154,7 @@ export function CartItem({
               e.stopPropagation();
               removeItem(item._id, item.variantId);
             }}
-            className="p-1.5 opacity-0 group-hover:opacity-100 bg-white rounded-full shadow-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0"
+            className="p-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 bg-white rounded-full shadow-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-300 transform translate-x-0 sm:translate-x-2 sm:group-hover:translate-x-0 shrink-0"
             aria-label="Remove item"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -163,9 +162,9 @@ export function CartItem({
         </div>
 
         {/* Action Row */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-3">
-            <p className="text-emerald-600 font-black text-xs tracking-tight">
+        <div className="flex flex-col min-[380px]:flex-row min-[380px]:items-center justify-between mt-3 sm:mt-4 gap-2 min-[380px]:gap-0">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <p className="text-emerald-600 font-black text-xs sm:text-sm tracking-tight">
               {formatPrice(item.price)}
             </p>
             {item.moq > 1 && (
@@ -173,10 +172,10 @@ export function CartItem({
             )}
           </div>
 
-          <div className="flex items-center bg-gray-50 p-1 rounded-xl border border-gray-100/50">
+          <div className="flex items-center bg-gray-50 p-0.5 sm:p-1 rounded-xl border border-gray-100/50 w-fit">
             <button
               onClick={decrement}
-              className="w-7 h-7 flex items-center justify-center hover:bg-white rounded-lg transition-all text-gray-400 hover:text-gray-900 shadow-none hover:shadow-sm disabled:opacity-30"
+              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center hover:bg-white rounded-lg transition-all text-gray-400 hover:text-gray-900 shadow-none hover:shadow-sm disabled:opacity-30"
               disabled={item.quantity <= item.moq}
               aria-label="Decrease quantity"
             >
@@ -189,11 +188,11 @@ export function CartItem({
               value={inputValue}
               onChange={handleQuantityChange}
               onBlur={handleBlur}
-              className="text-[11px] font-black w-10 text-center text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="text-[10px] sm:text-[11px] font-black w-8 sm:w-10 text-center text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <button
               onClick={increment}
-              className="w-7 h-7 flex items-center justify-center hover:bg-white rounded-lg transition-all text-gray-400 hover:text-gray-900 shadow-none hover:shadow-sm disabled:opacity-30"
+              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center hover:bg-white rounded-lg transition-all text-gray-400 hover:text-gray-900 shadow-none hover:shadow-sm disabled:opacity-30"
               disabled={item.quantity >= item.stock}
               aria-label="Increase quantity"
             >

@@ -95,7 +95,7 @@ export function CartDrawer({
             )}
           >
             {/* Header — safe-area + clear of any underlying sticky chrome */}
-            <div className="relative pt-[max(2rem,env(safe-area-inset-top,0px))] pb-6 px-8 flex items-center justify-between shrink-0">
+            <div className="relative pt-[max(2rem,env(safe-area-inset-top,0px))] pb-6 px-4 sm:px-8 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                   <ShoppingCart className="h-5 w-5 text-emerald-600" />
@@ -116,7 +116,7 @@ export function CartDrawer({
             </div>
 
             {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto px-8 py-2 space-y-4 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-2 space-y-4 custom-scrollbar">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <motion.div
@@ -154,7 +154,7 @@ export function CartDrawer({
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="relative px-8 pt-1.5 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-8 mt-auto border-t border-gray-100 bg-white/95 backdrop-blur-md">
+              <div className="relative px-4 sm:px-8 pt-1.5 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-8 mt-auto border-t border-gray-100 bg-white/95 backdrop-blur-md">
                 <div className="space-y-3">
                   {/* Summary */}
                   <div className="space-y-2">

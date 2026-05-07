@@ -1,9 +1,9 @@
 "use client";
 
-import { MessageCircle, Minus, Plus } from "lucide-react";
+import { MessageCircle, Minus, Plus, ShieldCheck, Star, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPricing";
 import { OffPlatformPaymentWarningModal } from "@/components/security/OffPlatformPaymentWarningModal";
 
@@ -33,6 +33,22 @@ export function ProductPurchaseActions({
 }: ProductPurchaseActionsProps) {
   const [whatsappWarningOpen, setWhatsappWarningOpen] = useState(false);
   const [pendingWhatsAppUrl, setPendingWhatsAppUrl] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
 
   const mustSelectVariant = requiresVariantSelection && !isVariantSelected;
   const canPurchase = product.stock > 0 && !mustSelectVariant;
@@ -129,23 +145,55 @@ export function ProductPurchaseActions({
             </span>
           </Button>
         )}
+
+        {/* Elite Trust Features */}
+        <div className="pt-4 grid grid-cols-3 gap-2 border-t border-slate-50 mt-2">
+          <div className="flex flex-col items-center text-center gap-1">
+            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            </div>
+            <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Secured Escrow</span>
+          </div>
+          <div className="flex flex-col items-center text-center gap-1">
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+              <Truck className="w-3.5 h-3.5 text-blue-600" />
+            </div>
+            <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Fast Logistics</span>
+          </div>
+          <div className="flex flex-col items-center text-center gap-1">
+            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+            </div>
+            <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Verified Seller</span>
+          </div>
+        </div>
       </div>
 
-      {/* Mobile: flush on top of bottom nav; --mobile-bottom-nav-height is set by MobileBottomNav (measured) */}
       <div
-        className="fixed inset-x-0 z-[60] md:hidden border-t border-gray-100 bg-white/95 px-4 pt-2 pb-3 shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.12)] backdrop-blur-xl"
+        className={cn(
+          "fixed inset-x-0 z-[60] md:hidden border-t border-gray-100 bg-white/95 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all duration-500",
+          !isVisible && "translate-y-full opacity-0"
+        )}
         style={{
           bottom: "var(--mobile-bottom-nav-height, calc(env(safe-area-inset-bottom, 0px) + 3rem))",
         }}
       >
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-2 flex items-baseline justify-between gap-2">
-            <p className="text-lg font-black tracking-tight text-taja-primary">{mobilePriceLabel}</p>
-            {currentCompareAtPrice > currentPrice && (
-              <span className="text-xs text-gray-400 line-through">
-                ₦{Number(currentCompareAtPrice).toLocaleString()}
-              </span>
+        <div className="mx-auto max-w-7xl mb-3 flex items-center gap-3">
+          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shrink-0">
+            {product.images && product.images[0] && (
+              <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
             )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black text-taja-secondary uppercase tracking-tight truncate">{product.title}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-black tracking-tight text-taja-primary">{mobilePriceLabel}</p>
+              {currentCompareAtPrice > currentPrice && (
+                <span className="text-[10px] text-gray-400 line-through">
+                  ₦{Number(currentCompareAtPrice).toLocaleString()}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="mx-auto flex max-w-7xl items-center gap-3">

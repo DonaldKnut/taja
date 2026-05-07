@@ -13,6 +13,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { Container } from "@/components/layout";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { useWishlistStore, type WishlistItem } from "@/components/wishlist";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   ProductDetailGallery,
   ProductDetailMeta,
@@ -31,8 +32,23 @@ export default function ProductDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"description" | "specifications">("description");
   const [selectedVariantId, setSelectedVariantId] = useState<string | "standard" | null>("standard");
+  const [isScrollingDown, setIsScrollingDown] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setIsScrollingDown(currentScrollY > lastScrollY && currentScrollY > 50);
+      setLastScrollY(currentScrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
   const { addItem, updateQuantity, toggleCart, isOpen } = useCartStore();
   const { items: wishlistItems, toggleWishlistItem } = useWishlistStore();
+  const { user } = useAuth();
+
+  const isOwner = user && product && (user.id === product.sellerId || user._id === product.sellerId);
 
   const isWishlisted = product
     ? wishlistItems.some((item) => item._id === product.id)
@@ -312,6 +328,7 @@ export default function ProductDetailPage() {
           selectedImageIndex={selectedImageIndex}
           setSelectedImageIndex={setSelectedImageIndex}
           showDesktop={false}
+          isSticky={isScrollingDown}
         />
 
         {/* Main Product Showcase */}
@@ -336,6 +353,8 @@ export default function ProductDetailPage() {
                 onToggleWishlist={handleToggleWishlist}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
+                isOwner={!!isOwner}
+                onEdit={() => router.push(`/seller/products/${product.id}/edit`)}
               />
               <ProductPurchaseActions
                 product={product}

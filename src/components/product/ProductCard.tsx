@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, PlayCircle, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, PlayCircle, ChevronLeft, ChevronRight, Pencil, MoreHorizontal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ProductPrice } from "./ProductPrice";
 import { ShopLink } from "../shop/ShopLink";
@@ -82,6 +82,7 @@ export function ProductCard({
   const [optionsPanelPosition, setOptionsPanelPosition] = useState<{ top: number; left: number; width: number } | null>(null);
   const [sellerPanelOpen, setSellerPanelOpen] = useState(false);
   const [showBubbles, setShowBubbles] = useState(false);
+  const [showMediaActions, setShowMediaActions] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isTouchActive, setIsTouchActive] = useState(false);
   const [canHover, setCanHover] = useState(false);
@@ -89,6 +90,7 @@ export function ProductCard({
   const [failedMedia, setFailedMedia] = useState<Set<string>>(new Set());
   const [isNearViewport, setIsNearViewport] = useState(false);
   const [mediaLoaded, setMediaLoaded] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -290,11 +292,10 @@ export function ProductCard({
   useEffect(() => {
     setMediaIndex(0);
     setFailedMedia(new Set());
-  }, [product?._id]);
-
-  useEffect(() => {
     setMediaLoaded(false);
-  }, [product?._id, activeMedia.src, activeMedia.type]);
+    setHasLoadedOnce(false);
+    setShowMediaActions(false);
+  }, [product?._id]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof IntersectionObserver === "undefined") {
@@ -662,8 +663,8 @@ export function ProductCard({
       {optionsPanelContent}
       {sellerPanelContent}
       <div className="relative aspect-square overflow-hidden bg-gray-50 rounded-t-[2rem]">
-        {!mediaLoaded && (
-          <div className="absolute inset-0 z-10 pointer-events-none animate-pulse bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100" />
+        {!hasLoadedOnce && (
+          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100" />
         )}
         {isInsideDashboard ? (
           <div className="block w-full h-full">
@@ -688,7 +689,10 @@ export function ProductCard({
                 loop
                 playsInline
                 preload={isNearViewport ? "metadata" : "none"}
-                onLoadedData={() => setMediaLoaded(true)}
+                onLoadedData={() => {
+                  setMediaLoaded(true);
+                  setHasLoadedOnce(true);
+                }}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : activeMedia.type === "video" ? (
@@ -697,8 +701,14 @@ export function ProductCard({
                 src={videoPoster}
                 alt={product.title}
                 loading="lazy"
-                onLoad={() => setMediaLoaded(true)}
-                onError={() => setMediaLoaded(true)}
+                onLoad={() => {
+                  setMediaLoaded(true);
+                  setHasLoadedOnce(true);
+                }}
+                onError={() => {
+                  setMediaLoaded(true);
+                  setHasLoadedOnce(true);
+                }}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : (
@@ -707,7 +717,10 @@ export function ProductCard({
                 alt={product.title}
                 fill
                 loading="lazy"
-                onLoad={() => setMediaLoaded(true)}
+                onLoad={() => {
+                  setMediaLoaded(true);
+                  setHasLoadedOnce(true);
+                }}
                 onError={() =>
                   setFailedMedia((prev) => {
                     const next = new Set(prev);
@@ -742,7 +755,10 @@ export function ProductCard({
                 loop
                 playsInline
                 preload={isNearViewport ? "metadata" : "none"}
-                onLoadedData={() => setMediaLoaded(true)}
+                onLoadedData={() => {
+                  setMediaLoaded(true);
+                  setHasLoadedOnce(true);
+                }}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : activeMedia.type === "video" ? (
@@ -751,8 +767,14 @@ export function ProductCard({
                 src={videoPoster}
                 alt={product.title}
                 loading="lazy"
-                onLoad={() => setMediaLoaded(true)}
-                onError={() => setMediaLoaded(true)}
+                onLoad={() => {
+                  setMediaLoaded(true);
+                  setHasLoadedOnce(true);
+                }}
+                onError={() => {
+                  setMediaLoaded(true);
+                  setHasLoadedOnce(true);
+                }}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : (
@@ -761,7 +783,10 @@ export function ProductCard({
                 alt={product.title}
                 fill
                 loading="lazy"
-                onLoad={() => setMediaLoaded(true)}
+                onLoad={() => {
+                  setMediaLoaded(true);
+                  setHasLoadedOnce(true);
+                }}
                 onError={() =>
                   setFailedMedia((prev) => {
                     const next = new Set(prev);
@@ -776,9 +801,9 @@ export function ProductCard({
         )}
         {activeMedia.type === "video" && (
           <>
-            <div className="absolute left-4 bottom-4 z-10 px-2.5 py-1.5 rounded-full bg-black/60 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 pointer-events-none">
-              <PlayCircle className="h-3.5 w-3.5" />
-              Video Preview
+            <div className="absolute left-2.5 sm:left-4 bottom-2.5 sm:bottom-4 z-10 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full bg-black/60 text-white text-[8px] sm:text-[9px] font-black uppercase tracking-widest flex items-center gap-1 pointer-events-none">
+              <PlayCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span className="max-[360px]:hidden">Video Preview</span>
             </div>
           </>
         )}
@@ -791,10 +816,10 @@ export function ProductCard({
                 e.stopPropagation();
                 setMediaIndex((idx) => (idx - 1 + mediaItems.length) % mediaItems.length);
               }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
+              className="absolute left-1.5 sm:left-2 top-1/2 -translate-y-1/2 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
               aria-label="Previous media"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
             <button
               type="button"
@@ -803,22 +828,75 @@ export function ProductCard({
                 e.stopPropagation();
                 setMediaIndex((idx) => (idx + 1) % mediaItems.length);
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
+              className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
               aria-label="Next media"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
           </>
         )}
 
-        {/* Wishlist Button Overlay */}
+        {/* Mobile collapsible media actions */}
+        <div className="absolute top-2.5 right-2.5 z-20 sm:hidden">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMediaActions((v) => !v);
+            }}
+            className="w-8 h-8 rounded-full bg-white/85 backdrop-blur-md flex items-center justify-center text-gray-900 shadow-sm border border-white/40"
+            aria-label="Toggle media actions"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+          {showMediaActions && (
+            <div className="mt-2 rounded-2xl bg-black/65 backdrop-blur-md p-1.5 flex flex-col gap-1 border border-white/20">
+              <button
+                type="button"
+                onClick={(e) => {
+                  handleCopyProductLink(e);
+                  setShowMediaActions(false);
+                }}
+                className="w-8 h-8 rounded-xl bg-white/90 text-gray-900 flex items-center justify-center"
+                title="Copy product link"
+              >
+                <Link2 className="h-4 w-4" />
+              </button>
+              {showWishlist && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    handleWishlistClick(e);
+                    setShowMediaActions(false);
+                  }}
+                  className="w-8 h-8 rounded-xl bg-white/90 text-gray-900 flex items-center justify-center"
+                >
+                  <Heart className={cn("h-4 w-4 transition-colors", isWishlisted && "fill-rose-500 text-rose-500")} />
+                </button>
+              )}
+              {user?.role === "admin" && (
+                <Link
+                  href={`/admin/products/${product._id}/edit`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-8 h-8 rounded-xl bg-white/90 text-gray-900 flex items-center justify-center"
+                  title="Edit product"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Wishlist Button Overlay (desktop/tablet) */}
         {showWishlist && (
-          <div className="absolute top-4 right-4 z-10">
+          <div className="hidden sm:block absolute top-2.5 sm:top-4 right-2.5 sm:right-4 z-10">
             <button
               onClick={handleWishlistClick}
-              className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-900 shadow-sm border border-white/40 active:scale-90 transition-all relative"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-900 shadow-sm border border-white/40 active:scale-90 transition-all relative"
             >
-              <Heart className={cn("h-4.5 w-4.5 transition-colors relative z-10", isWishlisted && "fill-rose-500 text-rose-500")} />
+              <Heart className={cn("h-4 w-4 sm:h-4.5 sm:w-4.5 transition-colors relative z-10", isWishlisted && "fill-rose-500 text-rose-500")} />
               
               {/* Love Bubbling Animation */}
               {showBubbles && (
@@ -848,46 +926,46 @@ export function ProductCard({
             </button>
           </div>
         )}
-        <div className="absolute top-4 left-4 z-10">
+        <div className="hidden sm:block absolute top-2.5 sm:top-4 left-2.5 sm:left-4 z-10">
           <button
             onClick={handleCopyProductLink}
-            className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-900 shadow-sm border border-white/40 active:scale-90 transition-all"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-900 shadow-sm border border-white/40 active:scale-90 transition-all"
             title="Copy product link"
           >
-            <Link2 className="h-4.5 w-4.5" />
+            <Link2 className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
           </button>
         </div>
         {user?.role === "admin" && (
-          <div className="absolute top-4 left-[3.25rem] z-10">
+          <div className="hidden sm:block absolute top-2.5 sm:top-4 left-[2.85rem] sm:left-[3.25rem] z-10">
             <Link
               href={`/admin/products/${product._id}/edit`}
               onClick={(e) => e.stopPropagation()}
-              className="h-10 px-3 rounded-full bg-white/80 backdrop-blur-md border border-white/40 shadow-sm inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-900"
+              className="h-8 sm:h-10 px-2 sm:px-3 rounded-full bg-white/80 backdrop-blur-md border border-white/40 shadow-sm inline-flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-gray-900"
               title="Edit product"
             >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
+              <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span className="max-[360px]:hidden">Edit</span>
             </Link>
           </div>
         )}
 
         {/* Condition/New Badge */}
         {product.condition === 'new' && (
-          <div className={`absolute top-4 ${user?.role === "admin" ? "left-[8.5rem]" : "left-[3.25rem]"} px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-full z-10`}>
+          <div className={`absolute top-2.5 sm:top-4 ${user?.role === "admin" ? "left-[6.4rem] sm:left-[8.5rem]" : "left-[2.85rem] sm:left-[3.25rem]"} px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-600 text-white text-[9px] sm:text-[10px] font-bold rounded-full z-10`}>
             NEW
           </div>
         )}
       </div>
 
       <CardContent className="p-2 sm:p-4 flex flex-col justify-between flex-grow">
-        <div className="space-y-1 pr-3 sm:pr-12">
+        <div className="space-y-1 sm:pr-12">
           {isInsideDashboard ? (
-            <h3 className="text-sm font-bold text-gray-900 line-clamp-2 min-h-[2.5rem] leading-tight">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] leading-tight">
               {product.title}
             </h3>
           ) : (
             <Link href={productPath} onClick={handleClick} className="block">
-              <h3 className="text-sm font-bold text-gray-900 group-hover/card:text-blue-600 transition-colors line-clamp-2 min-h-[2.5rem] leading-tight">
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 group-hover/card:text-blue-600 transition-colors line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] leading-tight">
                 {product.title}
               </h3>
             </Link>
@@ -902,7 +980,7 @@ export function ProductCard({
           </p>
 
           {showSellerRow && sellerName && (
-            <div className="mt-3 flex flex-col gap-2 rounded-2xl border border-gray-100/80 bg-gradient-to-b from-gray-50/50 to-gray-50/20 p-2.5 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-1.5 sm:from-transparent sm:to-transparent sm:shadow-none sm:border-gray-50 sm:bg-gray-50/30 group/seller-row">
+            <div className="mt-3 flex flex-col gap-2 rounded-2xl border border-gray-100/80 bg-gradient-to-b from-gray-50/50 to-gray-50/20 p-2 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-1.5 sm:from-transparent sm:to-transparent sm:shadow-none sm:border-gray-50 sm:bg-gray-50/30 group/seller-row">
               <button
                 type="button"
                 onClick={(e) => {
@@ -910,9 +988,9 @@ export function ProductCard({
                   e.stopPropagation();
                   setSellerPanelOpen(true);
                 }}
-                className="flex w-full min-w-0 items-center gap-2.5 text-left sm:w-auto sm:flex-1 sm:gap-2"
+                className="flex w-full min-w-0 items-center gap-2 text-left sm:w-auto sm:flex-1 sm:gap-2"
               >
-                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100 sm:h-7 sm:w-7">
+                <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100 sm:h-7 sm:w-7">
                   <Image
                     src={sellerAvatar}
                     alt={sellerName}
@@ -922,7 +1000,7 @@ export function ProductCard({
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[12px] font-semibold leading-snug text-gray-900 line-clamp-2 sm:text-[11px] sm:leading-tight sm:line-clamp-1 group-hover/seller-row:text-emerald-700 transition-colors">
+                  <span className="block text-[11px] font-semibold leading-tight text-gray-900 line-clamp-1 sm:text-[11px] group-hover/seller-row:text-emerald-700 transition-colors">
                     {sellerName}
                   </span>
                   {shopName && (
@@ -946,13 +1024,13 @@ export function ProductCard({
         </div>
 
         <div className="mt-auto pt-2 flex flex-col gap-3 relative">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <ProductPrice
               price={displayMinPrice}
               maxPrice={displayMaxPrice}
               hasVariants={hasVariants}
-              size="md"
-              className="leading-tight"
+              size="sm"
+              className="leading-tight sm:text-base"
             />
           </div>
 

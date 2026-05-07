@@ -21,7 +21,7 @@ export function ProductDetailTabs({
 }: ProductDetailTabsProps) {
   return (
     <div className={cn(compact ? "space-y-4 pt-0" : "space-y-6 pt-6")}>
-      <div className="flex gap-8 border-b border-gray-100">
+      <div className="flex gap-4 sm:gap-8 border-b border-gray-100">
         <button
           onClick={() => setActiveTab("description")}
           className={cn(
@@ -55,7 +55,7 @@ export function ProductDetailTabs({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-12 gap-y-2 sm:gap-y-4"
           >
             {specifications && Object.keys(specifications).length > 0 ? (
               Object.entries(specifications).map(([key, value]) => (

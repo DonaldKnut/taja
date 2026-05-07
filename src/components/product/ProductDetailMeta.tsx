@@ -1,7 +1,9 @@
 "use client";
+import { useState } from "react";
 import toast from "react-hot-toast";
 
-import { Heart, Share2, Star, Truck } from "lucide-react";
+import { Edit2, Heart, MoreHorizontal, Share2, Star, Truck, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPricing";
 import { ProductDetailTabs } from "./ProductDetailTabs";
@@ -15,6 +17,8 @@ interface ProductDetailMetaProps {
   onToggleWishlist: () => void;
   activeTab: "description" | "specifications";
   setActiveTab: (tab: "description" | "specifications") => void;
+  isOwner?: boolean;
+  onEdit?: () => void;
 }
 
 export function ProductDetailMeta({
@@ -26,7 +30,10 @@ export function ProductDetailMeta({
   onToggleWishlist,
   activeTab,
   setActiveTab,
+  isOwner = false,
+  onEdit,
 }: ProductDetailMetaProps) {
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
   const selectedVariant = product.variants?.find((v: any) => String(v._id || v.id || v.name) === String(selectedVariantId));
   const currentPrice = getEffectivePrice(product.price, selectedVariant?.price);
   const currentCompareAtPrice = selectedVariant?.compareAtPrice ?? product.compareAtPrice;
@@ -46,35 +53,126 @@ export function ProductDetailMeta({
             Verified Elite Choice
           </span>
         </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={onShare} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-            <Share2 className="w-5 h-5 text-gray-400" />
-          </button>
-          <button
-            type="button"
-            onClick={onToggleWishlist}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <Heart
-              className={cn(
-                "w-5 h-5 transition-colors",
-                isWishlisted ? "text-rose-500 fill-rose-500" : "text-gray-400"
+        <div className="relative flex items-center justify-end">
+          {/* Mobile/Tablet Collapsible Actions (Always collapsed on mobile for ultra-clean UI) */}
+          <div className="lg:hidden flex items-center gap-1.5">
+            <AnimatePresence>
+              {isActionsOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, x: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: 20, scale: 0.9 }}
+                  className="flex items-center gap-1.5"
+                >
+                  {isOwner && onEdit && (
+                    <button 
+                      type="button" 
+                      onClick={onEdit} 
+                      className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 active:scale-90 transition-transform"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button 
+                    type="button" 
+                    onClick={onShare} 
+                    className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-gray-400 active:scale-90 transition-transform"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onToggleWishlist}
+                    className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center active:scale-90 transition-transform"
+                  >
+                    <Heart
+                      className={cn(
+                        "w-4 h-4 transition-colors",
+                        isWishlisted ? "text-rose-500 fill-rose-500" : "text-gray-400"
+                      )}
+                    />
+                  </button>
+                </motion.div>
               )}
-            />
-          </button>
+            </AnimatePresence>
+            
+            <button 
+              type="button" 
+              onClick={() => setIsActionsOpen(!isActionsOpen)}
+              className={cn(
+                "w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90",
+                isActionsOpen ? "bg-taja-secondary text-white" : "bg-white border border-slate-100 text-taja-secondary shadow-sm"
+              )}
+            >
+              {isActionsOpen ? <X className="w-4 h-4" /> : <MoreHorizontal className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {/* Desktop Only View (>= 1024px) */}
+          <div className="hidden lg:flex items-center gap-2">
+            {isOwner && onEdit && (
+              <button type="button" onClick={onEdit} className="p-2.5 rounded-full hover:bg-emerald-50 transition-colors group/edit border border-transparent hover:border-emerald-100">
+                <Edit2 className="w-5 h-5 text-emerald-500 transition-transform group-hover/edit:scale-110" />
+              </button>
+            )}
+            <button type="button" onClick={onShare} className="p-2.5 rounded-full hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+              <Share2 className="w-5 h-5 text-gray-400" />
+            </button>
+            <button
+              type="button"
+              onClick={onToggleWishlist}
+              className="p-2.5 rounded-full hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-100"
+            >
+              <Heart
+                className={cn(
+                  "w-5 h-5 transition-colors",
+                  isWishlisted ? "text-rose-500 fill-rose-500" : "text-gray-400"
+                )}
+              />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-taja-secondary tracking-tighter leading-tight italic">
-          {product.title}
-        </h1>
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-gradient-to-r from-emerald-100 to-transparent"></div>
-          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em]">
-            Authentic Quality
-          </span>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-taja-secondary tracking-tighter leading-tight italic">
+            {product.title}
+          </h1>
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-emerald-100 to-transparent"></div>
+            <span className="text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em]">
+              Authentic Quality
+            </span>
+          </div>
         </div>
+
+        {/* Stock Scarcity Indicator */}
+        {product.stock > 0 && product.stock <= 10 && (
+          <div className="bg-rose-50/50 border border-rose-100/50 rounded-2xl p-4 space-y-2 animate-in fade-in slide-in-from-top-4 duration-700">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                </span>
+                Highly Coveted Item
+              </span>
+              <span className="text-[10px] font-bold text-rose-500 uppercase tracking-tight">
+                Only {product.stock} left in stock
+              </span>
+            </div>
+            <div className="h-1.5 w-full bg-rose-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-rose-400 to-rose-600 rounded-full transition-all duration-1000" 
+                style={{ width: `${(product.stock / 10) * 100}%` }}
+              />
+            </div>
+            <p className="text-[9px] font-medium text-rose-400 italic">
+              Join {Math.floor(Math.random() * 15) + 5} others viewing this exclusive piece right now.
+            </p>
+          </div>
+        )}
       </div>
 
       <ProductDetailTabs

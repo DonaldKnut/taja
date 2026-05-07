@@ -75,13 +75,28 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
         };
     }, [isAuthenticated]);
 
+    const [isVisible, setIsVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
+
     useEffect(() => {
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20);
+            const currentScrollY = window.scrollY;
+            
+            // Background change threshold
+            setIsScrolled(currentScrollY > 20);
+
+            // Hide/Show logic
+            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                setIsVisible(false);
+            } else {
+                setIsVisible(true);
+            }
+            
+            setLastScrollY(currentScrollY);
         };
-        window.addEventListener("scroll", handleScroll);
+        window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [lastScrollY]);
 
     const isTransparent = transparent && !isScrolled;
 
@@ -90,6 +105,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
             <header
                 className={cn(
                     "sticky top-0 w-full z-[9999] transition-all duration-500",
+                    !isVisible && "-translate-y-full opacity-0",
                     isTransparent
                         ? "bg-transparent border-transparent"
                         : "bg-white/80 backdrop-blur-xl border-b border-white/40 shadow-premium"

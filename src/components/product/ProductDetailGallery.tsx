@@ -12,6 +12,7 @@ interface ProductDetailGalleryProps {
   setSelectedImageIndex: (index: number) => void;
   showMobile?: boolean;
   showDesktop?: boolean;
+  isSticky?: boolean;
 }
 
 export function ProductDetailGallery({
@@ -21,6 +22,7 @@ export function ProductDetailGallery({
   setSelectedImageIndex,
   showMobile = true,
   showDesktop = true,
+  isSticky = false,
 }: ProductDetailGalleryProps) {
   const normalizedVideos = Array.isArray(product?.videos)
     ? product.videos
@@ -41,53 +43,60 @@ export function ProductDetailGallery({
   return (
     <>
       {showMobile && (
-        <div className="lg:hidden sticky top-12 sm:top-16 z-20 w-full relative aspect-square bg-slate-50 overflow-hidden">
-          {activeMedia.type === "video" ? (
-            <video
-              key={activeMedia.src}
-              src={activeMedia.src}
-              controls
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <Image src={activeMedia.src} alt={product.title} fill className="object-cover" />
-          )}
-          {activeMedia.type === "video" && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-black/55 border border-white/70 shadow-2xl flex items-center justify-center animate-pulse">
-                <PlayCircle className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
-              </div>
-            </div>
-          )}
-          {safeMediaItems.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={() => setSelectedImageIndex((activeIndex - 1 + safeMediaItems.length) % safeMediaItems.length)}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedImageIndex((activeIndex + 1) % safeMediaItems.length)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </>
-          )}
-          <div className="absolute top-4 left-4 flex flex-col gap-2">
-            {discountPercentage > 0 && (
-              <div className="bg-emerald-500 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
-                <Zap className="h-3 w-3 text-white fill-white" />
-                <span className="text-[9px] font-black tracking-widest text-white uppercase">
-                  {discountPercentage}% OFF
-                </span>
+        <div className="lg:hidden relative aspect-square mb-4">
+          <div className={cn(
+            "w-full bg-slate-50 overflow-hidden z-20 transition-all duration-700 ease-in-out",
+            isSticky 
+              ? "fixed top-0 left-0 right-0 h-[35vh] sm:h-[40vh] shadow-2xl border-b border-white/20" 
+              : "relative h-full"
+          )}>
+            {activeMedia.type === "video" ? (
+              <video
+                key={activeMedia.src}
+                src={activeMedia.src}
+                controls
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Image src={activeMedia.src} alt={product.title} fill className="object-cover" />
+            )}
+            {activeMedia.type === "video" && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-black/55 border border-white/70 shadow-2xl flex items-center justify-center animate-pulse">
+                  <PlayCircle className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                </div>
               </div>
             )}
+            {safeMediaItems.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImageIndex((activeIndex - 1 + safeMediaItems.length) % safeMediaItems.length)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImageIndex((activeIndex + 1) % safeMediaItems.length)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </>
+            )}
+            <div className="absolute top-4 left-4 flex flex-col gap-2">
+              {discountPercentage > 0 && (
+                <div className="bg-emerald-500 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                  <Zap className="h-3 w-3 text-white fill-white" />
+                  <span className="text-[9px] font-black tracking-widest text-white uppercase">
+                    {discountPercentage}% OFF
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

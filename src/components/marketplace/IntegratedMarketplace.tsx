@@ -43,6 +43,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
     const [verifiedOnly, setVerifiedOnly] = useState(false);
     const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
     const [isSearchCollapsed, setIsSearchCollapsed] = useState(false);
+    const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
     const [showVerifiedIntro, setShowVerifiedIntro] = useState(() => {
         if (typeof window !== "undefined" && !isInsideDashboard) {
             return !sessionStorage.getItem("taja_intro_played");
@@ -129,6 +130,15 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
         return () => clearInterval(timer);
     }, []);
 
+    // Scroll listener for sticky header effects
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsHeaderScrolled(window.scrollY > 200);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
     return (
         <div className={cn(
             "bg-[#F8F9FB] min-h-screen overflow-hidden",
@@ -187,8 +197,11 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         {/* ═══ Sliding Media Header ═══ */}
                         {/* ═══ Header Registry Search ═══ */}
                         <section className={cn(
-                            "px-4 sm:px-6 pb-6 bg-white border-b border-gray-100 sticky top-16 sm:top-20 z-40",
-                            isInsideDashboard ? "pt-4 sm:pt-8" : "pt-4 sm:pt-12"
+                            "px-4 sm:px-6 transition-all duration-500 sticky z-40",
+                            isInsideDashboard ? "top-16" : "top-20",
+                            isHeaderScrolled 
+                                ? "bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-premium py-4" 
+                                : cn("bg-white border-b border-gray-100 pb-6", isInsideDashboard ? "pt-4 sm:pt-8" : "pt-4 sm:pt-12")
                         )}>
                             {!isInsideDashboard && (
                                 <div className="flex items-center justify-between mb-8">
@@ -208,11 +221,19 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-end mb-3 sm:hidden">
+                            <div className={cn(
+                                "flex items-center justify-end sm:hidden transition-all duration-300",
+                                isHeaderScrolled ? "mb-1" : "mb-3"
+                            )}>
                                 <button
                                     type="button"
                                     onClick={() => setIsSearchCollapsed((prev) => !prev)}
-                                    className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-600"
+                                    className={cn(
+                                        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all",
+                                        isHeaderScrolled 
+                                            ? "bg-taja-light/50 text-taja-primary border-taja-primary/10" 
+                                            : "bg-white border-gray-200 text-gray-600 shadow-sm"
+                                    )}
                                 >
                                     {isSearchCollapsed ? "Show Search" : "Hide Search"}
                                     <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isSearchCollapsed && "-rotate-90")} />
@@ -227,7 +248,10 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                     <input
                                         type="text"
                                         placeholder="Search products, shops, and sellers..."
-                                        className="w-full h-16 bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all shadow-sm"
+                                        className={cn(
+                                            "w-full bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all",
+                                            isHeaderScrolled ? "h-14 shadow-sm" : "h-16 shadow-sm"
+                                        )}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                     />

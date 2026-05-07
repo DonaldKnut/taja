@@ -171,8 +171,8 @@ export default function ShopsPage() {
             )}
 
             {/* Logo - Centered Overlay Style */}
-            <div className="absolute -bottom-10 left-8">
-              <div className="w-20 h-20 rounded-3xl border-4 border-white shadow-2xl overflow-hidden bg-white ring-4 ring-black/5">
+            <div className="absolute -bottom-10 left-4 sm:left-8">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl border-4 border-white shadow-2xl overflow-hidden bg-white ring-4 ring-black/5">
                 {shop.logo ? (
                   <Image src={shop.logo} alt={shop.shopName} fill className="object-cover" sizes="80px" />
                 ) : (
@@ -184,9 +184,9 @@ export default function ShopsPage() {
             </div>
           </div>
 
-          <CardContent className="pt-14 pb-8 px-8 flex-1 flex flex-col">
+          <CardContent className="pt-12 sm:pt-14 pb-6 sm:pb-8 px-4 sm:px-8 flex-1 flex flex-col">
             <div className="space-y-4 mb-6">
-              <h3 className="text-xl font-black text-taja-secondary tracking-tight group-hover:text-taja-primary transition-colors">
+              <h3 className="text-lg sm:text-xl font-black text-taja-secondary tracking-tight group-hover:text-taja-primary transition-colors">
                 {shop.shopName}
               </h3>
 
@@ -246,7 +246,7 @@ export default function ShopsPage() {
           <motion.section
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative glass-panel rounded-[3.5rem] p-12 md:p-20 overflow-hidden border-white/60 shadow-premium mb-16"
+            className="relative glass-panel rounded-[2.5rem] sm:rounded-[3.5rem] p-6 sm:p-12 md:p-20 overflow-hidden border-white/60 shadow-premium mb-16"
           >
             {/* Background Motifs */}
             <div className="absolute inset-0 z-0 pointer-events-none">
@@ -262,7 +262,7 @@ export default function ShopsPage() {
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-taja-primary">Hub of Excellence</span>
               </div>
 
-              <h1 className="text-4xl md:text-7xl font-black text-taja-secondary tracking-tighter leading-[0.85] mb-8">
+              <h1 className="text-3xl sm:text-4xl md:text-7xl font-black text-taja-secondary tracking-tighter leading-[0.85] mb-8">
                 The Elite Standard of <br />
                 <span className="text-transparent bg-clip-text bg-gradient-taja">African Commerce.</span>
               </h1>
@@ -280,7 +280,7 @@ export default function ShopsPage() {
                   <Plus className="w-4 h-4 ml-3 group-hover:rotate-90 transition-transform" />
                 </Button>
 
-                <div className="relative group flex items-center lg:w-96">
+                <div className="relative group flex items-center w-full lg:w-96">
                   <Search className="absolute left-6 h-5 w-5 text-gray-300 group-focus-within:text-taja-primary transition-colors" />
                   <Input
                     type="text"
