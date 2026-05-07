@@ -199,6 +199,18 @@ export async function GET(request: NextRequest) {
       maxPrice: product.maxPrice,
       compareAtPrice: product.compareAtPrice,
       images: product.images || [],
+      videos: Array.isArray(product.videos)
+        ? product.videos
+            .map((v: any) =>
+              typeof v === 'string'
+                ? { url: v, type: 'video' as const }
+                : v?.url
+                  ? { ...v, type: 'video' as const }
+                  : null
+            )
+            .filter(Boolean)
+            .slice(0, 2)
+        : [],
       category: product.category?.name || product.category || 'General',
       subcategory: product.subcategory,
       condition: product.condition,
