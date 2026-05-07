@@ -36,6 +36,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Truck,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
