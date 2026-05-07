@@ -14,5 +14,6 @@ export { default as Notification } from "./Notification";
 export { default as ShopFollow } from "./ShopFollow";
 export { default as SupportTicket } from "./SupportTicket";
 export { default as WalletTransaction } from "./WalletTransaction";
+export { default as LogisticsPartner } from "./LogisticsPartner";
 
 

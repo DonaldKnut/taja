@@ -55,9 +55,10 @@ export function ProductDetailGallery({
             <Image src={activeMedia.src} alt={product.title} fill className="object-cover" />
           )}
           {activeMedia.type === "video" && (
-            <div className="absolute left-4 bottom-4 z-10 px-2.5 py-1.5 rounded-full bg-black/60 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 pointer-events-none">
-              <PlayCircle className="h-3.5 w-3.5" />
-              Video
+            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-black/55 border border-white/70 shadow-2xl flex items-center justify-center animate-pulse">
+                <PlayCircle className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
             </div>
           )}
           {safeMediaItems.length > 1 && (

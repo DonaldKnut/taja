@@ -42,6 +42,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
     const [maxPrice, setMaxPrice] = useState("");
     const [verifiedOnly, setVerifiedOnly] = useState(false);
     const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+    const [isSearchCollapsed, setIsSearchCollapsed] = useState(false);
     const [showVerifiedIntro, setShowVerifiedIntro] = useState(() => {
         if (typeof window !== "undefined" && !isInsideDashboard) {
             return !sessionStorage.getItem("taja_intro_played");
@@ -186,8 +187,8 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         {/* ═══ Sliding Media Header ═══ */}
                         {/* ═══ Header Registry Search ═══ */}
                         <section className={cn(
-                            "px-4 sm:px-6 pb-6 bg-white border-b border-gray-100",
-                            isInsideDashboard ? "pt-8" : "pt-12"
+                            "px-4 sm:px-6 pb-6 bg-white border-b border-gray-100 sticky top-16 sm:top-20 z-40",
+                            isInsideDashboard ? "pt-4 sm:pt-8" : "pt-4 sm:pt-12"
                         )}>
                             {!isInsideDashboard && (
                                 <div className="flex items-center justify-between mb-8">
@@ -207,34 +208,47 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                 </div>
                             )}
 
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-taja-primary transition-colors">
-                                    <Search className="w-5 h-5" />
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Search products, shops, and sellers..."
-                                    className="w-full h-16 bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all shadow-sm"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
+                            <div className="flex items-center justify-end mb-3 sm:hidden">
                                 <button
                                     type="button"
-                                    onClick={() => setShowAdvancedFilters((prev) => !prev)}
-                                    className={cn(
-                                        "absolute right-3 top-1/2 -translate-y-1/2 h-10 px-3 flex items-center justify-center gap-2 transition-colors rounded-xl",
-                                        showAdvancedFilters || hasAdvancedFilters
-                                            ? "text-taja-primary bg-taja-light/40"
-                                            : "text-gray-400 hover:text-black bg-gray-50"
-                                    )}
+                                    onClick={() => setIsSearchCollapsed((prev) => !prev)}
+                                    className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-600"
                                 >
-                                    <Filter className="w-4 h-4" />
-                                    <ChevronDown className={cn("w-3 h-3 transition-transform", showAdvancedFilters && "rotate-180")} />
+                                    {isSearchCollapsed ? "Show Search" : "Hide Search"}
+                                    <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isSearchCollapsed && "-rotate-90")} />
                                 </button>
                             </div>
 
+                            {!isSearchCollapsed && (
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-taja-primary transition-colors">
+                                        <Search className="w-5 h-5" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Search products, shops, and sellers..."
+                                        className="w-full h-16 bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all shadow-sm"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAdvancedFilters((prev) => !prev)}
+                                        className={cn(
+                                            "absolute right-3 top-1/2 -translate-y-1/2 h-10 px-3 flex items-center justify-center gap-2 transition-colors rounded-xl",
+                                            showAdvancedFilters || hasAdvancedFilters
+                                                ? "text-taja-primary bg-taja-light/40"
+                                                : "text-gray-400 hover:text-black bg-gray-50"
+                                        )}
+                                    >
+                                        <Filter className="w-4 h-4" />
+                                        <ChevronDown className={cn("w-3 h-3 transition-transform", showAdvancedFilters && "rotate-180")} />
+                                    </button>
+                                </div>
+                            )}
+
                             <AnimatePresence initial={false}>
-                                {showAdvancedFilters && (
+                                {showAdvancedFilters && !isSearchCollapsed && (
                                     <motion.div
                                         initial={{ opacity: 0, height: 0, y: -4 }}
                                         animate={{ opacity: 1, height: "auto", y: 0 }}
@@ -335,31 +349,8 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                             </AnimatePresence>
                         </section>
 
-                        {/* ═══ Stats View ═══ */}
-                        <section className="px-6 py-8 grid grid-cols-2 gap-4 -mt-6 relative z-20">
-                            <div className="bg-white/70 backdrop-blur-xl p-5 rounded-[2rem] shadow-premium flex items-center gap-4 border border-white/60">
-                                <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center text-white">
-                                    <Star className="w-4 h-4 fill-white" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-[9px] font-black text-gray-400 tracking-widest uppercase">Wallet</p>
-                                    <p className="text-sm font-black text-gray-900 tracking-tight">₦12,450.00 <span className="text-[8px] text-taja-primary italic ml-1">Verified</span></p>
-                                </div>
-                            </div>
-                            <div className="bg-white/70 backdrop-blur-xl p-5 rounded-[2rem] shadow-premium flex items-center gap-4 border border-white/60">
-                                <div className="w-10 h-10 rounded-xl bg-taja-primary flex items-center justify-center text-white">
-                                    <Zap className="w-4 h-4 fill-white" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-[9px] font-black text-gray-400 tracking-widest uppercase">Points</p>
-                                    <p className="text-sm font-black text-gray-900 tracking-tight">2,850</p>
-                                </div>
-                            </div>
-                        </section>
-
-
                         {/* ═══ Product Feed ═══ */}
-                        <section className="px-4 sm:px-6 space-y-8 mt-4 pb-20">
+                        <section className="px-4 sm:px-6 space-y-8 mt-6 pb-20">
                             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                                 <h3 className="text-2xl font-black text-gray-900 tracking-tighter italic">Product Catalog</h3>
                                 <div className="flex gap-2">

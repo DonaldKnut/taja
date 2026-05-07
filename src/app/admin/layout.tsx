@@ -71,6 +71,7 @@ const adminNavGroups = [
     items: [
       { name: "Global Orders", href: "/admin/orders", icon: ShoppingCart },
       { name: "Shops", href: "/admin/shops", icon: Store },
+      { name: "Logistics Partners", href: "/admin/logistics", icon: Truck },
       { name: "Categories", href: "/admin/categories", icon: Tag },
       { name: "Product Catalog", href: "/admin/products", icon: Package },
     ],

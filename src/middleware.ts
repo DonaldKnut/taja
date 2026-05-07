@@ -9,6 +9,7 @@ const protectedRoutes = [
   "/checkout",
   "/seller",     // seller only
   "/admin",      // admin only
+  "/logistics/dashboard",  // logistics partner dashboard
   "/onboarding", // complete profile (OAuth users)
 ];
 
