@@ -145,6 +145,7 @@ export default function ProductDetailPage() {
           stock: productData.inventory?.quantity ?? productData.stock ?? 0,
           moq: productData.inventory?.moq ?? 1,
           images: productData.images || [],
+          videos: productData.videos || [],
           condition: productData.condition || "good",
           category: productData.category?.name || productData.category || "",
           specifications: productData.specifications || {},

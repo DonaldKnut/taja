@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Zap } from "lucide-react";
-import { ImageSlider } from "@/components/ui/ImageSlider";
+import { PlayCircle, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProductDetailGalleryProps {
@@ -23,11 +22,62 @@ export function ProductDetailGallery({
   showMobile = true,
   showDesktop = true,
 }: ProductDetailGalleryProps) {
+  const normalizedVideos = Array.isArray(product?.videos)
+    ? product.videos
+        .map((v: any) => (typeof v === "string" ? v : v?.url))
+        .filter((url: string) => typeof url === "string" && url.trim().length > 0)
+        .slice(0, 2)
+    : [];
+  const normalizedImages = Array.isArray(product?.images) ? product.images : [];
+  const mediaItems: Array<{ type: "video" | "image"; src: string }> = [
+    ...normalizedVideos.map((src: string) => ({ type: "video" as const, src })),
+    ...normalizedImages.map((src: string) => ({ type: "image" as const, src })),
+  ];
+  const safeMediaItems =
+    mediaItems.length > 0 ? mediaItems : [{ type: "image" as const, src: "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png" }];
+  const activeIndex = Math.max(0, Math.min(selectedImageIndex, safeMediaItems.length - 1));
+  const activeMedia = safeMediaItems[activeIndex];
+
   return (
     <>
       {showMobile && (
-        <div className="lg:hidden w-full relative aspect-square bg-slate-50 overflow-hidden">
-          <ImageSlider images={product.images} alt={product.title} className="w-full h-full" showDots />
+        <div className="lg:hidden sticky top-16 z-20 w-full relative aspect-square bg-slate-50 overflow-hidden">
+          {activeMedia.type === "video" ? (
+            <video
+              key={activeMedia.src}
+              src={activeMedia.src}
+              controls
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Image src={activeMedia.src} alt={product.title} fill className="object-cover" />
+          )}
+          {activeMedia.type === "video" && (
+            <div className="absolute left-4 bottom-4 z-10 px-2.5 py-1.5 rounded-full bg-black/60 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 pointer-events-none">
+              <PlayCircle className="h-3.5 w-3.5" />
+              Video
+            </div>
+          )}
+          {safeMediaItems.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setSelectedImageIndex((activeIndex - 1 + safeMediaItems.length) % safeMediaItems.length)}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedImageIndex((activeIndex + 1) % safeMediaItems.length)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-8 w-8 rounded-full bg-black/45 text-white flex items-center justify-center"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </>
+          )}
           <div className="absolute top-4 left-4 flex flex-col gap-2">
             {discountPercentage > 0 && (
               <div className="bg-emerald-500 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
@@ -49,14 +99,25 @@ export function ProductDetailGallery({
               animate={{ opacity: 1, y: 0 }}
               className="group relative aspect-[4/5] bg-slate-50 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-emerald-900/5"
             >
-              <Image
-                src={product.images[selectedImageIndex]}
-                alt={product.title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                priority
-                sizes="(max-width: 1024px) 100vw, 60vw"
-              />
+              {activeMedia.type === "video" ? (
+                <video
+                  key={activeMedia.src}
+                  src={activeMedia.src}
+                  controls
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Image
+                  src={activeMedia.src}
+                  alt={product.title}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                />
+              )}
 
               <div className="absolute top-8 left-8 flex flex-col gap-3">
                 {discountPercentage > 0 && (
@@ -73,9 +134,9 @@ export function ProductDetailGallery({
               </div>
             </motion.div>
 
-            {product.images.length > 1 && (
+            {safeMediaItems.length > 1 && (
               <div className="flex gap-4 mt-8 overflow-x-auto no-scrollbar pb-2">
-                {product.images.map((image: string, index: number) => (
+                {safeMediaItems.map((item, index: number) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
@@ -86,7 +147,16 @@ export function ProductDetailGallery({
                         : "border-transparent opacity-60 hover:opacity-100 -rotate-2"
                     )}
                   >
-                    <Image src={image} alt="" fill className="object-cover" sizes="96px" />
+                    {item.type === "video" ? (
+                      <div className="relative w-full h-full bg-black">
+                        <video src={item.src} muted playsInline className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                          <PlayCircle className="h-5 w-5 text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <Image src={item.src} alt="" fill className="object-cover" sizes="96px" />
+                    )}
                   </button>
                 ))}
               </div>

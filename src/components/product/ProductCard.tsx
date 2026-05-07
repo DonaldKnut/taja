@@ -34,6 +34,8 @@ const normalizeMediaUrl = (value: unknown): string | null => {
   return null;
 };
 
+let activeCardVideo: HTMLVideoElement | null = null;
+
 export interface ProductCardProps {
   product: Product;
   variant?: "default" | "minimal" | "emphasis_modal";
@@ -81,9 +83,13 @@ export function ProductCard({
   const [sellerPanelOpen, setSellerPanelOpen] = useState(false);
   const [showBubbles, setShowBubbles] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [canHover, setCanHover] = useState(false);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [failedMedia, setFailedMedia] = useState<Set<string>>(new Set());
+  const [isNearViewport, setIsNearViewport] = useState(false);
+  const [mediaLoaded, setMediaLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     if (!optionsOpen || typeof document === "undefined") return;
@@ -161,27 +167,35 @@ export function ProductCard({
     : [fallbackImage];
   const videoItems = (() => {
     const raw = (product as any)?.videos;
-    if (!Array.isArray(raw)) return [] as string[];
+    if (!Array.isArray(raw)) return [] as Array<{ src: string; poster?: string }>;
     return raw
-      .map((v: any) => normalizeMediaUrl(typeof v === "string" ? v : v?.url))
-      .filter((url): url is string => Boolean(url))
+      .map((v: any) => {
+        if (typeof v === "string") {
+          const src = normalizeMediaUrl(v);
+          return src ? { src } : null;
+        }
+        if (!v || typeof v !== "object") return null;
+        const src = normalizeMediaUrl(v.url);
+        if (!src) return null;
+        const poster =
+          normalizeMediaUrl(v.poster) ||
+          normalizeMediaUrl(v.thumbnail) ||
+          normalizeMediaUrl(v.previewImage) ||
+          undefined;
+        return { src, poster };
+      })
+      .filter((item): item is { src: string; poster?: string } => Boolean(item))
       .slice(0, 2);
   })();
-  const mediaItemsRaw: Array<{ type: "image" | "video"; src: string }> = [
-    ...videoItems.map((src) => ({ type: "video" as const, src })),
-    ...images.map((src) => ({ type: "image" as const, src })),
+  const mediaItemsRaw: Array<{ type: "image" | "video"; src: string; poster?: string }> = [
+    ...videoItems.map((item) => ({ type: "video" as const, src: item.src, poster: item.poster })),
+    ...images.map((src) => ({ type: "image" as const, src, poster: undefined })),
   ];
   const mediaItems = mediaItemsRaw.filter((item) => !failedMedia.has(item.src));
-  const activeMedia = mediaItems[Math.max(0, Math.min(mediaIndex, mediaItems.length - 1))] || { type: "image" as const, src: fallbackImage };
+  const activeMedia =
+    mediaItems[Math.max(0, Math.min(mediaIndex, mediaItems.length - 1))] ||
+    { type: "image" as const, src: fallbackImage, poster: undefined };
   const productPath = getProductPath(product as any);
-  const previewVideoUrl = (() => {
-    const raw = (product as any)?.videos;
-    if (!Array.isArray(raw) || raw.length === 0) return "";
-    const first = raw[0];
-    if (typeof first === "string") return first;
-    if (first && typeof first === "object" && typeof first.url === "string") return first.url;
-    return "";
-  })();
 
   // Derive seller display for dashboard marketplace
   const sellerUser = (typeof product.seller === "object" ? product.seller : undefined) as any | undefined;
@@ -278,16 +292,63 @@ export function ProductCard({
   }, [product?._id]);
 
   useEffect(() => {
+    setMediaLoaded(false);
+  }, [product?._id, activeMedia.src, activeMedia.type]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof IntersectionObserver === "undefined") {
+      setIsNearViewport(true);
+      return;
+    }
+    const node = cardRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setIsNearViewport(Boolean(entry?.isIntersecting));
+      },
+      { root: null, rootMargin: "300px", threshold: 0.01 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setCanHover(mediaQuery.matches);
+    update();
+    mediaQuery.addEventListener?.("change", update);
+    return () => mediaQuery.removeEventListener?.("change", update);
+  }, []);
+
+  useEffect(() => {
     const video = videoRef.current;
-    const shouldPlay = activeMedia.type === "video";
+    const shouldPlay = activeMedia.type === "video" && isHovered && canHover;
     if (!video || activeMedia.type !== "video") return;
     if (shouldPlay) {
+      if (activeCardVideo && activeCardVideo !== video) {
+        activeCardVideo.pause();
+        activeCardVideo.currentTime = 0;
+      }
+      activeCardVideo = video;
       video.play().catch(() => {});
     } else {
       video.pause();
       video.currentTime = 0;
+      if (activeCardVideo === video) {
+        activeCardVideo = null;
+      }
     }
-  }, [isHovered, activeMedia.type, activeMedia.src]);
+    return () => {
+      if (activeCardVideo === video) {
+        activeCardVideo = null;
+      }
+    };
+  }, [isHovered, canHover, activeMedia.type, activeMedia.src]);
+
+  const shouldPlayActiveVideo = activeMedia.type === "video" && isHovered && canHover && isNearViewport;
+  const videoPoster = activeMedia.poster || images[0] || fallbackImage;
 
   const handleQuickAdd = (e: React.MouseEvent, variant?: any) => {
     e.preventDefault();
@@ -580,6 +641,7 @@ export function ProductCard({
 
   return (
     <motion.div
+      ref={cardRef}
       initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -590,17 +652,43 @@ export function ProductCard({
       {optionsPanelContent}
       {sellerPanelContent}
       <div className="relative aspect-square overflow-hidden bg-gray-50 rounded-t-[2rem]">
+        {!mediaLoaded && (
+          <div className="absolute inset-0 z-10 pointer-events-none animate-pulse bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100" />
+        )}
         {isInsideDashboard ? (
           <div className="block w-full h-full">
-            {activeMedia.type === "video" ? (
+            {activeMedia.type === "video" && isNearViewport && !shouldPlayActiveVideo ? (
+              <video
+                key={`${activeMedia.src}-prefetch`}
+                src={activeMedia.src}
+                preload="metadata"
+                muted
+                playsInline
+                className="hidden"
+                aria-hidden
+              />
+            ) : null}
+            {activeMedia.type === "video" && shouldPlayActiveVideo ? (
               <video
                 ref={videoRef}
                 key={activeMedia.src}
                 src={activeMedia.src}
+                poster={videoPoster}
                 muted
                 loop
                 playsInline
-                preload="metadata"
+                preload={isNearViewport ? "metadata" : "none"}
+                onLoadedData={() => setMediaLoaded(true)}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
+              />
+            ) : activeMedia.type === "video" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={videoPoster}
+                alt={product.title}
+                loading="lazy"
+                onLoad={() => setMediaLoaded(true)}
+                onError={() => setMediaLoaded(true)}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : (
@@ -608,6 +696,8 @@ export function ProductCard({
                 src={activeMedia.src}
                 alt={product.title}
                 fill
+                loading="lazy"
+                onLoad={() => setMediaLoaded(true)}
                 onError={() =>
                   setFailedMedia((prev) => {
                     const next = new Set(prev);
@@ -621,15 +711,38 @@ export function ProductCard({
           </div>
         ) : (
           <Link href={productPath} onClick={handleClick} className="block w-full h-full">
-            {activeMedia.type === "video" ? (
+            {activeMedia.type === "video" && isNearViewport && !shouldPlayActiveVideo ? (
+              <video
+                key={`${activeMedia.src}-prefetch`}
+                src={activeMedia.src}
+                preload="metadata"
+                muted
+                playsInline
+                className="hidden"
+                aria-hidden
+              />
+            ) : null}
+            {activeMedia.type === "video" && shouldPlayActiveVideo ? (
               <video
                 ref={videoRef}
                 key={activeMedia.src}
                 src={activeMedia.src}
+                poster={videoPoster}
                 muted
                 loop
                 playsInline
-                preload="metadata"
+                preload={isNearViewport ? "metadata" : "none"}
+                onLoadedData={() => setMediaLoaded(true)}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
+              />
+            ) : activeMedia.type === "video" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={videoPoster}
+                alt={product.title}
+                loading="lazy"
+                onLoad={() => setMediaLoaded(true)}
+                onError={() => setMediaLoaded(true)}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : (
@@ -637,6 +750,8 @@ export function ProductCard({
                 src={activeMedia.src}
                 alt={product.title}
                 fill
+                loading="lazy"
+                onLoad={() => setMediaLoaded(true)}
                 onError={() =>
                   setFailedMedia((prev) => {
                     const next = new Set(prev);

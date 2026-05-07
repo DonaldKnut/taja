@@ -95,6 +95,7 @@ export interface Product {
     | {
         url: string;
         thumbnail?: string;
+        poster?: string;
         duration?: number;
         type?: "video";
       }

@@ -205,7 +205,12 @@ export async function GET(request: NextRequest) {
               typeof v === 'string'
                 ? { url: v, type: 'video' as const }
                 : v?.url
-                  ? { ...v, type: 'video' as const }
+                  ? {
+                      ...v,
+                      thumbnail: v.thumbnail || v.poster || v.previewImage || undefined,
+                      poster: v.poster || v.thumbnail || v.previewImage || undefined,
+                      type: 'video' as const,
+                    }
                   : null
             )
             .filter(Boolean)
