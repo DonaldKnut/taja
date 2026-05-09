@@ -11,6 +11,7 @@ interface MarketplaceFeedOptions {
   search?: string;
   shop?: string;
   seller?: string;
+  location?: string;
   minPrice?: number;
   maxPrice?: number;
   verifiedOnly?: boolean;
@@ -38,7 +39,7 @@ const fallbackCategories = [
 ];
 
 export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
-  const { category, limit, search, shop, seller, minPrice, maxPrice, verifiedOnly } = options;
+  const { category, limit, search, shop, seller, location, minPrice, maxPrice, verifiedOnly } = options;
   const { user, isAuthenticated } = useAuth();
   const [data, setData] = useState<MarketplaceFeedResponse>({
     products: [],
@@ -63,6 +64,7 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
         if (search) params.append("search", search);
         if (shop) params.append("shop", shop);
         if (seller) params.append("seller", seller);
+        if (location) params.append("location", location);
         if (typeof minPrice === "number" && !Number.isNaN(minPrice)) {
           params.append("minPrice", `${minPrice}`);
         }
@@ -142,7 +144,7 @@ export function useMarketplaceFeed(options: MarketplaceFeedOptions = {}) {
         setLoading(false);
       }
     },
-    [category, limit, search, shop, seller, minPrice, maxPrice, verifiedOnly, isAuthenticated, user?._id]
+    [category, limit, search, shop, seller, location, minPrice, maxPrice, verifiedOnly, isAuthenticated, user?._id]
   );
 
   useEffect(() => {

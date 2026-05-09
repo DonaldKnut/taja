@@ -205,16 +205,16 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl mx-4 my-auto sm:my-0 bg-[#020617] shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2rem] border border-slate-800 overflow-hidden">
+      <div className="relative w-full max-w-2xl mx-4 my-auto sm:my-0 bg-gradient-to-br from-emerald-950 via-slate-950 to-emerald-900 shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2rem] border border-emerald-800/40 overflow-hidden">
         {/* Decorative background elements */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px]" />
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px]" />
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-400/20 rounded-full blur-[80px]" />
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-taja-primary/20 rounded-full blur-[80px]" />
           <div className="absolute inset-0 motif-blanc opacity-[0.03]" />
         </div>
 
         {/* Header */}
-        <div className="relative z-10 flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-950/40 backdrop-blur-xl">
+        <div className="relative z-10 flex items-center justify-between p-6 border-b border-emerald-800/30 bg-emerald-950/35 backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <div className="h-1 w-6 bg-taja-primary rounded-full" />
             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Search</h2>
@@ -242,9 +242,9 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
                 setSelectedIndex(-1);
               }}
               onKeyDown={handleKeyDown}
-              className={`w-full h-16 pl-12 pr-12 bg-slate-900/50 border-2 transition-all rounded-2xl text-base font-bold text-white placeholder:text-slate-600 focus:outline-none focus:bg-slate-900 ${error
+              className={`w-full h-16 pl-12 pr-12 bg-emerald-950/40 border-2 transition-all rounded-2xl text-base font-bold text-white placeholder:text-emerald-200/35 focus:outline-none focus:bg-emerald-950/55 ${error
                 ? 'border-rose-500/50 focus:border-rose-500 ring-4 ring-rose-500/5'
-                : 'border-slate-800 focus:border-taja-primary ring-4 ring-transparent focus:ring-taja-primary/10'
+                : 'border-emerald-800/35 focus:border-taja-primary ring-4 ring-transparent focus:ring-taja-primary/10'
                 }`}
               autoFocus
               maxLength={100}
@@ -269,8 +269,8 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
 
         {/* Suggestions / Recent Searches */}
         {displaySuggestions.length > 0 && (
-          <div className="relative z-10 border-t border-slate-800/50">
-            <div className="px-6 py-3 bg-slate-950/40 flex items-center justify-between">
+          <div className="relative z-10 border-t border-emerald-800/30">
+            <div className="px-6 py-3 bg-emerald-950/30 flex items-center justify-between">
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
                 {query.length >= 2 ? 'Search Suggestions' : 'Recent Searches'}
               </p>
@@ -312,7 +312,7 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
 
         {/* Popular Categories */}
         {!query && (
-          <div className="relative z-10 p-6 border-t border-slate-800/50">
+          <div className="relative z-10 p-6 border-t border-emerald-800/30">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-3 w-3 text-emerald-500" />
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Popular Categories</p>
@@ -322,7 +322,7 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
                 <button
                   key={category}
                   onClick={() => handleSuggestionClick(category)}
-                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-900/50 hover:bg-taja-primary hover:text-white border border-slate-800 hover:border-taja-primary rounded-xl transition-all"
+                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-100/80 bg-emerald-950/45 hover:bg-taja-primary hover:text-white border border-emerald-800/35 hover:border-taja-primary rounded-xl transition-all"
                 >
                   {category}
                 </button>
@@ -332,7 +332,7 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
         )}
 
         {/* Footer */}
-        <div className="relative z-10 p-6 border-t border-slate-800/50 bg-slate-950/40 backdrop-blur-xl">
+        <div className="relative z-10 p-6 border-t border-emerald-800/30 bg-emerald-950/35 backdrop-blur-xl">
           <div className="flex items-center gap-4">
             <Button
               type="button"

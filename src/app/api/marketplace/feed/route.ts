@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')?.trim();
     const shop = searchParams.get('shop')?.trim();
     const seller = searchParams.get('seller')?.trim();
+    const location = searchParams.get('location')?.trim();
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const verifiedOnly = searchParams.get('verifiedOnly') === 'true';
@@ -134,6 +135,33 @@ export async function GET(request: NextRequest) {
       }
 
       andFilters.push({ seller: { $in: matchingSellerIds } });
+    }
+
+    if (location) {
+      const locationRegex = new RegExp(escapeRegex(location), 'i');
+      const matchingShopIds = await Shop.find({
+        $or: [
+          { 'address.city': locationRegex },
+          { 'address.state': locationRegex },
+          { 'address.country': locationRegex },
+        ],
+      }).distinct('_id');
+
+      if (!matchingShopIds.length) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            products: [],
+            recommendedShops: [],
+            categories: [],
+            savedFilters: [],
+            personalizedHeadline: undefined,
+            experimentVariant: 'control',
+          },
+        });
+      }
+
+      andFilters.push({ shop: { $in: matchingShopIds } });
     }
 
     if (verifiedOnly) {

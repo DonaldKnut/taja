@@ -22,6 +22,8 @@ import {
   LayoutGrid,
   Camera,
   ChevronDown,
+  Search,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api, uploadProductImage, uploadProductVideo } from "@/lib/api";
@@ -59,6 +61,8 @@ export default function AdminProductsNewPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [shopModalOpen, setShopModalOpen] = useState(false);
+  const [shopSearch, setShopSearch] = useState("");
   const [form, setForm] = useState({
     shopId: shopIdFromUrl || "",
     title: "",
@@ -113,6 +117,25 @@ export default function AdminProductsNewPage() {
     const c = categories.find((x) => String(x._id) === String(form.category));
     return c ? categoryPickerLabel(c) : "Select category";
   }, [form.category, categories]);
+
+  const selectedShop = useMemo(
+    () => shops.find((s) => String(s._id) === String(form.shopId)),
+    [shops, form.shopId]
+  );
+
+  const filteredShops = useMemo(() => {
+    const q = shopSearch.trim().toLowerCase();
+    if (!q) return shops;
+    return shops.filter((shop) => {
+      const owner = shop.owner?.fullName ?? "";
+      const email = shop.owner?.email ?? "";
+      return (
+        shop.shopName.toLowerCase().includes(q) ||
+        owner.toLowerCase().includes(q) ||
+        email.toLowerCase().includes(q)
+      );
+    });
+  }, [shops, shopSearch]);
 
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
     e.preventDefault();
@@ -421,19 +444,24 @@ export default function AdminProductsNewPage() {
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
                     Select Shop *
                   </label>
-                  <select
-                    required
-                    value={form.shopId}
-                    onChange={(e) => setForm((f) => ({ ...f, shopId: e.target.value }))}
-                    className="w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-sm font-bold text-taja-secondary appearance-none"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShopModalOpen(true);
+                      setShopSearch("");
+                    }}
+                    className={cn(
+                      "w-full h-16 px-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-2xl text-sm font-bold flex items-center justify-between gap-3 text-left",
+                      form.shopId ? "text-taja-secondary" : "text-gray-400"
+                    )}
                   >
-                    <option value="">Choose a shop…</option>
-                    {shops.map((s) => (
-                      <option key={s._id} value={s._id}>
-                        {s.shopName} {s.owner?.fullName ? `— ${s.owner.fullName}` : ""}
-                      </option>
-                    ))}
-                  </select>
+                    <span className="truncate">
+                      {selectedShop
+                        ? `${selectedShop.shopName}${selectedShop.owner?.fullName ? ` — ${selectedShop.owner.fullName}` : ""}`
+                        : "Choose a shop..."}
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
+                  </button>
                   {shops.length === 0 && (
                     <div className="flex items-center gap-2 text-[10px] font-bold text-amber-600 mt-2">
                       <AlertTriangle className="h-3 w-3" />
@@ -1044,6 +1072,100 @@ export default function AdminProductsNewPage() {
           )
         }
       />
+
+      <AnimatePresence>
+        {shopModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+          >
+            <button
+              type="button"
+              aria-label="Close shop selector"
+              className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+              onClick={() => setShopModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              className="relative w-full max-w-2xl rounded-[2rem] border border-white/30 bg-white shadow-premium overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-600">
+                  Assign to Shop
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShopModalOpen(false)}
+                  className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="p-5 border-b border-slate-100">
+                <div className="relative">
+                  <Search className="h-4 w-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={shopSearch}
+                    onChange={(e) => setShopSearch(e.target.value)}
+                    placeholder="Search by shop, owner, or email..."
+                    className="w-full h-12 rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/15 focus:border-taja-primary/30"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="max-h-[55vh] overflow-y-auto p-3">
+                {filteredShops.length === 0 ? (
+                  <div className="px-4 py-10 text-center text-sm font-semibold text-slate-400">
+                    No shops match your search.
+                  </div>
+                ) : (
+                  filteredShops.map((shop) => {
+                    const active = String(form.shopId) === String(shop._id);
+                    return (
+                      <button
+                        key={shop._id}
+                        type="button"
+                        onClick={() => {
+                          setForm((f) => ({ ...f, shopId: shop._id }));
+                          setShopModalOpen(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-4 py-3 rounded-xl border transition-all flex items-center justify-between gap-3",
+                          active
+                            ? "border-emerald-300 bg-emerald-50"
+                            : "border-transparent hover:border-slate-200 hover:bg-slate-50"
+                        )}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-sm font-black text-slate-900 truncate">
+                            {shop.shopName}
+                          </span>
+                          <span className="block text-[11px] font-semibold text-slate-500 truncate">
+                            {shop.owner?.fullName || "Shop owner"}
+                            {shop.owner?.email ? ` · ${shop.owner.email}` : ""}
+                          </span>
+                        </span>
+                        {active && (
+                          <span className="shrink-0 h-7 w-7 rounded-full bg-emerald-500 text-white inline-flex items-center justify-center">
+                            <Check className="h-4 w-4" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

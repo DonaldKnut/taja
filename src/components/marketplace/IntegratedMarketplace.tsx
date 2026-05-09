@@ -38,12 +38,12 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
     const [searchQuery, setSearchQuery] = useState("");
     const [shopQuery, setShopQuery] = useState("");
     const [sellerQuery, setSellerQuery] = useState("");
+    const [locationQuery, setLocationQuery] = useState("");
     const [minPrice, setMinPrice] = useState("");
     const [maxPrice, setMaxPrice] = useState("");
     const [verifiedOnly, setVerifiedOnly] = useState(false);
     const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
     const [isSearchCollapsed, setIsSearchCollapsed] = useState(false);
-    const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
     const [showVerifiedIntro, setShowVerifiedIntro] = useState(() => {
         if (typeof window !== "undefined" && !isInsideDashboard) {
             return !sessionStorage.getItem("taja_intro_played");
@@ -60,6 +60,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
         search: searchQuery || undefined,
         shop: shopQuery || undefined,
         seller: sellerQuery || undefined,
+        location: locationQuery || undefined,
         minPrice: minPrice ? Number(minPrice) : undefined,
         maxPrice: maxPrice ? Number(maxPrice) : undefined,
         verifiedOnly,
@@ -92,8 +93,23 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
     }, [feed.products]);
 
     const hasAdvancedFilters = Boolean(
-        selectedCategory || shopQuery || sellerQuery || minPrice || maxPrice || verifiedOnly
+        selectedCategory || shopQuery || sellerQuery || locationQuery || minPrice || maxPrice || verifiedOnly
     );
+
+    const availableLocations = useMemo(() => {
+        const seen = new Set<string>();
+        const locations: string[] = [];
+        feed.products.forEach((product) => {
+            const raw = product.location?.trim();
+            if (!raw) return;
+            const key = raw.toLowerCase();
+            if (!seen.has(key)) {
+                seen.add(key);
+                locations.push(raw);
+            }
+        });
+        return locations.sort((a, b) => a.localeCompare(b));
+    }, [feed.products]);
 
     const displayedProducts = useMemo(() => {
         let prods = feed.products;
@@ -106,6 +122,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
         setSelectedCategory("");
         setShopQuery("");
         setSellerQuery("");
+        setLocationQuery("");
         setMinPrice("");
         setMaxPrice("");
         setVerifiedOnly(false);
@@ -128,15 +145,6 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
             setHeaderIndex((prev) => (prev + 1) % HEADER_IMAGES.length);
         }, 5000);
         return () => clearInterval(timer);
-    }, []);
-
-    // Scroll listener for sticky header effects
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsHeaderScrolled(window.scrollY > 200);
-        };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
     return (
@@ -197,11 +205,8 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         {/* ═══ Sliding Media Header ═══ */}
                         {/* ═══ Header Registry Search ═══ */}
                         <section className={cn(
-                            "px-4 sm:px-6 transition-all duration-500 sticky z-40",
-                            isInsideDashboard ? "top-16" : "top-20",
-                            isHeaderScrolled 
-                                ? "bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-premium py-4" 
-                                : cn("bg-white border-b border-gray-100 pb-6", isInsideDashboard ? "pt-4 sm:pt-8" : "pt-4 sm:pt-12")
+                            "px-4 sm:px-6 sticky z-40 bg-white border-b border-gray-100",
+                            isInsideDashboard ? "top-16 py-4" : "top-0 py-4 sm:py-6"
                         )}>
                             {!isInsideDashboard && (
                                 <div className="flex items-center justify-between mb-8">
@@ -222,18 +227,12 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                             )}
 
                             <div className={cn(
-                                "flex items-center justify-end sm:hidden transition-all duration-300",
-                                isHeaderScrolled ? "mb-1" : "mb-3"
+                                "flex items-center justify-end sm:hidden mb-2"
                             )}>
                                 <button
                                     type="button"
                                     onClick={() => setIsSearchCollapsed((prev) => !prev)}
-                                    className={cn(
-                                        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all",
-                                        isHeaderScrolled 
-                                            ? "bg-taja-light/50 text-taja-primary border-taja-primary/10" 
-                                            : "bg-white border-gray-200 text-gray-600 shadow-sm"
-                                    )}
+                                    className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-600 shadow-sm transition-all"
                                 >
                                     {isSearchCollapsed ? "Show Search" : "Hide Search"}
                                     <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isSearchCollapsed && "-rotate-90")} />
@@ -248,10 +247,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                     <input
                                         type="text"
                                         placeholder="Search products, shops, and sellers..."
-                                        className={cn(
-                                            "w-full bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all",
-                                            isHeaderScrolled ? "h-14 shadow-sm" : "h-16 shadow-sm"
-                                        )}
+                                        className="w-full h-14 sm:h-16 bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all shadow-sm"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                     />
@@ -298,7 +294,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                                 )}
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
                                                 <select
                                                     value={selectedCategory}
                                                     onChange={(e) => setSelectedCategory(e.target.value)}
@@ -338,6 +334,20 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                                                     ))}
                                                 </datalist>
 
+                                                <input
+                                                    type="text"
+                                                    list="marketplace-locations-list"
+                                                    value={locationQuery}
+                                                    onChange={(e) => setLocationQuery(e.target.value)}
+                                                    placeholder="Filter by location"
+                                                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                                                />
+                                                <datalist id="marketplace-locations-list">
+                                                    {availableLocations.map((location) => (
+                                                        <option key={location} value={location} />
+                                                    ))}
+                                                </datalist>
+
                                                 <label className="h-11 rounded-xl border border-gray-200 bg-white px-3 flex items-center gap-3">
                                                     <input
                                                         type="checkbox"
@@ -374,7 +384,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         </section>
 
                         {/* ═══ Product Feed ═══ */}
-                        <section className="px-4 sm:px-6 space-y-8 mt-6 pb-20">
+                        <section className="px-4 sm:px-6 space-y-8 mt-3 sm:mt-5 pb-20">
                             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                                 <h3 className="text-2xl font-black text-gray-900 tracking-tighter italic">Product Catalog</h3>
                                 <div className="flex gap-2">
