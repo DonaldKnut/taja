@@ -431,6 +431,7 @@ export async function getHomepageRecommendations(
   personalized: ProductRecommendation[];
   newArrivals: ProductRecommendation[];
 }> {
+  await connectDB();
   const excludeIds: string[] = [];
 
   const [trending, personalized, newArrivals] = await Promise.all([

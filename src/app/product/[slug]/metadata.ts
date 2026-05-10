@@ -1,5 +1,6 @@
 import { generateMetadata as genMeta } from "@/lib/seo";
 import { productsApi } from "@/lib/api";
+import { productDescriptionPlainText } from "@/lib/sanitizeProductDescriptionHtml";
 
 export async function generateMetadata({
   params,
@@ -20,12 +21,15 @@ export async function generateMetadata({
     }
 
     const productName = product.name || product.title;
-    const description = product.description || `Buy ${productName} on Taja.Shop. Quality products from verified Nigerian sellers.`;
+    const rawDesc = product.description || "";
+    const descriptionPlain =
+      productDescriptionPlainText(rawDesc) ||
+      `Buy ${productName} on Taja.Shop. Quality products from verified Nigerian sellers.`;
     const image = product.images?.[0] || "/og-image.png";
 
     return genMeta({
       title: productName,
-      description: description.substring(0, 160),
+      description: descriptionPlain.substring(0, 160),
       image,
       url: `/product/${params.slug}`,
       type: "product",

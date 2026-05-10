@@ -39,7 +39,13 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Container } from "@/components/layout";
-import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
+import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionEditor } from "@/components/product";
+import {
+  isRichTextDescriptionEmpty,
+  looksLikeHtmlDescription,
+  plainTextToRichHtml,
+  sanitizeProductDescriptionHtml,
+} from "@/lib/sanitizeProductDescriptionHtml";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -140,9 +146,12 @@ export default function EditProductPage() {
         }
 
         // Transform API response to match our form structure
+        const rawDescription = productData.description || "";
         setFormData({
           title: productData.name || productData.title || "",
-          description: productData.description || "",
+          description: looksLikeHtmlDescription(rawDescription)
+            ? rawDescription
+            : plainTextToRichHtml(rawDescription),
           category: typeof productData.category === 'object' ? productData.category._id : productData.category || "",
           subcategory: productData.subcategory || "",
           condition: productData.condition || "new",
@@ -396,6 +405,10 @@ export default function EditProductPage() {
       toast.error("Please fill in title, category, price and at least one image");
       return;
     }
+    if (!isDraft && isRichTextDescriptionEmpty(formData.description)) {
+      toast.error("Please add a product description");
+      return;
+    }
 
     setLoading(true);
 
@@ -403,7 +416,7 @@ export default function EditProductPage() {
       // Clean data to avoid CastErrors
       const payload = {
         title: formData.title,
-        description: formData.description,
+        description: sanitizeProductDescriptionHtml(formData.description),
         category: formData.category,
         subcategory: formData.subcategory || undefined,
         condition: formData.condition,
@@ -700,13 +713,10 @@ export default function EditProductPage() {
 
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Description</label>
-                    <textarea
-                      name="description"
+                    <ProductDescriptionEditor
                       value={formData.description}
-                      onChange={handleChange}
-                      rows={6}
-                      className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all font-medium text-gray-600"
-                      placeholder="Describe the product clearly for buyers..."
+                      onChange={(html) => setFormData((prev) => ({ ...prev, description: html }))}
+                      placeholder="Describe the product clearly for buyers… Use bold, lists, and headings as needed."
                     />
                   </div>
 

@@ -41,10 +41,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const allowedVehicles = ["bicycle", "motorcycle", "car", "van", "truck"];
-    if (!allowedVehicles.includes(String(vehicleType))) {
-      return NextResponse.json({ success: false, message: "Invalid vehicle type" }, { status: 400 });
+    const PRESET_VEHICLES = ["bicycle", "motorcycle", "car", "van", "truck"] as const;
+    const vtRaw = String(vehicleType).trim();
+    const vtLower = vtRaw.toLowerCase();
+    const isPreset = PRESET_VEHICLES.includes(vtLower as (typeof PRESET_VEHICLES)[number]);
+    const isCustom =
+      !isPreset &&
+      vtRaw.length >= 2 &&
+      vtRaw.length <= 80 &&
+      !/[<>]/.test(vtRaw);
+    if (!isPreset && !isCustom) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Choose a vehicle type from the list, or enter 2–80 characters describing yours (no angle brackets).",
+        },
+        { status: 400 }
+      );
     }
+    const normalizedVehicleType = isPreset ? vtLower : vtRaw.slice(0, 80);
 
     const auth = await authenticate(request);
     const linkedUserId = auth.user?.userId;
@@ -68,7 +84,7 @@ export async function POST(request: NextRequest) {
           fullName: String(fullName).trim(),
           email: String(email).toLowerCase().trim(),
           phone: String(phone).trim(),
-          vehicleType: String(vehicleType),
+          vehicleType: normalizedVehicleType,
           canHandleFragile: Boolean(canHandleFragile),
           notes: String(notes || "").trim() || undefined,
           coverage: {

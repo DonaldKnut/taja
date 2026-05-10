@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Search, X, TrendingUp, Clock, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -44,8 +44,16 @@ const validateSearchQuery = (query: string): { valid: boolean; error?: string } 
   return { valid: true };
 };
 
+function marketplaceSearchBase(pathname: string | null): string {
+  const p = pathname || "";
+  if (p.startsWith("/dashboard")) return "/dashboard/marketplace";
+  if (p.startsWith("/seller")) return "/seller/marketplace";
+  return "/marketplace";
+}
+
 export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState(initialQuery);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -143,8 +151,7 @@ export function SearchModal({ open, onClose, initialQuery = "" }: SearchModalPro
     const trimmed = targetQuery.trim();
     saveRecentSearch(trimmed);
 
-    // Navigate to marketplace with search query
-    router.push(`/marketplace?search=${encodeURIComponent(trimmed)}`);
+    router.push(`${marketplaceSearchBase(pathname)}?search=${encodeURIComponent(trimmed)}`);
     onClose();
   };
 

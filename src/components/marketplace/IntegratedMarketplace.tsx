@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Search, Filter, Zap, Gift, Tag, Star, ChevronRight, ShoppingBag, ShieldCheck, Crown, ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Filter, Zap, Gift, Tag, Star, ChevronRight, ShoppingBag, ShieldCheck, Crown, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/product";
 import { useMarketplaceFeed } from "@/hooks/useMarketplaceFeed";
@@ -33,6 +34,7 @@ export interface IntegratedMarketplaceProps {
 }
 
 export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedMarketplaceProps) {
+    const searchParams = useSearchParams();
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [selectedTab, setSelectedTab] = useState<string>("All");
     const [searchQuery, setSearchQuery] = useState("");
@@ -43,13 +45,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
     const [maxPrice, setMaxPrice] = useState("");
     const [verifiedOnly, setVerifiedOnly] = useState(false);
     const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-    const [isSearchCollapsed, setIsSearchCollapsed] = useState(false);
-    const [showVerifiedIntro, setShowVerifiedIntro] = useState(() => {
-        if (typeof window !== "undefined" && !isInsideDashboard) {
-            return !sessionStorage.getItem("taja_intro_played");
-        }
-        return false;
-    });
+    const [showVerifiedIntro, setShowVerifiedIntro] = useState(false);
     const [headerIndex, setHeaderIndex] = useState(0);
 
     const { user } = useAuth();
@@ -128,6 +124,15 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
         setVerifiedOnly(false);
     };
 
+    // Decide intro visibility only after mount to avoid SSR/client mismatch.
+    useEffect(() => {
+        if (isInsideDashboard || typeof window === "undefined") {
+            setShowVerifiedIntro(false);
+            return;
+        }
+        setShowVerifiedIntro(!sessionStorage.getItem("taja_intro_played"));
+    }, [isInsideDashboard]);
+
     // Intro timer
     useEffect(() => {
         if (showVerifiedIntro) {
@@ -146,6 +151,12 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
         }, 5000);
         return () => clearInterval(timer);
     }, []);
+
+    const urlSearch = searchParams.get("search");
+    useEffect(() => {
+        if (urlSearch == null) return;
+        setSearchQuery(urlSearch);
+    }, [urlSearch]);
 
     return (
         <div className={cn(
@@ -206,74 +217,106 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                         {/* ═══ Header Registry Search ═══ */}
                         <section
                             className={cn(
-                                "px-4 sm:px-6 sticky border-b border-gray-100 shadow-sm",
+                                "px-4 sm:px-6 border-b border-gray-100 shadow-sm",
                                 "bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80",
-                                isInsideDashboard
-                                    ? "top-16 z-40 py-4"
-                                    : "top-20 z-[9998] py-4 sm:py-5 md:py-4"
+                                "pt-0 pb-4 sm:pb-5 md:pb-4"
                             )}
                         >
-                            {!isInsideDashboard && (
-                                <div className="flex items-center justify-between mb-6 md:mb-4">
-                                    <div className="space-y-1">
-                                        <p className="text-gray-400 text-xs font-medium uppercase tracking-widest leading-none">Premium Collection</p>
-                                        <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-none italic md:text-3xl">Hello, {firstName} 👋</h2>
+                            <div className="space-y-4">
+                                {!isInsideDashboard && (
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-1">
+                                            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.22em] leading-none">All products</p>
+                                            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Hello, {firstName} 👋</h2>
+                                        </div>
+                                        <div className="md:hidden">
+                                            <CartIcon
+                                                className="w-12 h-12 bg-taja-light/30 backdrop-blur-2xl border border-taja-primary/10 rounded-[1.2rem] text-taja-primary shadow-sm active:scale-95 transition-all"
+                                                iconSize="h-5 w-5"
+                                                badgeClassName="bg-taja-primary text-white border-2 border-white !h-4 !w-4 !text-[9px] !-top-1 !-right-1"
+                                            />
+                                        </div>
                                     </div>
+                                )}
 
-                                    {/* Mobile Cart Action */}
-                                    <div className="md:hidden">
-                                        <CartIcon
-                                            className="w-14 h-14 bg-taja-light/30 backdrop-blur-2xl border border-taja-primary/10 rounded-[1.5rem] text-taja-primary shadow-premium active:scale-95 transition-all"
-                                            iconSize="h-6 w-6"
-                                            badgeClassName="bg-taja-primary text-white border-2 border-white !h-5 !w-5 !text-[10px] !-top-1 !-right-1"
-                                        />
+                                <div className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-emerald-950 min-h-[120px] sm:min-h-[140px]">
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={HEADER_IMAGES[headerIndex]}
+                                            initial={{ opacity: 0, x: 24, scale: 1.04 }}
+                                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                                            exit={{ opacity: 0, x: -24, scale: 1.02 }}
+                                            transition={{ duration: 0.55, ease: "easeOut" }}
+                                            className="absolute inset-0"
+                                        >
+                                            <Image
+                                                src={HEADER_IMAGES[headerIndex]}
+                                                alt="Marketplace promotion"
+                                                fill
+                                                className="object-cover opacity-60"
+                                            />
+                                        </motion.div>
+                                    </AnimatePresence>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-950 via-emerald-900/85 to-emerald-900/40" />
+                                    <div className="relative z-10 p-5 sm:p-6 text-white max-w-sm">
+                                        <p className="text-xl sm:text-2xl font-black leading-tight">Get free delivery on shopping over $200</p>
+                                        <button
+                                            type="button"
+                                            className="mt-4 inline-flex items-center gap-2 h-9 px-4 rounded-full bg-white text-emerald-900 text-[10px] font-black uppercase tracking-widest"
+                                        >
+                                            Learn more
+                                            <ChevronRight className="w-3.5 h-3.5" />
+                                        </button>
                                     </div>
                                 </div>
-                            )}
 
-                            <div className={cn(
-                                "flex items-center justify-end sm:hidden mb-2"
-                            )}>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsSearchCollapsed((prev) => !prev)}
-                                    className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-600 shadow-sm transition-all"
-                                >
-                                    {isSearchCollapsed ? "Show Search" : "Hide Search"}
-                                    <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isSearchCollapsed && "-rotate-90")} />
-                                </button>
-                            </div>
-
-                            {!isSearchCollapsed && (
-                                <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-taja-primary transition-colors">
-                                        <Search className="w-5 h-5" />
+                                <div className="grid grid-cols-2 md:grid-cols-[1fr_auto_auto] gap-3">
+                                    <div className="relative col-span-2 md:col-span-1">
+                                        <select
+                                            value={selectedCategory}
+                                            onChange={(e) => setSelectedCategory(e.target.value)}
+                                            className="w-full h-12 rounded-2xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 appearance-none"
+                                        >
+                                            <option value="">All Categories</option>
+                                            {(feed.categories || []).map((category) => (
+                                                <option key={category} value={category}>{category}</option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                     </div>
-                                    <input
-                                        type="text"
-                                        placeholder="Search products, shops, and sellers..."
-                                        className="w-full h-14 sm:h-16 bg-white border border-gray-200 rounded-2xl pl-12 pr-14 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 transition-all shadow-sm"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
+
+                                    <div className="relative">
+                                        <select
+                                            value={selectedTab}
+                                            onChange={(e) => setSelectedTab(e.target.value)}
+                                            className="w-full md:w-[140px] h-12 rounded-2xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 appearance-none"
+                                        >
+                                            <option value="All">Sort: All</option>
+                                            <option value="Promo">Sort: Promo</option>
+                                            <option value="Best Deals">Sort: Best Deals</option>
+                                        </select>
+                                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                    </div>
+
                                     <button
                                         type="button"
                                         onClick={() => setShowAdvancedFilters((prev) => !prev)}
                                         className={cn(
-                                            "absolute right-3 top-1/2 -translate-y-1/2 h-10 px-3 flex items-center justify-center gap-2 transition-colors rounded-xl",
+                                            "h-12 px-4 inline-flex items-center justify-center gap-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm",
                                             showAdvancedFilters || hasAdvancedFilters
-                                                ? "text-taja-primary bg-taja-light/40"
-                                                : "text-gray-400 hover:text-black bg-gray-50"
+                                                ? "text-taja-primary bg-taja-light/40 border-taja-primary/25"
+                                                : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50"
                                         )}
                                     >
                                         <Filter className="w-4 h-4" />
+                                        Filters
                                         <ChevronDown className={cn("w-3 h-3 transition-transform", showAdvancedFilters && "rotate-180")} />
                                     </button>
                                 </div>
-                            )}
+                            </div>
 
                             <AnimatePresence initial={false}>
-                                {showAdvancedFilters && !isSearchCollapsed && (
+                                {showAdvancedFilters && (
                                     <motion.div
                                         initial={{ opacity: 0, height: 0, y: -4 }}
                                         animate={{ opacity: 1, height: "auto", y: 0 }}

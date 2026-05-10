@@ -30,7 +30,20 @@ const VEHICLES = [
   { value: "car", label: "Car" },
   { value: "van", label: "Van" },
   { value: "truck", label: "Truck" },
-];
+] as const;
+
+const CUSTOM_VEHICLE = "__custom__" as const;
+
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(":").map((x) => parseInt(x, 10));
+  if (Number.isNaN(h) || Number.isNaN(m)) return -1;
+  return h * 60 + m;
+}
+
+function formatActiveHoursLabel(start: string, end: string): string {
+  if (!start || !end) return "";
+  return `${start} – ${end}`;
+}
 
 const ID_TYPES = [
   { value: "national_id", label: "National ID" },
@@ -48,12 +61,14 @@ export default function LogisticsApplyPage() {
     fullName: "",
     email: "",
     phone: "",
-    vehicleType: "bicycle",
+    vehicleSelect: "bicycle" as string,
+    vehicleCustom: "",
     canHandleFragile: false,
     state: "",
     city: "",
     areas: "",
-    activeHours: "",
+    availabilityStart: "08:00",
+    availabilityEnd: "18:00",
     idType: "national_id",
     idNumber: "",
     selfieImage: "",
@@ -62,13 +77,30 @@ export default function LogisticsApplyPage() {
     notes: "",
   });
 
+  const resolvedVehicleType =
+    form.vehicleSelect === CUSTOM_VEHICLE
+      ? form.vehicleCustom.trim()
+      : form.vehicleSelect;
+
+  const availabilityValid =
+    !!form.availabilityStart &&
+    !!form.availabilityEnd &&
+    timeToMinutes(form.availabilityEnd) > timeToMinutes(form.availabilityStart);
+
+  const vehicleValid =
+    form.vehicleSelect !== CUSTOM_VEHICLE ||
+    (form.vehicleCustom.trim().length >= 2 && form.vehicleCustom.trim().length <= 80);
+
   const canProceedStep1 =
-    form.fullName.trim() &&
-    form.email.trim() &&
-    form.phone.trim() &&
-    form.state.trim() &&
-    form.city.trim() &&
-    form.vehicleType;
+    !!form.fullName.trim() &&
+    !!form.email.trim() &&
+    !!form.phone.trim() &&
+    !!form.state.trim() &&
+    !!form.city.trim() &&
+    !!form.areas.trim() &&
+    availabilityValid &&
+    vehicleValid &&
+    !!resolvedVehicleType;
 
   const canProceedStep2 =
     form.idType &&
@@ -99,9 +131,26 @@ export default function LogisticsApplyPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      const activeHours = formatActiveHoursLabel(form.availabilityStart, form.availabilityEnd);
       const res = await api("/api/logistics/apply", {
         method: "POST",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          fullName: form.fullName,
+          email: form.email,
+          phone: form.phone,
+          vehicleType: resolvedVehicleType,
+          canHandleFragile: form.canHandleFragile,
+          state: form.state,
+          city: form.city,
+          areas: form.areas,
+          activeHours,
+          idType: form.idType,
+          idNumber: form.idNumber,
+          selfieImage: form.selfieImage,
+          idFrontImage: form.idFrontImage,
+          guarantorPhone: form.guarantorPhone,
+          notes: form.notes,
+        }),
       });
       if (res?.success) {
         toast.success("Application submitted. We will verify and activate your profile soon.");
@@ -109,12 +158,14 @@ export default function LogisticsApplyPage() {
           fullName: "",
           email: "",
           phone: "",
-          vehicleType: "bicycle",
+          vehicleSelect: "bicycle",
+          vehicleCustom: "",
           canHandleFragile: false,
           state: "",
           city: "",
           areas: "",
-          activeHours: "",
+          availabilityStart: "08:00",
+          availabilityEnd: "18:00",
           idType: "national_id",
           idNumber: "",
           selfieImage: "",
@@ -277,11 +328,14 @@ export default function LogisticsApplyPage() {
               </div>
 
               <div className="sm:col-span-2 space-y-2">
-                <Label htmlFor="areas" className="text-xs font-bold uppercase tracking-wider text-slate-500">Coverage Areas</Label>
+                <Label htmlFor="areas" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Coverage Areas <span className="text-red-500">*</span>
+                </Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 text-slate-400" size={18} />
                   <Textarea
                     id="areas"
+                    required
                     placeholder="Enter areas separated by commas (e.g. Lekki, Victoria Island, Ajah)"
                     value={form.areas}
                     onChange={(e) => setForm((p) => ({ ...p, areas: e.target.value }))}
@@ -302,13 +356,19 @@ export default function LogisticsApplyPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Vehicle Type</Label>
-                <div className="relative">
-                  <Truck className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                <div className="relative max-w-xl">
+                  <Truck className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-[1]" size={18} />
                   <select
-                    value={form.vehicleType}
-                    onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
+                    value={form.vehicleSelect}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        vehicleSelect: e.target.value,
+                        ...(e.target.value !== CUSTOM_VEHICLE ? { vehicleCustom: "" } : {}),
+                      }))
+                    }
                     className="w-full pl-10 h-12 bg-white/50 border border-slate-200/60 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-taja-primary/30 transition-all appearance-none cursor-pointer"
                   >
                     {VEHICLES.map((v) => (
@@ -316,25 +376,73 @@ export default function LogisticsApplyPage() {
                         {v.label}
                       </option>
                     ))}
+                    <option value={CUSTOM_VEHICLE}>Other — describe my vehicle</option>
                   </select>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     <ChevronRight size={16} className="rotate-90" />
                   </div>
                 </div>
+                {form.vehicleSelect === CUSTOM_VEHICLE && (
+                  <div className="mt-3 space-y-2 max-w-xl">
+                    <Label htmlFor="vehicleCustom" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Your vehicle (required)
+                    </Label>
+                    <Input
+                      id="vehicleCustom"
+                      placeholder="e.g. Keke NAPEP, pickup, cargo trike…"
+                      value={form.vehicleCustom}
+                      onChange={(e) => setForm((p) => ({ ...p, vehicleCustom: e.target.value }))}
+                      maxLength={80}
+                      className="h-12 bg-white/50 border-slate-200/60 focus:bg-white transition-all"
+                    />
+                    <p className="text-[11px] text-slate-500">2–80 characters. We&apos;ll review with your application.</p>
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="activeHours" className="text-xs font-bold uppercase tracking-wider text-slate-500">Availability</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <Input
-                    id="activeHours"
-                    placeholder="8AM - 6PM"
-                    value={form.activeHours}
-                    onChange={(e) => setForm((p) => ({ ...p, activeHours: e.target.value }))}
-                    className="pl-10 h-12 bg-white/50 border-slate-200/60 focus:bg-white transition-all"
-                  />
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Availability</Label>
+                <p className="text-[11px] text-slate-500 mb-2">Pick your usual on-duty window (24-hour times).</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="availabilityStart" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      From
+                    </Label>
+                    <div className="relative">
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                      <Input
+                        id="availabilityStart"
+                        type="time"
+                        value={form.availabilityStart}
+                        onChange={(e) => setForm((p) => ({ ...p, availabilityStart: e.target.value }))}
+                        className="pl-10 h-12 bg-white/50 border-slate-200/60 focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="availabilityEnd" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      To
+                    </Label>
+                    <div className="relative">
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                      <Input
+                        id="availabilityEnd"
+                        type="time"
+                        value={form.availabilityEnd}
+                        onChange={(e) => setForm((p) => ({ ...p, availabilityEnd: e.target.value }))}
+                        className="pl-10 h-12 bg-white/50 border-slate-200/60 focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
+                {form.availabilityStart && form.availabilityEnd && !availabilityValid && (
+                  <p className="text-xs font-semibold text-amber-700 mt-1">End time must be after start time.</p>
+                )}
+                {availabilityValid && (
+                  <p className="text-[11px] text-slate-600 mt-1 font-medium">
+                    Saved as: <span className="text-taja-primary font-bold">{formatActiveHoursLabel(form.availabilityStart, form.availabilityEnd)}</span>
+                  </p>
+                )}
               </div>
 
               <div className="sm:col-span-2 p-4 rounded-2xl bg-blue-50/50 border border-blue-100 flex items-start gap-3">
@@ -534,19 +642,22 @@ export default function LogisticsApplyPage() {
               {step < 3 ? (
                 <Button
                   type="button"
-                  onClick={() => {
-                    if (step === 1 && !canProceedStep1) {
-                      toast.error("Complete all required profile and location fields.");
-                      return;
-                    }
-                    if (step === 2 && !canProceedStep2) {
-                      toast.error("Upload KYC images and fill ID number before continuing.");
-                      return;
-                    }
-                    setStep((prev) => ((prev + 1) as 1 | 2 | 3));
-                  }}
-                  disabled={submitting || uploadingSelfie || uploadingIdFront}
-                  className="btn-premium h-14 px-8 rounded-full bg-taja-primary text-white font-black text-xs uppercase tracking-[0.2em] flex items-center gap-2"
+                  onClick={() => setStep((prev) => ((prev + 1) as 1 | 2 | 3))}
+                  disabled={
+                    submitting ||
+                    uploadingSelfie ||
+                    uploadingIdFront ||
+                    (step === 1 && !canProceedStep1) ||
+                    (step === 2 && !canProceedStep2)
+                  }
+                  title={
+                    step === 1 && !canProceedStep1
+                      ? "Fill all required fields on this step to continue"
+                      : step === 2 && !canProceedStep2
+                        ? "Complete ID verification to continue"
+                        : undefined
+                  }
+                  className="btn-premium h-14 px-8 rounded-full bg-taja-primary text-white font-black text-xs uppercase tracking-[0.2em] flex items-center gap-2 disabled:opacity-45 disabled:pointer-events-none"
                 >
                   Continue
                   <ChevronRight size={16} />

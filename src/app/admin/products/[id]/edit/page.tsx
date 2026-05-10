@@ -39,7 +39,13 @@ import { api, sellerApi, uploadProductImage, uploadProductVideo } from "@/lib/ap
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Container } from "@/components/layout";
-import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
+import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionEditor } from "@/components/product";
+import {
+    isRichTextDescriptionEmpty,
+    looksLikeHtmlDescription,
+    plainTextToRichHtml,
+    sanitizeProductDescriptionHtml,
+} from "@/lib/sanitizeProductDescriptionHtml";
 
 interface ShopOption {
     _id: string;
@@ -173,10 +179,13 @@ export default function AdminEditProductPage() {
                 }
 
                 // Transform API response to match our form structure
+                const rawDescription = productData.description || "";
                 setFormData({
                     shopId: typeof productData.shop === "object" ? (productData.shop._id || "") : (productData.shop || ""),
                     title: productData.name || productData.title || "",
-                    description: productData.description || "",
+                    description: looksLikeHtmlDescription(rawDescription)
+                        ? rawDescription
+                        : plainTextToRichHtml(rawDescription),
                     category: typeof productData.category === 'object' ? productData.category._id : productData.category || "",
                     subcategory: productData.subcategory || "",
                     condition: productData.condition || "new",
@@ -415,8 +424,14 @@ export default function AdminEditProductPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.title || !formData.category || !formData.price || formData.images.length === 0) {
-            toast.error("Please fill in title, category, price and at least one image");
+        if (
+            !formData.title ||
+            isRichTextDescriptionEmpty(formData.description) ||
+            !formData.category ||
+            !formData.price ||
+            formData.images.length === 0
+        ) {
+            toast.error("Please fill in title, description, category, price and at least one image");
             return;
         }
 
@@ -435,7 +450,7 @@ export default function AdminEditProductPage() {
             const payload = {
                 shopId: formData.shopId || undefined,
                 title: formData.title,
-                description: formData.description,
+                description: sanitizeProductDescriptionHtml(formData.description),
                 category: formData.category,
                 subcategory: formData.subcategory || undefined,
                 condition: formData.condition,
@@ -743,13 +758,12 @@ export default function AdminEditProductPage() {
 
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Description</label>
-                                        <textarea
-                                            name="description"
+                                        <ProductDescriptionEditor
                                             value={formData.description}
-                                            onChange={handleChange}
-                                            rows={8}
-                                            className="w-full px-6 py-5 bg-slate-50/50 border border-slate-100 rounded-3xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-bold text-slate-700 text-base"
-                                            placeholder="Describe the product clearly for buyers..."
+                                            onChange={(html) =>
+                                                setFormData((prev) => ({ ...prev, description: html }))
+                                            }
+                                            placeholder="Describe the product clearly for buyers… Use bold, lists, and headings as needed."
                                         />
                                     </div>
 

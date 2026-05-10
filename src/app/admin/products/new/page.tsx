@@ -28,8 +28,13 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { api, uploadProductImage, uploadProductVideo } from "@/lib/api";
 import toast from "react-hot-toast";
-import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
+import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionEditor } from "@/components/product";
 import { cn } from "@/lib/utils";
+import {
+  isRichTextDescriptionEmpty,
+  plainTextToRichHtml,
+  sanitizeProductDescriptionHtml,
+} from "@/lib/sanitizeProductDescriptionHtml";
 
 interface Shop {
   _id: string;
@@ -139,7 +144,7 @@ export default function AdminProductsNewPage() {
 
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
     e.preventDefault();
-    if (!form.shopId || !form.title.trim() || !form.description.trim() || !form.category || !form.price.trim()) {
+    if (!form.shopId || !form.title.trim() || isRichTextDescriptionEmpty(form.description) || !form.category || !form.price.trim()) {
       toast.error("Fill required fields: Shop, Title, Description, Category, Price");
       return;
     }
@@ -165,7 +170,7 @@ export default function AdminProductsNewPage() {
         body: JSON.stringify({
           shopId: form.shopId,
           title: form.title.trim(),
-          description: form.description.trim(),
+          description: sanitizeProductDescriptionHtml(form.description),
           category: form.category,
           price: parseFloat(form.price),
           compareAtPrice: form.compareAtPrice ? parseFloat(form.compareAtPrice) : undefined,
@@ -216,11 +221,11 @@ export default function AdminProductsNewPage() {
   const fromPasteCount = form.imageUrls.trim() ? form.imageUrls.trim().split(/[\n\s]+/).filter(Boolean).length : 0;
   const imageCount = imageList.length + fromPasteCount;
   const hasRequiredFields =
-    !!form.shopId && !!form.title.trim() && !!form.description.trim() && !!form.category && !!form.price.trim() && imageCount > 0;
+    !!form.shopId && !!form.title.trim() && !isRichTextDescriptionEmpty(form.description) && !!form.category && !!form.price.trim() && imageCount > 0;
   const missingRequired = [
     !form.shopId && "Select shop",
     !form.title.trim() && "Title",
-    !form.description.trim() && "Description",
+    isRichTextDescriptionEmpty(form.description) && "Description",
     !form.category && "Category",
     !form.price.trim() && "Price",
     imageCount === 0 && "At least one image",
@@ -355,9 +360,13 @@ export default function AdminProductsNewPage() {
         }),
       });
       if (res?.success && res?.description) {
+        const nextDesc =
+          typeof res.description === "string" && /<[a-z]/i.test(res.description)
+            ? res.description
+            : plainTextToRichHtml(String(res.description));
         setForm((prev) => ({
           ...prev,
-          description: res.description,
+          description: nextDesc,
         }));
         toast.success("Description generated with AI. Feel free to tweak it.");
       } else if (res?.message) {
@@ -514,13 +523,10 @@ export default function AdminProductsNewPage() {
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
                     Description *
                   </label>
-                  <textarea
-                    rows={6}
-                    required
+                  <ProductDescriptionEditor
                     value={form.description}
-                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                    className="w-full p-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-3xl text-sm font-medium text-taja-secondary placeholder:text-gray-300 resize-none leading-relaxed"
-                    placeholder="Describe the product in detail…"
+                    onChange={(html) => setForm((f) => ({ ...f, description: html }))}
+                    placeholder="Describe the product in detail… Use bold, lists, and headings as needed."
                   />
                 </div>
 
@@ -1040,7 +1046,7 @@ export default function AdminProductsNewPage() {
                 {[
                   { label: "Shop selected", done: !!form.shopId },
                   { label: "Title filled", done: !!form.title.trim() },
-                  { label: "Description written", done: !!form.description.trim() },
+                  { label: "Description written", done: !isRichTextDescriptionEmpty(form.description) },
                   { label: "Category chosen", done: !!form.category },
                   { label: "Price set", done: !!form.price.trim() },
                   { label: "Images added", done: imageCount > 0 },

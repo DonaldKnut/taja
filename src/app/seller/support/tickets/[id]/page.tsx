@@ -22,7 +22,8 @@ import {
   Zap,
   Pencil,
   Check,
-  X
+  X,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";

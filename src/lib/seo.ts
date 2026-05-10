@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SITE_META_DESCRIPTION, SITE_LONG_DESCRIPTION } from "@/lib/site-seo";
+import { productDescriptionPlainText } from "@/lib/sanitizeProductDescriptionHtml";
 
 const siteName = "Taja.Shop";
 const defaultTitle = "Taja.Shop — Buy & Sell Online | Marketplace for Nigerian & African Sellers";
@@ -187,7 +188,7 @@ export function generateProductStructuredData(product: {
 
   const structuredData: any = {
     name: product.name,
-    description: product.description,
+    description: productDescriptionPlainText(product.description) || product.name,
     image: fullImages,
     offers: {
       "@type": "Offer",

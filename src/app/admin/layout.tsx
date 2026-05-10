@@ -349,7 +349,7 @@ export default function AdminLayout({
         {adminNavGroups.map((group) => (
           <div key={group.label}>
             {!narrow && (
-              <p className="px-4 mb-4 text-[9px] font-black uppercase tracking-[0.3em] text-white/30">{group.label}</p>
+              <p className="px-4 mb-4 text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">{group.label}</p>
             )}
             <div className="space-y-1">
               {group.items.map((item) => {
@@ -389,11 +389,11 @@ export default function AdminLayout({
                       narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3.5",
                       isActive
                         ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                        : "text-white/40 hover:text-white hover:bg-white/5"
+                        : "text-slate-300/80 hover:text-white hover:bg-white/8"
                     )}
                   >
                     <div className={cn("flex items-center min-w-0", !narrow && "flex-1")}>
-                      <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-white/20 group-hover:text-emerald-400 transition-colors")} />
+                      <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-slate-400 group-hover:text-emerald-400 transition-colors")} />
                       {!narrow && displayName}
                     </div>
                     {!narrow && (
@@ -546,7 +546,7 @@ export default function AdminLayout({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
+                  className="fixed inset-0 bg-slate-900/50 backdrop-blur-md"
                   onClick={() => setSidebarOpen(false)}
                 />
                 <motion.div
@@ -554,7 +554,7 @@ export default function AdminLayout({
                   animate={{ x: 0 }}
                   exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-emerald-950 border-r border-white/10 shadow-huge overflow-y-auto"
+                  className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-gradient-to-b from-slate-800 to-slate-950 border-r border-white/10 shadow-huge overflow-y-auto"
                 >
                   <SidebarContent mobile collapsed={false} />
                 </motion.div>
@@ -571,7 +571,7 @@ export default function AdminLayout({
           >
             <div
               className={cn(
-                "flex-1 flex flex-col min-h-0 rounded-[2.5rem] bg-emerald-950/95 backdrop-blur-3xl border border-white/5 overflow-hidden shadow-huge",
+                "flex-1 flex flex-col min-h-0 rounded-[2.5rem] bg-gradient-to-b from-slate-800/92 to-slate-950/95 backdrop-blur-3xl border border-white/10 overflow-hidden shadow-huge",
                 sidebarCollapsed ? "m-2" : "m-4"
               )}
             >

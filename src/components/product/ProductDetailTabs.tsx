@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { ProductDescriptionHtml } from "./ProductDescriptionHtml";
 
 interface ProductDetailTabsProps {
   activeTab: "description" | "specifications";
@@ -44,13 +45,10 @@ export function ProductDetailTabs({
 
       <div className="min-h-[100px]">
         {activeTab === "description" ? (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-gray-500 leading-relaxed text-sm lg:text-base italic"
-          >
-            {description ? `"${description}"` : "No description provided."}
-          </motion.p>
+          <ProductDescriptionHtml
+            description={description}
+            className={compact ? "text-sm lg:text-base" : ""}
+          />
         ) : (
           <motion.div
             initial={{ opacity: 0 }}

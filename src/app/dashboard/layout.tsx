@@ -121,7 +121,8 @@ export default function DashboardLayout({
     e.preventDefault();
     const trimmed = searchQuery.trim();
     if (trimmed.length < 2 || trimmed.length > 100) return;
-    router.push(`/marketplace?search=${encodeURIComponent(trimmed)}`);
+    const base = pathname.startsWith("/dashboard") ? "/dashboard/marketplace" : "/marketplace";
+    router.push(`${base}?search=${encodeURIComponent(trimmed)}`);
   };
 
   const handleLogout = () => logout();

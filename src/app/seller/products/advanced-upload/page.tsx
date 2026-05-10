@@ -123,7 +123,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
-import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
+import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionHtml } from "@/components/product";
 import { cn } from "@/lib/utils";
 
 interface MediaFile {
@@ -1270,9 +1270,9 @@ export default function AdvancedProductUploadPage() {
                       <h4 className="font-semibold text-lg mb-2">
                         {formData.title}
                       </h4>
-                      <p className="text-gray-600 mb-4">
-                        {formData.description}
-                      </p>
+                      <div className="text-gray-600 mb-4">
+                        <ProductDescriptionHtml description={formData.description} />
+                      </div>
 
                       <div className="space-y-2 mb-4">
                         <div className="flex justify-between">

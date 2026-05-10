@@ -1,11 +1,7 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
-export type LogisticsVehicleType =
-  | "bicycle"
-  | "motorcycle"
-  | "car"
-  | "van"
-  | "truck";
+/** Preset slugs or partner-described vehicle (e.g. "Keke NAPEP"). */
+export type LogisticsVehicleType = string;
 
 export type LogisticsKycStatus =
   | "pending"
@@ -86,8 +82,9 @@ const LogisticsPartnerSchema = new Schema<ILogisticsPartner>(
     phone: { type: String, required: true, trim: true },
     vehicleType: {
       type: String,
-      enum: ["bicycle", "motorcycle", "car", "van", "truck"],
       required: true,
+      trim: true,
+      maxlength: 120,
     },
     canHandleFragile: { type: Boolean, default: false },
     notes: { type: String, trim: true },

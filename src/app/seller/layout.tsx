@@ -153,7 +153,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     e.preventDefault();
     const trimmed = searchQuery.trim();
     if (trimmed.length < 2 || trimmed.length > 100) return;
-    router.push(`/marketplace?search=${encodeURIComponent(trimmed)}`);
+    router.push(`/seller/marketplace?search=${encodeURIComponent(trimmed)}`);
   };
 
   const handleLogout = () => { logout(); };
@@ -313,7 +313,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         {/* Seller Section */}
         <div>
           {!narrow && (
-            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Seller Dashboard</p>
+            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Seller Dashboard</p>
           )}
           <div className="space-y-1">
             {filteredSellerNav.map((item) => {
@@ -329,11 +329,11 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                     narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3",
                     isActive
                       ? "bg-taja-primary text-white shadow-emerald"
-                      : "text-white/40 hover:text-white hover:bg-white/5"
+                      : "text-slate-200/85 hover:text-white hover:bg-white/10"
                   )}
                 >
                   <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
-                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-white/20 group-hover:text-taja-primary transition-colors")} />
+                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-slate-400 group-hover:text-taja-primary transition-colors")} />
                     {!narrow && item.name}
                   </div>
                   {isActive && !narrow && (
@@ -348,7 +348,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         {/* Buyer Section */}
         <div>
           {!narrow && (
-            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Account</p>
+            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Account</p>
           )}
           <div className="space-y-1">
             {buyerNavigation.map((item) => {
@@ -364,11 +364,11 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                     narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3",
                     isActive
                       ? "bg-taja-primary text-white shadow-emerald"
-                      : "text-white/40 hover:text-white hover:bg-white/5"
+                      : "text-slate-200/85 hover:text-white hover:bg-white/10"
                   )}
                 >
                   <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
-                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-white/20 group-hover:text-taja-primary transition-colors")} />
+                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-slate-400 group-hover:text-taja-primary transition-colors")} />
                     {!narrow && item.name}
                   </div>
                   {isActive && !narrow && (
@@ -383,7 +383,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         {/* Management Section */}
         <div>
           {!narrow && (
-            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Management</p>
+            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Management</p>
           )}
           <div className="space-y-1">
             {filteredManagementNav.map((item) => {
@@ -399,11 +399,11 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                     narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3",
                     isActive
                       ? "bg-taja-primary text-white shadow-emerald"
-                      : "text-white/40 hover:text-white hover:bg-white/5"
+                      : "text-slate-200/85 hover:text-white hover:bg-white/10"
                   )}
                 >
                   <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
-                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-white/20 group-hover:text-taja-primary transition-colors")} />
+                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-slate-400 group-hover:text-taja-primary transition-colors")} />
                     {!narrow && item.name}
                   </div>
                   {isActive && !narrow && (
@@ -625,7 +625,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-taja-secondary/40 backdrop-blur-xl"
+                  className="fixed inset-0 bg-slate-900/45 backdrop-blur-xl"
                   onClick={() => setSidebarOpen(false)}
                 />
                 <motion.div
@@ -633,7 +633,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                   animate={{ x: 0 }}
                   exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-taja-secondary border-r border-white/10 shadow-2xl overflow-y-auto"
+                  className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950 border-r border-white/10 shadow-2xl overflow-y-auto"
                 >
                   <SidebarContent mobile collapsed={false} />
                 </motion.div>
@@ -650,7 +650,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
           >
             <div
               className={cn(
-                "flex-1 flex flex-col min-h-0 bg-taja-secondary/95 backdrop-blur-3xl border-r border-white/10 shadow-2xl relative z-10 overflow-hidden",
+                "flex-1 flex flex-col min-h-0 bg-gradient-to-b from-slate-700/88 via-slate-800/92 to-slate-950/95 backdrop-blur-3xl border border-white/10 shadow-2xl relative z-10 overflow-hidden",
                 sidebarCollapsed ? "m-2 rounded-3xl" : "m-4 rounded-[40px]"
               )}
             >

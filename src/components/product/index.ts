@@ -18,6 +18,8 @@ export type { ProductPriceProps } from "./ProductPrice";
 export type { ProductBadgeProps } from "./ProductBadge";
 export { CategoryPickerModal, categoryPickerLabel } from "./CategoryPickerModal";
 export type { CategoryPickerItem } from "./CategoryPickerModal";
+export { ProductDescriptionEditor } from "./ProductDescriptionEditor";
+export { ProductDescriptionHtml } from "./ProductDescriptionHtml";
 
 
 

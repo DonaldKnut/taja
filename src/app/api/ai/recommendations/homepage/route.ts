@@ -61,6 +61,17 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('[AI_RECOMMENDATIONS_HOMEPAGE] Error:', error);
+    const isDbTimeout =
+      /buffering timed out/i.test(String(error?.message || "")) ||
+      /server selection timed out/i.test(String(error?.message || ""));
+    if (isDbTimeout) {
+      // Degrade gracefully when DB is temporarily unavailable.
+      return NextResponse.json({
+        success: true,
+        data: { trending: [], personalized: [], newArrivals: [] },
+        message: "Recommendations are temporarily unavailable.",
+      });
+    }
     return NextResponse.json(
       {
         success: false,

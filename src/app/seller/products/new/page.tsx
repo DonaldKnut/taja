@@ -35,13 +35,20 @@ import toast from "react-hot-toast";
 import { api, sellerApi, shopsApi, uploadProductImage, uploadProductVideo } from "@/lib/api";
 import { z } from "zod";
 import { ShopRequirementModal } from "@/components/shop/ShopRequirementModal";
-import { CategoryPickerModal, categoryPickerLabel } from "@/components/product";
+import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionEditor } from "@/components/product";
 import { cn } from "@/lib/utils";
+import {
+  isRichTextDescriptionEmpty,
+  plainTextToRichHtml,
+  sanitizeProductDescriptionHtml,
+} from "@/lib/sanitizeProductDescriptionHtml";
 
 // Zod schema for required publish fields
 const productPublishSchema = z.object({
   title: z.string().min(1, "Product Title is required"),
-  description: z.string().optional(),
+  description: z
+    .string()
+    .refine((val) => !isRichTextDescriptionEmpty(val), { message: "Description is required" }),
   category: z.string().optional(),
   price: z
     .string()
@@ -56,6 +63,11 @@ const productPublishSchema = z.object({
   images: z
     .array(z.string().min(1))
     .min(1, "Please add at least one product image"),
+});
+
+const productDraftSchema = productPublishSchema.extend({
+  description: z.string().optional(),
+  images: z.array(z.string().min(1)).optional(),
 });
 
 const categoryFields: Record<string, string[]> = {
@@ -398,9 +410,13 @@ export default function NewProductPage() {
       });
 
       if (response?.description) {
+        const nextDesc =
+          typeof response.description === "string" && /<[a-z]/i.test(response.description)
+            ? response.description
+            : plainTextToRichHtml(String(response.description));
         setFormData((prev) => ({
           ...prev,
-          description: response.description,
+          description: nextDesc,
         }));
         toast.success("Description generated with AI");
       }
@@ -510,10 +526,10 @@ export default function NewProductPage() {
       return;
     }
 
-    // Zod validation for required fields
-    const validation = productPublishSchema.safeParse({
+    // Zod validation for required fields (drafts may omit description / images)
+    const validation = (isDraft ? productDraftSchema : productPublishSchema).safeParse({
       title: formData.title.trim(),
-      description: (formData.description || "").trim(),
+      description: formData.description || "",
       category: (formData.category || "").trim(),
       price: formData.price.trim(),
       images: formData.images || [],
@@ -554,7 +570,7 @@ export default function NewProductPage() {
       const productData = {
         name: formData.title,
         title: formData.title,
-        description: formData.description,
+        description: sanitizeProductDescriptionHtml(formData.description),
         category: formData.category,
         subcategory: formData.subcategory || undefined,
         condition: formData.condition,
@@ -753,13 +769,10 @@ export default function NewProductPage() {
                       </motion.div>
                     )}
                   </div>
-                  <textarea
-                    name="description"
-                    rows={8}
+                  <ProductDescriptionEditor
                     value={formData.description}
-                    onChange={handleChange}
-                    className="w-full p-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-0 transition-all rounded-3xl text-sm font-medium text-taja-secondary placeholder:text-gray-300 resize-none leading-relaxed"
-                    placeholder="Describe your product in detail..."
+                    onChange={(html) => setFormData((prev) => ({ ...prev, description: html }))}
+                    placeholder="Describe your product in detail… Use bold, lists, and headings as needed."
                   />
                 </div>
 

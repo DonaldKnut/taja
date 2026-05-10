@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, PlayCircle, ChevronLeft, ChevronRight, Pencil, MoreHorizontal } from "lucide-react";
+import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, Play, PlayCircle, ChevronLeft, ChevronRight, Pencil, MoreHorizontal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ProductPrice } from "./ProductPrice";
 import { ShopLink } from "../shop/ShopLink";
@@ -135,8 +135,6 @@ export function ProductCard({
       window.removeEventListener("resize", update);
     };
   }, [optionsOpen]);
-
-  if (!product) return null;
 
   const isWishlisted = wishlistItems.some(item => item._id === product._id);
 
@@ -658,11 +656,18 @@ export function ProductCard({
       onTouchStart={() => setIsTouchActive(true)}
       onTouchEnd={() => setIsTouchActive(false)}
       onTouchCancel={() => setIsTouchActive(false)}
-      className={cn("group/card flex flex-col h-full bg-white rounded-[2rem] border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
+      className={cn("group/card flex flex-col h-full bg-white rounded-2xl sm:rounded-[2rem] border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
     >
       {optionsPanelContent}
       {sellerPanelContent}
-      <div className="relative aspect-square overflow-hidden bg-gray-50 rounded-t-[2rem]">
+      <div
+        className={cn(
+          "relative aspect-square overflow-hidden rounded-t-2xl sm:rounded-t-[2rem]",
+          activeMedia.type === "video"
+            ? "bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900"
+            : "bg-gray-50"
+        )}
+      >
         {!hasLoadedOnce && (
           <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100" />
         )}
@@ -696,21 +701,29 @@ export function ProductCard({
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : activeMedia.type === "video" ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={videoPoster}
-                alt={product.title}
-                loading="lazy"
-                onLoad={() => {
-                  setMediaLoaded(true);
-                  setHasLoadedOnce(true);
-                }}
-                onError={() => {
-                  setMediaLoaded(true);
-                  setHasLoadedOnce(true);
-                }}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
-              />
+              <div className="relative w-full h-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={videoPoster}
+                  alt={product.title}
+                  loading="lazy"
+                  onLoad={() => {
+                    setMediaLoaded(true);
+                    setHasLoadedOnce(true);
+                  }}
+                  onError={() => {
+                    setMediaLoaded(true);
+                    setHasLoadedOnce(true);
+                  }}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110 brightness-[0.88] contrast-[1.06]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-slate-900/35 pointer-events-none" aria-hidden />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
+                  <div className="rounded-full bg-black/35 backdrop-blur-[2px] p-3 sm:p-3.5 ring-2 ring-white/35 shadow-lg">
+                    <Play className="h-7 w-7 sm:h-8 sm:w-8 text-white fill-white/90" />
+                  </div>
+                </div>
+              </div>
             ) : (
               <Image
                 src={activeMedia.src}
@@ -762,21 +775,29 @@ export function ProductCard({
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : activeMedia.type === "video" ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={videoPoster}
-                alt={product.title}
-                loading="lazy"
-                onLoad={() => {
-                  setMediaLoaded(true);
-                  setHasLoadedOnce(true);
-                }}
-                onError={() => {
-                  setMediaLoaded(true);
-                  setHasLoadedOnce(true);
-                }}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
-              />
+              <div className="relative w-full h-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={videoPoster}
+                  alt={product.title}
+                  loading="lazy"
+                  onLoad={() => {
+                    setMediaLoaded(true);
+                    setHasLoadedOnce(true);
+                  }}
+                  onError={() => {
+                    setMediaLoaded(true);
+                    setHasLoadedOnce(true);
+                  }}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110 brightness-[0.88] contrast-[1.06]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-slate-900/35 pointer-events-none" aria-hidden />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
+                  <div className="rounded-full bg-black/35 backdrop-blur-[2px] p-3 sm:p-3.5 ring-2 ring-white/35 shadow-lg">
+                    <Play className="h-7 w-7 sm:h-8 sm:w-8 text-white fill-white/90" />
+                  </div>
+                </div>
+              </div>
             ) : (
               <Image
                 src={activeMedia.src}
