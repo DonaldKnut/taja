@@ -324,6 +324,31 @@ export async function uploadProductImage(file: File): Promise<string> {
   return data.data.url || data.data;
 }
 
+/** Logistics partner apply flow: works without login; uses dedicated upload type + folder. */
+export async function uploadLogisticsKycImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("type", "logistics-kyc");
+
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const data = await readResponsePayload(response);
+  if (!response.ok) {
+    throw new ApiError(data.message || data.error || "Upload failed", response.status, data);
+  }
+  return data.data.url || data.data;
+}
+
 // Upload API helper for product videos
 export async function uploadProductVideo(file: File): Promise<string> {
   const formData = new FormData();

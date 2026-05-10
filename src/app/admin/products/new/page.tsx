@@ -1079,12 +1079,12 @@ export default function AdminProductsNewPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[10060] flex items-center justify-center p-4"
           >
             <button
               type="button"
               aria-label="Close shop selector"
-              className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]"
               onClick={() => setShopModalOpen(false)}
             />
             <motion.div

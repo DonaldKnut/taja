@@ -204,15 +204,20 @@ export function IntegratedMarketplace({ isInsideDashboard = false }: IntegratedM
                     >
                         {/* ═══ Sliding Media Header ═══ */}
                         {/* ═══ Header Registry Search ═══ */}
-                        <section className={cn(
-                            "px-4 sm:px-6 sticky z-40 bg-white border-b border-gray-100",
-                            isInsideDashboard ? "top-16 py-4" : "top-0 py-4 sm:py-6"
-                        )}>
+                        <section
+                            className={cn(
+                                "px-4 sm:px-6 sticky border-b border-gray-100 shadow-sm",
+                                "bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80",
+                                isInsideDashboard
+                                    ? "top-16 z-40 py-4"
+                                    : "top-20 z-[9998] py-4 sm:py-5 md:py-4"
+                            )}
+                        >
                             {!isInsideDashboard && (
-                                <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center justify-between mb-6 md:mb-4">
                                     <div className="space-y-1">
                                         <p className="text-gray-400 text-xs font-medium uppercase tracking-widest leading-none">Premium Collection</p>
-                                        <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-none italic">Hello, {firstName} 👋</h2>
+                                        <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-none italic md:text-3xl">Hello, {firstName} 👋</h2>
                                     </div>
 
                                     {/* Mobile Cart Action */}
