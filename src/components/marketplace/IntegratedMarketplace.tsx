@@ -673,7 +673,12 @@ export function IntegratedMarketplace({
                                     )}
                                 </AnimatePresence>
 
-                                <div className="grid grid-cols-2 md:grid-cols-[1fr_auto_auto] gap-3">
+                                <div
+                                    className={cn(
+                                        "grid grid-cols-2 md:grid-cols-[1fr_auto_auto] gap-3",
+                                        hostShell && "lg:hidden"
+                                    )}
+                                >
                                     <div className="h-12 rounded-2xl border border-gray-200 bg-white px-4 flex items-center justify-between col-span-2 md:col-span-1">
                                         <div className="min-w-0">
                                             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-400">Active filters</p>
