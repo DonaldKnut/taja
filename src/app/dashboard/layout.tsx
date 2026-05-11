@@ -110,6 +110,11 @@ export default function DashboardLayout({
       const next = !c;
       try {
         localStorage.setItem(DASHBOARD_SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+        window.dispatchEvent(
+          new CustomEvent("taja:dashboard-sidebar-collapsed-change", {
+            detail: { collapsed: next },
+          })
+        );
       } catch {
         /* ignore */
       }

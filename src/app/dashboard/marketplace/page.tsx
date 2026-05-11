@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { IntegratedMarketplace } from "@/components/marketplace/IntegratedMarketplace";
 
 function DashboardMarketplaceInner() {
-  return <IntegratedMarketplace isInsideDashboard={true} />;
+  return <IntegratedMarketplace isInsideDashboard hostShell="buyer" />;
 }
 
 export default function DashboardMarketplacePage() {

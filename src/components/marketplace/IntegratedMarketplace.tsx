@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
-import { Filter, Zap, Gift, Tag, Star, ChevronRight, ShoppingBag, ShieldCheck, Crown, ChevronDown, SlidersHorizontal, X, Search } from "lucide-react";
+import { Filter, Zap, Gift, Tag, Star, ChevronRight, ChevronLeft, ShoppingBag, ShieldCheck, Crown, ChevronDown, SlidersHorizontal, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/product";
 import { useMarketplaceFeed } from "@/hooks/useMarketplaceFeed";
@@ -30,10 +31,14 @@ const HEADER_IMAGES = [
 ];
 const MARKETPLACE_SLIDE_MS = 5000;
 const SPOTLIGHT_SLIDES_BEFORE_DISMISS = 3;
+const MARKETPLACE_FILTERS_RAIL_OPEN_KEY = "taja_marketplace_filters_rail_open";
 
 export interface IntegratedMarketplaceProps {
     isInsideDashboard?: boolean;
+    /** @deprecated use hostShell */
     hasHostSidebar?: boolean;
+    /** Embedded in buyer or seller app shell — desktop uses fixed dockable filter rail */
+    hostShell?: "seller" | "buyer";
 }
 
 interface MarketplaceFilterPreset {
@@ -48,7 +53,12 @@ interface MarketplaceFilterPreset {
     verifiedOnly: boolean;
 }
 
-export function IntegratedMarketplace({ isInsideDashboard = false, hasHostSidebar = false }: IntegratedMarketplaceProps) {
+export function IntegratedMarketplace({
+    isInsideDashboard = false,
+    hasHostSidebar = false,
+    hostShell: hostShellProp,
+}: IntegratedMarketplaceProps) {
+    const hostShell = hostShellProp ?? (hasHostSidebar ? ("seller" as const) : null);
     const searchParams = useSearchParams();
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [categorySearchTerm, setCategorySearchTerm] = useState("");
@@ -66,6 +76,9 @@ export function IntegratedMarketplace({ isInsideDashboard = false, hasHostSideba
     const [savedPresets, setSavedPresets] = useState<MarketplaceFilterPreset[]>([]);
     const [presetName, setPresetName] = useState("");
     const [headerIndex, setHeaderIndex] = useState(0);
+    const [filtersRailExpanded, setFiltersRailExpanded] = useState(true);
+    const [hostShellSidebarCollapsed, setHostShellSidebarCollapsed] = useState(false);
+    const [hostShellFiltersPortalReady, setHostShellFiltersPortalReady] = useState(false);
 
     const { user } = useAuth();
     const firstName = user?.fullName?.split(" ")[0] || "Shopper";
@@ -288,11 +301,243 @@ export function IntegratedMarketplace({ isInsideDashboard = false, hasHostSideba
         setSearchQuery(urlSearch);
     }, [urlSearch]);
 
+    useEffect(() => {
+        if (!hostShell) return;
+        const readRail = () => {
+            try {
+                setFiltersRailExpanded(localStorage.getItem(MARKETPLACE_FILTERS_RAIL_OPEN_KEY) !== "0");
+            } catch {
+                /* ignore */
+            }
+        };
+        readRail();
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === MARKETPLACE_FILTERS_RAIL_OPEN_KEY) {
+                setFiltersRailExpanded(e.newValue !== "0");
+            }
+        };
+        window.addEventListener("storage", onStorage);
+        return () => window.removeEventListener("storage", onStorage);
+    }, [hostShell]);
+
+    useEffect(() => {
+        if (hostShell !== "seller" && hostShell !== "buyer") {
+            setHostShellFiltersPortalReady(false);
+            return;
+        }
+        setHostShellFiltersPortalReady(true);
+        const storageKey =
+            hostShell === "seller" ? "taja_seller_sidebar_collapsed" : "taja_dashboard_sidebar_collapsed";
+        const eventName =
+            hostShell === "seller"
+                ? "taja:seller-sidebar-collapsed-change"
+                : "taja:dashboard-sidebar-collapsed-change";
+        const read = () => {
+            try {
+                setHostShellSidebarCollapsed(localStorage.getItem(storageKey) === "1");
+            } catch {
+                /* ignore */
+            }
+        };
+        read();
+        const onEv = (e: Event) => {
+            const detail = (e as CustomEvent<{ collapsed?: boolean }>).detail;
+            if (typeof detail?.collapsed === "boolean") {
+                setHostShellSidebarCollapsed(detail.collapsed);
+            } else {
+                read();
+            }
+        };
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === storageKey) {
+                setHostShellSidebarCollapsed(e.newValue === "1");
+            }
+        };
+        window.addEventListener(eventName, onEv);
+        window.addEventListener("storage", onStorage);
+        return () => {
+            window.removeEventListener(eventName, onEv);
+            window.removeEventListener("storage", onStorage);
+        };
+    }, [hostShell]);
+
+    const toggleFiltersRailExpanded = () => {
+        setFiltersRailExpanded((prev) => {
+            const next = !prev;
+            try {
+                localStorage.setItem(MARKETPLACE_FILTERS_RAIL_OPEN_KEY, next ? "1" : "0");
+            } catch {
+                /* ignore */
+            }
+            return next;
+        });
+    };
+
+    const railWidthPx = hostShell ? (filtersRailExpanded ? 240 : 56) : 0;
+
+    const hostShellDesktopFilterLeft =
+        hostShell === "seller"
+            ? hostShellSidebarCollapsed
+                ? "calc(5rem + 1.5rem)"
+                : "calc(18rem + 1.5rem)"
+            : hostShell === "buyer"
+              ? hostShellSidebarCollapsed
+                  ? "calc(5rem + 1.5rem)"
+                  : "calc(260px + 1.5rem)"
+              : undefined;
+
+    const hostShellRailInner = (
+        <>
+            {filtersRailExpanded ? (
+                <>
+                    <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-3 py-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Search & filters</span>
+                        <button
+                            type="button"
+                            onClick={toggleFiltersRailExpanded}
+                            className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                            title="Dock filter panel"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </button>
+                    </div>
+                    <div className="space-y-4 p-4">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Refine results</p>
+                            <h4 className="text-sm font-black text-gray-900">Marketplace filters</h4>
+                        </div>
+                        <div className="relative">
+                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                value={categorySearchTerm}
+                                onChange={(e) => setCategorySearchTerm(e.target.value)}
+                                placeholder="Search categories..."
+                                className="w-full h-10 rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                            />
+                        </div>
+                        <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
+                            {filteredCategories.map((category) => {
+                                const checked = selectedCategories.includes(category);
+                                return (
+                                    <label key={category} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={(e) =>
+                                                setSelectedCategories((prev) =>
+                                                    e.target.checked ? [...prev, category] : prev.filter((c) => c !== category)
+                                                )
+                                            }
+                                            className="h-4 w-4 rounded border-gray-300 text-taja-primary focus:ring-taja-primary/30"
+                                        />
+                                        <span className="text-xs font-semibold text-gray-700 truncate">{category}</span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <input
+                                type="number"
+                                min={0}
+                                value={minPrice}
+                                onChange={(e) => setMinPrice(e.target.value)}
+                                placeholder="Min ₦"
+                                className="h-10 rounded-xl border border-gray-200 bg-gray-50 px-3 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                            />
+                            <input
+                                type="number"
+                                min={0}
+                                value={maxPrice}
+                                onChange={(e) => setMaxPrice(e.target.value)}
+                                placeholder="Max ₦"
+                                className="h-10 rounded-xl border border-gray-200 bg-gray-50 px-3 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                            />
+                        </div>
+                        <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                            <input
+                                type="checkbox"
+                                checked={verifiedOnly}
+                                onChange={(e) => setVerifiedOnly(e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-taja-primary focus:ring-taja-primary/30"
+                            />
+                            <span className="text-xs font-semibold text-gray-700">Verified shops only</span>
+                        </label>
+                        <button
+                            type="button"
+                            onClick={applyFilters}
+                            className="w-full h-10 rounded-xl bg-taja-primary text-white text-[10px] font-black uppercase tracking-widest hover:opacity-95 transition-opacity"
+                        >
+                            Apply filters
+                        </button>
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-2 space-y-2">
+                            <p className="text-[9px] font-black uppercase tracking-[0.16em] text-gray-400 px-1">Saved filters</p>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={presetName}
+                                    onChange={(e) => setPresetName(e.target.value)}
+                                    placeholder="Name this preset"
+                                    className="flex-1 h-9 rounded-lg border border-gray-200 bg-white px-2 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={saveCurrentPreset}
+                                    disabled={!presetName.trim()}
+                                    className="h-9 px-3 rounded-lg border border-gray-200 bg-white text-[10px] font-black uppercase tracking-widest text-gray-600 disabled:opacity-50"
+                                >
+                                    Save
+                                </button>
+                            </div>
+                            {savedPresets.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {savedPresets.map((preset) => (
+                                        <button
+                                            key={preset.id}
+                                            type="button"
+                                            onClick={() => applyPreset(preset)}
+                                            className="px-2.5 h-7 rounded-full border border-gray-200 bg-white text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-taja-primary hover:border-taja-primary/25 transition-colors"
+                                        >
+                                            {preset.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={clearAdvancedFilters}
+                            className="w-full h-10 rounded-xl border border-gray-200 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-taja-primary hover:border-taja-primary/25 transition-colors"
+                        >
+                            Clear all filters
+                        </button>
+                    </div>
+                </>
+            ) : (
+                <button
+                    type="button"
+                    onClick={toggleFiltersRailExpanded}
+                    className="flex min-h-[140px] w-full flex-col items-center justify-center gap-2 p-2 text-gray-600 hover:bg-gray-50"
+                    title="Expand filters"
+                >
+                    <SlidersHorizontal className="h-5 w-5 shrink-0" />
+                    <ChevronRight className="h-4 w-4 shrink-0" />
+                    <span className="text-[8px] font-black uppercase tracking-widest text-center leading-tight text-gray-500 px-0.5">
+                        Filters
+                    </span>
+                </button>
+            )}
+        </>
+    );
+
     return (
-        <div className={cn(
-            "bg-[#F8F9FB] min-h-screen overflow-hidden",
-            isInsideDashboard ? "pb-12" : "pb-24"
-        )}>
+        <div
+            className={cn(
+                "bg-[#F8F9FB] min-h-screen",
+                hostShell ? "overflow-x-hidden" : "overflow-hidden",
+                isInsideDashboard ? "pb-12" : "pb-24"
+            )}
+        >
             <AnimatePresence mode="wait">
                 {showVerifiedIntro && !isInsideDashboard ? (
                     <motion.div
@@ -349,7 +594,8 @@ export function IntegratedMarketplace({ isInsideDashboard = false, hasHostSideba
                             className={cn(
                                 "px-4 sm:px-6 border-b border-gray-100 shadow-sm",
                                 "bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80",
-                                "pt-0 pb-4 sm:pb-5 md:pb-4"
+                                "pt-0 pb-4 sm:pb-5 md:pb-4",
+                                hostShell === "seller" && "lg:hidden"
                             )}
                         >
                             <div className="space-y-4">
@@ -466,7 +712,8 @@ export function IntegratedMarketplace({ isInsideDashboard = false, hasHostSideba
                                             "h-12 px-4 inline-flex items-center justify-center gap-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm",
                                             showAdvancedFilters || hasAdvancedFilters
                                                 ? "text-taja-primary bg-taja-light/40 border-taja-primary/25"
-                                                : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50"
+                                                : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50",
+                                            hostShell && "lg:hidden"
                                         )}
                                     >
                                         <Filter className="w-4 h-4" />
@@ -483,7 +730,7 @@ export function IntegratedMarketplace({ isInsideDashboard = false, hasHostSideba
                                         animate={{ opacity: 1, height: "auto", y: 0 }}
                                         exit={{ opacity: 0, height: 0, y: -4 }}
                                         transition={{ duration: 0.2 }}
-                                        className="overflow-hidden"
+                                        className={cn("overflow-hidden", hostShell && "lg:hidden")}
                                     >
                                         <div className="mt-4 rounded-3xl border border-gray-200 bg-gray-50/70 p-4 md:p-5 space-y-4">
                                             <div className="flex items-center justify-between">
@@ -645,15 +892,51 @@ export function IntegratedMarketplace({ isInsideDashboard = false, hasHostSideba
                         </section>
 
                         {/* ═══ Product Feed ═══ */}
-                        <section className="px-4 sm:px-6 space-y-8 mt-3 sm:mt-5 pb-20">
-                            <div className={cn("grid grid-cols-1 gap-6 lg:gap-8", hasHostSidebar ? "lg:grid-cols-[240px_1fr]" : "lg:grid-cols-[280px_1fr]")}>
-                                <aside className="hidden lg:block relative">
-                                    <div
-                                        className={cn(
-                                            "max-h-[calc(100vh-7rem)] overflow-y-auto rounded-3xl border border-gray-200 bg-white p-4 shadow-sm space-y-4",
-                                            hasHostSidebar ? "sticky top-24 w-full" : "fixed top-24 w-[280px]"
-                                        )}
-                                    >
+                        <section className="relative px-4 sm:px-6 space-y-8 mt-3 sm:mt-5 pb-20">
+                            <div
+                                className={cn(
+                                    "grid grid-cols-1 gap-6 lg:gap-8",
+                                    hostShell
+                                        ? filtersRailExpanded
+                                            ? "lg:grid-cols-[240px_1fr]"
+                                            : "lg:grid-cols-[56px_1fr]"
+                                        : hasHostSidebar
+                                          ? "lg:grid-cols-[240px_1fr]"
+                                          : "lg:grid-cols-[280px_1fr]"
+                                )}
+                            >
+                                {hostShell === "seller" || hostShell === "buyer" ? (
+                                    <>
+                                        <div
+                                            className="hidden lg:block shrink-0 min-w-0"
+                                            style={{ width: railWidthPx, maxWidth: "100%" }}
+                                            aria-hidden
+                                        />
+                                        {hostShellFiltersPortalReady &&
+                                            typeof document !== "undefined" &&
+                                            createPortal(
+                                                <aside
+                                                    className="pointer-events-auto fixed z-[90] hidden max-h-[calc(100vh-6rem)] min-w-0 overflow-y-auto rounded-3xl border border-gray-200 bg-white shadow-lg lg:block"
+                                                    style={{
+                                                        left: hostShellDesktopFilterLeft,
+                                                        top: "6rem",
+                                                        width: railWidthPx,
+                                                    }}
+                                                    aria-label="Marketplace filters"
+                                                >
+                                                    {hostShellRailInner}
+                                                </aside>,
+                                                document.body
+                                            )}
+                                    </>
+                                ) : (
+                                    <aside className="hidden lg:block relative">
+                                        <div
+                                            className={cn(
+                                                "max-h-[calc(100vh-7rem)] overflow-y-auto rounded-3xl border border-gray-200 bg-white p-4 shadow-sm space-y-4",
+                                                hasHostSidebar ? "sticky top-24 w-full" : "fixed top-24 w-[280px]"
+                                            )}
+                                        >
                                         <div className="space-y-1">
                                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Refine results</p>
                                             <h4 className="text-sm font-black text-gray-900">Marketplace filters</h4>
@@ -766,7 +1049,8 @@ export function IntegratedMarketplace({ isInsideDashboard = false, hasHostSideba
                                             Clear all filters
                                         </button>
                                     </div>
-                                </aside>
+                                    </aside>
+                                )}
 
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between border-b border-gray-100 pb-4">

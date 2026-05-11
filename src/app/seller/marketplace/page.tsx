@@ -3,5 +3,5 @@
 import { IntegratedMarketplace } from "@/components/marketplace/IntegratedMarketplace";
 
 export default function SellerMarketplacePage() {
-    return <IntegratedMarketplace isInsideDashboard hasHostSidebar />;
+    return <IntegratedMarketplace isInsideDashboard hostShell="seller" />;
 }
