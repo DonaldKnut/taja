@@ -3,9 +3,11 @@ import { quoteLagosDeliveryAddress, type LagosDeliveryQuote } from "@/lib/delive
 export type ProductShippingLike = {
   freeShipping?: boolean;
   shippingCost?: number;
+  costPerKg?: number;
   weight?: number;
   lagosMainlandDelivery?: number | null;
   lagosIslandDelivery?: number | null;
+  shippingPayer?: "buyer" | "seller" | "platform" | "split";
 };
 
 export type CheckoutShippingLine = {
@@ -53,35 +55,63 @@ export function sumLineShippingBeforeShopTiers(
   anySellerLagosRates: boolean;
   lagosQuote: LagosDeliveryQuote | null;
   totalWeightKg: number;
+  shippingPolicyAudit: {
+    subsidizedNaira: number;
+    subsidizedBySellerNaira: number;
+    subsidizedByPlatformNaira: number;
+    subsidizedBySplitNaira: number;
+  };
 } {
   const lagosQuote = quoteLagosDeliveryAddress(resolvedShippingAddress);
   let shipping = 0;
   let anySellerLagosRates = false;
   let totalWeightKg = 0;
+  let subsidizedNaira = 0;
+  let subsidizedBySellerNaira = 0;
+  let subsidizedByPlatformNaira = 0;
+  let subsidizedBySplitNaira = 0;
 
   for (const line of lines) {
     const qty = Number(line.quantity) || 0;
     const w = Number(line.shipping?.weight) || 0;
     totalWeightKg += w * qty;
 
-    if (line.shipping?.freeShipping) {
-      continue;
-    }
+    const flat = Number(line.shipping?.shippingCost) || 0;
+    const weightBased = (Number(line.shipping?.costPerKg) || 0) * w;
+    const fallbackUnit = flat > 0 ? flat : weightBased;
+    let unitShipping = fallbackUnit;
 
     if (lagosQuote) {
       const unit = sellerLagosUnitNaira(line.shipping, lagosQuote.zoneLabel);
       if (unit !== null) {
         anySellerLagosRates = true;
-        shipping += unit * qty;
-      } else {
-        shipping += (Number(line.shipping?.shippingCost) || 0) * qty;
+        unitShipping = unit;
       }
-    } else {
-      shipping += (Number(line.shipping?.shippingCost) || 0) * qty;
     }
+    const lineBase = unitShipping * qty;
+    if (line.shipping?.freeShipping) {
+      subsidizedNaira += lineBase;
+      const payer = line.shipping?.shippingPayer || "seller";
+      if (payer === "platform") subsidizedByPlatformNaira += lineBase;
+      else if (payer === "split") subsidizedBySplitNaira += lineBase;
+      else subsidizedBySellerNaira += lineBase;
+      continue;
+    }
+    shipping += lineBase;
   }
 
-  return { shipping, anySellerLagosRates, lagosQuote, totalWeightKg };
+  return {
+    shipping,
+    anySellerLagosRates,
+    lagosQuote,
+    totalWeightKg,
+    shippingPolicyAudit: {
+      subsidizedNaira,
+      subsidizedBySellerNaira,
+      subsidizedByPlatformNaira,
+      subsidizedBySplitNaira,
+    },
+  };
 }
 
 export function finalizeLagosShippingNaira(opts: {

@@ -209,32 +209,32 @@ export default function AdminLayout({
       {/* Branding for Mobile */}
       {mobile && (
         <div className="space-y-6 mb-10">
-          <div className="flex items-center justify-between px-2 text-white">
+                    <div className="flex items-center justify-between px-2 text-taja-secondary">
             <Logo size="sm" href="/admin/dashboard" variant="header" />
-            <button onClick={() => setSidebarOpen(false)} className="p-2 text-white/70 hover:text-white">
+                        <button onClick={() => setSidebarOpen(false)} className="p-2 text-taja-secondary hover:text-taja-primary">
               <X className="h-6 w-6" />
             </button>
           </div>
           
           {/* Quick Utilities for Mobile */}
           <div className="grid grid-cols-2 gap-3 px-2">
-            <button 
+                        <button 
               onClick={() => { setNotificationsOpen(true); setSidebarOpen(false); }}
-              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all relative group"
+              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 text-taja-secondary hover:bg-gray-100 transition-all relative group"
             >
-              <Bell className="h-5 w-5 mb-2 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <Bell className="h-5 w-5 mb-2 text-taja-primary group-hover:scale-110 transition-transform" />
               <span className="text-[9px] font-black uppercase tracking-widest">Alerts</span>
               {unreadCount > 0 && (
-                <span className="absolute top-3 right-3 h-4 w-4 bg-emerald-500 text-white text-[8px] font-black rounded-lg flex items-center justify-center border border-emerald-950">
+                <span className="absolute top-3 right-3 h-4 w-4 bg-taja-primary text-white text-[8px] font-black rounded-lg flex items-center justify-center border border-white">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
             <button 
               onClick={() => { toggleCart(); setSidebarOpen(false); }}
-              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all group"
+              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 text-taja-secondary hover:bg-gray-100 transition-all group"
             >
-              <ShoppingCart className="h-5 w-5 mb-2 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <ShoppingCart className="h-5 w-5 mb-2 text-taja-primary group-hover:scale-110 transition-transform" />
               <span className="text-[9px] font-black uppercase tracking-widest">Cart</span>
             </button>
           </div>
@@ -275,7 +275,7 @@ export default function AdminLayout({
                 </div>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-black text-white tracking-tight truncate leading-none mb-1">
+                                <p className="text-sm font-black text-taja-secondary tracking-tight truncate leading-none mb-1">
                   {user?.fullName || "System Manager"}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1">
@@ -286,11 +286,11 @@ export default function AdminLayout({
                 </div>
               </div>
             </div>
-            <motion.div
+                        <motion.div
               animate={{ rotate: profileExpanded ? 180 : 0 }}
               transition={{ duration: 0.2 }}
             >
-              <ChevronDown className="h-5 w-5 text-white/40" />
+              <ChevronDown className="h-5 w-5 text-taja-secondary/80" />
             </motion.div>
           </button>
         )}
@@ -304,25 +304,25 @@ export default function AdminLayout({
               className="overflow-hidden"
             >
               <div className="pt-4 px-2 space-y-2">
-                <div className="mb-4 px-2">
-                  <p className="text-[10px] text-white/40 truncate text-center">
+                                                <div className="mb-4 px-2">
+                  <p className="text-[10px] text-taja-secondary truncate text-center">
                     {user?.email}
                   </p>
                 </div>
                 <Link
                   href="/admin/shops/new"
-                  className="group flex items-center justify-center gap-3 w-full px-6 py-3.5 bg-white/10 text-white border border-white/20 rounded-2xl font-black uppercase tracking-[0.15em] hover:bg-white/20 transition-all text-[10px]"
+                  className="group flex items-center justify-center gap-3 w-full px-6 py-3.5 bg-white/10 text-taja-secondary border border-taja-secondary/20 rounded-2xl font-black uppercase tracking-[0.15em] hover:bg-white/20 transition-all text-[10px]"
                 >
                   <Store className="h-4 w-4" />
                   New shop
                 </Link>
                 <Link
                   href="/admin/products/new"
-                  className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-white text-emerald-950 rounded-2xl font-black uppercase tracking-[0.15em] shadow-premium hover:shadow-premium-hover hover:-translate-y-0.5 transition-all text-[11px]"
+                  className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-white text-taja-secondary rounded-2xl font-black uppercase tracking-[0.15em] shadow-premium hover:shadow-premium-hover hover:-translate-y-0.5 transition-all text-[11px]"
                 >
                   <Plus className="h-4 w-4" />
                   New Product
-                  <Sparkles className="h-4 w-4 text-emerald-500 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Sparkles className="h-4 w-4 text-taja-secondary ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </div>
             </motion.div>
@@ -336,7 +336,7 @@ export default function AdminLayout({
           <Link
             href="/dashboard"
             onClick={() => setSidebarOpen(false)}
-            className="flex items-center justify-center gap-3 w-full px-6 py-3.5 bg-white/10 text-white border border-white/20 rounded-2xl font-black uppercase tracking-[0.15em] hover:bg-white/20 transition-all text-[10px]"
+            className="flex items-center justify-center gap-3 w-full px-6 py-3.5 bg-white/10 text-taja-secondary border border-taja-secondary/20 rounded-2xl font-black uppercase tracking-[0.15em] hover:bg-white/20 transition-all text-[10px]"
           >
             <LayoutGrid className="h-4 w-4" />
             Buyer dashboard
@@ -349,7 +349,7 @@ export default function AdminLayout({
         {adminNavGroups.map((group) => (
           <div key={group.label}>
             {!narrow && (
-              <p className="px-4 mb-4 text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">{group.label}</p>
+                                                                              <p className="px-4 mb-4 text-[11px] font-black uppercase tracking-[0.3em] text-taja-secondary">{group.label}</p>
             )}
             <div className="space-y-1">
               {group.items.map((item) => {
@@ -358,13 +358,13 @@ export default function AdminLayout({
                   item.href === "/admin/support/tickets"
                     ? [
                         supportCounts.unread > 0
-                          ? { label: "Unread", value: supportCounts.unread, className: "bg-indigo-500/15 text-indigo-200 border-indigo-500/30" }
+                          ? { label: "Unread", value: supportCounts.unread, className: "bg-taja-secondary/10 text-taja-secondary border-taja-secondary/30" }
                           : null,
                         supportCounts.needsReply > 0
-                          ? { label: "Reply", value: supportCounts.needsReply, className: "bg-rose-500/15 text-rose-200 border-rose-500/30" }
+                          ? { label: "Reply", value: supportCounts.needsReply, className: "bg-taja-secondary/10 text-taja-secondary border-taja-secondary/30" }
                           : null,
                         supportCounts.unassigned > 0
-                          ? { label: "Unassigned", value: supportCounts.unassigned, className: "bg-amber-500/15 text-amber-200 border-amber-500/30" }
+                          ? { label: "Unassigned", value: supportCounts.unassigned, className: "bg-taja-secondary/10 text-taja-secondary border-taja-secondary/30" }
                           : null,
                       ].filter(Boolean)
                     : [];
@@ -384,16 +384,16 @@ export default function AdminLayout({
                     href={item.href}
                     title={narrow ? displayName : undefined}
                     onClick={() => mobile && setSidebarOpen(false)}
-                    className={cn(
-                      "group flex rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+                                        className={cn(
+                      "group flex rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300",
                       narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3.5",
                       isActive
-                        ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                        : "text-slate-300/80 hover:text-white hover:bg-white/8"
+                        ? "bg-taja-secondary/10 text-taja-secondary shadow-premium"
+                        : "text-taja-secondary hover:text-taja-secondary hover:bg-taja-secondary/5"
                     )}
                   >
                     <div className={cn("flex items-center min-w-0", !narrow && "flex-1")}>
-                      <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-slate-400 group-hover:text-emerald-400 transition-colors")} />
+                                                                                        <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", "text-taja-secondary group-hover:text-taja-secondary transition-colors")} />
                       {!narrow && displayName}
                     </div>
                     {!narrow && (
@@ -414,7 +414,7 @@ export default function AdminLayout({
                         {isActive && (
                           <motion.div
                             layoutId={`activeNav${mobile ? "Mob" : "Desk"}`}
-                            className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"
+                            className="w-1.5 h-1.5 rounded-full bg-taja-secondary animate-pulse"
                           />
                         )}
                       </div>
@@ -429,11 +429,11 @@ export default function AdminLayout({
 
       {/* Logout */}
       <div className="mt-auto px-2">
-        <button
+                <button
           title={narrow ? "Logout" : undefined}
           onClick={() => { logout(); mobile && setSidebarOpen(false); }}
           className={cn(
-            "w-full rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-red-400/60 hover:text-red-400 hover:bg-red-500/5 transition-all group",
+            "w-full rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-red-500/60 hover:text-red-500 hover:bg-red-50 transition-all group",
             narrow ? "flex items-center justify-center p-3" : "flex items-center gap-4 px-5 py-4"
           )}
         >
@@ -554,7 +554,7 @@ export default function AdminLayout({
                   animate={{ x: 0 }}
                   exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-gradient-to-b from-slate-800 to-slate-950 border-r border-white/10 shadow-huge overflow-y-auto"
+                                    className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-white border-r border-gray-100 shadow-huge overflow-y-auto"
                 >
                   <SidebarContent mobile collapsed={false} />
                 </motion.div>
@@ -566,12 +566,12 @@ export default function AdminLayout({
           <aside
             className={cn(
               "hidden lg:flex lg:flex-col lg:fixed lg:top-20 lg:bottom-0 lg:left-0 lg:z-[100] lg:pb-0 transition-[width] duration-300 ease-out",
-              sidebarCollapsed ? "lg:w-20" : "lg:w-80"
+              sidebarCollapsed ? "lg:w-20" : "lg:w-72"
             )}
           >
-            <div
+                        <div
               className={cn(
-                "flex-1 flex flex-col min-h-0 rounded-[2.5rem] bg-gradient-to-b from-slate-800/92 to-slate-950/95 backdrop-blur-3xl border border-white/10 overflow-hidden shadow-huge",
+                "flex-1 flex flex-col min-h-0 rounded-[2.5rem] bg-white/80 backdrop-blur-3xl border border-white/60 overflow-hidden shadow-glass",
                 sidebarCollapsed ? "m-2" : "m-4"
               )}
             >
@@ -579,7 +579,7 @@ export default function AdminLayout({
                 <button
                   type="button"
                   onClick={toggleSidebarCollapsed}
-                  className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                                    className="p-2 rounded-xl text-taja-secondary hover:text-taja-primary bg-white hover:bg-gray-50 border border-gray-100 transition-colors"
                   aria-expanded={!sidebarCollapsed}
                   aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
@@ -596,7 +596,7 @@ export default function AdminLayout({
           <main
             className={cn(
               "flex-1 overflow-y-auto relative scrollbar-hide transition-[padding] duration-300 ease-out",
-              sidebarCollapsed ? "lg:pl-20" : "lg:pl-80"
+              sidebarCollapsed ? "lg:pl-20" : "lg:pl-72"
             )}
           >
             <div className="h-full">

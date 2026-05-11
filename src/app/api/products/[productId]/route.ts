@@ -7,6 +7,7 @@ import { authenticate, requireAuth } from '@/lib/middleware';
 import '@/models/Category'; // Ensure Category model is registered for populate('category')
 import { notifyOwnerViewAlert } from '@/lib/notifications';
 import { writeAuditLog } from '@/lib/audit';
+import { validateShippingPolicy } from '@/lib/delivery/shippingPolicy';
 
 export const dynamic = 'force-dynamic';
 
@@ -214,6 +215,16 @@ export async function PUT(
           }
         }
       });
+
+      if (product.status !== 'draft') {
+        const shippingValidation = validateShippingPolicy((product as any).shipping);
+        if (!shippingValidation.isValid) {
+          return NextResponse.json(
+            { success: false, message: shippingValidation.message || 'Invalid shipping policy' },
+            { status: 400 }
+          );
+        }
+      }
 
       await product.save();
 

@@ -158,9 +158,11 @@ export async function POST(request: NextRequest) {
           shipping: {
             freeShipping: !!sh.freeShipping,
             shippingCost: typeof sh.shippingCost === 'number' ? sh.shippingCost : 0,
+            costPerKg: typeof sh.costPerKg === 'number' ? sh.costPerKg : 0,
             weight: typeof sh.weight === 'number' ? sh.weight : 0,
             lagosMainlandDelivery: sh.lagosMainlandDelivery,
             lagosIslandDelivery: sh.lagosIslandDelivery,
+            shippingPayer: sh.shippingPayer,
           },
         });
 
@@ -188,6 +190,7 @@ export async function POST(request: NextRequest) {
         anySellerLagosRates,
         lagosQuote,
         totalWeightKg,
+        shippingPolicyAudit,
       } = sumLineShippingBeforeShopTiers(shippingLines, addrParts);
 
       let shipping = preShopShipping;
@@ -386,6 +389,10 @@ export async function POST(request: NextRequest) {
           discount,
           total,
         },
+        shippingAudit: {
+          ...shippingPolicyAudit,
+          chargedToBuyerNaira: shipping,
+        },
         ...(deliveryQuoteSnapshot ? { deliveryQuoteSnapshot } : {}),
         status: 'processing', // Orders are immediately processing after payment
         paymentStatus: 'paid',
@@ -416,6 +423,10 @@ export async function POST(request: NextRequest) {
           shipping,
           tax,
           total,
+          shippingAudit: {
+            ...shippingPolicyAudit,
+            chargedToBuyerNaira: shipping,
+          },
           vatApplied: taxContext.appliesVat,
           vatStatus: taxContext.vatStatus,
           vatRate: taxContext.vatRate,

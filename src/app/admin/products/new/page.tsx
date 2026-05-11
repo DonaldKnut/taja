@@ -35,6 +35,7 @@ import {
   plainTextToRichHtml,
   sanitizeProductDescriptionHtml,
 } from "@/lib/sanitizeProductDescriptionHtml";
+import { validateShippingPolicy } from "@/lib/delivery/shippingPolicy";
 
 interface Shop {
   _id: string;
@@ -84,6 +85,7 @@ export default function AdminProductsNewPage() {
   const [shipping, setShipping] = useState({
     weight: "",
     shippingCost: "",
+    shippingPayer: "buyer" as "buyer" | "seller" | "platform" | "split",
     lagosMainlandDelivery: "",
     lagosIslandDelivery: "",
     freeShipping: false,
@@ -154,6 +156,19 @@ export default function AdminProductsNewPage() {
       toast.error("Add at least one image (upload or paste URLs)");
       return;
     }
+    const shippingValidation = validateShippingPolicy({
+      ...shipping,
+      weight: shipping.weight ? parseFloat(shipping.weight) : 0,
+      shippingCost: shipping.shippingCost ? parseFloat(shipping.shippingCost) : 0,
+      lagosMainlandDelivery:
+        shipping.lagosMainlandDelivery.trim() !== "" ? parseFloat(shipping.lagosMainlandDelivery) : undefined,
+      lagosIslandDelivery:
+        shipping.lagosIslandDelivery.trim() !== "" ? parseFloat(shipping.lagosIslandDelivery) : undefined,
+    });
+    if (!shippingValidation.isValid) {
+      toast.error(shippingValidation.message || "Invalid logistics policy");
+      return;
+    }
     setLoading(true);
     try {
       const parsedStock = Math.max(0, parseInt(form.stock, 10) || 0);
@@ -190,6 +205,7 @@ export default function AdminProductsNewPage() {
             weight: shipping.weight ? parseFloat(shipping.weight) : 0,
             shippingCost: shipping.shippingCost ? parseFloat(shipping.shippingCost) : 0,
             freeShipping: shipping.freeShipping,
+            shippingPayer: shipping.shippingPayer,
             ...(typeof lagosMain === "number" && Number.isFinite(lagosMain) && lagosMain >= 0
               ? { lagosMainlandDelivery: lagosMain }
               : {}),
@@ -930,6 +946,23 @@ export default function AdminProductsNewPage() {
                     Enable Free Shipping
                   </label>
                 </div>
+                {shipping.freeShipping && (
+                  <div className="group space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      Free shipping sponsor *
+                    </label>
+                    <select
+                      value={shipping.shippingPayer}
+                      onChange={(e) => setShipping((s) => ({ ...s, shippingPayer: e.target.value as any }))}
+                      className="w-full h-12 px-4 glass-card border-white/60 bg-white/40 rounded-xl text-sm font-bold text-taja-secondary"
+                    >
+                      <option value="seller">Seller covers delivery</option>
+                      <option value="platform">Platform subsidy</option>
+                      <option value="split">Split seller/platform</option>
+                      <option value="buyer">Buyer pays (invalid for free shipping)</option>
+                    </select>
+                  </div>
+                )}
 
                 {!shipping.freeShipping && (
                   <div className="space-y-3 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/15">

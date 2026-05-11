@@ -30,6 +30,13 @@ export interface IOrder extends Document {
     discount: number;
     total: number;
   };
+  shippingAudit?: {
+    subsidizedNaira?: number;
+    subsidizedBySellerNaira?: number;
+    subsidizedByPlatformNaira?: number;
+    subsidizedBySplitNaira?: number;
+    chargedToBuyerNaira?: number;
+  };
   status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'refunded' | 'disputed';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   paymentMethod: 'flutterwave' | 'paystack' | 'bank_transfer' | 'cod' | 'crypto';
@@ -173,6 +180,13 @@ const OrderSchema = new Schema<IOrder>(
       tax: { type: Number, default: 0 },
       discount: { type: Number, default: 0 },
       total: { type: Number, required: true },
+    },
+    shippingAudit: {
+      subsidizedNaira: Number,
+      subsidizedBySellerNaira: Number,
+      subsidizedByPlatformNaira: Number,
+      subsidizedBySplitNaira: Number,
+      chargedToBuyerNaira: Number,
     },
     status: {
       type: String,

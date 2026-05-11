@@ -121,8 +121,8 @@ export async function GET(request: NextRequest) {
         }
         await saveUser(user);
       }
-      // Update avatar from Google if user doesn't have one or if it's an OAuth user
-      if (picture && (!user.avatar || user.oauthProviders?.google)) {
+        // Update avatar from Google if user doesn't have one (default behavior)
+      if (picture && !user.avatar) {
         user.avatar = picture;
         await saveUser(user);
       }

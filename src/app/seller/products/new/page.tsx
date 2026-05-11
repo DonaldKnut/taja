@@ -22,11 +22,13 @@ import {
   Sparkles,
   DollarSign,
   Target,
-  Plus,
+    Plus,
   LayoutGrid,
   TrendingUp,
   Trash2,
   ChevronDown,
+  MapPin,
+  Zap,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -42,6 +44,7 @@ import {
   plainTextToRichHtml,
   sanitizeProductDescriptionHtml,
 } from "@/lib/sanitizeProductDescriptionHtml";
+import { validateShippingPolicy } from "@/lib/delivery/shippingPolicy";
 
 // Zod schema for required publish fields
 const productPublishSchema = z.object({
@@ -118,6 +121,8 @@ const colors = [
   "Brown",
 ];
 
+const SELLER_SIDEBAR_COLLAPSED_KEY = "taja_seller_sidebar_collapsed";
+
 export default function NewProductPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -169,6 +174,7 @@ export default function NewProductPage() {
     shipping: {
       weight: "",
       freeShipping: false,
+      shippingPayer: "buyer" as "buyer" | "seller" | "platform" | "split",
       shippingCost: "",
       costPerKg: "",
       lagosMainlandDelivery: "",
@@ -193,6 +199,7 @@ export default function NewProductPage() {
     status: "active" as "active" | "draft",
   });
   const [tagInput, setTagInput] = useState("");
+  const [sellerSidebarUndocked, setSellerSidebarUndocked] = useState(false);
 
   const canAddProducts = hasShop && isVerifiedSeller;
 
@@ -201,6 +208,34 @@ export default function NewProductPage() {
     const c = allCategories.find((x) => String(x._id) === String(formData.category));
     return c ? categoryPickerLabel(c) : "Select category";
   }, [formData.category, allCategories]);
+
+  useEffect(() => {
+    const syncSidebarMode = () => {
+      try {
+        const collapsed = localStorage.getItem(SELLER_SIDEBAR_COLLAPSED_KEY) === "1";
+        setSellerSidebarUndocked(!collapsed);
+      } catch {
+        setSellerSidebarUndocked(false);
+      }
+    };
+
+    const onSidebarModeChange = (event: Event) => {
+      const collapsed = (event as CustomEvent<{ collapsed?: boolean }>).detail?.collapsed;
+      if (typeof collapsed === "boolean") {
+        setSellerSidebarUndocked(!collapsed);
+        return;
+      }
+      syncSidebarMode();
+    };
+
+    syncSidebarMode();
+    window.addEventListener("storage", syncSidebarMode);
+    window.addEventListener("taja:seller-sidebar-collapsed-change", onSidebarModeChange);
+    return () => {
+      window.removeEventListener("storage", syncSidebarMode);
+      window.removeEventListener("taja:seller-sidebar-collapsed-change", onSidebarModeChange);
+    };
+  }, []);
 
   // Redirect if no shop or not verified — user shouldn't see this page until setup + verification are done
   useEffect(() => {
@@ -542,6 +577,24 @@ export default function NewProductPage() {
       toast.error(messages.join("\n"));
       return;
     }
+    const shippingValidation = validateShippingPolicy({
+      ...formData.shipping,
+      shippingCost: formData.shipping.shippingCost ? parseFloat(formData.shipping.shippingCost) : 0,
+      costPerKg: formData.shipping.costPerKg ? parseFloat(formData.shipping.costPerKg) : 0,
+      weight: formData.shipping.weight ? parseFloat(formData.shipping.weight) : 0,
+      lagosMainlandDelivery:
+        formData.shipping.lagosMainlandDelivery.trim() !== ""
+          ? parseFloat(formData.shipping.lagosMainlandDelivery)
+          : undefined,
+      lagosIslandDelivery:
+        formData.shipping.lagosIslandDelivery.trim() !== ""
+          ? parseFloat(formData.shipping.lagosIslandDelivery)
+          : undefined,
+    });
+    if (!shippingValidation.isValid) {
+      toast.error(shippingValidation.message || "Invalid logistics policy");
+      return;
+    }
 
     setLoading(true);
 
@@ -591,6 +644,7 @@ export default function NewProductPage() {
         shipping: {
           weight: formData.shipping.weight ? parseFloat(formData.shipping.weight) : 0,
           freeShipping: formData.shipping.freeShipping,
+          shippingPayer: formData.shipping.shippingPayer,
           shippingCost: formData.shipping.shippingCost ? parseFloat(formData.shipping.shippingCost) : 0,
           costPerKg: formData.shipping.costPerKg ? parseFloat(formData.shipping.costPerKg) : undefined,
           ...(formData.shipping.lagosMainlandDelivery.trim() !== ""
@@ -690,7 +744,12 @@ export default function NewProductPage() {
         variants={container}
         className="max-w-[1400px] mx-auto px-4 sm:px-10 pt-32 pb-12"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-12",
+            sellerSidebarUndocked ? "lg:grid-cols-1" : "lg:grid-cols-12"
+          )}
+        >
           {/* Main Form Area */}
           <div className="lg:col-span-8 space-y-12">
 
@@ -1424,16 +1483,32 @@ export default function NewProductPage() {
       </div>
     </motion.section>
 
-    {/* Shipping Card */}
-    <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px]">
+        {/* Shipping Card */}
+    <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px] relative overflow-hidden bg-gradient-to-br from-white to-purple-50/20">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-[80px] rounded-full -z-10" />
       <div className="flex items-center gap-3 mb-8">
-        <Truck className="h-5 w-5 text-purple-500" />
-        <h3 className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em]">Logistics Protocol</h3>
+        <div className="p-2.5 bg-purple-500/10 rounded-2xl">
+          <Truck className="h-5 w-5 text-purple-600" />
+        </div>
+        <div className="space-y-0.5">
+          <h3 className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em]">Logistics Protocol</h3>
+          <p className="text-xl font-black text-taja-secondary tracking-tighter italic">Delivery Strategy</p>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        <label className="flex items-center gap-4 cursor-pointer group p-2 rounded-xl hover:bg-white/40 transition-all">
-          <div className="relative">
+      <div className="space-y-8">
+        {/* Primary Shipping Toggle */}
+        <div className="p-6 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-between group hover:bg-emerald-500/10 transition-all duration-300">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white rounded-2xl shadow-sm border border-emerald-100 group-hover:scale-110 transition-transform duration-500">
+              <Sparkles className="h-5 w-5 text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-taja-secondary">Free Shipping</p>
+              <p className="text-[10px] text-emerald-600/70 font-medium uppercase tracking-widest mt-0.5">Complimentary Delivery</p>
+            </div>
+          </div>
+          <label className="relative cursor-pointer">
             <input
               type="checkbox"
               name="shipping.freeShipping"
@@ -1441,103 +1516,165 @@ export default function NewProductPage() {
               onChange={handleChange}
               className="peer hidden"
             />
-            <div className="w-10 h-6 bg-gray-200 peer-checked:bg-emerald-500 rounded-full transition-all duration-300  shadow-inner" />
-            <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-4 shadow-sm" />
+            <div className="w-14 h-8 bg-gray-200 peer-checked:bg-emerald-500 rounded-full transition-all duration-300 shadow-inner" />
+            <div className="absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-6 shadow-md" />
+          </label>
+        </div>
+        {formData.shipping.freeShipping && (
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+              Free shipping sponsor *
+            </label>
+            <select
+              name="shipping.shippingPayer"
+              value={formData.shipping.shippingPayer}
+              onChange={handleChange}
+              className="w-full h-12 sm:h-14 px-4 sm:px-5 rounded-2xl border border-emerald-200 bg-white/90 text-sm font-bold text-taja-secondary focus:outline-none focus:ring-4 focus:ring-emerald-500/15"
+            >
+              <option value="seller">Seller covers delivery</option>
+              <option value="platform">Platform subsidy</option>
+              <option value="split">Split seller/platform</option>
+              <option value="buyer">Buyer pays (invalid for free shipping)</option>
+            </select>
           </div>
-          <span className="text-[10px] font-black text-taja-secondary uppercase tracking-widest">Free Shipping</span>
-        </label>
+        )}
 
         {!formData.shipping.freeShipping && (
-          <>
+          <div className="space-y-4 sm:space-y-6">
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Delivery Fee (₦) — flat rate</label>
-              <input
-                name="shipping.shippingCost"
-                type="number"
-                min="0"
-                value={formData.shipping.shippingCost}
-                onChange={handleChange}
-                className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
-              />
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                <div className="w-1.5 h-1.5 rounded-full bg-taja-primary/40 group-focus-within:bg-taja-primary animate-pulse" />
+                Delivery Fee (₦) — Flat
+              </label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₦</span>
+                <input
+                  name="shipping.shippingCost"
+                  type="number"
+                  min="0"
+                  value={formData.shipping.shippingCost}
+                  onChange={handleChange}
+                  inputMode="decimal"
+                  className="w-full h-12 sm:h-16 pl-10 sm:pl-12 pr-4 sm:pr-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-4 sm:focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-2xl text-base sm:text-lg font-black text-taja-secondary shadow-sm"
+                />
+              </div>
             </motion.div>
+
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Or cost per kg (₦) — weight-based</label>
-              <input
-                name="shipping.costPerKg"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.shipping.costPerKg}
-                onChange={handleChange}
-                placeholder="Optional: logistics-style pricing"
-                className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
-              />
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40 group-focus-within:bg-blue-500 animate-pulse" />
+                Cost per kg (₦) — Weight
+              </label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₦</span>
+                <input
+                  name="shipping.costPerKg"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.shipping.costPerKg}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  inputMode="decimal"
+                  className="w-full h-12 sm:h-16 pl-10 sm:pl-12 pr-4 sm:pr-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-blue-500/40 focus:ring-4 sm:focus:ring-8 focus:ring-blue-500/5 transition-all rounded-2xl text-base sm:text-lg font-black text-taja-secondary shadow-sm"
+                />
+              </div>
             </motion.div>
+
+            {/* Lagos Specific Overrides */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] border border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-white space-y-5 sm:space-y-6 shadow-sm relative overflow-hidden"
             >
-              <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">Lagos: mainland vs island (optional)</p>
-              <p className="text-[9px] text-gray-600 leading-relaxed">
-                Set both to override the default Lagos table for this item. Checkout picks <strong>mainland</strong> or <strong>island &amp; premium</strong> from the buyer&apos;s address. Leave blank to use the flat fee above or platform zones.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="group space-y-1">
-                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Mainland (₦ / unit)</label>
-                  <input
-                    name="shipping.lagosMainlandDelivery"
-                    type="number"
-                    min="0"
-                    value={formData.shipping.lagosMainlandDelivery}
-                    onChange={handleChange}
-                    placeholder="e.g. 2500"
-                    className="w-full h-12 px-4 glass-card border-white/60 bg-white/40 focus:bg-white rounded-xl text-sm font-bold text-taja-secondary"
-                  />
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-purple-500/5 rounded-full blur-3xl" />
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white rounded-2xl shadow-sm border border-purple-100">
+                  <MapPin className="h-5 w-5 text-purple-600" />
                 </div>
-                <div className="group space-y-1">
-                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Island &amp; premium (₦ / unit)</label>
-                  <input
-                    name="shipping.lagosIslandDelivery"
-                    type="number"
-                    min="0"
-                    value={formData.shipping.lagosIslandDelivery}
-                    onChange={handleChange}
-                    placeholder="e.g. 4500"
-                    className="w-full h-12 px-4 glass-card border-white/60 bg-white/40 focus:bg-white rounded-xl text-sm font-bold text-taja-secondary"
-                  />
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-black text-purple-900 uppercase tracking-[0.2em]">Lagos Intelligence</p>
+                  <p className="text-sm font-bold text-taja-secondary">Mainland vs Island (Optional)</p>
+                </div>
+              </div>
+              
+              <p className="text-[11px] text-gray-500 leading-relaxed max-w-lg">
+                Set both to override the default Lagos table for this item. Checkout picks <strong>mainland</strong> or <strong>island &amp; premium</strong> from the buyer&apos;s address. Leave blank to use the flat fee above.
+              </p>
+
+              <div className="space-y-5 sm:space-y-6 pt-1 sm:pt-2">
+                <div className="group space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-purple-600 transition-colors">Mainland (₦ / unit)</label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₦</span>
+                    <input
+                      name="shipping.lagosMainlandDelivery"
+                      type="number"
+                      min="0"
+                      value={formData.shipping.lagosMainlandDelivery}
+                      onChange={handleChange}
+                      placeholder="e.g. 2500"
+                      inputMode="decimal"
+                      className="w-full h-12 sm:h-16 pl-10 sm:pl-12 pr-4 sm:pr-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-purple-500/40 focus:ring-4 sm:focus:ring-8 focus:ring-purple-500/5 transition-all rounded-[20px] text-base sm:text-lg font-black text-taja-secondary shadow-sm"
+                    />
+                  </div>
+                </div>
+                <div className="group space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-purple-600 transition-colors">Island & premium (₦ / unit)</label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₦</span>
+                    <input
+                      name="shipping.lagosIslandDelivery"
+                      type="number"
+                      min="0"
+                      value={formData.shipping.lagosIslandDelivery}
+                      onChange={handleChange}
+                      placeholder="e.g. 4500"
+                      inputMode="decimal"
+                      className="w-full h-12 sm:h-16 pl-10 sm:pl-12 pr-4 sm:pr-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-purple-500/40 focus:ring-4 sm:focus:ring-8 focus:ring-purple-500/5 transition-all rounded-[20px] text-base sm:text-lg font-black text-taja-secondary shadow-sm"
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>
+
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Weight (kg)</label>
-              <input
-                name="shipping.weight"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.shipping.weight}
-                onChange={handleChange}
-                placeholder="For weight-based delivery"
-                className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white transition-all rounded-2xl text-sm font-bold text-taja-secondary"
-              />
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Estimated Product Weight (kg)</label>
+              <div className="relative">
+                <Package className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  name="shipping.weight"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.shipping.weight}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full h-16 pl-14 pr-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-2xl text-lg font-bold text-taja-secondary shadow-sm"
+                />
+              </div>
+              <p className="text-[9px] text-gray-400 font-medium px-2 italic">Crucial for weight-based delivery calculations.</p>
             </motion.div>
-          </>
+          </div>
         )}
 
         <div className="group space-y-2">
-          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Processing Time</label>
-          <select
-            name="shipping.processingTime"
-            value={formData.shipping.processingTime}
-            onChange={handleChange}
-            className="w-full h-14 px-6 glass-card border-white/60 bg-white/40 focus:bg-white appearance-none transition-all rounded-2xl text-[10px] font-black uppercase tracking-widest text-taja-secondary"
-          >
-            <option value="1-2-days">1-2 Business Days</option>
-            <option value="3-5-days">3-5 Business Days</option>
-            <option value="1-week">1 Week Execution</option>
-            <option value="2-weeks">2 Weeks Strategy</option>
-          </select>
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">Processing Time Protocol</label>
+          <div className="relative">
+            <Zap className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <select
+              name="shipping.processingTime"
+              value={formData.shipping.processingTime}
+              onChange={handleChange}
+              className="w-full h-16 pl-14 pr-12 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-8 focus:ring-taja-primary/5 transition-all appearance-none rounded-2xl text-xs font-black uppercase tracking-widest text-taja-secondary cursor-pointer shadow-sm"
+            >
+              <option value="1-2-days">1-2 Business Days (High Efficiency)</option>
+              <option value="3-5-days">3-5 Business Days (Standard Protocol)</option>
+              <option value="1-week">1 Week Execution</option>
+              <option value="2-weeks">2 Weeks Strategic Fulfillment</option>
+            </select>
+            <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none group-hover:text-taja-primary transition-colors" />
+          </div>
         </div>
       </div>
     </motion.section>

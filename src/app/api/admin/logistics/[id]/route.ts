@@ -15,7 +15,18 @@ export async function PATCH(
     try {
       await connectDB();
       const body = await request.json();
-      const { status, kycStatus, riskLevel, riskReasonCode, riskReasonNotes } = body || {};
+      const {
+        status,
+        kycStatus,
+        riskLevel,
+        riskReasonCode,
+        riskReasonNotes,
+        trustTier,
+        maxOrderValueKobo,
+        maxRadiusKm,
+        maxConcurrentJobs,
+        guarantorFormStatus,
+      } = body || {};
 
       const update: Record<string, any> = {};
       const allowedStatus = ["pending_review", "approved", "rejected", "suspended"];
@@ -29,6 +40,7 @@ export async function PATCH(
         "duplicate_identity",
         "other",
       ];
+      const allowedGuarantorStatus = ["not_submitted", "submitted", "approved", "rejected"];
 
       const before = await LogisticsPartner.findById(params.id).lean();
       if (!before) {
@@ -50,12 +62,48 @@ export async function PATCH(
       if (typeof riskReasonNotes === "string") {
         update["risk.reasonNotes"] = riskReasonNotes.trim() || undefined;
       }
+      const parsedTier = Number(trustTier);
+      if (!Number.isNaN(parsedTier) && [0, 1, 2, 3].includes(parsedTier)) {
+        update["trust.trustTier"] = parsedTier;
+      }
+      if (
+        typeof maxOrderValueKobo === "number" &&
+        Number.isFinite(maxOrderValueKobo) &&
+        maxOrderValueKobo >= 100000
+      ) {
+        update["assignment.maxOrderValueKobo"] = Math.round(maxOrderValueKobo);
+      }
+      if (typeof maxRadiusKm === "number" && Number.isFinite(maxRadiusKm) && maxRadiusKm >= 1) {
+        update["assignment.maxRadiusKm"] = Math.round(maxRadiusKm);
+      }
+      if (
+        typeof maxConcurrentJobs === "number" &&
+        Number.isFinite(maxConcurrentJobs) &&
+        maxConcurrentJobs >= 1 &&
+        maxConcurrentJobs <= 10
+      ) {
+        update["assignment.maxConcurrentJobs"] = Math.round(maxConcurrentJobs);
+      }
+      if (
+        guarantorFormStatus &&
+        allowedGuarantorStatus.includes(String(guarantorFormStatus))
+      ) {
+        update["trust.guarantorFormStatus"] = String(guarantorFormStatus);
+        update["trust.guarantorForm.reviewedAt"] = new Date();
+        update["trust.guarantorForm.reviewedBy"] = user.userId;
+      }
 
       if (Object.keys(update).length === 0) {
         return NextResponse.json({ success: false, message: "No valid update fields provided" }, { status: 400 });
       }
 
       if (update.status === "suspended" || update["risk.level"] === "blacklist") {
+        update["availability.isOnline"] = false;
+      }
+      if (
+        update["trust.guarantorFormStatus"] &&
+        update["trust.guarantorFormStatus"] !== "approved"
+      ) {
         update["availability.isOnline"] = false;
       }
 
@@ -78,12 +126,16 @@ export async function PATCH(
           before: {
             status: before.status,
             kycStatus: before.trust?.kycStatus,
+            trustTier: before.trust?.trustTier,
+            guarantorFormStatus: before.trust?.guarantorFormStatus,
             riskLevel: before.risk?.level,
             riskReasonCode: before.risk?.reasonCode,
           },
           after: {
             status: doc?.status,
             kycStatus: doc?.trust?.kycStatus,
+            trustTier: doc?.trust?.trustTier,
+            guarantorFormStatus: doc?.trust?.guarantorFormStatus,
             riskLevel: doc?.risk?.level,
             riskReasonCode: doc?.risk?.reasonCode,
           },

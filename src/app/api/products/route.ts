@@ -3,6 +3,7 @@ import connectDB from '@/lib/db';
 import Product from '@/models/Product';
 import { requireRole, authenticate } from '@/lib/middleware';
 import { writeAuditLog } from '@/lib/audit';
+import { validateShippingPolicy } from '@/lib/delivery/shippingPolicy';
 import '@/models/Shop'; // ensure Shop model is registered for populate('shop')
 import '@/models/User'; // ensure User model is registered for populate('seller')
 import '@/models/Category'; // ensure Category model is registered for populate('category')
@@ -166,6 +167,15 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+      if (status !== 'draft') {
+        const shippingValidation = validateShippingPolicy(shipping);
+        if (!shippingValidation.isValid) {
+          return NextResponse.json(
+            { success: false, message: shippingValidation.message || 'Invalid shipping policy' },
+            { status: 400 }
+          );
+        }
+      }
 
       await connectDB();
 
@@ -249,6 +259,7 @@ export async function POST(request: NextRequest) {
           freeShipping: shipping?.freeShipping || false,
           shippingCost: shipping?.shippingCost || 0,
           costPerKg: shipping?.costPerKg,
+          shippingPayer: shipping?.shippingPayer || 'buyer',
           weightTiers: shipping?.weightTiers,
           lagosMainlandDelivery:
             shipping?.lagosMainlandDelivery != null && Number.isFinite(Number(shipping.lagosMainlandDelivery))

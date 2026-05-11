@@ -3,6 +3,7 @@ import connectDB from '@/lib/db';
 import Product from '@/models/Product';
 import Shop from '@/models/Shop';
 import { requireRole } from '@/lib/middleware';
+import { validateShippingPolicy } from '@/lib/delivery/shippingPolicy';
 
 export const dynamic = 'force-dynamic';
 
@@ -142,6 +143,15 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+      if (status !== 'draft') {
+        const shippingValidation = validateShippingPolicy(shipping);
+        if (!shippingValidation.isValid) {
+          return NextResponse.json(
+            { success: false, message: shippingValidation.message || 'Invalid shipping policy' },
+            { status: 400 }
+          );
+        }
+      }
 
       await connectDB();
 
@@ -206,6 +216,8 @@ export async function POST(request: NextRequest) {
           dimensions: shipping?.dimensions ?? { length: 0, width: 0, height: 0 },
           freeShipping: shipping?.freeShipping ?? false,
           shippingCost: shipping?.shippingCost ?? 0,
+          costPerKg: shipping?.costPerKg,
+          shippingPayer: shipping?.shippingPayer || 'buyer',
           lagosMainlandDelivery:
             shipping?.lagosMainlandDelivery != null && Number.isFinite(Number(shipping.lagosMainlandDelivery))
               ? Number(shipping.lagosMainlandDelivery)

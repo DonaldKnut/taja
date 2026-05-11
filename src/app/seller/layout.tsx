@@ -116,6 +116,11 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       const next = !c;
       try {
         localStorage.setItem(SELLER_SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+        window.dispatchEvent(
+          new CustomEvent("taja:seller-sidebar-collapsed-change", {
+            detail: { collapsed: next },
+          })
+        );
       } catch {
         /* ignore */
       }
@@ -187,7 +192,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       {mobile && (
         <div className="flex items-center justify-between mb-10 px-2">
           <Logo size="sm" href="/seller/dashboard" variant="header" />
-          <button onClick={() => setSidebarOpen(false)} className="p-2 text-white/70 hover:text-white">
+                    <button onClick={() => setSidebarOpen(false)} className="p-2 text-taja-secondary hover:text-taja-primary">
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -195,9 +200,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
       {/* User profile section */}
       <div className={cn("mb-8", narrow && "mb-4")}>
-        <div
+                <div
           className={cn(
-            "rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md",
+            "rounded-3xl bg-gray-50 border border-gray-100 shadow-sm",
             narrow ? "flex justify-center p-3" : "flex items-center gap-4 p-4"
           )}
         >
@@ -212,10 +217,10 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
           </div>
           {!narrow && (
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-black text-white tracking-tight truncate">{user?.fullName || "Seller"}</p>
+                            <p className="text-sm font-black text-taja-secondary tracking-tight truncate">{user?.fullName || "Seller"}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-taja-secondary">
                   Active Seller
                 </p>
               </div>
@@ -227,38 +232,38 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       {/* Create product CTA */}
       <div className={cn("mb-8", narrow && "mb-4")}>
         {checkingShop ? (
-          <div className="h-14 w-full bg-white/5 animate-pulse rounded-2xl" />
+                    <div className="h-14 w-full bg-gray-50 animate-pulse rounded-2xl" />
         ) : isUnderReview || !canAddProducts ? (
           narrow ? (
             <div className="flex flex-col gap-2">
               {kycPending && (
-                <Link
+                                <Link
                   href="/onboarding/kyc"
                   title="Start verification"
                   onClick={() => mobile && setSidebarOpen(false)}
-                  className="flex items-center justify-center p-3 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-400 transition-colors shadow-emerald"
+                  className="flex items-center justify-center p-3 rounded-2xl bg-taja-secondary/10 text-taja-secondary hover:bg-taja-secondary/20 transition-colors shadow-premium"
                 >
                   <ShieldCheck className="h-5 w-5" />
                 </Link>
               )}
               {!kycPending && !hasShop && (
-                <Link
+                                <Link
                   href="/seller/setup"
                   title="Shop setup"
                   onClick={() => mobile && setSidebarOpen(false)}
-                  className="flex items-center justify-center p-3 rounded-2xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors"
+                  className="flex items-center justify-center p-3 rounded-2xl bg-gray-50 border border-gray-100 text-taja-secondary hover:bg-gray-100 transition-all"
                 >
                   <Store className="h-5 w-5" />
                 </Link>
               )}
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 space-y-3">
+                        <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 text-taja-secondary space-y-3">
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-[0.1em]">Restricted Access</span>
+                <AlertCircle className="h-4 w-4 text-rose-500" />
+                              <span className="text-[11px] font-black uppercase tracking-[0.1em]">Restricted Access</span>
               </div>
-              <p className="text-[11px] font-medium leading-relaxed opacity-80">
+                                          <p className="text-[11px] font-medium leading-relaxed text-taja-secondary">
                 {kycPending
                   ? "Complete your identity verification to start selling."
                   : !hasShop
@@ -267,10 +272,10 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
               </p>
               <div className="flex gap-2">
                 {kycPending && (
-                  <Link
+                                    <Link
                     href="/onboarding/kyc"
                     onClick={() => mobile && setSidebarOpen(false)}
-                    className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] bg-emerald-500 text-white hover:bg-emerald-400 transition-colors"
+                    className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] bg-taja-secondary text-white hover:bg-emerald-900 transition-colors"
                   >
                     Start Verification
                   </Link>
@@ -313,7 +318,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         {/* Seller Section */}
         <div>
           {!narrow && (
-            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Seller Dashboard</p>
+                                                <p className="px-4 mb-4 text-[11px] font-black uppercase tracking-[0.3em] text-taja-secondary">Seller Dashboard</p>
           )}
           <div className="space-y-1">
             {filteredSellerNav.map((item) => {
@@ -325,19 +330,19 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                   title={narrow ? item.name : undefined}
                   onClick={() => mobile && setSidebarOpen(false)}
                   className={cn(
-                    "group flex rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+                                                                                "group flex rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300",
                     narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3",
                     isActive
-                      ? "bg-taja-primary text-white shadow-emerald"
-                      : "text-slate-200/85 hover:text-white hover:bg-white/10"
+                      ? "bg-taja-primary/10 text-taja-secondary shadow-premium"
+                      : "text-taja-secondary hover:text-taja-primary hover:bg-taja-primary/5"
                   )}
                 >
-                  <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
-                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-slate-400 group-hover:text-taja-primary transition-colors")} />
+                                                      <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
+                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", "text-taja-secondary group-hover:text-taja-primary transition-colors")} />
                     {!narrow && item.name}
                   </div>
                   {isActive && !narrow && (
-                    <motion.div layoutId={`activeNav${mobile ? "Mob" : "Desk"}`} className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
+                    <motion.div layoutId={`activeNav${mobile ? "Mob" : "Desk"}`} className="w-1.5 h-1.5 rounded-full bg-taja-secondary animate-pulse shrink-0" />
                   )}
                 </Link>
               );
@@ -348,7 +353,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         {/* Buyer Section */}
         <div>
           {!narrow && (
-            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Account</p>
+                                                <p className="px-4 mb-4 text-[11px] font-black uppercase tracking-[0.3em] text-taja-secondary">Account</p>
           )}
           <div className="space-y-1">
             {buyerNavigation.map((item) => {
@@ -363,12 +368,12 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                     "group flex rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
                     narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3",
                     isActive
-                      ? "bg-taja-primary text-white shadow-emerald"
-                      : "text-slate-200/85 hover:text-white hover:bg-white/10"
+                      ? "bg-emerald-700 text-white shadow-[0_0_20px_rgba(5,150,105,0.35)]"
+                      : "text-emerald-200/95 hover:text-white hover:bg-emerald-800/55"
                   )}
                 >
                   <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
-                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-slate-400 group-hover:text-taja-primary transition-colors")} />
+                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-emerald-300 group-hover:text-white transition-colors")} />
                     {!narrow && item.name}
                   </div>
                   {isActive && !narrow && (
@@ -383,7 +388,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         {/* Management Section */}
         <div>
           {!narrow && (
-            <p className="px-4 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Management</p>
+                                                <p className="px-4 mb-4 text-[11px] font-black uppercase tracking-[0.3em] text-taja-secondary">Management</p>
           )}
           <div className="space-y-1">
             {filteredManagementNav.map((item) => {
@@ -398,12 +403,12 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                     "group flex rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
                     narrow ? "items-center justify-center px-2 py-3.5" : "items-center justify-between px-5 py-3",
                     isActive
-                      ? "bg-taja-primary text-white shadow-emerald"
-                      : "text-slate-200/85 hover:text-white hover:bg-white/10"
+                      ? "bg-emerald-700 text-white shadow-[0_0_20px_rgba(5,150,105,0.35)]"
+                      : "text-emerald-200/95 hover:text-white hover:bg-emerald-800/55"
                   )}
                 >
                   <div className={cn("flex items-center", !narrow && "w-full min-w-0")}>
-                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-slate-400 group-hover:text-taja-primary transition-colors")} />
+                    <item.icon className={cn("h-4 w-4 shrink-0", narrow ? "" : "mr-4", isActive ? "text-white" : "text-emerald-300 group-hover:text-white transition-colors")} />
                     {!narrow && item.name}
                   </div>
                   {isActive && !narrow && (
@@ -633,7 +638,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                   animate={{ x: 0 }}
                   exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950 border-r border-white/10 shadow-2xl overflow-y-auto"
+                                    className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-white border-r border-gray-100 shadow-2xl overflow-y-auto"
                 >
                   <SidebarContent mobile collapsed={false} />
                 </motion.div>
@@ -645,12 +650,12 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
           <aside
             className={cn(
               "hidden lg:flex lg:flex-col lg:fixed lg:top-20 lg:bottom-0 lg:left-0 lg:z-[100] lg:pb-0 transition-[width] duration-300 ease-out",
-              sidebarCollapsed ? "lg:w-20" : "lg:w-80"
+              sidebarCollapsed ? "lg:w-20" : "lg:w-72"
             )}
           >
-            <div
+                        <div
               className={cn(
-                "flex-1 flex flex-col min-h-0 bg-gradient-to-b from-slate-700/88 via-slate-800/92 to-slate-950/95 backdrop-blur-3xl border border-white/10 shadow-2xl relative z-10 overflow-hidden",
+                "flex-1 flex flex-col min-h-0 bg-white/80 backdrop-blur-3xl border border-white/60 shadow-glass relative z-10 overflow-hidden",
                 sidebarCollapsed ? "m-2 rounded-3xl" : "m-4 rounded-[40px]"
               )}
             >
@@ -658,7 +663,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                 <button
                   type="button"
                   onClick={toggleSidebarCollapsed}
-                  className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                                    className="p-2 rounded-xl text-taja-secondary hover:text-taja-primary bg-white hover:bg-gray-50 border border-gray-100 transition-colors"
                   aria-expanded={!sidebarCollapsed}
                   aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
@@ -675,7 +680,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
           <main
             className={cn(
               "flex-1 overflow-y-auto relative scrollbar-hide transition-[padding] duration-300 ease-out",
-              sidebarCollapsed ? "lg:pl-20" : "lg:pl-80"
+              sidebarCollapsed ? "lg:pl-20" : "lg:pl-72"
             )}
           >
             {/* Subtle Ambient Background Decorative Element */}

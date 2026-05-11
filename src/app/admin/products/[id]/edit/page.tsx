@@ -46,6 +46,7 @@ import {
     plainTextToRichHtml,
     sanitizeProductDescriptionHtml,
 } from "@/lib/sanitizeProductDescriptionHtml";
+import { validateShippingPolicy } from "@/lib/delivery/shippingPolicy";
 
 interface ShopOption {
     _id: string;
@@ -99,6 +100,7 @@ export default function AdminEditProductPage() {
             },
             freeShipping: false,
             shippingCost: "",
+            shippingPayer: "buyer" as "buyer" | "seller" | "platform" | "split",
             lagosMainlandDelivery: "",
             lagosIslandDelivery: "",
             processingTime: "1-2-days" as "1-2-days" | "3-5-days" | "1-week" | "2-weeks",
@@ -210,6 +212,7 @@ export default function AdminEditProductPage() {
                         dimensions: productData.shipping?.dimensions || { length: 0, width: 0, height: 0 },
                         freeShipping: productData.shipping?.freeShipping || false,
                         shippingCost: productData.shipping?.shippingCost ? String(productData.shipping.shippingCost) : "",
+                        shippingPayer: productData.shipping?.shippingPayer || "buyer",
                         lagosMainlandDelivery:
                             productData.shipping?.lagosMainlandDelivery != null
                                 ? String(productData.shipping.lagosMainlandDelivery)
@@ -434,6 +437,23 @@ export default function AdminEditProductPage() {
             toast.error("Please fill in title, description, category, price and at least one image");
             return;
         }
+        const shippingValidation = validateShippingPolicy({
+            ...formData.shipping,
+            shippingCost: formData.shipping.shippingCost ? parseFloat(formData.shipping.shippingCost) : 0,
+            weight: formData.shipping.weight ? parseFloat(formData.shipping.weight) : 0,
+            lagosMainlandDelivery:
+                formData.shipping.lagosMainlandDelivery.trim() === ""
+                    ? undefined
+                    : parseFloat(formData.shipping.lagosMainlandDelivery),
+            lagosIslandDelivery:
+                formData.shipping.lagosIslandDelivery.trim() === ""
+                    ? undefined
+                    : parseFloat(formData.shipping.lagosIslandDelivery),
+        });
+        if (!shippingValidation.isValid) {
+            toast.error(shippingValidation.message || "Invalid logistics policy");
+            return;
+        }
 
         setLoading(true);
 
@@ -476,6 +496,7 @@ export default function AdminEditProductPage() {
                     },
                     freeShipping: formData.shipping.freeShipping,
                     shippingCost: formData.shipping.shippingCost ? parseFloat(formData.shipping.shippingCost) : 0,
+                    shippingPayer: formData.shipping.shippingPayer,
                     lagosMainlandDelivery:
                         formData.shipping.lagosMainlandDelivery.trim() === ""
                             ? null
@@ -984,6 +1005,24 @@ export default function AdminEditProductPage() {
                                             Enable Free Shipping
                                         </label>
                                     </div>
+                                    {formData.shipping.freeShipping && (
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                                                Free shipping sponsor *
+                                            </label>
+                                            <select
+                                                name="shipping.shippingPayer"
+                                                value={formData.shipping.shippingPayer}
+                                                onChange={handleChange}
+                                                className="w-full h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800"
+                                            >
+                                                <option value="seller">Seller covers delivery</option>
+                                                <option value="platform">Platform subsidy</option>
+                                                <option value="split">Split seller/platform</option>
+                                                <option value="buyer">Buyer pays (invalid for free shipping)</option>
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 

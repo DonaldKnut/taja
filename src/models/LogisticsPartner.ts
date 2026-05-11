@@ -14,6 +14,12 @@ export type LogisticsPartnerStatus =
   | "rejected"
   | "suspended";
 
+export type LogisticsGuarantorFormStatus =
+  | "not_submitted"
+  | "submitted"
+  | "approved"
+  | "rejected";
+
 export interface ILogisticsPartner extends Document {
   user?: mongoose.Types.ObjectId;
   fullName: string;
@@ -33,11 +39,27 @@ export interface ILogisticsPartner extends Document {
   };
   trust: {
     kycStatus: LogisticsKycStatus;
+    trustTier: 0 | 1 | 2 | 3;
     idType?: "national_id" | "drivers_license" | "passport" | "voters_card";
     idNumberMasked?: string;
     selfieImage?: string;
     idFrontImage?: string;
     guarantorPhone?: string;
+    guarantorFormStatus: LogisticsGuarantorFormStatus;
+    guarantorForm?: {
+      fullName: string;
+      phone: string;
+      relationship: string;
+      address: string;
+      idType: "national_id" | "drivers_license" | "passport" | "voters_card";
+      idNumberMasked?: string;
+      idFrontImage: string;
+      selfieImage: string;
+      submittedAt?: Date;
+      reviewedAt?: Date;
+      reviewedBy?: mongoose.Types.ObjectId;
+      reviewNotes?: string;
+    };
   };
   verification: {
     emailOtp?: {
@@ -69,6 +91,9 @@ export interface ILogisticsPartner extends Document {
     totalCompleted: number;
     totalCancelled: number;
     averageRating: number;
+    maxOrderValueKobo: number;
+    maxRadiusKm: number;
+    maxConcurrentJobs: number;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -103,6 +128,11 @@ const LogisticsPartnerSchema = new Schema<ILogisticsPartner>(
         enum: ["pending", "verified", "rejected"],
         default: "pending",
       },
+      trustTier: {
+        type: Number,
+        enum: [0, 1, 2, 3],
+        default: 0,
+      },
       idType: {
         type: String,
         enum: ["national_id", "drivers_license", "passport", "voters_card"],
@@ -111,6 +141,28 @@ const LogisticsPartnerSchema = new Schema<ILogisticsPartner>(
       selfieImage: { type: String, trim: true },
       idFrontImage: { type: String, trim: true },
       guarantorPhone: { type: String, trim: true },
+      guarantorFormStatus: {
+        type: String,
+        enum: ["not_submitted", "submitted", "approved", "rejected"],
+        default: "not_submitted",
+      },
+      guarantorForm: {
+        fullName: { type: String, trim: true },
+        phone: { type: String, trim: true },
+        relationship: { type: String, trim: true },
+        address: { type: String, trim: true },
+        idType: {
+          type: String,
+          enum: ["national_id", "drivers_license", "passport", "voters_card"],
+        },
+        idNumberMasked: { type: String, trim: true },
+        idFrontImage: { type: String, trim: true },
+        selfieImage: { type: String, trim: true },
+        submittedAt: Date,
+        reviewedAt: Date,
+        reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
+        reviewNotes: { type: String, trim: true },
+      },
     },
     verification: {
       emailOtp: {
@@ -155,6 +207,11 @@ const LogisticsPartnerSchema = new Schema<ILogisticsPartner>(
       totalCompleted: { type: Number, default: 0 },
       totalCancelled: { type: Number, default: 0 },
       averageRating: { type: Number, default: 0 },
+      // Trust-tier safety defaults for MVP:
+      // Tier 0 (new): low value, short radius, one active job at a time.
+      maxOrderValueKobo: { type: Number, default: 200000 }, // ₦2,000
+      maxRadiusKm: { type: Number, default: 10 },
+      maxConcurrentJobs: { type: Number, default: 1 },
     },
   },
   { timestamps: true }

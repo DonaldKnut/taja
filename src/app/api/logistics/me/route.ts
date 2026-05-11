@@ -25,9 +25,14 @@ export async function GET(request: NextRequest) {
       const eligibleForAssignment =
         profile.status === "approved" &&
         profile.trust?.kycStatus === "verified" &&
+        profile.trust?.guarantorFormStatus === "approved" &&
         Boolean(profile.verification?.emailOtp?.verifiedAt) &&
         profile.risk?.level !== "blacklist" &&
         Boolean(profile.availability?.isOnline);
+      const requiresGuarantorForm =
+        profile.status === "approved" &&
+        profile.trust?.kycStatus === "verified" &&
+        profile.trust?.guarantorFormStatus !== "approved";
       const payoutHoldActive =
         Boolean(profile.payout?.holdUntil) &&
         new Date(String(profile.payout?.holdUntil)).getTime() > Date.now();
@@ -37,6 +42,7 @@ export async function GET(request: NextRequest) {
         data: {
           ...profile,
           eligibleForAssignment,
+          requiresGuarantorForm,
           emailOtpVerified: Boolean(profile.verification?.emailOtp?.verifiedAt),
           payoutHoldActive,
         },
@@ -62,9 +68,15 @@ export async function PUT(request: NextRequest) {
       if (!profile) {
         return NextResponse.json({ success: false, message: "Logistics profile not found" }, { status: 404 });
       }
-      if (Boolean(isOnline) && (profile.status !== "approved" || profile.risk?.level === "blacklist")) {
+      if (
+        Boolean(isOnline) &&
+        (profile.status !== "approved" ||
+          profile.risk?.level === "blacklist" ||
+          profile.trust?.kycStatus !== "verified" ||
+          profile.trust?.guarantorFormStatus !== "approved")
+      ) {
         return NextResponse.json(
-          { success: false, message: "Profile is not cleared to go online" },
+          { success: false, message: "Complete verification and guarantor approval before going online" },
           { status: 403 }
         );
       }

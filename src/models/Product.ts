@@ -78,6 +78,7 @@ export interface IProduct extends Document {
      */
     lagosMainlandDelivery?: number;
     lagosIslandDelivery?: number;
+    shippingPayer?: 'buyer' | 'seller' | 'platform' | 'split';
     processingTime: '1-2-days' | '3-5-days' | '1-week' | '2-weeks';
   };
   specifications: Record<string, any>;
@@ -208,6 +209,7 @@ const ProductSchema = new Schema<IProduct>(
       ],
       lagosMainlandDelivery: { type: Number, min: 0 },
       lagosIslandDelivery: { type: Number, min: 0 },
+      shippingPayer: { type: String, enum: ['buyer', 'seller', 'platform', 'split'], default: 'buyer' },
       processingTime: {
         type: String,
         enum: ['1-2-days', '3-5-days', '1-week', '2-weeks'],

@@ -98,11 +98,13 @@ export async function POST(request: NextRequest) {
           },
           trust: {
             kycStatus: "pending",
+            trustTier: 0,
             idType: idType || undefined,
             idNumberMasked: maskedId,
             selfieImage: selfieImage ? String(selfieImage).trim() : undefined,
             idFrontImage: idFrontImage ? String(idFrontImage).trim() : undefined,
             guarantorPhone: guarantorPhone ? String(guarantorPhone).trim() : undefined,
+            guarantorFormStatus: "not_submitted",
           },
           risk: {
             level: "normal",
@@ -110,6 +112,15 @@ export async function POST(request: NextRequest) {
           payout: {
             holdDays: payoutHoldDays,
             holdUntil: payoutHoldUntil,
+          },
+          assignment: {
+            totalAssigned: 0,
+            totalCompleted: 0,
+            totalCancelled: 0,
+            averageRating: 0,
+            maxOrderValueKobo: 200000,
+            maxRadiusKm: 10,
+            maxConcurrentJobs: 1,
           },
           status: "pending_review",
         },
