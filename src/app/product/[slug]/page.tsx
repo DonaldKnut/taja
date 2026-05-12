@@ -191,6 +191,7 @@ export default function ProductDetailPage() {
           reviews: productData.reviews || [],
           relatedProducts: productData.relatedProducts || [],
           variants: productData.variants || [],
+          isNegotiable: !!productData.isNegotiable,
         };
 
         setProduct(transformedProduct);

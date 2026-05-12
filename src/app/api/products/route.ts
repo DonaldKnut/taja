@@ -138,6 +138,7 @@ export async function POST(request: NextRequest) {
         status = 'draft',
         shop,
         variants,
+        isNegotiable,
       } = body;
       const normalizedImages = Array.isArray(images)
         ? images
@@ -275,6 +276,7 @@ export async function POST(request: NextRequest) {
         seo: seo || { tags: [] },
         status,
         variants: variants || [],
+        isNegotiable: isNegotiable || false,
       });
 
       await writeAuditLog({

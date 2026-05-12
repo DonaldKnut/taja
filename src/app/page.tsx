@@ -67,7 +67,7 @@ export default function HomePage() {
     <>
       <div className="min-h-screen">
         {/* Navigation - Enhanced */}
-        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
+        <nav className={`fixed top-0 left-0 right-0 z-50 overflow-visible transition-all duration-500 ${isScrolled
           ? "bg-white/80 backdrop-blur-xl border-b border-taja-primary/5 shadow-premium py-2"
           : "bg-transparent py-4"
           }`}>
@@ -83,11 +83,11 @@ export default function HomePage() {
               <div className="absolute bottom-0 right-0 w-1/2 h-2/3 bg-gradient-to-tl from-gray-100/30 via-transparent to-transparent pointer-events-none"></div>
             </>
           )}
-          <Container size="lg" className="relative z-10">
-            <div className="flex justify-between items-center h-16">
+          <Container size="lg" className="relative z-10 overflow-visible">
+            <div className="flex justify-between items-center h-16 overflow-visible">
               <Logo size="lg" variant="header" />
               <div className="hidden md:flex items-center space-x-6 lg:space-x-10">
-                <div className="relative">
+                <div className="relative overflow-visible">
                   <SiteMegaNav pathname={pathname} variant="home" idPrefix="home-nav" />
                 </div>
                 {isAuthenticated && user ? (

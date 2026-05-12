@@ -107,15 +107,15 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
         <>
             <header
                 className={cn(
-                    "sticky top-0 w-full z-[9999] transition-all duration-500 relative",
+                    "sticky top-0 w-full z-[9999] transition-all duration-500 relative overflow-visible",
                     !isVisible && "-translate-y-full opacity-0",
                     isTransparent
                         ? "bg-transparent border-transparent"
                         : "bg-white/80 backdrop-blur-xl border-b border-white/40 shadow-premium"
                 )}
             >
-                <Container size="lg" className="h-20 flex items-center justify-between px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center gap-10">
+                <Container size="lg" className="h-20 flex items-center justify-between px-4 sm:px-6 lg:px-8 overflow-visible">
+                    <div className="flex items-center gap-10 overflow-visible">
                         <Logo size="lg" variant="header" className="hover:opacity-80 transition-opacity" href="/" />
 
                         {/* Mega menu — desktop */}

@@ -111,6 +111,7 @@ export default function EditProductPage() {
       sku?: string;
       active: boolean;
     }[],
+    isNegotiable: false,
     status: "active" as "active" | "draft",
   });
 
@@ -198,6 +199,7 @@ export default function EditProductPage() {
           videos: (productData.videos || []).map((v: any) =>
             typeof v === "string" ? { url: v, type: "video" as const } : { ...v, type: "video" as const }
           ),
+          isNegotiable: !!productData.isNegotiable,
           specifications: productData.specifications || {},
           inventory: {
             quantity: productData.inventory?.quantity ?? productData.stock ?? 1,
@@ -990,6 +992,23 @@ export default function EditProductPage() {
                           className="rounded-2xl h-16 pl-12 text-xl font-black border-gray-100 focus:border-taja-primary transition-all"
                           placeholder="0.00"
                         />
+                        <div className="group space-y-4 pt-4">
+                          <label className="flex items-center gap-4 p-4 rounded-2xl border border-gray-100 bg-gray-50/30 hover:bg-white hover:border-taja-primary/30 hover:shadow-premium-hover transition-all cursor-pointer group/negotiable">
+                            <div className="relative flex items-center justify-center">
+                              <input
+                                name="isNegotiable"
+                                type="checkbox"
+                                checked={formData.isNegotiable}
+                                onChange={handleChange}
+                                className="h-6 w-6 rounded-lg border-gray-200 text-taja-primary focus:ring-taja-primary/20 transition-all cursor-pointer"
+                              />
+                            </div>
+                            <div className="space-y-0.5">
+                              <span className="block text-xs font-black text-taja-secondary uppercase tracking-tight">Price is negotiable</span>
+                              <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Allow buyers to discuss pricing</span>
+                            </div>
+                          </label>
+                        </div>
                         <button
                           type="button"
                           onClick={() => handleAnalyzePrice()}

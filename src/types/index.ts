@@ -118,6 +118,7 @@ export interface Product {
   specifications?: Record<string, string>;
   variants?: ProductVariant[];
   likes?: number;
+  isNegotiable?: boolean;
   averageRating?: number;
   reviewCount?: number;
   createdAt?: string;

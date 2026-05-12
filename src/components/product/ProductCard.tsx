@@ -985,8 +985,13 @@ export function ProductCard({
 
         {/* Condition/New Badge */}
         {product.condition === 'new' && (
-          <div className={`absolute top-2.5 sm:top-4 ${user?.role === "admin" ? "left-[6.4rem] sm:left-[8.5rem]" : "left-[2.85rem] sm:left-[3.25rem]"} px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-600 text-white text-[9px] sm:text-[10px] font-bold rounded-full z-10`}>
+          <div className={`absolute top-2.5 sm:top-4 ${user?.role === "admin" ? "left-[6.4rem] sm:left-[8.5rem]" : "left-[2.85rem] sm:left-[3.25rem]"} px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-600 text-white text-[9px] sm:text-[10px] font-bold rounded-full z-10 shadow-premium`}>
             NEW
+          </div>
+        )}
+        {product.isNegotiable && (
+          <div className={`absolute top-2.5 sm:top-4 ${product.condition === 'new' ? (user?.role === "admin" ? "left-[10rem] sm:left-[13rem]" : "left-[6rem] sm:left-[7.5rem]") : (user?.role === "admin" ? "left-[6.4rem] sm:left-[8.5rem]" : "left-[2.85rem] sm:left-[3.25rem]")} px-2 sm:px-3 py-0.5 sm:py-1 bg-emerald-600 text-white text-[9px] sm:text-[10px] font-bold rounded-full z-10 shadow-premium uppercase tracking-widest`}>
+            Negotiable
           </div>
         )}
       </div>

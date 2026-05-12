@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
-import { Filter, Zap, Gift, Tag, Star, ChevronRight, ChevronLeft, ShoppingBag, ShieldCheck, Crown, ChevronDown, SlidersHorizontal, X, Search } from "lucide-react";
+import { Filter, Zap, Gift, Tag, Star, ChevronRight, ChevronLeft, ShoppingBag, ShieldCheck, Crown, ChevronDown, SlidersHorizontal, X, Search, Pin, PinOff } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/product";
 import { useMarketplaceFeed } from "@/hooks/useMarketplaceFeed";
@@ -107,7 +107,20 @@ export function IntegratedMarketplace({
         return shops.sort((a, b) => a.localeCompare(b));
     }, [feed.products]);
 
-    const availableSellers = useMemo(() => {
+    const [filtersDocked, setFiltersDocked] = useState(false);
+
+    useEffect(() => {
+        const saved = localStorage.getItem("taja_marketplace_filters_docked");
+        if (saved !== null) setFiltersDocked(saved === "true");
+    }, []);
+
+    const toggleFiltersDocked = () => {
+        const next = !filtersDocked;
+        setFiltersDocked(next);
+        localStorage.setItem("taja_marketplace_filters_docked", String(next));
+    };
+
+    const hasFiltersApplied = useMemo(() => {
         const seen = new Set<string>();
         const sellers: string[] = [];
         feed.products.forEach((product) => {
@@ -899,7 +912,8 @@ export function IntegratedMarketplace({
                         <section className="relative px-4 sm:px-6 space-y-8 mt-3 sm:mt-5 pb-20">
                             <div
                                 className={cn(
-                                    "grid grid-cols-1 gap-6 lg:gap-8",
+                                    "grid grid-cols-1 lg:gap-8",
+                                    filtersDocked ? "gap-0" : "gap-6",
                                     hostShell
                                         ? filtersRailExpanded
                                             ? "lg:grid-cols-[240px_1fr]"
@@ -934,16 +948,32 @@ export function IntegratedMarketplace({
                                             )}
                                     </>
                                 ) : (
-                                    <aside className="hidden lg:block relative">
+                                    <aside className={cn(
+                                        "hidden lg:block shrink-0 transition-all duration-300",
+                                        filtersDocked ? "relative" : "relative"
+                                    )}>
                                         <div
                                             className={cn(
-                                                "max-h-[calc(100vh-7rem)] overflow-y-auto rounded-3xl border border-gray-200 bg-white p-4 shadow-sm space-y-4",
-                                                hasHostSidebar ? "sticky top-24 w-full z-10" : "fixed top-24 z-30 w-[280px]"
+                                                "transition-all duration-300 overflow-y-auto no-scrollbar",
+                                                filtersDocked 
+                                                    ? "sticky top-[5rem] h-[calc(100vh-5rem)] border-r border-gray-100 bg-white p-6 space-y-6 rounded-none" 
+                                                    : "max-h-[calc(100vh-7rem)] rounded-3xl border border-gray-200 bg-white p-4 shadow-sm space-y-4",
+                                                !filtersDocked && (hasHostSidebar ? "sticky top-24 w-full z-10" : "fixed top-24 z-30 w-[280px]")
                                             )}
                                         >
-                                        <div className="space-y-1">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Refine results</p>
-                                            <h4 className="text-sm font-black text-gray-900">Marketplace filters</h4>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="space-y-0.5">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Refine results</p>
+                                                <h4 className="text-sm font-black text-gray-900 italic uppercase tracking-tighter">Marketplace</h4>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={toggleFiltersDocked}
+                                                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-gray-50 text-gray-400 hover:text-taja-primary transition-all"
+                                                title={filtersDocked ? "Undock filters" : "Dock filters"}
+                                            >
+                                                {filtersDocked ? <Pin className="w-3.5 h-3.5 fill-current" /> : <PinOff className="w-3.5 h-3.5" />}
+                                            </button>
                                         </div>
                                         <div className="relative">
                                             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />

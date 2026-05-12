@@ -181,6 +181,7 @@ export async function PUT(
         'seo',
         'status',
         'variants',
+        'isNegotiable',
       ];
 
       allowedFields.forEach((field) => {

@@ -93,6 +93,7 @@ export interface IProduct extends Document {
   likes: number;
   averageRating: number;
   reviewCount: number;
+  isNegotiable?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -152,6 +153,10 @@ const ProductSchema = new Schema<IProduct>(
     currency: {
       type: String,
       default: 'NGN',
+    },
+    isNegotiable: {
+      type: Boolean,
+      default: false,
     },
     images: [
       {

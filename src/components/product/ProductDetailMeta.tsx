@@ -201,6 +201,15 @@ export function ProductDetailMeta({
           <Truck className="w-3 h-3" />
           {product.shipping?.freeShipping ? "Complementary Elite Shipping" : "Priority Dispatch in 24h"}
         </p>
+        {product.isNegotiable && (
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100/50 border border-emerald-200/50 rounded-xl mt-2">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-[9px] font-black text-emerald-700 uppercase tracking-[0.2em]">Open to discussion / Negotiable</span>
+          </div>
+        )}
       </div>
 
       {product.variants?.length > 0 && (

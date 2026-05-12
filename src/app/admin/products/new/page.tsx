@@ -81,6 +81,7 @@ export default function AdminProductsNewPage() {
     stock: "1",
     status: "active",
     variants: [] as any[],
+    isNegotiable: false,
   });
   const [shipping, setShipping] = useState({
     weight: "",
@@ -219,6 +220,7 @@ export default function AdminProductsNewPage() {
             stock: parseInt(String(v.stock)) || 0,
             weight: parseFloat(String(v.weight)) || 0,
           })),
+          isNegotiable: form.isNegotiable,
         }),
       });
       if (res?.success) {
@@ -914,6 +916,19 @@ export default function AdminProductsNewPage() {
                       placeholder="0.00"
                     />
                   </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 glass-card border-white/60 rounded-2xl bg-white/20 hover:bg-white hover:border-taja-primary/30 transition-all cursor-pointer group/negotiable">
+                  <input
+                    type="checkbox"
+                    id="isNegotiable"
+                    checked={form.isNegotiable}
+                    onChange={(e) => setForm((f) => ({ ...f, isNegotiable: e.target.checked }))}
+                    className="h-5 w-5 rounded border-gray-300 text-taja-primary focus:ring-taja-primary cursor-pointer"
+                  />
+                  <label htmlFor="isNegotiable" className="space-y-0.5 cursor-pointer">
+                    <span className="block text-[10px] font-black uppercase tracking-widest text-taja-secondary">Price is negotiable</span>
+                    <span className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Allow buyers to discuss pricing</span>
+                  </label>
                 </div>
 
 

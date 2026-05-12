@@ -56,37 +56,36 @@ function LogisticsLoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-white overflow-hidden flex flex-col lg:flex-row relative">
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row relative">
       {/* ═══ Background Decorative Elements ═══ */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute inset-0 motif-blanc opacity-20"></div>
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/5 rounded-full blur-[100px] animate-pulse"></div>
-        <div className="absolute bottom-[20%] right-[10%] w-[30%] h-[30%] bg-blue-500/5 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
 
-      {/* ═══ Left Side: Form ═══ */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative z-10">
-        <div className="w-full max-w-md">
-          <div className="mb-10 text-center lg:text-left">
-            <div className="flex justify-center lg:justify-start mb-8">
+      {/* ═══ Left Side: Form (Scrollable) ═══ */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 lg:p-20 relative z-10 overflow-y-auto">
+        <div className="w-full max-w-md py-12">
+          <div className="mb-12 text-center lg:text-left">
+            <div className="flex justify-center lg:justify-start mb-10">
               <Logo size="lg" href="/" variant="header" />
             </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-black uppercase tracking-widest mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-black uppercase tracking-widest mb-6">
               <Truck className="h-3 w-3" />
-              Logistics Portal
+              Operational Gateway
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-2 italic">
-              Partner Sign-in.
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-3 italic">
+              Partner Entry.
             </h1>
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
-              Access the Taja logistics engine.
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">
+              Authorized Logistics Personnel Only
             </p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-6">
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="space-y-1.5">
-                <Label htmlFor="rider-email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
+                <Label htmlFor="rider-email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Identity</Label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-emerald-500 transition-colors">
                     <Mail className="h-4 w-4" />
@@ -98,14 +97,14 @@ function LogisticsLoginForm() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-12 h-13 rounded-2xl border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20 transition-all text-sm font-semibold"
-                    placeholder="partner@taja.shop"
+                    className="pl-12 h-14 rounded-2xl border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20 transition-all text-sm font-bold"
+                    placeholder="Enter partner email"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="rider-password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Secure Password</Label>
+                <Label htmlFor="rider-password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Access Key</Label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-emerald-500 transition-colors">
                     <Lock className="h-4 w-4" />
@@ -117,7 +116,7 @@ function LogisticsLoginForm() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-12 pr-12 h-13 rounded-2xl border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20 transition-all text-sm font-semibold"
+                    className="pl-12 pr-12 h-14 rounded-2xl border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-emerald-500/20 transition-all text-sm font-bold"
                     placeholder="••••••••"
                   />
                   <button
@@ -132,161 +131,161 @@ function LogisticsLoginForm() {
             </div>
 
             <div className="flex items-center justify-between px-1">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-400 cursor-pointer hover:text-slate-900 transition-colors">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="rounded border-slate-200 text-emerald-600 focus:ring-emerald-500"
                 />
-                Remember me
+                Stay Signed In
               </label>
               <Link
                 href="/forgot-password"
-                className="text-xs font-bold text-emerald-700 hover:text-emerald-800"
+                className="text-xs font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-500"
               >
-                Forgot credentials?
+                Reset
               </Link>
             </div>
 
             <Button 
               type="submit" 
               disabled={submitting} 
-              className="w-full h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg shadow-emerald-900/10 hover:shadow-emerald-900/20 active:scale-[0.98] transition-all group"
+              className="w-full h-15 rounded-2xl font-black uppercase tracking-[0.25em] text-[10px] shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/20 active:scale-[0.98] transition-all group bg-slate-900"
             >
               {submitting ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white" />
-                  Authenticating...
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-white/50" />
+                  Verifying...
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  Sign in to Portal
+                  Launch Dashboard
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               )}
             </Button>
           </form>
 
-          <div className="mt-12 p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-4">
-            <p className="text-xs font-semibold text-slate-500 leading-relaxed text-center">
-              New to Taja Logistics? Join the fleet that powers Nigeria's premium marketplace.
+          <div className="mt-16 p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100/50 space-y-5 text-center">
+            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
+              New to the fleet?
             </p>
-            <Button asChild variant="outline" className="w-full h-11 rounded-xl border-slate-200 hover:bg-white hover:border-emerald-500 hover:text-emerald-700 text-[10px] font-black uppercase tracking-widest transition-all">
-              <Link href="/logistics/apply">Complete Rider Application</Link>
+            <p className="text-sm font-bold text-slate-600 leading-relaxed px-4">
+              Join the high-performance delivery network powering Nigeria's finest stores.
+            </p>
+            <Button asChild variant="outline" className="w-full h-12 rounded-xl border-slate-200 hover:bg-white hover:border-emerald-500 hover:text-emerald-700 text-[10px] font-black uppercase tracking-[0.2em] transition-all bg-white shadow-sm">
+              <Link href="/logistics/apply">Apply to Join</Link>
             </Button>
           </div>
           
-          <div className="mt-8 text-center">
+          <div className="mt-10 text-center">
             <Link href="/login" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-all">
-              <ArrowRight className="h-3 w-3 rotate-180" /> Back to Customer Sign-in
+              <Activity className="h-3 w-3" /> Customer Portal
             </Link>
           </div>
         </div>
       </div>
 
-      {/* ═══ Right Side: Promo Panel ═══ */}
-      <div className="hidden lg:flex flex-1 relative bg-slate-950 items-center justify-center p-12 overflow-hidden">
+      {/* ═══ Right Side: Promo Panel (Fixed) ═══ */}
+      <div className="hidden lg:flex flex-1 relative bg-slate-950 items-center justify-center p-12 h-screen sticky top-0 overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 motif-blanc opacity-10"></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/20 via-transparent to-blue-600/10"></div>
+          <div className="absolute inset-0 motif-blanc opacity-5"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 via-slate-950 to-blue-600/5"></div>
           
-          {/* Floating Blobs */}
+          {/* High-speed motion lines effect */}
+          <div className="absolute inset-0 overflow-hidden opacity-20">
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                animate={{ x: [-1000, 1000] }}
+                transition={{ duration: 2 + i, repeat: Infinity, ease: "linear", delay: i * 0.5 }}
+                className="h-px w-64 bg-gradient-to-r from-transparent via-emerald-400 to-transparent absolute"
+                style={{ top: `${15 + (i * 15)}%`, left: '-20%' }}
+              />
+            ))}
+          </div>
+
           <motion.div 
             animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-              x: [0, 50, 0],
-              y: [0, -30, 0]
+              scale: [1, 1.1, 1],
+              opacity: [0.1, 0.2, 0.1]
             }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             className="absolute top-1/4 -right-20 w-96 h-96 bg-emerald-500/20 rounded-full blur-[120px]"
           />
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.3, 1],
-              opacity: [0.2, 0.4, 0.2],
-              x: [0, -60, 0],
-              y: [0, 40, 0]
-            }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute -bottom-20 -left-20 w-[30rem] h-[30rem] bg-blue-500/10 rounded-full blur-[140px]"
-          />
         </div>
 
-        <div className="relative z-10 w-full max-w-lg space-y-12">
+        <div className="relative z-10 w-full max-w-md space-y-12">
           <div className="space-y-4">
-            <h2 className="text-5xl font-black text-white tracking-tighter leading-[0.95] italic">
-              Powering Nigeria's <br />
-              <span className="text-emerald-400">Next-Day Delivery.</span>
+            <div className="h-1 w-12 bg-emerald-400 rounded-full" />
+            <h2 className="text-6xl font-black text-white tracking-tighter leading-[0.9] italic">
+              Drive the <br />
+              <span className="text-emerald-400 underline decoration-white/10 underline-offset-8">Future.</span>
             </h2>
-            <p className="text-lg text-slate-400 font-medium leading-relaxed">
-              Join the fleet that's redefining urban logistics for the modern African marketplace.
+            <p className="text-base text-slate-500 font-bold uppercase tracking-widest">
+              Nigeria's #1 Logistics Engine
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-4">
             {[
               {
-                title: "Automated Payouts",
-                desc: "Get paid instantly after every successful delivery cycle.",
+                title: "Fast Payouts",
+                desc: "Earnings delivered daily.",
                 icon: Zap,
-                color: "text-emerald-400",
-                bg: "bg-emerald-400/10 border-emerald-400/20"
+                color: "text-emerald-400"
               },
               {
-                title: "Intelligent Routing",
-                desc: "Optimized paths that save fuel and maximize your earnings.",
+                title: "Smart Routes",
+                desc: "AI-optimized navigation.",
                 icon: Activity,
-                color: "text-blue-400",
-                bg: "bg-blue-400/10 border-blue-400/20"
+                color: "text-blue-400"
               },
               {
-                title: "Premium Tech Support",
-                desc: "24/7 dedicated assistance for all our logistics partners.",
+                title: "Elite Fleet",
+                desc: "Premium tools & support.",
                 icon: ShieldCheck,
-                color: "text-slate-300",
-                bg: "bg-slate-400/10 border-slate-400/20"
+                color: "text-slate-300"
               }
             ].map((item, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + (i * 0.1) }}
-                className={cn(
-                  "p-6 rounded-[2rem] border backdrop-blur-xl flex items-start gap-5 hover:-translate-y-1 transition-all group",
-                  item.bg
-                )}
+                transition={{ delay: 0.3 + (i * 0.1) }}
+                className="flex items-center gap-5 p-5 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-sm group hover:bg-white/10 transition-all"
               >
-                <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3", item.bg, "bg-opacity-20")}>
-                  <item.icon className={cn("h-6 w-6", item.color)} />
+                <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 border border-white/10 group-hover:scale-110 transition-transform">
+                  <item.icon className={cn("h-5 w-5", item.color)} />
                 </div>
                 <div>
-                  <h4 className="text-base font-black text-white tracking-tight uppercase mb-1">{item.title}</h4>
-                  <p className="text-xs text-slate-400 font-medium leading-relaxed">{item.desc}</p>
+                  <h4 className="text-xs font-black text-white uppercase tracking-[0.2em] mb-0.5">{item.title}</h4>
+                  <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">{item.desc}</p>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          <div className="flex items-center gap-4 pt-6 border-t border-white/5">
+          <div className="flex items-center gap-6 pt-10 border-t border-white/10">
             <div className="flex -space-x-3">
               {[
                 "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/dele_mup0gl.png",
                 "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/LYNNPINNEDIT___mv5yne.jpg",
                 "https://res.cloudinary.com/db2fcni0k/image/upload/v1771796366/Portrait____Cooperate_headshot_qfzmsr.jpg"
               ].map((src, i) => (
-                <div key={i} className="h-10 w-10 rounded-full border-2 border-slate-950 bg-slate-800 overflow-hidden shadow-xl ring-1 ring-white/10">
+                <div key={i} className="h-10 w-10 rounded-full border-2 border-slate-950 bg-slate-800 overflow-hidden shadow-2xl ring-1 ring-white/20">
                   <img src={src} alt="Partner" className="h-full w-full object-cover" />
                 </div>
               ))}
             </div>
             <div className="space-y-0.5">
-              <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Trusted by 500+ Riders</p>
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => <Zap key={i} className="h-2.5 w-2.5 text-emerald-400 fill-emerald-400" />)}
+              <p className="text-[9px] font-black text-white uppercase tracking-[0.3em]">Join 500+ Elite Partners</p>
+              <div className="flex items-center gap-1.5 opacity-60">
+                <div className="h-1 w-1 rounded-full bg-emerald-400" />
+                <div className="h-1 w-1 rounded-full bg-emerald-400" />
+                <div className="h-1 w-1 rounded-full bg-emerald-400" />
               </div>
             </div>
           </div>

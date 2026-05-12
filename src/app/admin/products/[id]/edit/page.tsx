@@ -112,6 +112,7 @@ export default function AdminEditProductPage() {
         },
         status: "active" as "active" | "draft" | "suspended",
         variants: [] as any[],
+        isNegotiable: false,
     });
 
     const [productOwner, setProductOwner] = useState<any>(null);
@@ -235,6 +236,7 @@ export default function AdminEditProductPage() {
                         stock: String(v.stock || ""),
                         weight: String(v.weight || ""),
                     })),
+                    isNegotiable: !!productData.isNegotiable,
                 });
             } catch (error: any) {
                 console.error("Failed to fetch data:", error);
@@ -477,6 +479,7 @@ export default function AdminEditProductPage() {
                 price: parseFloat(formData.price),
                 maxPrice: formData.isRange && formData.maxPrice ? parseFloat(formData.maxPrice) : undefined,
                 compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : undefined,
+                isNegotiable: formData.isNegotiable,
                 currency: formData.currency,
                 images: formData.images,
                 videos: formData.videos,
@@ -913,6 +916,20 @@ export default function AdminEditProductPage() {
                                             </p>
                                         </div>
                                     </div>
+                                </div>
+                                <div className="mt-10 flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:border-emerald-200 transition-all cursor-pointer group/negotiable">
+                                    <input
+                                        type="checkbox"
+                                        id="isNegotiable"
+                                        name="isNegotiable"
+                                        checked={formData.isNegotiable}
+                                        onChange={handleChange}
+                                        className="h-5 w-5 rounded border-slate-200 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                                    />
+                                    <label htmlFor="isNegotiable" className="space-y-0.5 cursor-pointer">
+                                        <span className="block text-[10px] font-black uppercase tracking-widest text-slate-900">Price is negotiable</span>
+                                        <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-widest">Allow buyers to discuss pricing</span>
+                                    </label>
                                 </div>
                             </section>
 

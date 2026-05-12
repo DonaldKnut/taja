@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Modal } from "@/components/modal/Modal";
 import { Button } from "@/components/ui/Button";
 import { toast } from "react-hot-toast";
-import { Check, Copy, KeyRound, Loader2, ShieldAlert } from "lucide-react";
+import { Check, Copy, KeyRound, Loader2, Mail, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 export type RiderProvisionConfirmTarget = {
   partnerId: string;
@@ -14,6 +15,7 @@ export type RiderProvisionConfirmTarget = {
 };
 
 export type RiderProvisionCredentials = {
+  partnerId: string;
   email: string;
   temporaryPassword: string;
   mode: "account_created" | "password_rotated";
@@ -111,8 +113,41 @@ export function RiderProvisionModals({
   onConfirmProvision,
   onCloseCredentials,
 }: RiderProvisionModalsProps) {
+  const [emailSending, setEmailSending] = useState(false);
+
+  useEffect(() => {
+    setEmailSending(false);
+  }, [credentials?.partnerId, credentials?.temporaryPassword]);
+
   const loginUrl =
     typeof window !== "undefined" ? `${window.location.origin}/logistics/login` : "/logistics/login";
+
+  const sendEmailToRider = async () => {
+    if (!credentials?.partnerId) {
+      toast.error("Missing partner reference — close and provision again.");
+      return;
+    }
+    try {
+      setEmailSending(true);
+      const res = await api("/api/admin/logistics/send-rider-credentials", {
+        method: "POST",
+        body: JSON.stringify({
+          partnerId: credentials.partnerId,
+          temporaryPassword: credentials.temporaryPassword,
+          isPasswordRotation: credentials.mode === "password_rotated",
+        }),
+      });
+      if (res?.success) {
+        toast.success(res?.message || "Email sent to rider");
+      } else {
+        toast.error(res?.message || "Could not send email");
+      }
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Could not send email");
+    } finally {
+      setEmailSending(false);
+    }
+  };
 
   const bundleText = credentials
     ? `Rider portal: ${loginUrl}\nEmail: ${credentials.email}\nTemporary password: ${credentials.temporaryPassword}\n\nShare only over a secure channel. Previous passwords (if any) no longer work.`
@@ -205,10 +240,20 @@ export function RiderProvisionModals({
             <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-xs font-semibold text-emerald-950">
               <KeyRound className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
               Rider sign-in URL:{" "}
-              <code className="font-mono text-[11px] bg-white/80 px-1.5 py-0.5 rounded-md border border-emerald-100">
-                /logistics/login
-              </code>
+              <a
+                href={loginUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-[11px] bg-white/90 px-1.5 py-0.5 rounded-md border border-emerald-100 text-emerald-900 hover:underline break-all"
+              >
+                {loginUrl.replace(/^https?:\/\//, "")}
+              </a>
             </div>
+
+            <p className="text-xs font-semibold text-slate-600 leading-relaxed">
+              Email delivery always goes to the partner&apos;s profile address below (not a custom address), so it
+              matches their application.
+            </p>
 
             <div className="space-y-3">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
@@ -245,13 +290,35 @@ export function RiderProvisionModals({
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 border-emerald-200 text-emerald-900 hover:bg-emerald-50"
+                onClick={() => void sendEmailToRider()}
+                disabled={emailSending}
+              >
+                {emailSending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                    Sending…
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4 shrink-0" aria-hidden />
+                    Email rider
+                  </>
+                )}
+              </Button>
               <CopyChip
                 label="Copy sign-in link"
                 value={loginUrl}
                 successToast="Sign-in link copied"
-                className="flex-1 h-10"
+                className="h-10 w-full"
               />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
               <CopyChip
                 label="Copy all details"
                 value={bundleText}
