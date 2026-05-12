@@ -32,6 +32,7 @@ const HEADER_IMAGES = [
 const MARKETPLACE_SLIDE_MS = 5000;
 const SPOTLIGHT_SLIDES_BEFORE_DISMISS = 3;
 const MARKETPLACE_FILTERS_RAIL_OPEN_KEY = "taja_marketplace_filters_rail_open";
+const MARKETPLACE_FILTERS_SIDEBAR_COLLAPSED_KEY = "taja_marketplace_filters_sidebar_collapsed";
 
 export interface IntegratedMarketplaceProps {
     isInsideDashboard?: boolean;
@@ -108,16 +109,27 @@ export function IntegratedMarketplace({
     }, [feed.products]);
 
     const [filtersDocked, setFiltersDocked] = useState(false);
+    const [filtersSidebarCollapsed, setFiltersSidebarCollapsed] = useState(false);
 
     useEffect(() => {
         const saved = localStorage.getItem("taja_marketplace_filters_docked");
         if (saved !== null) setFiltersDocked(saved === "true");
+        const savedCollapsed = localStorage.getItem(MARKETPLACE_FILTERS_SIDEBAR_COLLAPSED_KEY);
+        if (savedCollapsed !== null) setFiltersSidebarCollapsed(savedCollapsed === "1");
     }, []);
 
     const toggleFiltersDocked = () => {
         const next = !filtersDocked;
         setFiltersDocked(next);
         localStorage.setItem("taja_marketplace_filters_docked", String(next));
+    };
+
+    const toggleFiltersSidebarCollapsed = () => {
+        setFiltersSidebarCollapsed((prev) => {
+            const next = !prev;
+            localStorage.setItem(MARKETPLACE_FILTERS_SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+            return next;
+        });
     };
 
     const hasFiltersApplied = useMemo(() => {
@@ -920,7 +932,9 @@ export function IntegratedMarketplace({
                                             : "lg:grid-cols-[56px_1fr]"
                                         : hasHostSidebar
                                           ? "lg:grid-cols-[240px_1fr]"
-                                          : "lg:grid-cols-[280px_1fr]"
+                                          : filtersSidebarCollapsed
+                                            ? "lg:grid-cols-[56px_1fr]"
+                                            : "lg:grid-cols-[280px_1fr]"
                                 )}
                             >
                                 {hostShell === "seller" || hostShell === "buyer" ? (
@@ -955,25 +969,66 @@ export function IntegratedMarketplace({
                                         <div
                                             className={cn(
                                                 "transition-all duration-300 overflow-y-auto no-scrollbar",
-                                                filtersDocked 
+                                                filtersSidebarCollapsed
+                                                    ? "h-[calc(100vh-7rem)] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm"
+                                                    : "",
+                                                !filtersSidebarCollapsed && filtersDocked 
                                                     ? "sticky top-[5rem] h-[calc(100vh-5rem)] border-r border-gray-100 bg-white p-6 space-y-6 rounded-none" 
-                                                    : "max-h-[calc(100vh-7rem)] rounded-3xl border border-gray-200 bg-white p-4 shadow-sm space-y-4",
-                                                !filtersDocked && (hasHostSidebar ? "sticky top-24 w-full z-10" : "fixed top-24 z-30 w-[280px]")
+                                                    : !filtersSidebarCollapsed
+                                                      ? "max-h-[calc(100vh-7rem)] rounded-3xl border border-gray-200 bg-white p-4 shadow-sm space-y-4"
+                                                      : "",
+                                                !filtersSidebarCollapsed && !filtersDocked && (hasHostSidebar ? "sticky top-24 w-full z-10" : "fixed top-24 z-30 w-[280px]")
                                             )}
                                         >
+                                        {filtersSidebarCollapsed ? (
+                                            <div className="flex h-full w-full flex-col items-center gap-2 pt-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={toggleFiltersSidebarCollapsed}
+                                                    className="h-9 w-9 rounded-xl border border-gray-200 bg-white text-gray-500 hover:text-taja-primary hover:border-taja-primary/25 transition-colors flex items-center justify-center"
+                                                    title="Expand filters"
+                                                >
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={toggleFiltersDocked}
+                                                    className="h-9 w-9 rounded-xl border border-gray-200 bg-white text-gray-500 hover:text-taja-primary hover:border-taja-primary/25 transition-colors flex items-center justify-center"
+                                                    title={filtersDocked ? "Undock filters" : "Dock filters"}
+                                                >
+                                                    {filtersDocked ? <Pin className="w-4 h-4 fill-current" /> : <PinOff className="w-4 h-4" />}
+                                                </button>
+                                                <div className="mt-2 flex-1 flex items-start justify-center">
+                                                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-500 [writing-mode:vertical-rl] rotate-180">
+                                                        Filters
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                        <>
                                         <div className="flex items-center justify-between gap-2">
                                             <div className="space-y-0.5">
                                                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Refine results</p>
                                                 <h4 className="text-sm font-black text-gray-900 italic uppercase tracking-tighter">Marketplace</h4>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={toggleFiltersDocked}
-                                                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-gray-50 text-gray-400 hover:text-taja-primary transition-all"
-                                                title={filtersDocked ? "Undock filters" : "Dock filters"}
-                                            >
-                                                {filtersDocked ? <Pin className="w-3.5 h-3.5 fill-current" /> : <PinOff className="w-3.5 h-3.5" />}
-                                            </button>
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={toggleFiltersSidebarCollapsed}
+                                                    className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-gray-50 text-gray-400 hover:text-taja-primary transition-all"
+                                                    title="Collapse filters"
+                                                >
+                                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={toggleFiltersDocked}
+                                                    className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-gray-50 text-gray-400 hover:text-taja-primary transition-all"
+                                                    title={filtersDocked ? "Undock filters" : "Dock filters"}
+                                                >
+                                                    {filtersDocked ? <Pin className="w-3.5 h-3.5 fill-current" /> : <PinOff className="w-3.5 h-3.5" />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="relative">
                                             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1082,6 +1137,8 @@ export function IntegratedMarketplace({
                                         >
                                             Clear all filters
                                         </button>
+                                        </>
+                                        )}
                                     </div>
                                     </aside>
                                 )}
