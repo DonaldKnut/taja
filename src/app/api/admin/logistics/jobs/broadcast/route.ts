@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/middleware";
 import Order from "@/models/Order";
 import DeliveryJob from "@/models/DeliveryJob";
 import DeliveryEvent from "@/models/DeliveryEvent";
+import { notifyAdminsLogisticsJobBroadcastCreated } from "@/lib/logisticsAdminNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,15 @@ export async function POST(request: NextRequest) {
           radiusKm: Math.max(1, radiusKm),
           ttlMinutes: Math.max(5, ttlMinutes),
         },
+      });
+
+      const orderLean = order as { orderNumber?: string };
+      void notifyAdminsLogisticsJobBroadcastCreated({
+        jobId: String(doc._id),
+        orderId: String(order._id),
+        orderNumber: orderLean.orderNumber,
+        pickupCity: doc.pickup?.city || "Unknown",
+        pickupState: doc.pickup?.state || "Unknown",
       });
 
       return NextResponse.json({

@@ -589,96 +589,96 @@ export function IntegratedMarketplace({
                         className="w-full h-full"
                     >
                         {/* ═══ Sliding Media Header ═══ */}
-                        {/* ═══ Header Registry Search ═══ */}
                         <section
                             className={cn(
-                                "px-4 sm:px-6 border-b border-gray-100 shadow-sm",
-                                "bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80",
-                                "pt-0 pb-4 sm:pb-5 md:pb-4",
+                                "px-4 sm:px-6 pt-0 pb-4 sm:pb-5 md:pb-4",
                                 hostShell === "seller" && "lg:hidden"
                             )}
                         >
-                            <div className="space-y-4">
-                                <AnimatePresence initial={false}>
-                                    {!isInsideDashboard && showLandingSpotlight && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -18 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -24, scale: 0.985, filter: "blur(6px)" }}
-                                            transition={{ duration: 0.5, ease: "easeOut" }}
-                                            className="space-y-4"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div className="space-y-1.5">
-                                                    <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.22em] leading-none">
-                                                        Curated marketplace
-                                                    </p>
-                                                    <h2 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tight">
-                                                        Welcome back, {firstName} 👋
-                                                    </h2>
-                                                    <p className="text-[11px] sm:text-xs font-semibold text-slate-500">
-                                                        Discover verified Nigerian sellers, premium picks, and smarter daily deals.
-                                                    </p>
-                                                </div>
-                                                <div className="md:hidden">
-                                                    <CartIcon
-                                                        className="w-12 h-12 bg-taja-light/30 backdrop-blur-2xl border border-taja-primary/10 rounded-[1.2rem] text-taja-primary shadow-sm active:scale-95 transition-all"
-                                                        iconSize="h-5 w-5"
-                                                        badgeClassName="bg-taja-primary text-white border-2 border-white !h-4 !w-4 !text-[9px] !-top-1 !-right-1"
+                            <AnimatePresence initial={false}>
+                                {!isInsideDashboard && showLandingSpotlight && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -18 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -24, scale: 0.985, filter: "blur(6px)" }}
+                                        transition={{ duration: 0.5, ease: "easeOut" }}
+                                        className="relative z-[110] isolate space-y-4"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1.5">
+                                                <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.22em] leading-none">
+                                                    Curated marketplace
+                                                </p>
+                                                <h2 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                                                    Welcome back, {firstName} 👋
+                                                </h2>
+                                                <p className="text-[11px] sm:text-xs font-semibold text-slate-500">
+                                                    Discover verified Nigerian sellers, premium picks, and smarter daily deals.
+                                                </p>
+                                            </div>
+                                            <div className="md:hidden">
+                                                <CartIcon
+                                                    className="w-12 h-12 bg-taja-light/30 backdrop-blur-2xl border border-taja-primary/10 rounded-[1.2rem] text-taja-primary shadow-sm active:scale-95 transition-all"
+                                                    iconSize="h-5 w-5"
+                                                    badgeClassName="bg-taja-primary text-white border-2 border-white !h-4 !w-4 !text-[9px] !-top-1 !-right-1"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="relative overflow-hidden rounded-3xl border border-emerald-900/15 bg-emerald-950 min-h-[150px] sm:min-h-[185px] shadow-[0_18px_45px_-22px_rgba(16,185,129,0.45)]">
+                                            <AnimatePresence mode="wait">
+                                                <motion.div
+                                                    key={HEADER_IMAGES[headerIndex]}
+                                                    initial={{ opacity: 0, x: 24, scale: 1.04 }}
+                                                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, x: -24, scale: 1.02 }}
+                                                    transition={{ duration: 0.55, ease: "easeOut" }}
+                                                    className="absolute inset-0"
+                                                >
+                                                    <Image
+                                                        src={HEADER_IMAGES[headerIndex]}
+                                                        alt="Marketplace premium spotlight"
+                                                        fill
+                                                        className="object-cover opacity-70"
                                                     />
+                                                </motion.div>
+                                            </AnimatePresence>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-950 via-emerald-900/88 to-emerald-900/50" />
+                                            <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-emerald-400/15 to-transparent blur-xl" />
+                                            <div className="relative z-10 p-5 sm:p-7 text-white max-w-md">
+                                                <div className="inline-flex items-center gap-2 mb-3 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-200 animate-pulse" />
+                                                    Premium marketplace spotlight
                                                 </div>
+                                                <p className="text-2xl sm:text-3xl font-black leading-tight tracking-tight">
+                                                    Trusted sellers, seamless checkout, and smarter shopping all in one place.
+                                                </p>
+                                                <p className="mt-2 text-[11px] sm:text-xs text-emerald-100/90 font-medium leading-relaxed">
+                                                    Compare top products, discover verified stores, and shop with confidence across Nigeria.
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    className="mt-5 inline-flex items-center gap-2 h-10 px-5 rounded-full bg-white text-emerald-900 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-900/20 hover:translate-x-0.5 transition-transform"
+                                                >
+                                                    Explore marketplace
+                                                    <ChevronRight className="w-3.5 h-3.5" />
+                                                </button>
                                             </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </section>
 
-                                            <div className="relative overflow-hidden rounded-3xl border border-emerald-900/15 bg-emerald-950 min-h-[150px] sm:min-h-[185px] shadow-[0_18px_45px_-22px_rgba(16,185,129,0.45)]">
-                                                <AnimatePresence mode="wait">
-                                                    <motion.div
-                                                        key={HEADER_IMAGES[headerIndex]}
-                                                        initial={{ opacity: 0, x: 24, scale: 1.04 }}
-                                                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                                                        exit={{ opacity: 0, x: -24, scale: 1.02 }}
-                                                        transition={{ duration: 0.55, ease: "easeOut" }}
-                                                        className="absolute inset-0"
-                                                    >
-                                                        <Image
-                                                            src={HEADER_IMAGES[headerIndex]}
-                                                            alt="Marketplace premium spotlight"
-                                                            fill
-                                                            className="object-cover opacity-70"
-                                                        />
-                                                    </motion.div>
-                                                </AnimatePresence>
-                                                <div className="absolute inset-0 bg-gradient-to-r from-emerald-950 via-emerald-900/88 to-emerald-900/50" />
-                                                <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-emerald-400/15 to-transparent blur-xl" />
-                                                <div className="relative z-10 p-5 sm:p-7 text-white max-w-md">
-                                                    <div className="inline-flex items-center gap-2 mb-3 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]">
-                                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-200 animate-pulse" />
-                                                        Premium marketplace spotlight
-                                                    </div>
-                                                    <p className="text-2xl sm:text-3xl font-black leading-tight tracking-tight">
-                                                        Trusted sellers, seamless checkout, and smarter shopping all in one place.
-                                                    </p>
-                                                    <p className="mt-2 text-[11px] sm:text-xs text-emerald-100/90 font-medium leading-relaxed">
-                                                        Compare top products, discover verified stores, and shop with confidence across Nigeria.
-                                                    </p>
-                                                    <button
-                                                        type="button"
-                                                        className="mt-5 inline-flex items-center gap-2 h-10 px-5 rounded-full bg-white text-emerald-900 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-900/20 hover:translate-x-0.5 transition-transform"
-                                                    >
-                                                        Explore marketplace
-                                                        <ChevronRight className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                <div
-                                    className={cn(
-                                        "grid grid-cols-2 md:grid-cols-[1fr_auto_auto] gap-3",
-                                        hostShell && "lg:hidden"
-                                    )}
-                                >
+                        {/* ═══ Header Registry Search ═══ */}
+                        <section
+                            className={cn(
+                                "px-4 sm:px-6 border-b border-gray-100 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80 z-[80] transition-all duration-300 lg:hidden",
+                                "sticky top-[5rem] shadow-sm py-4"
+                            )}
+                        >
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 md:grid-cols-[1fr_auto_auto] gap-3">
                                     <div className="h-12 rounded-2xl border border-gray-200 bg-white px-4 flex items-center justify-between col-span-2 md:col-span-1">
                                         <div className="min-w-0">
                                             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-400">Active filters</p>
@@ -717,8 +717,7 @@ export function IntegratedMarketplace({
                                             "h-12 px-4 inline-flex items-center justify-center gap-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm",
                                             showAdvancedFilters || hasAdvancedFilters
                                                 ? "text-taja-primary bg-taja-light/40 border-taja-primary/25"
-                                                : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50",
-                                            hostShell && "lg:hidden"
+                                                : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50"
                                         )}
                                     >
                                         <Filter className="w-4 h-4" />
@@ -735,7 +734,7 @@ export function IntegratedMarketplace({
                                         animate={{ opacity: 1, height: "auto", y: 0 }}
                                         exit={{ opacity: 0, height: 0, y: -4 }}
                                         transition={{ duration: 0.2 }}
-                                        className={cn("overflow-hidden", hostShell && "lg:hidden")}
+                                        className="overflow-hidden lg:hidden"
                                     >
                                         <div className="mt-4 rounded-3xl border border-gray-200 bg-gray-50/70 p-4 md:p-5 space-y-4">
                                             <div className="flex items-center justify-between">
@@ -939,7 +938,7 @@ export function IntegratedMarketplace({
                                         <div
                                             className={cn(
                                                 "max-h-[calc(100vh-7rem)] overflow-y-auto rounded-3xl border border-gray-200 bg-white p-4 shadow-sm space-y-4",
-                                                hasHostSidebar ? "sticky top-24 w-full" : "fixed top-24 w-[280px]"
+                                                hasHostSidebar ? "sticky top-24 w-full z-10" : "fixed top-24 z-30 w-[280px]"
                                             )}
                                         >
                                         <div className="space-y-1">
@@ -1133,7 +1132,7 @@ export function IntegratedMarketplace({
                                         )}
                                     </AnimatePresence>
 
-                                    <div className="pt-6 flex justify-center pb-20">
+                                    <div className="pt-6 flex justify-center pb-10">
                                         <button
                                             onClick={() => feed.refetch()}
                                             className="px-12 h-18 bg-white border border-gray-100 rounded-full shadow-premium flex items-center justify-center gap-4 group hover:shadow-xl transition-all active:scale-95"
@@ -1148,118 +1147,55 @@ export function IntegratedMarketplace({
                                             )}
                                         </button>
                                     </div>
+
+                                    {/* ═══ Curated Brands ═══ */}
+                                    <section className="py-4 pt-10 border-t border-gray-100">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <Crown className="w-5 h-5 text-taja-primary" />
+                                            <h3 className="text-lg font-black text-gray-900 tracking-tighter uppercase italic">Featured Shops</h3>
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-6 px-1 pb-6">
+                                            {(feed.recommendedShops && feed.recommendedShops.length > 0 ? feed.recommendedShops : []).map((shop) => (
+                                                <Link
+                                                    key={shop._id}
+                                                    href={`/shop/${shop.shopSlug}`}
+                                                    className="flex flex-col items-center gap-3 group"
+                                                >
+                                                    <div className="w-full aspect-square bg-white rounded-[1.5rem] flex items-center justify-center shadow-premium border border-gray-50 transition-all group-hover:shadow-xl group-hover:-translate-y-1 overflow-hidden relative p-4">
+                                                        {shop.logo ? (
+                                                            <img
+                                                                src={shop.logo}
+                                                                alt={shop.shopName}
+                                                                className="w-full h-full object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-xl">
+                                                                <ShoppingBag className="w-6 h-6 text-gray-200" />
+                                                            </div>
+                                                        )}
+                                                        {shop.isVerified && (
+                                                            <div className="absolute top-2 right-2 w-5 h-5 bg-taja-primary rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                                                <ShieldCheck className="w-3 h-3 text-white" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <span className="block text-[10px] font-black text-gray-900 uppercase tracking-widest group-hover:text-taja-primary transition-colors truncate w-full px-2">
+                                                            {shop.shopName}
+                                                        </span>
+                                                        <div className="flex items-center justify-center gap-1 mt-0.5">
+                                                            <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+                                                            <span className="text-[8px] font-black text-gray-400">{shop.averageRating || "5.0"}</span>
+                                                        </div>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </section>
                                 </div>
                             </div>
                         </section>
 
-                        {/* ═══ Curated Brands ═══ */}
-                        <section className="px-4 sm:px-6 py-4 pt-10 border-t border-gray-100">
-                            <div className="flex items-center gap-3 mb-6">
-                                <Crown className="w-5 h-5 text-taja-primary" />
-                                <h3 className="text-lg font-black text-gray-900 tracking-tighter uppercase italic">Featured Shops</h3>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-6 px-1 pb-6">
-                                {(feed.recommendedShops && feed.recommendedShops.length > 0 ? feed.recommendedShops : []).map((shop) => (
-                                    <Link
-                                        key={shop._id}
-                                        href={`/shop/${shop.shopSlug}`}
-                                        className="flex flex-col items-center gap-3 group"
-                                    >
-                                        <div className="w-full aspect-square bg-white rounded-[1.5rem] flex items-center justify-center shadow-premium border border-gray-50 transition-all group-hover:shadow-xl group-hover:-translate-y-1 overflow-hidden relative p-4">
-                                            {shop.logo ? (
-                                                <img
-                                                    src={shop.logo}
-                                                    alt={shop.shopName}
-                                                    className="w-full h-full object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-xl">
-                                                    <ShoppingBag className="w-6 h-6 text-gray-200" />
-                                                </div>
-                                            )}
-                                            {shop.isVerified && (
-                                                <div className="absolute top-2 right-2 w-5 h-5 bg-taja-primary rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                                                    <ShieldCheck className="w-3 h-3 text-white" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="text-center">
-                                            <span className="block text-[10px] font-black text-gray-900 uppercase tracking-widest group-hover:text-taja-primary transition-colors truncate w-full px-2">
-                                                {shop.shopName}
-                                            </span>
-                                            <div className="flex items-center justify-center gap-1 mt-0.5">
-                                                <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
-                                                <span className="text-[8px] font-black text-gray-400">{shop.averageRating || "5.0"}</span>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* ═══ Promotional Experience Section (Moved Below Products) ═══ */}
-                        {!isInsideDashboard && (
-                            <section className="relative px-6 py-20 bg-black mt-20">
-                                {/* Sliding Background Images */}
-                                <div className="absolute inset-0 z-0">
-                                    <AnimatePresence mode="popLayout">
-                                        <motion.div
-                                            key={headerIndex}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 0.4 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 2 }}
-                                            className="absolute inset-0"
-                                        >
-                                            <Image
-                                                src={HEADER_IMAGES[headerIndex]}
-                                                alt="Promo Background"
-                                                fill
-                                                className="object-cover saturate-0"
-                                            />
-                                        </motion.div>
-                                    </AnimatePresence>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
-                                    <div className="absolute inset-0 motif-blanc opacity-[0.03]" />
-                                </div>
-
-                                <div className="relative z-10 max-w-4xl mx-auto text-center space-y-12">
-                                    <div className="space-y-4">
-                                        <h3 className="text-sm font-black text-taja-primary uppercase tracking-[0.4em]">The Taja Experience</h3>
-                                        <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight italic">
-                                            Curated Collections <br /> & Premium Finds.
-                                        </h2>
-                                    </div>
-
-                                    {/* Quick Icon Links - In a more prominent promotional grid */}
-                                    <div className="grid grid-cols-3 md:grid-cols-5 gap-8">
-                                        {[
-                                            { label: "GreatBuy", icon: ShoppingBag, color: "bg-rose-500/10 text-rose-500 border-rose-500/20" },
-                                            { label: "Flash", icon: Zap, color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
-                                            { label: "Gift", icon: Gift, color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-                                            { label: "Coupon", icon: Tag, color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-                                            { label: "VIPArea", icon: Star, color: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-                                        ].map((item) => (
-                                            <div key={item.label} className="flex flex-col items-center gap-4 group cursor-pointer">
-                                                <div className={cn("w-20 h-20 rounded-[2rem] flex items-center justify-center transition-all group-hover:scale-110 group-hover:rotate-3 border backdrop-blur-xl shadow-2xl", item.color)}>
-                                                    <item.icon className="w-8 h-8" />
-                                                </div>
-                                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest group-hover:text-taja-primary transition-colors">{item.label}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="pt-8">
-                                        <Button
-                                            variant="outline"
-                                            className="rounded-full px-10 border-white/20 text-white hover:bg-white hover:text-black transition-all"
-                                        >
-                                            Explore Curated Collections
-                                        </Button>
-                                    </div>
-                                </div>
-                            </section>
-                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

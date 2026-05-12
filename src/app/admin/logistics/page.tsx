@@ -9,6 +9,7 @@ import { Search } from "lucide-react";
 
 type LogisticsPartner = {
   _id: string;
+  user?: string;
   fullName: string;
   email: string;
   phone: string;
@@ -79,6 +80,8 @@ export default function AdminLogisticsPage() {
   const [timelineJobId, setTimelineJobId] = useState<string | null>(null);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineEvents, setTimelineEvents] = useState<DeliveryEventItem[]>([]);
+  const [provisioningId, setProvisioningId] = useState<string | null>(null);
+  const [provisionModal, setProvisionModal] = useState<{ email: string; temporaryPassword: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -201,6 +204,31 @@ export default function AdminLogisticsPage() {
       toast.error(error?.message || "Failed to load timeline");
     } finally {
       setTimelineLoading(false);
+    }
+  };
+
+  const provisionRiderAccess = async (id: string) => {
+    const ok = window.confirm(
+      "Create rider-only login for this partner? They must already be approved. A temporary password is shown once — copy it and send it securely to the rider."
+    );
+    if (!ok) return;
+    try {
+      setProvisioningId(id);
+      const res = await api(`/api/admin/logistics/${id}/provision-access`, { method: "POST" });
+      if (res?.success && res?.data?.temporaryPassword) {
+        setProvisionModal({
+          email: res.data.email,
+          temporaryPassword: res.data.temporaryPassword,
+        });
+        toast.success("Rider portal access ready");
+        await load();
+      } else {
+        toast.error(res?.message || "Provisioning failed");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Provisioning failed");
+    } finally {
+      setProvisioningId(null);
     }
   };
 
@@ -550,6 +578,18 @@ export default function AdminLogisticsPage() {
                         <div className="flex flex-wrap gap-2">
                           <Button
                             size="sm"
+                            className="h-8 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white hover:bg-slate-800"
+                            disabled={
+                              provisioningId === p._id ||
+                              savingId === p._id ||
+                              p.status !== "approved"
+                            }
+                            onClick={() => provisionRiderAccess(p._id)}
+                          >
+                            {provisioningId === p._id ? "Provisioning…" : "Rider login"}
+                          </Button>
+                          <Button
+                            size="sm"
                             className="h-8 rounded-lg text-[10px] font-black uppercase tracking-widest"
                             disabled={savingId === p._id}
                             onClick={() =>
@@ -700,6 +740,48 @@ export default function AdminLogisticsPage() {
           )}
         </CardContent>
       </Card>
+
+      {provisionModal ? (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="max-w-md w-full rounded-3xl bg-white border border-slate-200 shadow-2xl p-6 space-y-4">
+            <h3 className="text-lg font-black text-slate-900">Rider credentials (copy now)</h3>
+            <p className="text-sm font-semibold text-slate-600">
+              Rider signs in at <span className="font-mono text-slate-900">/logistics/login</span>. This password is
+              not shown again.
+            </p>
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm space-y-2">
+              <p>
+                <span className="font-black text-slate-500 uppercase text-[10px] tracking-widest">Email</span>
+                <br />
+                <span className="font-mono font-semibold text-slate-900 break-all">{provisionModal.email}</span>
+              </p>
+              <p>
+                <span className="font-black text-slate-500 uppercase text-[10px] tracking-widest">Temporary password</span>
+                <br />
+                <span className="font-mono font-bold text-slate-900 break-all">{provisionModal.temporaryPassword}</span>
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => {
+                  void navigator.clipboard.writeText(
+                    `Login: ${window.location.origin}/logistics/login\nEmail: ${provisionModal.email}\nPassword: ${provisionModal.temporaryPassword}`
+                  );
+                  toast.success("Copied to clipboard");
+                }}
+              >
+                Copy all
+              </Button>
+              <Button type="button" className="rounded-xl" onClick={() => setProvisionModal(null)}>
+                Done
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

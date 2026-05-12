@@ -946,24 +946,7 @@ export default function AdminEditProductPage() {
                                         />
                                     </div>
 
-                                    <div className="group space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                                            Delivery Fee (₦)
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-300">₦</span>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                name="shipping.shippingCost"
-                                                value={formData.shipping.shippingCost}
-                                                onChange={handleChange}
-                                                className="rounded-2xl h-14 pl-12 font-black border-slate-100 bg-slate-50/50"
-                                                placeholder="Flat rate"
-                                            />
-                                        </div>
-                                    </div>
+
 
                                     {!formData.shipping.freeShipping && (
                                         <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 space-y-3">

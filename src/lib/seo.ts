@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SITE_META_DESCRIPTION, SITE_LONG_DESCRIPTION } from "@/lib/site-seo";
 import { productDescriptionPlainText } from "@/lib/sanitizeProductDescriptionHtml";
+import { TAJA_LOGO_URL, PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 const siteName = "Taja.Shop";
 const defaultTitle = "Taja.Shop — Buy & Sell Online | Marketplace for Nigerian & African Sellers";
@@ -101,7 +102,7 @@ export function generateStructuredData({
       name: "Taja.Shop",
       alternateName: ["Taja", "Taja Shop", "taja.shop"],
       url: baseUrl,
-      logo: "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
+      logo: TAJA_LOGO_URL,
       description: SITE_LONG_DESCRIPTION,
       sameAs: [
         "https://instagram.com/taja.shop",
@@ -180,7 +181,9 @@ export function generateProductStructuredData(product: {
   rating?: { value: number; count: number };
   shopName?: string;
 }) {
-  const images = Array.isArray(product.image) ? product.image : [product.image];
+  const rawImages = Array.isArray(product.image) ? product.image : [product.image];
+  const nonEmpty = rawImages.filter((img) => typeof img === "string" && img.trim().length > 0);
+  const images = nonEmpty.length > 0 ? nonEmpty : [PRODUCT_IMAGE_PLACEHOLDER_URL];
   const fullImages = images.map((img) =>
     img.startsWith("http") ? img : `${siteUrl}${img}`
   );
@@ -255,7 +258,7 @@ export function generateArticleJsonLd(input: {
   keywords?: string[];
 }) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://taja.shop";
-  const logoUrl = `${baseUrl}/favicon.png`;
+  const logoUrl = TAJA_LOGO_URL;
   const images = input.imageUrls
     .filter(Boolean)
     .map((u) => (u.startsWith("http") ? u : `${siteUrl}${u.startsWith("/") ? u : `/${u}`}`));

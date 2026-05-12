@@ -59,6 +59,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (user.role === 'logistics') {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            'Logistics partners sign in at the rider portal: open "/logistics/login" (Rider login).',
+        },
+        { status: 403 }
+      );
+    }
+
     // Verify password
     const isPasswordValid = await comparePassword(password, user.password);
 

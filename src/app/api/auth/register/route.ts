@@ -26,6 +26,17 @@ export async function POST(request: NextRequest) {
       referralCode,
     } = body;
 
+    if (role === "logistics" || role === "admin") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This account type cannot be registered here. Logistics riders receive access from an administrator.",
+        },
+        { status: 400 },
+      );
+    }
+
     // Validation (phone collected after email verification — web + mobile parity)
     if (!fullName || !email || !password) {
       return NextResponse.json(

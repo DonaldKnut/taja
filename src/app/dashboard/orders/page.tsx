@@ -5,6 +5,7 @@ import { checkoutApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import toast from "react-hot-toast";
 import { OrderCard, OrdersEmptyState, OrdersFiltersBar, type DashboardOrder } from "@/components/orders";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 export default function OrdersPage() {
   const { isAuthenticated, user } = useAuth();
@@ -49,7 +50,7 @@ export default function OrdersPage() {
               name: item.title || item.product?.title || item.product?.name || "Product",
               quantity: item.quantity || 1,
               price: item.price || 0,
-              image: item.image || item.product?.images?.[0] || item.product?.image || "/placeholder-product.jpg",
+              image: item.image || item.product?.images?.[0] || item.product?.image || PRODUCT_IMAGE_PLACEHOLDER_URL,
               seller: {
                 name: order.seller?.fullName || "Unknown Seller",
                 shop: order.shop?.shopName || "Unknown Shop",

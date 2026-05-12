@@ -86,7 +86,9 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
             setIsScrolled(currentScrollY > 20);
 
             // Hide/Show logic
-            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+            if (pathname === "/marketplace") {
+                setIsVisible(true);
+            } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
                 setIsVisible(false);
             } else {
                 setIsVisible(true);

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { PlayCircle, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 interface ProductDetailGalleryProps {
   product: any;
@@ -36,7 +37,7 @@ export function ProductDetailGallery({
     ...normalizedImages.map((src: string) => ({ type: "image" as const, src })),
   ];
   const safeMediaItems =
-    mediaItems.length > 0 ? mediaItems : [{ type: "image" as const, src: "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png" }];
+    mediaItems.length > 0 ? mediaItems : [{ type: "image" as const, src: PRODUCT_IMAGE_PLACEHOLDER_URL }];
   const activeIndex = Math.max(0, Math.min(selectedImageIndex, safeMediaItems.length - 1));
   const activeMedia = safeMediaItems[activeIndex];
 

@@ -19,9 +19,11 @@ import {
   ProductDetailMeta,
   ProductPurchaseActions,
   ProductShopSummary,
+  ProductViewerPresence,
 } from "@/components/product";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
-const fallbackImage = "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png";
+const fallbackImage = PRODUCT_IMAGE_PLACEHOLDER_URL;
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -321,6 +323,7 @@ export default function ProductDetailPage() {
       <StructuredData data={breadcrumbs} />
       <div className="min-h-screen bg-white text-taja-secondary selection:bg-taja-primary/30 selection:text-taja-secondary">
         <AppHeader />
+        {product.id ? <ProductViewerPresence productId={product.id} /> : null}
 
         <ProductDetailGallery
           product={product}

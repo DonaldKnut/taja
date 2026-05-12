@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { deliverHtmlMail, isMailConfigured } from "@/lib/mail-delivery";
+import { TAJA_LOGO_URL, PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 async function sendTransactionalMail(
   to: string | string[],
@@ -99,7 +100,7 @@ export async function sendVerificationEmail(
       year: new Date().getFullYear(),
       logoUrl:
         process.env.LOGO_URL ||
-        "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
+        TAJA_LOGO_URL,
     });
 
     return await sendTransactionalMail(
@@ -127,7 +128,7 @@ export async function sendWelcomeEmail(email: string, name: string) {
       year: new Date().getFullYear(),
       logoUrl:
         process.env.LOGO_URL ||
-        "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
+        TAJA_LOGO_URL,
     });
 
     return await sendTransactionalMail(email, "Welcome to Taja.Shop!", html);
@@ -164,7 +165,7 @@ export async function sendSellerApprovedEmail(
     <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f7; padding:32px 0;">
       <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px 28px;border:1px solid #edf0f4;">
         <div style="text-align:center;margin-bottom:24px;">
-          <img src="${process.env.LOGO_URL || "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png"}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:12px;" />
+          <img src="${process.env.LOGO_URL || TAJA_LOGO_URL}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:12px;" />
         </div>
         <p style="font-size:14px;color:#111827;margin:0 0 12px;">Hi ${safeName},</p>
         <p style="font-size:14px;color:#111827;margin:0 0 12px;">
@@ -232,7 +233,7 @@ export async function sendAdminKycSubmittedEmail(
     year: new Date().getFullYear(),
     logoUrl:
       process.env.LOGO_URL ||
-      "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
+      TAJA_LOGO_URL,
   });
 
   const adminEmail = process.env.ADMIN_EMAIL;
@@ -301,7 +302,7 @@ export async function sendAdminNewShopEmail(
     year: new Date().getFullYear(),
     logoUrl:
       process.env.LOGO_URL ||
-      "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
+      TAJA_LOGO_URL,
   });
 
   const adminEmail = process.env.ADMIN_EMAIL;
@@ -359,7 +360,7 @@ export async function sendPasswordResetEmail(
       year: new Date().getFullYear(),
       logoUrl:
         process.env.LOGO_URL ||
-        "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
+        TAJA_LOGO_URL,
     });
 
     return await sendTransactionalMail(
@@ -390,7 +391,7 @@ export async function sendBroadcastEmail(
   try {
     const logoUrl =
       process.env.LOGO_URL ||
-      "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png";
+      TAJA_LOGO_URL;
     const html = `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
         <img src="${logoUrl}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:24px;" />
@@ -452,8 +453,8 @@ export async function sendOrderConfirmationEmail(
     const orderUrl = `${baseUrl}/dashboard/orders/${orderId}`;
     const logoUrl =
       process.env.LOGO_URL ||
-      "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png";
-    const fallbackImg = logoUrl;
+      TAJA_LOGO_URL;
+    const fallbackImg = PRODUCT_IMAGE_PLACEHOLDER_URL;
 
     const itemsHtml = items
       .map((item) => {
@@ -626,7 +627,7 @@ export async function sendOrderShippedEmail(
       year: new Date().getFullYear(),
       logoUrl:
         process.env.LOGO_URL ||
-        "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
+        TAJA_LOGO_URL,
     });
 
     return await sendTransactionalMail(

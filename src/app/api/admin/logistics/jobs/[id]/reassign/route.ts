@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/middleware";
 import DeliveryJob from "@/models/DeliveryJob";
 import DeliveryEvent from "@/models/DeliveryEvent";
 import { canTransitionDeliveryJob } from "@/lib/jobs/deliveryJobs";
+import { notifyAdminsLogisticsJobReleasedToQueue } from "@/lib/logisticsAdminNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,10 @@ export async function POST(
         actorRole: "admin",
         eventType: "job_reassigned",
         metadata: { ttlMinutes },
+      });
+      void notifyAdminsLogisticsJobReleasedToQueue({
+        jobId: String(updated._id),
+        ttlMinutes,
       });
       return NextResponse.json({ success: true, message: "Job released back to queue", data: updated });
     } catch (error: any) {

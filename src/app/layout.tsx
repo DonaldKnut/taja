@@ -7,6 +7,7 @@ import {
   SITE_LONG_DESCRIPTION,
   getRootWebSiteJsonLd,
 } from "@/lib/site-seo";
+import { TAJA_LOGO_URL } from "@/lib/brandAssets";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://taja.shop";
 
@@ -102,7 +103,7 @@ export default function RootLayout({
               name: "Taja.Shop",
               alternateName: ["Taja", "Taja Shop", "taja.shop"],
               url: siteUrl,
-              logo: `${siteUrl}/favicon.png`,
+              logo: TAJA_LOGO_URL,
               description: SITE_LONG_DESCRIPTION,
               ...(process.env.NEXT_PUBLIC_SUPPORT_PHONE
                 ? {

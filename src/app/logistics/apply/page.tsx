@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -198,6 +199,12 @@ export default function LogisticsApplyPage() {
           </h1>
           <p className="text-lg text-slate-600 font-medium max-w-2xl mx-auto">
             Become a partner and start earning. We welcome everyone from bicycle riders to truck drivers.
+          </p>
+          <p className="mt-4 text-sm font-semibold text-slate-500">
+            Already have rider access from operations?{" "}
+            <Link href="/logistics/login" className="text-emerald-700 font-bold hover:underline">
+              Rider sign-in
+            </Link>
           </p>
         </div>
 

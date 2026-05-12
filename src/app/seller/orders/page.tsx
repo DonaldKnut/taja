@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/Input";
 import { checkoutApi, api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "react-hot-toast";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 interface OrderItem {
     id: string;
@@ -97,7 +98,7 @@ export default function SellerOrdersPage() {
                         name: item.title || item.product?.title || "Product",
                         quantity: item.quantity || 1,
                         price: item.price || 0,
-                        image: item.image || item.product?.images?.[0] || "/placeholder-product.jpg",
+                        image: item.image || item.product?.images?.[0] || PRODUCT_IMAGE_PLACEHOLDER_URL,
                     })) || [],
                 }));
                 setOrders(mappedOrders);

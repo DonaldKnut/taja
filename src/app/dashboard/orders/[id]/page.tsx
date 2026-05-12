@@ -42,6 +42,7 @@ import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 // Narrative timeline status map
 const narrativeStatus = {
@@ -458,7 +459,7 @@ export default function OrderDetailPage() {
                     <div key={item._id} className="group relative flex items-center gap-6 p-4 rounded-3xl border border-gray-50 hover:bg-gray-50/50 hover:border-gray-100 transition-all duration-300">
                       <div className="relative w-24 h-24 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
                         <Image
-                          src={item.image || "/placeholder-product.jpg"}
+                          src={item.image || PRODUCT_IMAGE_PLACEHOLDER_URL}
                           alt={item.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"

@@ -33,6 +33,7 @@ import {
   Home,
   ChevronLeft,
   ChevronRight,
+  Pin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -50,6 +51,7 @@ import { cn } from "@/lib/utils";
 
 const KYC_BANNER_SKIP_KEY = "taja_seller_kyc_banner_skipped";
 const SELLER_SIDEBAR_COLLAPSED_KEY = "taja_seller_sidebar_collapsed";
+const SELLER_SIDEBAR_DOCKED_KEY = "taja_seller_sidebar_docked";
 
 const sellerNavigation = [
   { name: "Overview", href: "/seller/dashboard", icon: LayoutDashboard },
@@ -82,6 +84,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarDocked, setSidebarDocked] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -92,6 +95,12 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   const [checkingShop, setCheckingShop] = useState(true);
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (user?.role === "logistics") {
+      router.replace("/logistics/dashboard");
+    }
+  }, [user?.role, router]);
 
   const isUnderReview = user?.accountStatus === "under_review";
   const kycStatus = user?.kyc?.status;
@@ -106,6 +115,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       if (localStorage.getItem(SELLER_SIDEBAR_COLLAPSED_KEY) === "1") {
         setSidebarCollapsed(true);
       }
+      if (localStorage.getItem(SELLER_SIDEBAR_DOCKED_KEY) === "0") {
+        setSidebarDocked(false);
+      }
     } catch {
       /* ignore */
     }
@@ -119,6 +131,23 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         window.dispatchEvent(
           new CustomEvent("taja:seller-sidebar-collapsed-change", {
             detail: { collapsed: next },
+          })
+        );
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
+  const toggleSidebarDocked = () => {
+    setSidebarDocked((d) => {
+      const next = !d;
+      try {
+        localStorage.setItem(SELLER_SIDEBAR_DOCKED_KEY, next ? "1" : "0");
+        window.dispatchEvent(
+          new CustomEvent("taja:seller-sidebar-docked-change", {
+            detail: { docked: next },
           })
         );
       } catch {
@@ -443,6 +472,15 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
               >
                 <Menu className="h-6 w-6" />
               </button>
+
+              <button
+                onClick={toggleSidebarCollapsed}
+                className="hidden lg:flex p-2 text-gray-400 hover:text-taja-primary transition-colors bg-white/40 rounded-xl border border-white/60"
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+              </button>
               <Logo size="lg" href="/seller/dashboard" variant="header" />
 
               <div className="hidden lg:flex h-8 w-px bg-white/40 mx-2" />
@@ -621,7 +659,50 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
           </div>
         </header>
 
-        <div className="flex flex-1 overflow-hidden relative pt-20">
+        {/* Desktop sidebar: keep outside overflow-hidden so fixed rail receives clicks */}
+        <aside
+          className={cn(
+            "hidden lg:flex lg:flex-col lg:fixed lg:bottom-0 lg:left-0 lg:z-[105] lg:pb-0 transition-all duration-300 ease-out",
+            sidebarDocked ? "lg:top-20" : "lg:top-24",
+            sidebarCollapsed ? "lg:w-20" : "lg:w-72"
+          )}
+        >
+          <div
+            className={cn(
+              "flex-1 flex flex-col min-h-0 bg-white/80 backdrop-blur-3xl border transition-all duration-300 relative z-10 overflow-hidden",
+              sidebarDocked 
+                ? "m-0 rounded-none border-y-0 border-l-0 border-r-white/10 shadow-none" 
+                : (sidebarCollapsed ? "m-2 rounded-3xl" : "m-4 rounded-[40px]") + " border-white/60 shadow-glass"
+            )}
+          >
+            <div className="hidden lg:flex items-center justify-between px-3 pt-2 pb-1 shrink-0 border-b border-white/5 relative z-20">
+              <button
+                type="button"
+                onClick={toggleSidebarDocked}
+                className="p-1.5 rounded-lg text-taja-secondary hover:text-taja-primary bg-white hover:bg-gray-50 border border-gray-100 transition-colors"
+                aria-label={sidebarDocked ? "Undock sidebar" : "Dock sidebar"}
+                title={sidebarDocked ? "Undock sidebar (Floating)" : "Dock sidebar (Fixed)"}
+              >
+                <Pin className={cn("h-4 w-4 transition-transform", sidebarDocked ? "rotate-45 text-taja-primary" : "text-gray-400")} />
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleSidebarCollapsed}
+                className="p-1.5 rounded-lg text-taja-secondary hover:text-taja-primary bg-white hover:bg-gray-50 border border-gray-100 transition-colors shrink-0 pointer-events-auto [&_svg]:pointer-events-none"
+                aria-expanded={!sidebarCollapsed}
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <SidebarContent collapsed={sidebarCollapsed} />
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex flex-1 min-h-0 overflow-hidden relative pt-20">
           {/* Mobile sidebar */}
           <AnimatePresence>
             {sidebarOpen && (
@@ -638,7 +719,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                   animate={{ x: 0 }}
                   exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-white border-r border-gray-100 shadow-2xl overflow-y-auto"
+                  className="fixed left-0 top-0 h-screen w-full max-w-[300px] bg-white border-r border-gray-100 shadow-2xl overflow-y-auto"
                 >
                   <SidebarContent mobile collapsed={false} />
                 </motion.div>
@@ -646,99 +727,72 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
             )}
           </AnimatePresence>
 
-          {/* Desktop Sidebar - collapsible rail */}
-          <aside
-            className={cn(
-              "hidden lg:flex lg:flex-col lg:fixed lg:top-20 lg:bottom-0 lg:left-0 lg:z-[100] lg:pb-0 transition-[width] duration-300 ease-out",
-              sidebarCollapsed ? "lg:w-20" : "lg:w-72"
-            )}
-          >
-                        <div
-              className={cn(
-                "flex-1 flex flex-col min-h-0 bg-white/80 backdrop-blur-3xl border border-white/60 shadow-glass relative z-10 overflow-hidden",
-                sidebarCollapsed ? "m-2 rounded-3xl" : "m-4 rounded-[40px]"
-              )}
-            >
-              <div className="hidden lg:flex items-center justify-end px-2 pt-2 pb-1 shrink-0 border-b border-white/5">
-                <button
-                  type="button"
-                  onClick={toggleSidebarCollapsed}
-                                    className="p-2 rounded-xl text-taja-secondary hover:text-taja-primary bg-white hover:bg-gray-50 border border-gray-100 transition-colors"
-                  aria-expanded={!sidebarCollapsed}
-                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                  {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-                </button>
-              </div>
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <SidebarContent collapsed={sidebarCollapsed} />
-              </div>
-            </div>
-          </aside>
-
-          {/* Main Content */}
+          {/* Main Content: pointer-events-none so the full-bleed box does not steal clicks over the fixed sidebar gutter; inner restores interaction + scroll */}
           <main
             className={cn(
-              "flex-1 overflow-y-auto relative scrollbar-hide transition-[padding] duration-300 ease-out",
-              sidebarCollapsed ? "lg:pl-20" : "lg:pl-72"
+              "flex-1 flex flex-col min-h-0 relative pointer-events-none transition-all duration-300 ease-out",
+              sidebarCollapsed ? "lg:pl-20" : "lg:pl-72",
+              !sidebarDocked && "lg:px-4"
             )}
           >
-            {/* Subtle Ambient Background Decorative Element */}
-            <div className="fixed top-1/4 right-1/4 w-[600px] h-[600px] bg-taja-primary/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
-            <div className="fixed bottom-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/5 blur-[100px] rounded-full -z-10 pointer-events-none" />
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide pointer-events-auto relative">
+              {/* Subtle Ambient Background Decorative Element */}
+              <div className="fixed top-1/4 right-1/4 w-[600px] h-[600px] bg-taja-primary/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
+              <div className="fixed bottom-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/5 blur-[100px] rounded-full -z-10 pointer-events-none" />
 
-            {/* Identity Shield - Fixed Verification Awareness Widget */}
-            <AnimatePresence>
-              {kycPending && !bannerDismissed && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                  className="fixed bottom-8 right-8 z-50 max-w-sm"
-                >
-                  <div className="glass-panel p-6 border-white/40 shadow-premium-hover relative overflow-hidden group rounded-[2rem]">
-                    {/* Animated Background Glow */}
-                    <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full group-hover:bg-emerald-500/20 transition-colors duration-500" />
+              {/* Identity Shield - Fixed Verification Awareness Widget */}
+              <AnimatePresence>
+                {kycPending && !bannerDismissed && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="fixed bottom-8 right-8 z-50 max-w-sm"
+                  >
+                    <div className="glass-panel p-6 border-white/40 shadow-premium-hover relative overflow-hidden group rounded-[2rem]">
+                      {/* Animated Background Glow */}
+                      <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full group-hover:bg-emerald-500/20 transition-colors duration-500" />
 
-                    <div className="flex items-start gap-4 relative z-10">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                        <ShieldCheck className="h-6 w-6 text-emerald-400 animate-pulse" />
+                      <div className="flex items-start gap-4 relative z-10">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                          <ShieldCheck className="h-6 w-6 text-emerald-400 animate-pulse" />
+                        </div>
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-black text-taja-secondary tracking-tight uppercase">Verification Status</h4>
+                          <p className="text-[11px] font-medium text-gray-500 leading-relaxed">
+                            Your verification is pending. Complete it to unlock advanced selling features and list products.
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-black text-taja-secondary tracking-tight uppercase">Verification Status</h4>
-                        <p className="text-[11px] font-medium text-gray-500 leading-relaxed">
-                          Your verification is pending. Complete it to unlock advanced selling features and list products.
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className="mt-6 flex flex-col gap-2 relative z-10">
-                      <Button asChild variant="gradient" className="w-full h-11 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-emerald">
-                        <Link href="/onboarding/kyc">Secure Account Now</Link>
-                      </Button>
+                      <div className="mt-6 flex flex-col gap-2 relative z-10">
+                        <Button asChild variant="gradient" className="w-full h-11 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-emerald">
+                          <Link href="/onboarding/kyc">Secure Account Now</Link>
+                        </Button>
+                        <button
+                          onClick={dismissKycBanner}
+                          className="w-full h-11 text-[10px] font-black text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Compass className="h-4 w-4" />
+                          Explore Dashboard First
+                        </button>
+                      </div>
+
+                      {/* Corner close button */}
                       <button
                         onClick={dismissKycBanner}
-                        className="w-full h-11 text-[10px] font-black text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
                       >
-                        <Compass className="h-4 w-4" />
-                        Explore Dashboard First
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                    {/* Corner close button */}
-                    <button
-                      onClick={dismissKycBanner}
-                      className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="h-full">
-              {children}
+              <div className="h-full">
+                {children}
+              </div>
             </div>
           </main>
         </div>

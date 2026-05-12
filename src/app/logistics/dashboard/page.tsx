@@ -70,6 +70,35 @@ export default function LogisticsDashboardPage() {
     idFrontImage: "",
     selfieImage: "",
   });
+  const [pwdCurrent, setPwdCurrent] = useState("");
+  const [pwdNew, setPwdNew] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
+
+  const changePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pwdNew.length < 6) {
+      toast.error("New password must be at least 6 characters");
+      return;
+    }
+    try {
+      setPwdSaving(true);
+      const res = await api("/api/users/password", {
+        method: "PUT",
+        body: JSON.stringify({ currentPassword: pwdCurrent, newPassword: pwdNew }),
+      });
+      if (res?.success) {
+        toast.success("Password updated");
+        setPwdCurrent("");
+        setPwdNew("");
+      } else {
+        toast.error(res?.message || "Failed to update password");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update password");
+    } finally {
+      setPwdSaving(false);
+    }
+  };
 
   const load = async () => {
     try {
@@ -288,7 +317,7 @@ export default function LogisticsDashboardPage() {
   };
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="logistics" redirectTo="/logistics/login">
       <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8">
@@ -296,6 +325,52 @@ export default function LogisticsDashboardPage() {
             <p className="mt-2 text-sm font-semibold text-slate-500">
               Dispatch-ready profile with soft KYC and assignment eligibility checks.
             </p>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-400">Rider password</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">
+              Replace the temporary password from operations. You can also use{" "}
+              <a href="/forgot-password" className="text-emerald-700 font-bold hover:underline">
+                Forgot password
+              </a>{" "}
+              on the sign-in page.
+            </p>
+            <form onSubmit={changePassword} className="mt-4 grid gap-3 max-w-md">
+              <div>
+                <Label htmlFor="rider-pwd-current">Current password</Label>
+                <Input
+                  id="rider-pwd-current"
+                  type="password"
+                  value={pwdCurrent}
+                  onChange={(e) => setPwdCurrent(e.target.value)}
+                  required
+                  className="mt-1 h-10 rounded-xl"
+                  autoComplete="current-password"
+                />
+              </div>
+              <div>
+                <Label htmlFor="rider-pwd-new">New password</Label>
+                <Input
+                  id="rider-pwd-new"
+                  type="password"
+                  value={pwdNew}
+                  onChange={(e) => setPwdNew(e.target.value)}
+                  required
+                  minLength={6}
+                  className="mt-1 h-10 rounded-xl"
+                  autoComplete="new-password"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={pwdSaving}
+                variant="outline"
+                className="h-10 rounded-xl text-[10px] font-black uppercase tracking-widest w-fit"
+              >
+                {pwdSaving ? "Saving…" : "Update password"}
+              </Button>
+            </form>
           </div>
 
           {loading ? (

@@ -5,7 +5,7 @@ export interface IUser extends Document {
   email: string;
   phone?: string; // optional at signup; collected after email verification (or OAuth completion flows)
   password: string;
-  role: 'buyer' | 'seller' | 'admin';
+  role: 'buyer' | 'seller' | 'admin' | 'logistics';
   avatar?: string;
   coverPhoto?: string;
   referralCode?: string;
@@ -154,7 +154,7 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['buyer', 'seller', 'admin'],
+      enum: ['buyer', 'seller', 'admin', 'logistics'],
       default: 'buyer',
     },
     avatar: String,

@@ -20,6 +20,7 @@ import { Container } from "@/components/layout";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface Address {
@@ -766,7 +767,7 @@ export default function CheckoutPage() {
                     {cartItems.map((item) => (
                       <div key={`${item._id}-${item.variantId || "base"}`} className="flex gap-4">
                         <div className="h-16 w-16 rounded-2xl overflow-hidden relative shrink-0 border border-gray-100">
-                          <Image src={item.images[0] || "/placeholder.jpg"} alt={item.title} fill className="object-cover" />
+                          <Image src={item.images?.[0] || PRODUCT_IMAGE_PLACEHOLDER_URL} alt={item.title} fill className="object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-taja-secondary text-sm truncate">{item.title}</h4>

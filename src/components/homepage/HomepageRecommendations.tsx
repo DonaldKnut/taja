@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 import { getProductDisplayPriceRange } from "@/lib/productPricing";
 import { Button } from "@/components/ui/Button";
 import { getProductPath } from "@/lib/productLinks";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 interface Product {
   _id: string;
@@ -161,7 +162,7 @@ export function HomepageRecommendations() {
                     <Link href={getProductPath(product as any)} className="group block">
                       <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 mb-3">
                         <Image
-                          src={product.images?.[0] || "/placeholder.jpg"}
+                          src={product.images?.[0] || PRODUCT_IMAGE_PLACEHOLDER_URL}
                           alt={product.title}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import LogisticsPartner from "@/models/LogisticsPartner";
-import User from "@/models/User";
 import { requireAuth } from "@/lib/middleware";
+import { logisticsPartnerQueryForAuthUser } from "@/lib/logisticsPartnerLookup";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +11,7 @@ export async function GET(request: NextRequest) {
   return requireAuth(async (_req, user) => {
     try {
       await connectDB();
-      const currentUser = await User.findById(user.userId).select("email").lean();
-      const query: any = { $or: [{ user: user.userId }] };
-      if (currentUser?.email) {
-        query.$or.push({ email: String(currentUser.email).toLowerCase() });
-      }
-
+      const query = await logisticsPartnerQueryForAuthUser(user.userId);
       const profile = await LogisticsPartner.findOne(query).lean();
       if (!profile) {
         return NextResponse.json({ success: true, data: null });
@@ -64,7 +59,8 @@ export async function PUT(request: NextRequest) {
       await connectDB();
       const body = await request.json();
       const { isOnline, activeHours, notes } = body || {};
-      const profile = await LogisticsPartner.findOne({ user: user.userId });
+      const query = await logisticsPartnerQueryForAuthUser(user.userId);
+      const profile = await LogisticsPartner.findOne(query);
       if (!profile) {
         return NextResponse.json({ success: false, message: "Logistics profile not found" }, { status: 404 });
       }
@@ -81,10 +77,16 @@ export async function PUT(request: NextRequest) {
         );
       }
 
+      const userLink =
+        profile.user && String(profile.user) === String(user.userId)
+          ? {}
+          : { user: user.userId };
+
       const updated = await LogisticsPartner.findOneAndUpdate(
         { _id: profile._id },
         {
           $set: {
+            ...userLink,
             "availability.isOnline": Boolean(isOnline),
             "availability.activeHours": activeHours ? String(activeHours).trim() : undefined,
             notes: notes ? String(notes).trim() : undefined,

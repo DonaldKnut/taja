@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import LogisticsPartner from "@/models/LogisticsPartner";
 import { authenticate } from "@/lib/middleware";
+import { notifyAdminsLogisticsApplicationSubmitted } from "@/lib/logisticsAdminNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +128,18 @@ export async function POST(request: NextRequest) {
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     ).lean();
+
+    if (doc?._id) {
+      void notifyAdminsLogisticsApplicationSubmitted({
+        partnerId: String(doc._id),
+        fullName: String(fullName).trim(),
+        email: String(email).toLowerCase().trim(),
+        phone: String(phone).trim(),
+        city: String(city).trim(),
+        state: String(state).trim(),
+        vehicleType: normalizedVehicleType,
+      });
+    }
 
     return NextResponse.json({
       success: true,

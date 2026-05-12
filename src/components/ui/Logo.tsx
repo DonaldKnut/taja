@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { TAJA_LOGO_URL } from "@/lib/brandAssets";
 
 interface LogoProps {
   className?: string;
@@ -20,7 +21,7 @@ const sizeClasses = {
 
 export function Logo({ className, size = "md", href = "/", variant = "default" }: LogoProps) {
   const dimensions = sizeClasses[size];
-  const src = "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png";
+  const src = TAJA_LOGO_URL;
 
   const imageContent = (
     <Image
@@ -57,7 +58,7 @@ export function LogoHTML({ size = "md" }: { size?: "sm" | "md" | "lg" | "xl" }) 
 
   return (
     <img
-      src="https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png"
+      src={TAJA_LOGO_URL}
       alt="Taja Shop"
       width={dimensions.width}
       height={dimensions.height}

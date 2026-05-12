@@ -14,6 +14,12 @@ interface ProtectedRouteProps {
   redirectTo?: string;
 }
 
+function homePathForRole(role: string): string {
+  if (role === "seller") return "/seller/dashboard";
+  if (role === "logistics") return "/logistics/dashboard";
+  return "/dashboard";
+}
+
 export function ProtectedRoute({
   children,
   requiredRole,
@@ -26,15 +32,12 @@ export function ProtectedRoute({
     if (!loading) {
       // Check authentication
       if (!isAuthenticated || !user) {
-        // Only redirect if we're not already on the login page to prevent loops
         const currentPath = window.location.pathname;
-        if (currentPath !== redirectTo && !currentPath.startsWith("/login")) {
-          console.log("[ProtectedRoute] Not authenticated, redirecting to:", redirectTo, {
-            isAuthenticated,
-            hasUser: !!user,
-            loading,
-            currentPath,
-          });
+        const onPublicAuthPage =
+          currentPath.startsWith("/login") ||
+          currentPath.startsWith("/register") ||
+          currentPath.startsWith("/logistics/login");
+        if (currentPath !== redirectTo && !onPublicAuthPage) {
           router.replace(redirectTo);
         }
         return;
@@ -45,7 +48,7 @@ export function ProtectedRoute({
         const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
         if (!roles.includes(user.role)) {
           const currentPath = window.location.pathname;
-          const target = user.role === "seller" ? "/seller/dashboard" : "/dashboard";
+          const target = homePathForRole(user.role);
           if (currentPath !== target) {
             router.replace(target);
           }

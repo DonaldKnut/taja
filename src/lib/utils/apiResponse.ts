@@ -3,6 +3,8 @@
  * This helps normalize responses from the backend which may have varying formats
  */
 
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
+
 export interface NormalizedResponse<T> {
   data: T[];
   total?: number;
@@ -176,7 +178,7 @@ export function transformOrder(order: any) {
       name: item.product?.name || item.name || item.productName || "Unknown Product",
       quantity: item.quantity || 1,
       price: item.price || item.unitPrice || 0,
-      image: item.product?.images?.[0] || item.image || item.product?.image || "/placeholder-product.jpg",
+      image: item.product?.images?.[0] || item.image || item.product?.image || PRODUCT_IMAGE_PLACEHOLDER_URL,
       seller: {
         name: item.seller?.name || item.seller?.fullName || "Unknown Seller",
         shop: item.seller?.shop?.shopName || item.shopName || "Unknown Shop",

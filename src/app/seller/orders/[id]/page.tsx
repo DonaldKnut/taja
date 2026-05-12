@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, cn } from "@/lib/utils";
 import { api, checkoutApi } from "@/lib/api";
 import toast from "react-hot-toast";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 const isMongoObjectId = (value: string) => /^[a-f\d]{24}$/i.test(value);
 
@@ -282,7 +283,7 @@ export default function SellerOrderDetailPage() {
                     <div key={item._id} className="group relative flex items-center gap-8 p-6 rounded-[2rem] border border-gray-100 hover:bg-white hover:shadow-premium transition-all duration-500">
                       <div className="relative w-32 h-32 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-500 bg-gray-50">
                         <Image
-                          src={item.image || "/placeholder-product.jpg"}
+                          src={item.image || PRODUCT_IMAGE_PLACEHOLDER_URL}
                           alt={item.title}
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-700"

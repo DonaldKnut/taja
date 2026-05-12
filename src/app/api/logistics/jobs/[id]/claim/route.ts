@@ -5,6 +5,8 @@ import LogisticsPartner from "@/models/LogisticsPartner";
 import DeliveryJob from "@/models/DeliveryJob";
 import DeliveryEvent from "@/models/DeliveryEvent";
 import User from "@/models/User";
+import Order from "@/models/Order";
+import { notifyAdminsLogisticsJobClaimed } from "@/lib/logisticsAdminNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +87,21 @@ export async function POST(
         metadata: {
           claimExpiresAt: claimed?.claim?.claimExpiresAt,
         },
+      });
+
+      const riderDoc = await User.findById(user.userId).select("fullName").lean();
+      const orderId = claimed?.order ? String(claimed.order) : "";
+      let orderNumber: string | undefined;
+      if (orderId) {
+        const o = await Order.findById(orderId).select("orderNumber").lean();
+        orderNumber = (o as { orderNumber?: string } | null)?.orderNumber;
+      }
+      void notifyAdminsLogisticsJobClaimed({
+        jobId: String(claimed._id),
+        orderId,
+        orderNumber,
+        riderName: (riderDoc as { fullName?: string } | null)?.fullName || "Rider",
+        riderId: user.userId,
       });
 
       return NextResponse.json({ success: true, message: "Job claimed", data: claimed });

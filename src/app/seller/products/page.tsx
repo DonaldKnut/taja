@@ -38,6 +38,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import { ConfirmModal } from "@/components/modal/ConfirmModal";
 import { getAbsoluteProductUrl, getProductPath } from "@/lib/productLinks";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 interface SellerProduct {
   id: string;
@@ -137,7 +138,7 @@ export default function SellerProductsPage() {
             status: product.status || "draft",
             category: typeof product.category === 'object' ? product.category?.name : product.category || "Uncategorized",
             updatedAt: product.updatedAt || new Date().toISOString(),
-            image: product.images?.[0] || product.image || "/placeholder-product.jpg",
+            image: product.images?.[0] || product.image || PRODUCT_IMAGE_PLACEHOLDER_URL,
             views: product.views || 0,
             likes: product.likes || 0,
             sales: product.sales || 0,
@@ -256,7 +257,7 @@ export default function SellerProductsPage() {
             status: product.status || "draft",
             category: typeof product.category === 'object' ? product.category?.name : product.category || "Uncategorized",
             updatedAt: product.updatedAt || new Date().toISOString(),
-            image: product.images?.[0] || product.image || "/placeholder-product.jpg",
+            image: product.images?.[0] || product.image || PRODUCT_IMAGE_PLACEHOLDER_URL,
             views: product.views || 0,
             likes: product.likes || 0,
             sales: product.sales || 0,

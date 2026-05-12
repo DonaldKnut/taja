@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Product from '@/models/Product';
 import { requireRole } from '@/lib/middleware';
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from '@/lib/brandAssets';
 
 export const dynamic = 'force-dynamic';
 
-const FALLBACK_PRODUCT_IMAGE =
-  'https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png';
+const FALLBACK_PRODUCT_IMAGE = PRODUCT_IMAGE_PLACEHOLDER_URL;
 
 const normalizeMediaUrl = (value: unknown): string | null => {
   if (typeof value !== 'string') return null;

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import LogisticsPartner from "@/models/LogisticsPartner";
 import { requireAuth } from "@/lib/middleware";
+import { logisticsPartnerQueryForAuthUser } from "@/lib/logisticsPartnerLookup";
 import { sendVerificationEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,13 @@ export async function POST(request: NextRequest) {
   return requireAuth(async (_req, user) => {
     try {
       await connectDB();
-      const profile = await LogisticsPartner.findOne({ user: user.userId });
+      const query = await logisticsPartnerQueryForAuthUser(user.userId);
+      const profile = await LogisticsPartner.findOne(query);
       if (!profile) {
         return NextResponse.json({ success: false, message: "Logistics profile not found" }, { status: 404 });
+      }
+      if (!profile.user || String(profile.user) !== String(user.userId)) {
+        profile.set({ user: user.userId });
       }
 
       const now = Date.now();

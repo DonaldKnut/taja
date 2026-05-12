@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { Minus, Plus, Trash2, ShoppingBag, Package, AlertCircle } from "lucide-react";
+import { Minus, Plus, Trash2, Package, AlertCircle } from "lucide-react";
 import { useCartStore, type CartItem as CartItemType } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 function formatSellerLabel(seller: string | undefined): string {
   const s = (seller || "").trim();
@@ -99,19 +100,13 @@ export function CartItem({
       <div
         className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-gray-50 shadow-sm group-hover:shadow-md transition-all duration-500 w-16 h-16 min-[400px]:w-20 min-[400px]:h-20 sm:w-[90px] sm:h-[90px]"
       >
-        {item.images && item.images[0] ? (
-          <Image
-            src={item.images[0]}
-            alt={item.title}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-            sizes="(max-width: 400px) 64px, (max-width: 640px) 80px, 90px"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-300">
-            <ShoppingBag className="h-6 w-6 sm:h-8 sm:w-8" />
-          </div>
-        )}
+        <Image
+          src={item.images?.[0]?.trim() ? item.images[0] : PRODUCT_IMAGE_PLACEHOLDER_URL}
+          alt={item.title}
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          sizes="(max-width: 400px) 64px, (max-width: 640px) 80px, 90px"
+        />
       </div>
 
       {/* Details */}

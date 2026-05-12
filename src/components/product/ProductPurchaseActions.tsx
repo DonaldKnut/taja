@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPricing";
 import { OffPlatformPaymentWarningModal } from "@/components/security/OffPlatformPaymentWarningModal";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 interface ProductPurchaseActionsProps {
   product: any;
@@ -180,9 +181,11 @@ export function ProductPurchaseActions({
       >
         <div className="mx-auto max-w-7xl mb-3 flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shrink-0">
-            {product.images && product.images[0] && (
-              <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
-            )}
+            <img
+              src={product.images?.[0]?.trim() ? product.images[0] : PRODUCT_IMAGE_PLACEHOLDER_URL}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-black text-taja-secondary uppercase tracking-tight truncate">{product.title}</p>

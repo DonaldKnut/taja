@@ -5,6 +5,8 @@ import { requireAuth } from "@/lib/middleware";
 import DeliveryJob from "@/models/DeliveryJob";
 import DeliveryEvent from "@/models/DeliveryEvent";
 import { canTransitionDeliveryJob } from "@/lib/jobs/deliveryJobs";
+import Order from "@/models/Order";
+import { notifyAdminsLogisticsJobOtpVerified } from "@/lib/logisticsAdminNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +80,21 @@ export async function POST(
         eventType: stage === "pickup" ? "pickup_otp_verified" : "delivery_otp_verified",
         metadata: { status: job.status },
       });
+
+      const orderId = job.order ? String(job.order) : "";
+      let orderNumber: string | undefined;
+      if (orderId) {
+        const o = await Order.findById(orderId).select("orderNumber").lean();
+        orderNumber = (o as { orderNumber?: string } | null)?.orderNumber;
+      }
+      void notifyAdminsLogisticsJobOtpVerified({
+        jobId: String(job._id),
+        orderId,
+        orderNumber,
+        stage: stage as "pickup" | "delivery",
+        newStatus: job.status,
+      });
+
       return NextResponse.json({ success: true, message: `${stage} OTP verified`, data: job });
     } catch (error: any) {
       console.error("POST logistics jobs otp verify error:", error);

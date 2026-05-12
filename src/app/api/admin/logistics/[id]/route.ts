@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import LogisticsPartner from "@/models/LogisticsPartner";
 import AuditLog from "@/models/AuditLog";
 import { requireRole } from "@/lib/middleware";
+import { notifyAdminsLogisticsPartnerAdminReview } from "@/lib/logisticsAdminNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -142,6 +143,35 @@ export async function PATCH(
           update,
         },
       });
+
+      if (doc) {
+        const summaryLines: string[] = [];
+        if (update.status && update.status !== before.status) {
+          summaryLines.push(`Partner status: ${before.status} → ${doc.status}`);
+        }
+        if (update["trust.kycStatus"] && update["trust.kycStatus"] !== before.trust?.kycStatus) {
+          summaryLines.push(`KYC: ${before.trust?.kycStatus} → ${doc.trust?.kycStatus}`);
+        }
+        if (
+          update["trust.guarantorFormStatus"] &&
+          update["trust.guarantorFormStatus"] !== before.trust?.guarantorFormStatus
+        ) {
+          summaryLines.push(`Guarantor: ${before.trust?.guarantorFormStatus} → ${doc.trust?.guarantorFormStatus}`);
+        }
+        if (update["risk.level"] && update["risk.level"] !== before.risk?.level) {
+          summaryLines.push(`Risk: ${before.risk?.level} → ${doc.risk?.level}`);
+        }
+        if (typeof update["trust.trustTier"] === "number" && update["trust.trustTier"] !== before.trust?.trustTier) {
+          summaryLines.push(`Trust tier: ${before.trust?.trustTier} → ${doc.trust?.trustTier}`);
+        }
+        if (summaryLines.length > 0) {
+          void notifyAdminsLogisticsPartnerAdminReview({
+            partnerId: params.id,
+            partnerName: doc.fullName || "Partner",
+            summaryLines,
+          });
+        }
+      }
 
       return NextResponse.json({
         success: true,

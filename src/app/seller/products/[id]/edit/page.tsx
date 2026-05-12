@@ -1137,24 +1137,7 @@ export default function EditProductPage() {
 
                   {!formData.shipping.freeShipping && (
                     <div className="space-y-4 sm:space-y-6">
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
-                        <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
-                          <div className="w-1.5 h-1.5 rounded-full bg-taja-primary/40 group-focus-within:bg-taja-primary animate-pulse" />
-                          Delivery Fee (₦) — Flat
-                        </label>
-                        <div className="relative">
-                          <span className="pointer-events-none absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₦</span>
-                          <input
-                            name="shipping.shippingCost"
-                            type="number"
-                            min="0"
-                            value={formData.shipping.shippingCost}
-                            onChange={handleChange}
-                            inputMode="decimal"
-                            className="w-full h-12 sm:h-16 pl-10 sm:pl-12 pr-4 sm:pr-6 glass-card border-white/60 bg-white/40 focus:bg-white focus:border-taja-primary/40 focus:ring-4 sm:focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-2xl text-base sm:text-lg font-black text-taja-secondary shadow-sm"
-                          />
-                        </div>
-                      </motion.div>
+
 
                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group space-y-2">
                         <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">

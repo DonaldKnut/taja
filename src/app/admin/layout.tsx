@@ -35,6 +35,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Pin,
   ClipboardList,
   Truck,
 } from "lucide-react";
@@ -49,6 +50,7 @@ import { CartIcon, useCartStore } from "@/components/cart";
 import { cn } from "@/lib/utils";
 
 const ADMIN_SIDEBAR_COLLAPSED_KEY = "taja_admin_sidebar_collapsed";
+const ADMIN_SIDEBAR_DOCKED_KEY = "taja_admin_sidebar_docked";
 
 const adminNavGroups = [
   {
@@ -102,6 +104,7 @@ export default function AdminLayout({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarDocked, setSidebarDocked] = useState(true);
   const [profileExpanded, setProfileExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -122,6 +125,9 @@ export default function AdminLayout({
       if (localStorage.getItem(ADMIN_SIDEBAR_COLLAPSED_KEY) === "1") {
         setSidebarCollapsed(true);
       }
+      if (localStorage.getItem(ADMIN_SIDEBAR_DOCKED_KEY) === "0") {
+        setSidebarDocked(false);
+      }
     } catch {
       /* ignore */
     }
@@ -132,6 +138,28 @@ export default function AdminLayout({
       const next = !c;
       try {
         localStorage.setItem(ADMIN_SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+        window.dispatchEvent(
+          new CustomEvent("taja:admin-sidebar-collapsed-change", {
+            detail: { collapsed: next },
+          })
+        );
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
+  const toggleSidebarDocked = () => {
+    setSidebarDocked((d) => {
+      const next = !d;
+      try {
+        localStorage.setItem(ADMIN_SIDEBAR_DOCKED_KEY, next ? "1" : "0");
+        window.dispatchEvent(
+          new CustomEvent("taja:admin-sidebar-docked-change", {
+            detail: { docked: next },
+          })
+        );
       } catch {
         /* ignore */
       }
@@ -463,6 +491,15 @@ export default function AdminLayout({
               >
                 <Menu className="h-6 w-6" />
               </button>
+
+              <button
+                onClick={toggleSidebarCollapsed}
+                className="hidden lg:flex p-2 text-gray-400 hover:text-emerald-500 transition-colors bg-white rounded-xl shadow-sm border border-gray-100"
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+              </button>
               <Logo size="lg" href="/admin/dashboard" variant="header" />
               <div className="hidden lg:flex h-8 w-px bg-gray-100 mx-2" />
               <span className="hidden sm:block text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 shadow-sm">
@@ -565,25 +602,39 @@ export default function AdminLayout({
           {/* Desktop Sidebar */}
           <aside
             className={cn(
-              "hidden lg:flex lg:flex-col lg:fixed lg:top-20 lg:bottom-0 lg:left-0 lg:z-[100] lg:pb-0 transition-[width] duration-300 ease-out",
+              "hidden lg:flex lg:flex-col lg:fixed lg:bottom-0 lg:left-0 lg:z-[100] lg:pb-0 transition-all duration-300 ease-out",
+              sidebarDocked ? "lg:top-20" : "lg:top-24",
               sidebarCollapsed ? "lg:w-20" : "lg:w-72"
             )}
           >
-                        <div
+            <div
               className={cn(
-                "flex-1 flex flex-col min-h-0 rounded-[2.5rem] bg-white/80 backdrop-blur-3xl border border-white/60 overflow-hidden shadow-glass",
-                sidebarCollapsed ? "m-2" : "m-4"
+                "flex-1 flex flex-col min-h-0 bg-white/80 backdrop-blur-3xl border transition-all duration-300 overflow-hidden shadow-glass",
+                sidebarDocked 
+                  ? "m-0 rounded-none border-y-0 border-l-0 border-r-gray-100 shadow-none" 
+                  : (sidebarCollapsed ? "m-2 rounded-[2rem]" : "m-4 rounded-[2.5rem]") + " border-white/60"
               )}
             >
-              <div className="hidden lg:flex items-center justify-end px-2 pt-2 pb-1 shrink-0 border-b border-white/5">
+              <div className="hidden lg:flex items-center justify-between px-3 pt-2 pb-1 shrink-0 border-b border-white/5 relative z-20">
+                <button
+                  type="button"
+                  onClick={toggleSidebarDocked}
+                  className="p-1.5 rounded-lg text-taja-secondary hover:text-emerald-500 bg-white hover:bg-gray-50 border border-gray-100 transition-colors"
+                  aria-label={sidebarDocked ? "Undock sidebar" : "Dock sidebar"}
+                  title={sidebarDocked ? "Undock sidebar (Floating)" : "Dock sidebar (Fixed)"}
+                >
+                  <Pin className={cn("h-4 w-4 transition-transform", sidebarDocked ? "rotate-45 text-emerald-500" : "text-gray-400")} />
+                </button>
+
                 <button
                   type="button"
                   onClick={toggleSidebarCollapsed}
-                                    className="p-2 rounded-xl text-taja-secondary hover:text-taja-primary bg-white hover:bg-gray-50 border border-gray-100 transition-colors"
+                  className="p-1.5 rounded-lg text-taja-secondary hover:text-emerald-500 bg-white hover:bg-gray-50 border border-gray-100 transition-colors"
                   aria-expanded={!sidebarCollapsed}
                   aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
-                  {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                  {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                 </button>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto">
@@ -595,8 +646,9 @@ export default function AdminLayout({
           {/* Main Content Area */}
           <main
             className={cn(
-              "flex-1 overflow-y-auto relative scrollbar-hide transition-[padding] duration-300 ease-out",
-              sidebarCollapsed ? "lg:pl-20" : "lg:pl-72"
+              "flex-1 overflow-y-auto relative scrollbar-hide transition-all duration-300 ease-out",
+              sidebarCollapsed ? "lg:pl-20" : "lg:pl-72",
+              !sidebarDocked && "lg:px-4"
             )}
           >
             <div className="h-full">

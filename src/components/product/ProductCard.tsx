@@ -19,6 +19,7 @@ import { useWishlistStore, WishlistItem } from "@/components/wishlist";
 import { toast } from "react-hot-toast";
 import { getAbsoluteProductUrl, getProductPath } from "@/lib/productLinks";
 import { useAuth } from "@/contexts/AuthContext";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 const normalizeMediaUrl = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
@@ -67,7 +68,7 @@ export function ProductCard({
   showDiscount = true,
   showShop = true,
   showRating = true,
-  fallbackImage = "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png",
+  fallbackImage = PRODUCT_IMAGE_PLACEHOLDER_URL,
   formatPrice = (price) => formatCurrency(price),
   onClick,
   isInsideDashboard = false,

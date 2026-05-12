@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import LogisticsPartner from "@/models/LogisticsPartner";
 import User from "@/models/User";
 import { requireAuth } from "@/lib/middleware";
+import { notifyAdminsLogisticsGuarantorSubmitted } from "@/lib/logisticsAdminNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,12 @@ export async function POST(request: NextRequest) {
         },
       });
       await profile.save();
+
+      void notifyAdminsLogisticsGuarantorSubmitted({
+        partnerId: String(profile._id),
+        partnerName: profile.fullName || "Partner",
+        guarantorName: fullName,
+      });
 
       return NextResponse.json({
         success: true,

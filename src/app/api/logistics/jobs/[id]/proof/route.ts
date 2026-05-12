@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import { requireAuth } from "@/lib/middleware";
 import DeliveryJob from "@/models/DeliveryJob";
 import DeliveryEvent from "@/models/DeliveryEvent";
+import { notifyAdminsLogisticsJobProofUploaded } from "@/lib/logisticsAdminNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,15 @@ export async function POST(
               ? job.proof?.pickupPhotos?.length || 0
               : job.proof?.deliveryPhotos?.length || 0,
         },
+      });
+
+      const proofCount =
+        stage === "pickup" ? job.proof?.pickupPhotos?.length || 0 : job.proof?.deliveryPhotos?.length || 0;
+      void notifyAdminsLogisticsJobProofUploaded({
+        jobId: String(job._id),
+        stage: stage as "pickup" | "delivery",
+        riderId: user.userId,
+        photoCount: proofCount,
       });
 
       return NextResponse.json({ success: true, message: "Proof uploaded", data: job.proof });

@@ -14,7 +14,7 @@ const protectedRoutes = [
 ];
 
 // Routes that should redirect to dashboard if already authenticated
-const authRoutes = ["/login", "/register"];
+const authRoutes = ["/login", "/register", "/logistics/login"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -30,7 +30,8 @@ export function middleware(request: NextRequest) {
 
   // Redirect to login if accessing protected route without token
   if (isProtectedRoute && !token) {
-    const loginUrl = new URL("/login", request.url);
+    const isLogistics = pathname.startsWith("/logistics");
+    const loginUrl = new URL(isLogistics ? "/logistics/login" : "/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }

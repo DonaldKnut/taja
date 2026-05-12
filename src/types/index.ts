@@ -1,5 +1,5 @@
 // User Types
-export type UserRole = "buyer" | "seller" | "admin";
+export type UserRole = "buyer" | "seller" | "admin" | "logistics";
 
 export type AccountStatus = "active" | "suspended" | "banned" | "under_review";
 

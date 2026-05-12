@@ -8,6 +8,7 @@ import { Sparkles, TrendingUp, ShoppingBag, Loader2, ChevronRight, Zap } from "l
 import { api } from "@/lib/api";
 import { formatCurrency, cn } from "@/lib/utils";
 import { getProductPath } from "@/lib/productLinks";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 interface Recommendation {
   productId: string;
@@ -149,7 +150,7 @@ export function AIRecommendations({
             >
               <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden bg-gray-50 mb-5 border border-white/40 shadow-premium transition-all duration-700 group-hover:shadow-premium-hover group-hover:-translate-y-2">
                 <Image
-                  src={rec.product.images?.[0] || "https://res.cloudinary.com/db2fcni0k/image/upload/v1771782341/taja_y3vftg.png"}
+                  src={rec.product.images?.[0] || PRODUCT_IMAGE_PLACEHOLDER_URL}
                   alt={rec.product.title}
                   fill
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"

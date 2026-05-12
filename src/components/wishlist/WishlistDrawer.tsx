@@ -10,6 +10,7 @@ import { useCartStore } from "@/components/cart";
 import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 
 export function WishlistDrawer() {
     const router = useRouter();
@@ -51,7 +52,7 @@ export function WishlistDrawer() {
             _id: item._id,
             title: item.title,
             price: item.price,
-            images: item.images || ["/placeholder.jpg"],
+            images: item.images || [PRODUCT_IMAGE_PLACEHOLDER_URL],
             seller: item.shop?.shopName || "Taja Store",
             shopSlug: item.shop?.shopSlug,
             moq: 1,
@@ -165,7 +166,7 @@ export function WishlistDrawer() {
                                                     className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-slate-50 overflow-hidden flex-shrink-0 border border-gray-50"
                                                 >
                                                     <Image
-                                                        src={item.images?.[0] || "/placeholder.jpg"}
+                                                        src={item.images?.[0] || PRODUCT_IMAGE_PLACEHOLDER_URL}
                                                         alt={item.title}
                                                         fill
                                                         className="object-cover transition-transform group-hover:scale-105"

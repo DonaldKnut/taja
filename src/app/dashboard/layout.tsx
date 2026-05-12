@@ -96,6 +96,12 @@ export default function DashboardLayout({
   const wishlistCount = wishlistItems.length;
 
   useEffect(() => {
+    if (user?.role === "logistics") {
+      router.replace("/logistics/dashboard");
+    }
+  }, [user?.role, router]);
+
+  useEffect(() => {
     try {
       if (localStorage.getItem(DASHBOARD_SIDEBAR_COLLAPSED_KEY) === "1") {
         setSidebarCollapsed(true);
@@ -530,7 +536,37 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <div className="flex flex-1 overflow-hidden relative">
+        {/* Desktop sidebar outside overflow-hidden so fixed rail stays clickable */}
+        <aside
+          className={cn(
+            /* z-[95]: above marketplace filter portal (z-[90]) */
+            "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:top-16 z-[95] transition-[width] duration-300 ease-out",
+            sidebarCollapsed ? "lg:w-20" : "lg:w-[260px]"
+          )}
+        >
+          <div className="flex-1 flex flex-col min-h-0 bg-white border-r border-gray-100 overflow-hidden">
+            <div className="hidden lg:flex items-center justify-end border-b border-gray-50 px-1.5 py-2 shrink-0">
+              <button
+                type="button"
+                onClick={toggleSidebarCollapsed}
+                className="p-2 rounded-xl text-gray-400 hover:text-taja-primary hover:bg-gray-50 transition-colors"
+                aria-expanded={!sidebarCollapsed}
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRight className="h-5 w-5" />
+                ) : (
+                  <ChevronLeft className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <SidebarContent collapsed={sidebarCollapsed} />
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex flex-1 min-h-0 overflow-hidden relative">
           {/* ═══ Mobile Sidebar Drawer ═══ */}
           <AnimatePresence>
             {sidebarOpen && (
@@ -565,35 +601,6 @@ export default function DashboardLayout({
               </div>
             )}
           </AnimatePresence>
-
-          {/* ═══ Desktop Sidebar ═══ */}
-          <aside
-            className={cn(
-              "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:top-16 z-30 transition-[width] duration-300 ease-out",
-              sidebarCollapsed ? "lg:w-20" : "lg:w-[260px]"
-            )}
-          >
-            <div className="flex-1 flex flex-col min-h-0 bg-white border-r border-gray-100 overflow-hidden">
-              <div className="hidden lg:flex items-center justify-end border-b border-gray-50 px-1.5 py-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={toggleSidebarCollapsed}
-                  className="p-2 rounded-xl text-gray-400 hover:text-taja-primary hover:bg-gray-50 transition-colors"
-                  aria-expanded={!sidebarCollapsed}
-                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                  {sidebarCollapsed ? (
-                    <ChevronRight className="h-5 w-5" />
-                  ) : (
-                    <ChevronLeft className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <SidebarContent collapsed={sidebarCollapsed} />
-              </div>
-            </div>
-          </aside>
 
           {/* ═══ Main Content Area ═══ */}
           <main
