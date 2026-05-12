@@ -7,7 +7,7 @@ import {
   SITE_LONG_DESCRIPTION,
   getRootWebSiteJsonLd,
 } from "@/lib/site-seo";
-import { TAJA_LOGO_URL } from "@/lib/brandAssets";
+import { TAJA_LOGO_URL, tajaAppIconSized } from "@/lib/brandAssets";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://taja.shop";
 
@@ -62,9 +62,12 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.png",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: tajaAppIconSized(32), sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: tajaAppIconSized(192),
+    apple: [{ url: tajaAppIconSized(180), sizes: "180x180", type: "image/png" }],
   },
   manifest: "/manifest.json",
 };

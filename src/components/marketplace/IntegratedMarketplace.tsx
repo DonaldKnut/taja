@@ -698,12 +698,13 @@ export function IntegratedMarketplace({
                         {/* ═══ Header Registry Search ═══ */}
                         <section
                             className={cn(
-                                "px-4 sm:px-6 border-b border-gray-100 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80 z-[80] transition-all duration-300 lg:hidden",
+                                /* Below AppHeader (9999) / mobile drawer (10000+) and below MobileBottomNav (z-50) */
+                                "px-4 sm:px-6 border-b border-gray-100 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80 z-40 transition-all duration-300 lg:hidden",
                                 "sticky top-[5rem] shadow-sm py-4"
                             )}
                         >
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 md:grid-cols-[1fr_auto_auto] gap-3">
+                                <div className="grid grid-cols-2 md:grid-cols-[1fr_auto] gap-3">
                                     <div className="h-12 rounded-2xl border border-gray-200 bg-white px-4 flex items-center justify-between col-span-2 md:col-span-1">
                                         <div className="min-w-0">
                                             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-400">Active filters</p>
@@ -722,24 +723,11 @@ export function IntegratedMarketplace({
                                         </button>
                                     </div>
 
-                                    <div className="relative">
-                                        <select
-                                            value={selectedTab}
-                                            onChange={(e) => setSelectedTab(e.target.value)}
-                                            className="w-full md:w-[140px] h-12 rounded-2xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 appearance-none"
-                                        >
-                                            <option value="All">Sort: All</option>
-                                            <option value="Promo">Sort: Promo</option>
-                                            <option value="Best Deals">Sort: Best Deals</option>
-                                        </select>
-                                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                    </div>
-
                                     <button
                                         type="button"
                                         onClick={() => setShowAdvancedFilters((prev) => !prev)}
                                         className={cn(
-                                            "h-12 px-4 inline-flex items-center justify-center gap-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm",
+                                            "col-span-2 md:col-span-1 h-12 px-4 inline-flex items-center justify-center gap-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-colors shadow-sm",
                                             showAdvancedFilters || hasAdvancedFilters
                                                 ? "text-taja-primary bg-taja-light/40 border-taja-primary/25"
                                                 : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50"
@@ -749,6 +737,25 @@ export function IntegratedMarketplace({
                                         Filters
                                         <ChevronDown className={cn("w-3 h-3 transition-transform", showAdvancedFilters && "rotate-180")} />
                                     </button>
+                                </div>
+
+                                {/* Pills stay in this sticky strip below lg so they are never covered by the bar while scrolling */}
+                                <div className="flex flex-wrap gap-2 border-t border-gray-100/80 pt-3">
+                                    {["All", "Promo", "Best Deals"].map((tab) => (
+                                        <button
+                                            key={tab}
+                                            type="button"
+                                            onClick={() => setSelectedTab(tab)}
+                                            className={cn(
+                                                "px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all",
+                                                selectedTab === tab
+                                                    ? "bg-black text-white shadow-xl scale-105"
+                                                    : "text-gray-400 hover:text-black"
+                                            )}
+                                        >
+                                            {tab}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -1151,10 +1158,11 @@ export function IntegratedMarketplace({
                                                 {displayedProducts.length} result{displayedProducts.length === 1 ? "" : "s"}
                                             </p>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="hidden lg:flex gap-2">
                                             {["All", "Promo", "Best Deals"].map((tab) => (
                                                 <button
                                                     key={tab}
+                                                    type="button"
                                                     onClick={() => setSelectedTab(tab)}
                                                     className={cn(
                                                         "px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all",
