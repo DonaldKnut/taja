@@ -8,6 +8,7 @@ import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import { CartDrawer, useCartStore } from "@/components/cart";
 import { WishlistDrawer } from "@/components/wishlist/WishlistDrawer";
 import { FloatingCart } from "@/components/ui/FloatingCart";
+import { CookieConsent } from "@/components/layout/CookieConsent";
 
 interface ClientAppShellProps {
   children: React.ReactNode;
@@ -77,6 +78,7 @@ function CartShell({ children }: { children: React.ReactNode }) {
       </div>
       <FloatingCart />
       <MobileBottomNav />
+      <CookieConsent />
       <CartDrawer isOpen={isOpen} onClose={toggleCart} />
       <WishlistDrawer />
       <Toaster

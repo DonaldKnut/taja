@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Truck, Zap, ShieldCheck, Clock, ArrowRight, Mail, Lock, Eye, EyeOff, MapPin, Activity } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 function LogisticsLoginForm() {
   const searchParams = useSearchParams();
