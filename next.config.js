@@ -113,7 +113,10 @@ const nextConfig = {
 
     return config;
   },
+  // Bypass Vercel/Next Image Optimization entirely (no /_next/image, no transformation quota).
+  // Images load from origin URLs (Cloudinary, R2, etc.). Cloudflare in front of the app still caches static assets.
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
