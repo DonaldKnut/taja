@@ -157,3 +157,14 @@ export function isMegaMenuActive(pathname: string, sectionId: MegaMenuId): boole
   }
   return false;
 }
+
+/** Flat link list for mobile drawers — same IA as mega menu. */
+export function getSiteMobileNavBlocks() {
+  return SITE_MEGA_MENU.map((section) => ({
+    id: section.id,
+    title: section.label,
+    eyebrow: section.eyebrow,
+    icon: section.icon,
+    links: section.columns.flatMap((c) => c.links),
+  }));
+}

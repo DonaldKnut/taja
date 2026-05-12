@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, Menu, X, Zap, ShieldCheck, User, Bell, Heart, Rocket, Layout } from "lucide-react";
-import { Container } from "@/components/layout";
+import { Container } from "./Container";
 import { SiteMegaNav } from "@/components/layout/SiteMegaNav";
 import { MobileMegaNavAccordion } from "@/components/layout/MobileMegaNavAccordion";
 import { Logo } from "@/components/ui/Logo";
@@ -88,10 +88,12 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
             setIsScrolled(currentScrollY > 20);
 
             // Hide/Show logic
-            if (pathname === "/marketplace") {
-                setIsVisible(true);
-            } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-                setIsVisible(false);
+            if (pathname.startsWith("/product/")) {
+                if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                    setIsVisible(false);
+                } else {
+                    setIsVisible(true);
+                }
             } else {
                 setIsVisible(true);
             }
@@ -115,18 +117,26 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                         : "bg-white/80 backdrop-blur-xl border-b border-white/40 shadow-premium"
                 )}
             >
-                <Container size="lg" className="h-20 flex items-center justify-between px-4 sm:px-6 lg:px-8 overflow-visible">
-                    <div className="flex items-center gap-10 overflow-visible">
-                        <Logo size="lg" variant="header" className="hover:opacity-80 transition-opacity" href="/" />
+                <Container
+                    size="lg"
+                    className="h-20 flex min-w-0 items-center justify-between gap-2 px-4 sm:px-6 lg:px-8 overflow-visible"
+                >
+                    <div className="flex min-w-0 shrink items-center gap-2 sm:gap-3 xl:gap-8 overflow-visible">
+                        <Logo
+                            size="lg"
+                            variant="header"
+                            className="shrink-0 hover:opacity-80 transition-opacity"
+                            href="/"
+                        />
 
-                        {/* Mega menu — desktop */}
-                        <div className="hidden lg:block">
+                        {/* Mega menu — desktop (nav is flex-nowrap + scrollbar-hide; Company shows xl+) */}
+                        <div className="hidden min-w-0 lg:block">
                             <SiteMegaNav pathname={pathname} variant="app" idPrefix="app-header" />
                         </div>
                     </div>
 
-                    {/* Search - Desktop Only */}
-                    <div className="flex-1 max-w-md mx-8 hidden md:block">
+                    {/* Search — shrinks before mega nav wraps; md+ only */}
+                    <div className="mx-1.5 hidden min-w-0 max-w-[min(100%,10.5rem)] flex-1 basis-0 sm:max-w-[13rem] md:mx-2 md:max-w-[15rem] lg:max-w-[17rem] lg:mx-3 xl:mx-8 xl:max-w-md md:block">
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                                 <Search className="h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" />
@@ -144,7 +154,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex shrink-0 items-center gap-2 md:gap-3">
                         {/* Authenticated Actions */}
                         <div className="flex items-center gap-1 md:gap-2">
                             {isAuthenticated ? (

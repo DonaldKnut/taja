@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronDown, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { getSiteMobileNavBlocks } from "@/components/layout/SiteMegaNav";
+import { getSiteMobileNavBlocks } from "@/components/layout/siteMegaMenuConfig";
 
 export interface MobileMegaNavAccordionProps {
   pathname: string;

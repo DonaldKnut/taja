@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCartStore } from "@/stores/cartStore";
 import { cartApi, productsApi } from "@/lib/api";
@@ -8,9 +9,10 @@ import toast from "react-hot-toast";
 import { StructuredData } from "@/components/StructuredData";
 import { generateProductStructuredData, generateBreadcrumbs } from "@/lib/seo";
 import { getEffectivePrice } from "@/lib/productPricing";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { AIRecommendations } from "@/components/product/AIRecommendations";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { Container } from "@/components/layout";
+import { Container } from "@/components/layout/Container";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { useWishlistStore, type WishlistItem } from "@/components/wishlist";
 import { useAuth } from "@/contexts/AuthContext";
@@ -335,8 +337,22 @@ export default function ProductDetailPage() {
           isSticky={isScrollingDown}
         />
 
+        {/* Floating Back Button */}
+        <div className="fixed top-24 left-4 sm:left-10 z-[50] pointer-events-none">
+          <Link 
+            href="/marketplace" 
+            className="pointer-events-auto inline-flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-200/50 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.15)] hover:bg-white transition-all group active:scale-95"
+          >
+            <div className="h-6 w-6 rounded-lg bg-slate-900 flex items-center justify-center transition-transform group-hover:-translate-x-1">
+              <ArrowLeft className="w-3.5 h-3.5 text-white" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 pr-1">Back to Marketplace</span>
+          </Link>
+        </div>
+
         {/* Main Product Showcase */}
         <div className="max-w-[1440px] mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10">
+
           <div className="grid lg:grid-cols-12 gap-10 lg:gap-20">
             <ProductDetailGallery
               product={product}

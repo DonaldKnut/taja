@@ -110,6 +110,8 @@ export function IntegratedMarketplace({
 
     const [filtersDocked, setFiltersDocked] = useState(false);
     const [filtersSidebarCollapsed, setFiltersSidebarCollapsed] = useState(false);
+    /** Standalone /marketplace mobile: fixed bottom filter dock — expanded by default, user can collapse */
+    const [mobileFilterDockExpanded, setMobileFilterDockExpanded] = useState(true);
 
     useEffect(() => {
         const saved = localStorage.getItem("taja_marketplace_filters_docked");
@@ -132,7 +134,7 @@ export function IntegratedMarketplace({
         });
     };
 
-    const hasFiltersApplied = useMemo(() => {
+    const availableSellers = useMemo(() => {
         const seen = new Set<string>();
         const sellers: string[] = [];
         feed.products.forEach((product) => {
@@ -695,15 +697,85 @@ export function IntegratedMarketplace({
                             </AnimatePresence>
                         </section>
 
-                        {/* ═══ Header Registry Search ═══ */}
+                        {/* ═══ Mobile filters: sticky in-flow when embedded (hostShell); fixed bottom dock on standalone /marketplace ═══ */}
                         <section
                             className={cn(
-                                /* Below AppHeader (9999) / mobile drawer (10000+) and below MobileBottomNav (z-50) */
-                                "px-4 sm:px-6 border-b border-gray-100 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80 z-40 transition-all duration-300 lg:hidden",
-                                "sticky top-[5rem] shadow-sm py-4"
+                                "px-4 sm:px-6 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80 transition-all duration-300 lg:hidden",
+                                hostShell
+                                    ? "sticky top-[5rem] z-40 border-b border-gray-100 shadow-sm py-4"
+                                    : "fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--mobile-bottom-nav-height,4.25rem))] z-[45] max-h-[min(85dvh,calc(100dvh-5rem))] flex flex-col rounded-t-2xl border border-gray-200 border-b-0 shadow-[0_-12px_40px_-8px_rgba(15,23,42,0.12)] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-w-2xl mx-auto w-[calc(100%-1rem)] sm:w-full"
                             )}
                         >
-                            <div className="space-y-4">
+                            {!hostShell && (
+                                <div className="flex shrink-0 items-center gap-2 border-b border-gray-100/90 px-2 pb-2">
+                                    <button
+                                        type="button"
+                                        aria-expanded={mobileFilterDockExpanded}
+                                        aria-controls="marketplace-mobile-filter-panel"
+                                        onClick={() => setMobileFilterDockExpanded((v) => !v)}
+                                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-taja-primary/30 hover:text-taja-primary"
+                                        title={mobileFilterDockExpanded ? "Hide filters" : "Show filters"}
+                                    >
+                                        <ChevronDown className={cn("h-4 w-4 transition-transform", mobileFilterDockExpanded && "rotate-180")} />
+                                    </button>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-400">Active filters</p>
+                                        <p className="truncate text-xs font-bold text-gray-700">
+                                            {selectedCategories.length > 0
+                                                ? `${selectedCategories.length} categor${selectedCategories.length > 1 ? "ies" : "y"}`
+                                                : hasAdvancedFilters || searchQuery.trim()
+                                                  ? "Refinements on"
+                                                  : "None yet"}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={clearAdvancedFilters}
+                                        className="shrink-0 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-taja-primary"
+                                    >
+                                        Reset
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setMobileFilterDockExpanded(true);
+                                            setShowAdvancedFilters((prev) => !prev);
+                                        }}
+                                        className={cn(
+                                            "flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-[10px] font-black uppercase tracking-widest",
+                                            showAdvancedFilters || hasAdvancedFilters
+                                                ? "border-taja-primary/25 bg-taja-light/40 text-taja-primary"
+                                                : "border-gray-200 bg-white text-gray-600"
+                                        )}
+                                    >
+                                        <Filter className="h-3.5 w-3.5" />
+                                        <span className="hidden min-[360px]:inline">Filters</span>
+                                    </button>
+                                </div>
+                            )}
+                            <div
+                                id="marketplace-mobile-filter-panel"
+                                className={cn(
+                                    "flex min-h-0 flex-1 flex-col overflow-hidden",
+                                    !hostShell && !mobileFilterDockExpanded && "hidden"
+                                )}
+                            >
+                            <div className={cn("space-y-4", !hostShell && "min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-3")}>
+                                {!hostShell && mobileFilterDockExpanded && (
+                                    <div className="relative">
+                                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                                        <input
+                                            type="search"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            placeholder="Search products…"
+                                            enterKeyHint="search"
+                                            className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-3 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:border-taja-primary focus:outline-none focus:ring-2 focus:ring-taja-primary/20"
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                )}
+                                {hostShell ? (
                                 <div className="grid grid-cols-2 md:grid-cols-[1fr_auto] gap-3">
                                     <div className="h-12 rounded-2xl border border-gray-200 bg-white px-4 flex items-center justify-between col-span-2 md:col-span-1">
                                         <div className="min-w-0">
@@ -738,6 +810,7 @@ export function IntegratedMarketplace({
                                         <ChevronDown className={cn("w-3 h-3 transition-transform", showAdvancedFilters && "rotate-180")} />
                                     </button>
                                 </div>
+                                ) : null}
 
                                 {/* Pills stay in this sticky strip below lg so they are never covered by the bar while scrolling */}
                                 <div className="flex flex-wrap gap-2 border-t border-gray-100/80 pt-3">
@@ -757,7 +830,6 @@ export function IntegratedMarketplace({
                                         </button>
                                     ))}
                                 </div>
-                            </div>
 
                             <AnimatePresence initial={false}>
                                 {showAdvancedFilters && (
@@ -925,10 +997,17 @@ export function IntegratedMarketplace({
                                     </motion.div>
                                 )}
                             </AnimatePresence>
+                            </div>
+                            </div>
                         </section>
 
                         {/* ═══ Product Feed ═══ */}
-                        <section className="relative px-4 sm:px-6 space-y-8 mt-3 sm:mt-5 pb-20">
+                        <section
+                            className={cn(
+                                "relative space-y-8 px-4 sm:px-6 mt-3 sm:mt-5 pb-20",
+                                !hostShell && "max-lg:pb-[calc(6.5rem+var(--mobile-bottom-nav-height,4.25rem)+env(safe-area-inset-bottom,0px))]"
+                            )}
+                        >
                             <div
                                 className={cn(
                                     "grid grid-cols-1 lg:gap-8",
@@ -976,15 +1055,27 @@ export function IntegratedMarketplace({
                                         <div
                                             className={cn(
                                                 "transition-all duration-300 overflow-y-auto no-scrollbar",
-                                                filtersSidebarCollapsed
-                                                    ? "h-[calc(100vh-7rem)] rounded-2xl border border-gray-200 bg-white p-2 shadow-sm"
-                                                    : "",
-                                                !filtersSidebarCollapsed && filtersDocked 
-                                                    ? "sticky top-[5rem] h-[calc(100vh-5rem)] border-r border-gray-100 bg-white p-6 space-y-6 rounded-none" 
-                                                    : !filtersSidebarCollapsed
-                                                      ? "max-h-[calc(100vh-7rem)] rounded-3xl border border-gray-200 bg-white p-4 shadow-sm space-y-4"
-                                                      : "",
-                                                !filtersSidebarCollapsed && !filtersDocked && (hasHostSidebar ? "sticky top-24 w-full z-10" : "fixed top-24 z-30 w-[280px]")
+                                                filtersSidebarCollapsed &&
+                                                    cn(
+                                                        "rounded-2xl border border-gray-200 bg-white p-2 shadow-sm",
+                                                        filtersDocked &&
+                                                            "sticky top-[5rem] self-start z-20 h-[calc(100vh-7rem)] max-h-[calc(100vh-7rem)]",
+                                                        !filtersDocked &&
+                                                            (hasHostSidebar
+                                                                ? "sticky top-24 z-10 h-[calc(100vh-7rem)] max-h-[calc(100vh-7rem)] w-full"
+                                                                : "fixed left-4 top-24 z-30 h-[calc(100vh-7rem)] w-14 max-w-[3.5rem] sm:left-6 lg:left-8")
+                                                    ),
+                                                !filtersSidebarCollapsed &&
+                                                    cn(
+                                                        filtersDocked &&
+                                                            "sticky top-[5rem] h-[calc(100vh-5rem)] border-r border-gray-100 bg-white p-6 space-y-6 rounded-none",
+                                                        !filtersDocked &&
+                                                            "max-h-[calc(100vh-7rem)] rounded-3xl border border-gray-200 bg-white p-4 shadow-sm space-y-4",
+                                                        !filtersDocked &&
+                                                            (hasHostSidebar
+                                                                ? "sticky top-24 w-full z-10"
+                                                                : "fixed left-4 top-24 z-30 w-[280px] max-w-[calc(100vw-2rem)] sm:left-6 lg:left-8")
+                                                    )
                                             )}
                                         >
                                         {filtersSidebarCollapsed ? (

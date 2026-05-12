@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { toast } from "react-hot-toast";
+import { OTPModal } from "@/components/ui/OTPModal";
 
 type LogisticsProfile = {
   _id: string;
@@ -101,6 +102,14 @@ export default function LogisticsDashboardPage() {
     idFrontImage: "",
     selfieImage: "",
   });
+
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [otpTarget, setOtpTarget] = useState<{
+    type: "email" | "job";
+    jobId?: string;
+    stage?: "pickup" | "delivery";
+  } | null>(null);
+
   const [pwdCurrent, setPwdCurrent] = useState("");
   const [pwdNew, setPwdNew] = useState("");
   const [pwdSaving, setPwdSaving] = useState(false);
@@ -285,25 +294,8 @@ export default function LogisticsDashboardPage() {
   };
 
   const verifyJobOtp = async (jobId: string, stage: "pickup" | "delivery") => {
-    const code = window.prompt(`Enter ${stage} OTP`);
-    if (!code) return;
-    try {
-      setActingJobId(jobId);
-      const res = await api(`/api/logistics/jobs/${jobId}/otp/verify`, {
-        method: "POST",
-        body: JSON.stringify({ stage, code: code.trim() }),
-      });
-      if (res?.success) {
-        toast.success(`${stage} OTP verified`);
-        await loadActiveJobs();
-      } else {
-        toast.error(res?.message || "OTP verification failed");
-      }
-    } catch (error: any) {
-      toast.error(error?.message || "OTP verification failed");
-    } finally {
-      setActingJobId(null);
-    }
+    setOtpTarget({ type: "job", jobId, stage });
+    setOtpModalOpen(true);
   };
 
   const uploadJobProof = async (jobId: string, stage: "pickup" | "delivery") => {
@@ -364,9 +356,12 @@ export default function LogisticsDashboardPage() {
   };
 
   const verifyOtp = async () => {
-    const code = window.prompt("Enter the 6-digit OTP sent to your email");
-    if (!code) return;
-    try {
+    setOtpTarget({ type: "email" });
+    setOtpModalOpen(true);
+  };
+
+  const handleOtpVerify = async (code: string) => {
+    if (otpTarget?.type === "email") {
       const res = await api("/api/logistics/otp/verify", {
         method: "POST",
         body: JSON.stringify({ code: code.trim() }),
@@ -375,10 +370,24 @@ export default function LogisticsDashboardPage() {
         toast.success("Email OTP verified");
         await load();
       } else {
-        toast.error(res?.message || "Failed to verify OTP");
+        throw new Error(res?.message || "Failed to verify OTP");
       }
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to verify OTP");
+    } else if (otpTarget?.type === "job" && otpTarget.jobId) {
+      setActingJobId(otpTarget.jobId);
+      try {
+        const res = await api(`/api/logistics/jobs/${otpTarget.jobId}/otp/verify`, {
+          method: "POST",
+          body: JSON.stringify({ code: code.trim(), stage: otpTarget.stage }),
+        });
+        if (res?.success) {
+          toast.success(`${otpTarget.stage} OTP verified`);
+          await loadActiveJobs();
+        } else {
+          throw new Error(res?.message || "OTP verification failed");
+        }
+      } finally {
+        setActingJobId(null);
+      }
     }
   };
 
@@ -1036,6 +1045,15 @@ export default function LogisticsDashboardPage() {
                 </div>
               </section>
             )}
+            <OTPModal
+                isOpen={otpModalOpen}
+                onClose={() => setOtpModalOpen(false)}
+                onVerify={handleOtpVerify}
+                onResend={otpTarget?.type === "email" ? sendOtp : undefined}
+                email={otpTarget?.type === "email" ? profile?.fullName : undefined}
+                title={otpTarget?.type === "job" ? `${otpTarget.stage === 'pickup' ? 'Pickup' : 'Delivery'} Verification` : undefined}
+                description={otpTarget?.type === "job" ? `Enter the 6-digit code provided by the ${otpTarget.stage === 'pickup' ? 'sender' : 'recipient'}.` : undefined}
+            />
           </main>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import { Providers } from "@/components/Providers";
@@ -12,6 +12,25 @@ import { CookieConsent } from "@/components/layout/CookieConsent";
 
 interface ClientAppShellProps {
   children: React.ReactNode;
+}
+
+/** In dev, unregister any /sw.js so stale precached webpack chunks cannot break HMR (factory undefined `.call`). */
+function useUnregisterServiceWorkersInDevelopment() {
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    let cancelled = false;
+    void navigator.serviceWorker
+      .getRegistrations()
+      .then((regs) => {
+        if (cancelled) return;
+        return Promise.all(regs.map((r) => r.unregister()));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 }
 
 const AUTH_ROUTES_WITHOUT_PROVIDERS = [
@@ -33,6 +52,7 @@ const AUTH_ROUTES_WITHOUT_PROVIDERS = [
  * can use AuthContext and error boundaries.
  */
 export function ClientAppShell({ children }: ClientAppShellProps) {
+  useUnregisterServiceWorkersInDevelopment();
   const pathname = usePathname();
   const isAuthRouteWithoutProviders =
     typeof pathname === "string" &&

@@ -790,7 +790,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                 )}
               </AnimatePresence>
 
-              <div className="h-full">
+              <div className="h-full min-w-0">
                 {children}
               </div>
             </div>

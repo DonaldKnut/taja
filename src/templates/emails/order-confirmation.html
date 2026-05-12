@@ -8,103 +8,87 @@
 </head>
 
 <body
-  style="margin:0;padding:0;background-color:#f8fafc;font-family:'Inter', system-ui, -apple-system, sans-serif;color:#1e293b;">
-  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f8fafc;">
+  style="margin:0;padding:0;background-color:#f4f7f5;font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;color:#1a1a1a;line-height:1.5;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f4f7f5;">
     <tr>
       <td align="center" style="padding:40px 16px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" width="600"
-          style="max-width:600px;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+          style="max-width:600px;background-color:#ffffff;border-radius:32px;overflow:hidden;box-shadow:0 40px 100px -20px rgba(0,0,0,0.05);">
+          
           <!-- Header -->
           <tr>
-            <td style="background-color:#022c22;padding:48px 32px;text-align:center;position:relative;overflow:hidden;">
-              <div
-                style="position:absolute;top:0;right:0;width:150px;height:150px;background-color:rgba(52,211,153,0.1);filter:blur(40px);border-radius:50%;">
+            <td style="padding:48px 40px 32px; text-align:center;">
+              <img src="<%= logoUrl %>" alt="Taja"
+                style="max-width:140px;height:auto;margin-bottom:32px;display:inline-block;" />
+              
+              <div style="display:inline-block; padding:8px 16px; background-color:#ecfdf5; border-radius:100px; margin-bottom:24px;">
+                <span style="color:#059669; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em;">Order Confirmed</span>
               </div>
-
-              <img src="<%= logoUrl %>" alt="Taja Shop"
-                style="max-width:180px;height:auto;margin-bottom:24px;display:inline-block;" />
-
-              <h1
-                style="margin:0;color:#34d399;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.3em;">
-                Order Confirmed</h1>
-              <div style="height:1px;width:40px;background-color:#34d399;margin:16px auto;opacity:0.3;"></div>
-              <p style="margin:0;color:#94a3b8;font-size:14px;font-weight:500;">Order #<%= orderNumber %></p>
+              
+              <h1 style="margin:0; font-size:32px; font-weight:900; color:#064e3b; letter-spacing:-0.03em; line-height:1.1;">
+                Thanks for your order, <%= customerName %>!
+              </h1>
+              <p style="margin:16px 0 0; color:#6b7280; font-size:14px; font-weight:600;">Order #<%= orderNumber %></p>
             </td>
           </tr>
 
-          <!-- Content Section -->
+          <!-- Content -->
           <tr>
-            <td style="padding:48px 40px;">
-              <h2
-                style="margin:0 0 16px;font-size:24px;font-weight:900;color:#022c22;letter-spacing:-0.04em;text-transform:uppercase;font-style:italic;">
-                Thank you, <%= customerName %>
-              </h2>
-              <p style="margin:0 0 32px;color:#64748b;font-size:16px;line-height:1.6;font-weight:500;">
-                Your order has been confirmed and is being processed. We've received your payment and the seller is preparing your items for shipment. This email is your <strong>order receipt</strong> (Paystack also emails a separate payment confirmation).
+            <td style="padding:0 40px 48px;">
+              <p style="margin:0 0 32px; color:#4b5563; font-size:15px; text-align:center;">
+                We've received your payment and the seller is preparing your items. Here's a summary of your order:
               </p>
 
               <%= receiptMetaHtml %>
 
               <!-- Order Summary -->
-              <div
-                style="background-color:#f8fafc;border-radius:20px;padding:24px;margin-bottom:32px;border:1px solid #e2e8f0;">
-                <h3 style="margin:0 0 16px;font-size:14px;font-weight:900;color:#022c22;text-transform:uppercase;letter-spacing:0.1em;">Order summary</h3>
-
+              <div style="background-color:#f9fafb; border-radius:24px; padding:32px; border:1px solid #f1f5f9; margin-bottom:32px;">
+                <h3 style="margin:0 0 20px; font-size:13px; font-weight:800; color:#064e3b; text-transform:uppercase; letter-spacing:0.1em;">Items</h3>
+                
                 <%= itemsHtml %>
 
-                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:20px;">
                   <tr>
-                    <td style="padding:8px 0;color:#64748b;font-size:14px;">Subtotal</td>
-                    <td style="padding:8px 0;text-align:right;color:#022c22;font-size:14px;font-weight:600;">₦<%= subtotalFormatted %></td>
+                    <td style="padding:8px 0; color:#6b7280; font-size:14px;">Subtotal</td>
+                    <td style="padding:8px 0; text-align:right; color:#1a1a1a; font-size:14px; font-weight:600;">₦<%= subtotalFormatted %></td>
                   </tr>
                   <tr>
-                    <td style="padding:8px 0;color:#64748b;font-size:14px;">Shipping</td>
-                    <td style="padding:8px 0;text-align:right;color:#022c22;font-size:14px;font-weight:600;">₦<%= shippingFormatted %></td>
+                    <td style="padding:8px 0; color:#6b7280; font-size:14px;">Shipping</td>
+                    <td style="padding:8px 0; text-align:right; color:#1a1a1a; font-size:14px; font-weight:600;">₦<%= shippingFormatted %></td>
                   </tr>
                   <%= shippingZoneHtml %>
                   <%= taxRowHtml %>
                   <%= discountRowHtml %>
                   <tr>
-                    <td style="padding:16px 0 0;border-top:2px solid #e2e8f0;color:#022c22;font-size:16px;font-weight:900;text-transform:uppercase;">Total</td>
-                    <td style="padding:16px 0 0;border-top:2px solid #e2e8f0;text-align:right;color:#059669;font-size:18px;font-weight:900;">₦<%= totalFormatted %></td>
+                    <td style="padding:20px 0 0; border-top:1px solid #e5e7eb; color:#064e3b; font-size:15px; font-weight:800; text-transform:uppercase;">Total</td>
+                    <td style="padding:20px 0 0; border-top:1px solid #e5e7eb; text-align:right; color:#10b981; font-size:20px; font-weight:900;">₦<%= totalFormatted %></td>
                   </tr>
                 </table>
               </div>
 
-              <!-- Shipping Address -->
-              <div
-                style="background-color:#f8fafc;border-radius:20px;padding:24px;margin-bottom:32px;border:1px solid #e2e8f0;">
-                <h3 style="margin:0 0 16px;font-size:14px;font-weight:900;color:#022c22;text-transform:uppercase;letter-spacing:0.1em;">Shipping address</h3>
-                <%= shippingAddressHtml %>
-              </div>
-
-              <!-- Next Steps -->
-              <div style="background-color:#ecfdf5;border-radius:20px;padding:24px;margin-bottom:32px;border:1px solid #a7f3d0;">
-                <h3 style="margin:0 0 12px;font-size:14px;font-weight:900;color:#065f46;text-transform:uppercase;letter-spacing:0.1em;">What's Next?</h3>
-                <ul style="margin:0;padding-left:20px;color:#065f46;font-size:14px;line-height:1.8;">
-                  <li>Seller will prepare your order for shipment</li>
-                  <li>You'll receive a tracking number once shipped</li>
-                  <li>Track your order in real-time from your dashboard</li>
-                  <li>Confirm delivery to release payment to seller</li>
-                </ul>
+              <!-- Shipping Info -->
+              <div style="background-color:#f9fafb; border-radius:24px; padding:32px; border:1px solid #f1f5f9; margin-bottom:40px;">
+                <h3 style="margin:0 0 16px; font-size:13px; font-weight:800; color:#064e3b; text-transform:uppercase; letter-spacing:0.1em;">Delivery Details</h3>
+                <div style="color:#4b5563; font-size:14px; line-height:1.6;">
+                  <%= shippingAddressHtml %>
+                </div>
               </div>
 
               <div style="text-align:center;">
                 <a href="<%= orderUrl %>"
-                  style="background-color:#022c22;color:#ffffff;padding:18px 32px;border-radius:99px;text-decoration:none;display:inline-block;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:0.2em;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">View Order Details</a>
+                  style="background-color:#10b981; color:#ffffff; padding:20px 40px; border-radius:100px; text-decoration:none; display:inline-block; font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:0.1em; shadow: 0 20px 40px -10px rgba(16,185,129,0.3);">View Order Details</a>
               </div>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="background-color:#f1f5f9;padding:24px 40px;text-align:center;">
-              <p
-                style="margin:0 0 8px;color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">
-                © <%= year %> Taja Tech Innovations Limited
+            <td style="background-color:#f9fafb; padding:32px 40px; text-align:center; border-top:1px solid #f1f5f9;">
+              <p style="margin:0 0 8px; color:#9ca3af; font-size:12px; font-weight:500;">
+                © <%= year %> Taja Shop • All rights reserved
               </p>
-              <p style="margin:0;color:#94a3b8;font-size:12px;">
-                Questions? Contact us at <a href="mailto:support@tajaapp.shop" style="color:#059669;text-decoration:none;">support@tajaapp.shop</a>
+              <p style="margin:0; color:#9ca3af; font-size:12px;">
+                Need help? <a href="mailto:support@tajaapp.shop" style="color:#10b981; text-decoration:none; font-weight:600;">Contact Support</a>
               </p>
             </td>
           </tr>

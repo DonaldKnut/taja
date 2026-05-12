@@ -53,9 +53,9 @@ export function OnboardingNavbar({
                 {/* Main nav bar */}
                 <div className="bg-white/80 backdrop-blur-xl border-b border-white/60 shadow-sm">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center justify-between h-16">
+                        <div className="flex items-center justify-between h-16 min-w-0 gap-2">
                             {/* Logo */}
-                            {!minimal && <Logo size="lg" variant="header" href="/" />}
+                            {!minimal && <Logo size="lg" variant="header" href="/" className="shrink-0" />}
 
                             {/* Centre label (desktop) */}
                             {currentPageLabel && !minimal && (
@@ -136,6 +136,14 @@ export function OnboardingNavbar({
                         </div>
                     </div>
                 </div>
+
+                {currentPageLabel && !minimal && (
+                    <div className="border-b border-gray-100 bg-taja-light/40 px-4 py-2 md:hidden">
+                        <p className="truncate text-center text-[11px] font-semibold uppercase tracking-wider text-taja-primary">
+                            {currentPageLabel}
+                        </p>
+                    </div>
+                )}
 
                 {/* ── Ad banner strip ── */}
                 {adContent && (

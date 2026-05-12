@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import {
   SITE_MEGA_MENU,
   isMegaMenuActive,
+  getSiteMobileNavBlocks,
   type MegaMenuId,
 } from "@/components/layout/siteMegaMenuConfig";
 
@@ -104,7 +105,7 @@ export function SiteMegaNav({ pathname, variant = "app", className, idPrefix = "
 
   const triggerClass =
     variant === "app"
-      ? "text-[10px] font-black uppercase tracking-[0.22em] px-1 py-2 rounded-lg transition-colors flex items-center gap-1"
+      ? "text-[9px] xl:text-[10px] font-black uppercase tracking-[0.14em] xl:tracking-[0.22em] px-0.5 xl:px-1 py-2 rounded-lg transition-colors flex items-center gap-0.5 xl:gap-1 whitespace-nowrap shrink-0"
       : "text-sm font-bold tracking-tight px-1 py-2 rounded-lg transition-colors flex items-center gap-1";
 
   return (
@@ -113,12 +114,18 @@ export function SiteMegaNav({ pathname, variant = "app", className, idPrefix = "
       className={cn("relative overflow-visible", className)}
       onMouseLeave={scheduleClose}
     >
-      <nav className="flex items-center gap-3 sm:gap-4 lg:gap-7 flex-wrap" aria-label="Primary sections">
+      <nav
+        className="flex flex-nowrap items-center gap-2 sm:gap-2.5 lg:gap-3 xl:gap-6 overflow-x-auto overflow-y-visible scrollbar-hide overscroll-x-contain"
+        aria-label="Primary sections"
+      >
         {SITE_MEGA_MENU.map((section) => {
           const active = isMegaMenuActive(pathname, section.id);
           const isOpen = open === section.id;
           return (
-            <div key={section.id} className="relative">
+            <div
+              key={section.id}
+              className={cn("relative shrink-0", variant === "app" && section.id === "company" && "hidden xl:block")}
+            >
               <button
                 type="button"
                 id={`${idPrefix}-trigger-${section.id}`}
@@ -142,8 +149,9 @@ export function SiteMegaNav({ pathname, variant = "app", className, idPrefix = "
                 {section.label}
                 <ChevronDown
                   className={cn(
-                    "h-3.5 w-3.5 opacity-60 transition-transform",
-                    isOpen && "rotate-180"
+                    "h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-60 transition-transform shrink-0",
+                    isOpen && "rotate-180",
+                    variant === "app" && "hidden xl:block"
                   )}
                   aria-hidden
                 />
@@ -228,13 +236,4 @@ export function SiteMegaNav({ pathname, variant = "app", className, idPrefix = "
   );
 }
 
-/** Flat link list for mobile drawers — same IA as mega menu. */
-export function getSiteMobileNavBlocks() {
-  return SITE_MEGA_MENU.map((section) => ({
-    id: section.id,
-    title: section.label,
-    eyebrow: section.eyebrow,
-    icon: section.icon,
-    links: section.columns.flatMap((c) => c.links),
-  }));
-}
+
