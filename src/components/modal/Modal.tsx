@@ -35,6 +35,10 @@ export interface ModalProps {
    */
   overlayClassName?: string;
   /**
+   * Class on the centered panel wrapper (`fixed inset-0 flex …`). Use a higher z-index when the modal must sit above sticky admin chrome.
+   */
+  panelClassName?: string;
+  /**
    * Modal size
    */
   size?: "sm" | "md" | "lg" | "xl" | "full";
@@ -68,6 +72,7 @@ export function Modal({
   children,
   className,
   overlayClassName,
+  panelClassName,
   size = "md",
   showCloseButton = true,
   closeOnOverlayClick = true,
@@ -95,7 +100,7 @@ export function Modal({
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className={cn("fixed inset-0 z-50 flex items-center justify-center p-4", panelClassName)}>
         <div
           className={cn(
             "relative bg-white rounded-lg shadow-xl w-full",

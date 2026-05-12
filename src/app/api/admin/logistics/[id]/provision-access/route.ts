@@ -54,6 +54,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         );
       }
 
+      const isExistingRider = Boolean(existing && (existing as { role?: string }).role === "logistics");
+      const mode = isExistingRider ? ("password_rotated" as const) : ("account_created" as const);
+
       let userId: string;
       if (existing && (existing as { role?: string }).role === "logistics") {
         await User.findByIdAndUpdate((existing as { _id: unknown })._id, {
@@ -92,16 +95,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         action: "admin.logistics.provision_access",
         entityType: "logistics_partner",
         entityId: String(partner._id),
-        metadata: { riderUserId: userId },
+        metadata: { riderUserId: userId, mode },
       }).catch(() => {});
 
       return NextResponse.json({
         success: true,
-        message: "Rider portal access created. Share the temporary password securely; rider signs in at /logistics/login.",
+        message:
+          mode === "password_rotated"
+            ? "New temporary rider password issued. Share it securely; previous password no longer works."
+            : "Rider portal access created. Share the temporary password securely; rider signs in at /logistics/login.",
         data: {
           email,
           temporaryPassword: tempPassword,
           riderLoginPath: "/logistics/login",
+          mode,
         },
       });
     } catch (error: unknown) {

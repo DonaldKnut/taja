@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, Menu, X, Zap, ShoppingBag, ShieldCheck, User, Bell, Heart } from "lucide-react";
 import { Container } from "@/components/layout";
+import { SiteMegaNav, getSiteMobileNavBlocks } from "@/components/layout/SiteMegaNav";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { useCartStore, CartIcon } from "@/components/cart";
@@ -106,7 +107,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
         <>
             <header
                 className={cn(
-                    "sticky top-0 w-full z-[9999] transition-all duration-500",
+                    "sticky top-0 w-full z-[9999] transition-all duration-500 relative",
                     !isVisible && "-translate-y-full opacity-0",
                     isTransparent
                         ? "bg-transparent border-transparent"
@@ -117,28 +118,10 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                     <div className="flex items-center gap-10">
                         <Logo size="lg" variant="header" className="hover:opacity-80 transition-opacity" href="/" />
 
-                        {/* Nav - Hidden on Mobile */}
-                        <nav className="hidden lg:flex items-center gap-8">
-                            {[
-                                { label: "Marketplace", href: "/marketplace" },
-                                { label: "Shops", href: "/shops" },
-                                { label: "Journal", href: "/blog" },
-                                { label: "How it Works", href: "/how-it-works" },
-                            ].map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className={cn(
-                                        "text-[10px] font-black uppercase tracking-[0.25em] transition-colors",
-                                        (link.href === "/blog" ? pathname.startsWith("/blog") : pathname.startsWith(link.href))
-                                            ? "text-taja-primary"
-                                            : "text-gray-400 hover:text-taja-secondary"
-                                    )}
-                                >
-                                    {link.label}
-                                </Link>
-                            ))}
-                        </nav>
+                        {/* Mega menu — desktop */}
+                        <div className="hidden lg:block">
+                            <SiteMegaNav pathname={pathname} variant="app" idPrefix="app-header" />
+                        </div>
                     </div>
 
                     {/* Search - Desktop Only */}
@@ -280,27 +263,31 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                 <h3 className="text-xl font-black text-taja-secondary tracking-tight">Navigation</h3>
                             </div>
 
-                            <nav className="flex flex-col gap-6">
-                                {[
-                                    { label: "Marketplace", href: "/marketplace" },
-                                    { label: "Shops", href: "/shops" },
-                                    { label: "Journal", href: "/blog" },
-                                    { label: "How it Works", href: "/how-it-works" },
-                                    { label: "Shipping Policy", href: "/shipping" },
-                                ].map((link, i) => (
-                                    <Link
-                                        key={i}
-                                        href={link.href}
-                                        onClick={() => setMobileMenuOpen(false)}
-                                        className={cn(
-                                            "text-2xl font-black tracking-tight transition-colors",
-                                            (link.href === "/blog" ? pathname.startsWith("/blog") : pathname === link.href)
-                                                ? "text-taja-primary"
-                                                : "text-taja-secondary hover:text-taja-primary"
-                                        )}
-                                    >
-                                        {link.label}
-                                    </Link>
+                            <nav className="flex flex-col gap-8">
+                                {getSiteMobileNavBlocks().map((block) => (
+                                    <div key={block.title} className="space-y-3">
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 px-1">
+                                            {block.title}
+                                        </p>
+                                        <div className="flex flex-col gap-3">
+                                            {block.links.map((link) => (
+                                                <Link
+                                                    key={`${block.title}-${link.label}-${link.href}`}
+                                                    href={link.href}
+                                                    onClick={() => setMobileMenuOpen(false)}
+                                                    className={cn(
+                                                        "text-xl font-black tracking-tight transition-colors",
+                                                        pathname === link.href ||
+                                                            (link.href !== "/" && pathname.startsWith(link.href))
+                                                            ? "text-taja-primary"
+                                                            : "text-taja-secondary hover:text-taja-primary"
+                                                    )}
+                                                >
+                                                    {link.label}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
                                 ))}
                             </nav>
 

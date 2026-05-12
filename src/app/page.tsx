@@ -6,8 +6,6 @@ import {
   Shield,
   ShieldCheck,
   Truck,
-  Users,
-  Star,
   Clock,
   ArrowRight,
   Menu,
@@ -15,7 +13,6 @@ import {
   User,
   LogOut,
   LayoutDashboard,
-  Store,
 } from "lucide-react";
 import { BrandShowcase } from "@/components/ui/BrandShowcase";
 import { AdvancedFooter } from "@/components/ui/AdvancedFooter";
@@ -23,16 +20,19 @@ import { Logo } from "@/components/ui/Logo";
 import { DashboardPreview } from "@/components/ui/DashboardPreview";
 import { HomepageRecommendations } from "@/components/homepage/HomepageRecommendations";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
-import { Container, Section } from "@/components/layout";
+import { Container } from "@/components/layout";
+import { SiteMegaNav, getSiteMobileNavBlocks } from "@/components/layout/SiteMegaNav";
+import { LogisticsPartnerPromo } from "@/components/homepage/LogisticsPartnerPromo";
 import { NewsletterSection } from "@/components/newsletter/NewsletterSection";
 import { CorporateRegistry } from "@/components/homepage/CorporateRegistry";
 
 export default function HomePage() {
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -86,31 +86,10 @@ export default function HomePage() {
           <Container size="lg" className="relative z-10">
             <div className="flex justify-between items-center h-16">
               <Logo size="lg" variant="header" />
-              <div className="hidden md:flex items-center space-x-10">
-                <Link
-                  href="/marketplace"
-                  className="text-sm font-bold text-taja-secondary hover:text-taja-primary transition-colors tracking-tight"
-                >
-                  Marketplace
-                </Link>
-                <Link
-                  href="/shops"
-                  className="text-sm font-bold text-taja-secondary hover:text-taja-primary transition-colors tracking-tight"
-                >
-                  Shops
-                </Link>
-                <Link
-                  href="/blog"
-                  className="text-sm font-bold text-taja-secondary hover:text-taja-primary transition-colors tracking-tight"
-                >
-                  Journal
-                </Link>
-                <Link
-                  href="/how-it-works"
-                  className="text-sm font-bold text-taja-secondary hover:text-taja-primary transition-colors tracking-tight"
-                >
-                  How it Works
-                </Link>
+              <div className="hidden md:flex items-center space-x-6 lg:space-x-10">
+                <div className="relative">
+                  <SiteMegaNav pathname={pathname} variant="home" idPrefix="home-nav" />
+                </div>
                 {isAuthenticated && user ? (
                   <div className="flex items-center gap-6">
                     <div className="h-8 w-px bg-taja-primary/10 mx-2" />
@@ -200,45 +179,27 @@ export default function HomePage() {
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto p-8 space-y-6">
-              <div className="space-y-2">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Navigation</span>
-                <Link
-                  href="/marketplace"
-                  className="group flex items-center justify-between text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Marketplace
-                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                </Link>
-                <Link
-                  href="/shops"
-                  className="group flex items-center justify-between text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <span className="flex items-center gap-2">
-                    <Store className="h-4 w-4 opacity-50" />
-                    Shops
+            <nav className="flex-1 overflow-y-auto p-8 space-y-8">
+              {getSiteMobileNavBlocks().map((block) => (
+                <div key={block.title} className="space-y-3">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
+                    {block.title}
                   </span>
-                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                </Link>
-                <Link
-                  href="/blog"
-                  className="group flex items-center justify-between text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Journal
-                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                </Link>
-                <Link
-                  href="/how-it-works"
-                  className="group flex items-center justify-between text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  How it Works
-                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                </Link>
-              </div>
+                  <div className="space-y-1">
+                    {block.links.map((link) => (
+                      <Link
+                        key={`${block.title}-${link.label}-${link.href}`}
+                        href={link.href}
+                        className="group flex items-center justify-between text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all py-1"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {link.label}
+                        <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
 
               {isAuthenticated && user ? (
                 <div className="space-y-2 pt-6 border-t border-gray-100">
@@ -410,6 +371,8 @@ export default function HomePage() {
 
         {/* Brand Showcase Section */}
         <BrandShowcase />
+
+        <LogisticsPartnerPromo />
 
         {/* CTA Section - Enhanced */}
         <section className="relative py-20 md:py-32 overflow-hidden bg-white">

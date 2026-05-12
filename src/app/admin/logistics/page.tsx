@@ -6,6 +6,10 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { api } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { Search } from "lucide-react";
+import {
+  RiderProvisionModals,
+  type RiderProvisionCredentials,
+} from "@/components/admin/RiderProvisionModals";
 
 type LogisticsPartner = {
   _id: string;
@@ -81,7 +85,8 @@ export default function AdminLogisticsPage() {
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineEvents, setTimelineEvents] = useState<DeliveryEventItem[]>([]);
   const [provisioningId, setProvisioningId] = useState<string | null>(null);
-  const [provisionModal, setProvisionModal] = useState<{ email: string; temporaryPassword: string } | null>(null);
+  const [provisionConfirm, setProvisionConfirm] = useState<RiderProvisionConfirmTarget | null>(null);
+  const [provisionCredentials, setProvisionCredentials] = useState<RiderProvisionCredentials | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -207,20 +212,24 @@ export default function AdminLogisticsPage() {
     }
   };
 
-  const provisionRiderAccess = async (id: string) => {
-    const ok = window.confirm(
-      "Create rider-only login for this partner? They must already be approved. A temporary password is shown once — copy it and send it securely to the rider."
-    );
-    if (!ok) return;
+  const executeProvision = async () => {
+    if (!provisionConfirm) return;
+    const id = provisionConfirm.partnerId;
     try {
       setProvisioningId(id);
       const res = await api(`/api/admin/logistics/${id}/provision-access`, { method: "POST" });
       if (res?.success && res?.data?.temporaryPassword) {
-        setProvisionModal({
+        const mode: RiderProvisionCredentials["mode"] =
+          res.data.mode === "password_rotated" ? "password_rotated" : "account_created";
+        setProvisionConfirm(null);
+        setProvisionCredentials({
           email: res.data.email,
           temporaryPassword: res.data.temporaryPassword,
+          mode,
         });
-        toast.success("Rider portal access ready");
+        toast.success(
+          mode === "password_rotated" ? "New rider password issued" : "Rider portal access ready"
+        );
         await load();
       } else {
         toast.error(res?.message || "Provisioning failed");
@@ -584,9 +593,19 @@ export default function AdminLogisticsPage() {
                               savingId === p._id ||
                               p.status !== "approved"
                             }
-                            onClick={() => provisionRiderAccess(p._id)}
+                            onClick={() =>
+                              setProvisionConfirm({
+                                partnerId: p._id,
+                                partnerName: p.fullName,
+                                hasExistingRider: Boolean(p.user),
+                              })
+                            }
                           >
-                            {provisioningId === p._id ? "Provisioning…" : "Rider login"}
+                            {provisioningId === p._id
+                              ? "Working…"
+                              : p.user
+                                ? "Reset password"
+                                : "Issue rider login"}
                           </Button>
                           <Button
                             size="sm"
@@ -741,47 +760,14 @@ export default function AdminLogisticsPage() {
         </CardContent>
       </Card>
 
-      {provisionModal ? (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="max-w-md w-full rounded-3xl bg-white border border-slate-200 shadow-2xl p-6 space-y-4">
-            <h3 className="text-lg font-black text-slate-900">Rider credentials (copy now)</h3>
-            <p className="text-sm font-semibold text-slate-600">
-              Rider signs in at <span className="font-mono text-slate-900">/logistics/login</span>. This password is
-              not shown again.
-            </p>
-            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm space-y-2">
-              <p>
-                <span className="font-black text-slate-500 uppercase text-[10px] tracking-widest">Email</span>
-                <br />
-                <span className="font-mono font-semibold text-slate-900 break-all">{provisionModal.email}</span>
-              </p>
-              <p>
-                <span className="font-black text-slate-500 uppercase text-[10px] tracking-widest">Temporary password</span>
-                <br />
-                <span className="font-mono font-bold text-slate-900 break-all">{provisionModal.temporaryPassword}</span>
-              </p>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => {
-                  void navigator.clipboard.writeText(
-                    `Login: ${window.location.origin}/logistics/login\nEmail: ${provisionModal.email}\nPassword: ${provisionModal.temporaryPassword}`
-                  );
-                  toast.success("Copied to clipboard");
-                }}
-              >
-                Copy all
-              </Button>
-              <Button type="button" className="rounded-xl" onClick={() => setProvisionModal(null)}>
-                Done
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <RiderProvisionModals
+        confirmTarget={provisionConfirm}
+        credentials={provisionCredentials}
+        confirmLoading={Boolean(provisionConfirm && provisioningId === provisionConfirm.partnerId)}
+        onCloseConfirm={() => setProvisionConfirm(null)}
+        onConfirmProvision={executeProvision}
+        onCloseCredentials={() => setProvisionCredentials(null)}
+      />
     </div>
   );
 }

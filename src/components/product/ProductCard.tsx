@@ -88,10 +88,9 @@ export function ProductCard({
   const [isTouchActive, setIsTouchActive] = useState(false);
   const [canHover, setCanHover] = useState(false);
   const [mediaIndex, setMediaIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
   const [failedMedia, setFailedMedia] = useState<Set<string>>(new Set());
   const [isNearViewport, setIsNearViewport] = useState(false);
-  const [mediaLoaded, setMediaLoaded] = useState(false);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -291,27 +290,43 @@ export function ProductCard({
   useEffect(() => {
     setMediaIndex(0);
     setFailedMedia(new Set());
-    setMediaLoaded(false);
-    setHasLoadedOnce(false);
     setShowMediaActions(false);
   }, [product?._id]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === "undefined" || typeof IntersectionObserver === "undefined") {
       setIsNearViewport(true);
-      return;
+      return undefined;
     }
-    const node = cardRef.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        setIsNearViewport(Boolean(entry?.isIntersecting));
-      },
-      { root: null, rootMargin: "300px", threshold: 0.01 }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
+    let observer: IntersectionObserver | null = null;
+    let cancelled = false;
+    let raf = 0;
+
+    const attach = () => {
+      const node = cardRef.current;
+      if (!node || cancelled) return;
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          setIsNearViewport(Boolean(entry?.isIntersecting));
+        },
+        { root: null, rootMargin: "300px", threshold: 0.01 }
+      );
+      observer.observe(node);
+    };
+
+    attach();
+    if (!observer) {
+      raf = requestAnimationFrame(() => {
+        if (!cancelled) attach();
+      });
+    }
+
+    return () => {
+      cancelled = true;
+      if (raf) cancelAnimationFrame(raf);
+      observer?.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -669,9 +684,34 @@ export function ProductCard({
             : "bg-gray-50"
         )}
       >
-        {!hasLoadedOnce && (
-          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100" />
-        )}
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
+          <motion.div
+            key={activeMedia.src}
+            custom={direction}
+            variants={{
+              initial: (direction: number) => ({
+                opacity: 0,
+                x: direction > 0 ? "20%" : direction < 0 ? "-20%" : 0,
+                scale: 1.05,
+              }),
+              animate: {
+                opacity: 1,
+                x: 0,
+                scale: 1,
+                transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+              },
+              exit: (direction: number) => ({
+                opacity: 0,
+                x: direction > 0 ? "-20%" : direction < 0 ? "20%" : 0,
+                scale: 0.95,
+                transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+              }),
+            }}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="absolute inset-0 w-full h-full"
+          >
         {isInsideDashboard ? (
           <div className="block w-full h-full">
             {activeMedia.type === "video" && isNearViewport && !shouldPlayActiveVideo ? (
@@ -695,10 +735,6 @@ export function ProductCard({
                 loop
                 playsInline
                 preload={isNearViewport ? "metadata" : "none"}
-                onLoadedData={() => {
-                  setMediaLoaded(true);
-                  setHasLoadedOnce(true);
-                }}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : activeMedia.type === "video" ? (
@@ -708,14 +744,6 @@ export function ProductCard({
                   src={videoPoster}
                   alt={product.title}
                   loading="lazy"
-                  onLoad={() => {
-                    setMediaLoaded(true);
-                    setHasLoadedOnce(true);
-                  }}
-                  onError={() => {
-                    setMediaLoaded(true);
-                    setHasLoadedOnce(true);
-                  }}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110 brightness-[0.88] contrast-[1.06]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-slate-900/35 pointer-events-none" aria-hidden />
@@ -731,10 +759,6 @@ export function ProductCard({
                 alt={product.title}
                 fill
                 loading="lazy"
-                onLoad={() => {
-                  setMediaLoaded(true);
-                  setHasLoadedOnce(true);
-                }}
                 onError={() =>
                   setFailedMedia((prev) => {
                     const next = new Set(prev);
@@ -769,10 +793,6 @@ export function ProductCard({
                 loop
                 playsInline
                 preload={isNearViewport ? "metadata" : "none"}
-                onLoadedData={() => {
-                  setMediaLoaded(true);
-                  setHasLoadedOnce(true);
-                }}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
               />
             ) : activeMedia.type === "video" ? (
@@ -782,14 +802,6 @@ export function ProductCard({
                   src={videoPoster}
                   alt={product.title}
                   loading="lazy"
-                  onLoad={() => {
-                    setMediaLoaded(true);
-                    setHasLoadedOnce(true);
-                  }}
-                  onError={() => {
-                    setMediaLoaded(true);
-                    setHasLoadedOnce(true);
-                  }}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110 brightness-[0.88] contrast-[1.06]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-slate-900/35 pointer-events-none" aria-hidden />
@@ -805,10 +817,6 @@ export function ProductCard({
                 alt={product.title}
                 fill
                 loading="lazy"
-                onLoad={() => {
-                  setMediaLoaded(true);
-                  setHasLoadedOnce(true);
-                }}
                 onError={() =>
                   setFailedMedia((prev) => {
                     const next = new Set(prev);
@@ -821,6 +829,8 @@ export function ProductCard({
             )}
           </Link>
         )}
+          </motion.div>
+        </AnimatePresence>
         {activeMedia.type === "video" && (
           <>
             <div className="absolute left-2.5 sm:left-4 bottom-2.5 sm:bottom-4 z-10 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full bg-black/60 text-white text-[8px] sm:text-[9px] font-black uppercase tracking-widest flex items-center gap-1 pointer-events-none">
@@ -836,6 +846,7 @@ export function ProductCard({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                setDirection(-1);
                 setMediaIndex((idx) => (idx - 1 + mediaItems.length) % mediaItems.length);
               }}
               className="absolute left-1.5 sm:left-2 top-1/2 -translate-y-1/2 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
@@ -848,6 +859,7 @@ export function ProductCard({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                setDirection(1);
                 setMediaIndex((idx) => (idx + 1) % mediaItems.length);
               }}
               className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
