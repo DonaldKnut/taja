@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Menu, X, Zap, ShoppingBag, ShieldCheck, User, Bell, Heart } from "lucide-react";
+import { Search, Menu, X, Zap, ShieldCheck, User, Bell, Heart, Rocket, Layout } from "lucide-react";
 import { Container } from "@/components/layout";
-import { SiteMegaNav, getSiteMobileNavBlocks } from "@/components/layout/SiteMegaNav";
+import { SiteMegaNav } from "@/components/layout/SiteMegaNav";
+import { MobileMegaNavAccordion } from "@/components/layout/MobileMegaNavAccordion";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { useCartStore, CartIcon } from "@/components/cart";
@@ -243,7 +244,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                            className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-white z-[10001] shadow-2xl p-8 flex flex-col lg:hidden"
+                            className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-white z-[10001] shadow-2xl p-8 flex flex-col min-h-0 overflow-hidden lg:hidden"
                         >
                             <div className="flex items-center justify-between mb-12">
                                 <Logo size="lg" variant="header" />
@@ -260,36 +261,18 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                     <Zap className="w-3 h-3 text-taja-primary fill-taja-primary" />
                                     <span className="text-[8px] font-black text-taja-primary uppercase tracking-widest">Premium Marketplace</span>
                                 </div>
-                                <h3 className="text-xl font-black text-taja-secondary tracking-tight">Navigation</h3>
+                                <div className="flex items-center gap-2">
+                                    <Layout className="w-5 h-5 text-taja-primary" />
+                                    <h3 className="text-xl font-black text-taja-secondary tracking-tight">Navigation</h3>
+                                </div>
                             </div>
 
-                            <nav className="flex flex-col gap-8">
-                                {getSiteMobileNavBlocks().map((block) => (
-                                    <div key={block.title} className="space-y-3">
-                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 px-1">
-                                            {block.title}
-                                        </p>
-                                        <div className="flex flex-col gap-3">
-                                            {block.links.map((link) => (
-                                                <Link
-                                                    key={`${block.title}-${link.label}-${link.href}`}
-                                                    href={link.href}
-                                                    onClick={() => setMobileMenuOpen(false)}
-                                                    className={cn(
-                                                        "text-xl font-black tracking-tight transition-colors",
-                                                        pathname === link.href ||
-                                                            (link.href !== "/" && pathname.startsWith(link.href))
-                                                            ? "text-taja-primary"
-                                                            : "text-taja-secondary hover:text-taja-primary"
-                                                    )}
-                                                >
-                                                    {link.label}
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </nav>
+                            <MobileMegaNavAccordion
+                                pathname={pathname}
+                                variant="app"
+                                onNavigate={() => setMobileMenuOpen(false)}
+                                className="overflow-y-auto pr-2 pb-4 scrollbar-hide flex-1 min-h-0 gap-2.5"
+                            />
 
                             <div className="mt-auto pt-10 border-t border-gray-100 flex flex-col gap-4">
                                 {isAuthenticated ? (
@@ -298,8 +281,9 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                             setMobileMenuOpen(false); 
                                             router.push(user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'seller' ? '/seller/dashboard' : '/dashboard'); 
                                         }}
-                                        className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs shadow-premium"
+                                        className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs shadow-premium gap-3"
                                     >
+                                        <Layout className="w-4 h-4" />
                                         {user?.role === 'admin' ? 'Admin Dashboard' : user?.role === 'seller' ? 'Seller Dashboard' : 'My Dashboard'}
                                     </Button>
                                 ) : (
@@ -307,14 +291,16 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                         <Button
                                             variant="outline"
                                             onClick={() => { setMobileMenuOpen(false); router.push('/login'); }}
-                                            className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs"
+                                            className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs gap-3"
                                         >
+                                            <User className="w-4 h-4" />
                                             Sign In
                                         </Button>
                                         <Button
                                             onClick={() => { setMobileMenuOpen(false); router.push('/register'); }}
-                                            className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs shadow-premium"
+                                            className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs shadow-premium gap-3"
                                         >
+                                            <Rocket className="w-4 h-4" />
                                             Sign Up
                                         </Button>
                                     </>

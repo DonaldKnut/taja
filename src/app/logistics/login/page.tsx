@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -8,7 +8,7 @@ import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Truck, Zap, ShieldCheck, Clock, ArrowRight, Mail, Lock, Eye, EyeOff, MapPin, Activity } from "lucide-react";
+import { Truck, Zap, ShieldCheck, Clock, ArrowRight, Mail, Lock, Eye, EyeOff, MapPin, Activity, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,17 @@ function LogisticsLoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("passwordUpdated") === "1") {
+      toast.success("Use your new password to sign in.", { duration: 6000 });
+      if (typeof window !== "undefined" && window.history.replaceState) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("passwordUpdated");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
+    }
+  }, [searchParams]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,12 +230,12 @@ function LogisticsLoginForm() {
 
         <div className="relative z-10 w-full max-w-md space-y-12">
           <div className="space-y-4">
-            <div className="h-1 w-12 bg-emerald-400 rounded-full" />
-            <h2 className="text-6xl font-black text-white tracking-tighter leading-[0.9] italic">
+            <div className="h-1 w-10 bg-emerald-400 rounded-full" />
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight italic">
               Drive the <br />
-              <span className="text-emerald-400 underline decoration-white/10 underline-offset-8">Future.</span>
+              <span className="text-emerald-400 underline decoration-white/10 underline-offset-4">Future.</span>
             </h2>
-            <p className="text-base text-slate-500 font-bold uppercase tracking-widest">
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
               Nigeria's #1 Logistics Engine
             </p>
           </div>
@@ -255,14 +266,14 @@ function LogisticsLoginForm() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 + (i * 0.1) }}
-                className="flex items-center gap-5 p-5 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-sm group hover:bg-white/10 transition-all"
+                className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm group hover:bg-white/10 transition-all"
               >
-                <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 border border-white/10 group-hover:scale-110 transition-transform">
-                  <item.icon className={cn("h-5 w-5", item.color)} />
+                <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/10 group-hover:scale-110 transition-transform">
+                  <item.icon className={cn("h-4 w-4", item.color)} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-white uppercase tracking-[0.2em] mb-0.5">{item.title}</h4>
-                  <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">{item.desc}</p>
+                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-0.5">{item.title}</h4>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-none">{item.desc}</p>
                 </div>
               </motion.div>
             ))}

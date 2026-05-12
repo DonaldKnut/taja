@@ -10,6 +10,8 @@ export type { ContainerProps } from "./Container";
 export type { SectionProps } from "./Section";
 export { SiteMegaNav, getSiteMobileNavBlocks } from "./SiteMegaNav";
 export type { SiteMegaNavProps } from "./SiteMegaNav";
+export { MobileMegaNavAccordion } from "./MobileMegaNavAccordion";
+export type { MobileMegaNavAccordionProps } from "./MobileMegaNavAccordion";
 export { SITE_MEGA_MENU, isMegaMenuActive } from "./siteMegaMenuConfig";
 export type { MegaMenuId, MegaMenuSection, MegaMenuLink } from "./siteMegaMenuConfig";
 

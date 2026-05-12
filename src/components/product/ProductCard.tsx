@@ -13,7 +13,7 @@ import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPri
 import { trackEvent } from "@/lib/analytics";
 import type { Product, Shop } from "@/types";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/stores/cartStore";
 import { useWishlistStore, WishlistItem } from "@/components/wishlist";
 import { toast } from "react-hot-toast";

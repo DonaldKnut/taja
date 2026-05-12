@@ -99,18 +99,43 @@ export async function api(path: string, opts: Options = {}) {
         res.statusText ||
         "Request failed";
 
-      // Handle 401 Unauthorized - token expired
+      // Handle 401 Unauthorized - token expired or rejected
       if (res.status === 401) {
-        // Clear auth data
         if (typeof window !== "undefined") {
+          let useLogisticsLogin = false;
+          try {
+            const raw = localStorage.getItem("user");
+            if (raw) {
+              const parsed = JSON.parse(raw) as { role?: string };
+              if (parsed?.role === "logistics") useLogisticsLogin = true;
+            }
+          } catch {
+            /* ignore */
+          }
+          if (!useLogisticsLogin && localStorage.getItem("role") === "logistics") {
+            useLogisticsLogin = true;
+          }
+          if (!useLogisticsLogin && window.location.pathname.startsWith("/logistics")) {
+            useLogisticsLogin = true;
+          }
+
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("role");
-        }
-        // Redirect to login if not already there
-        if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-          window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname);
+
+          const path = window.location.pathname;
+          const onBuyerSellerAuth =
+            path.startsWith("/login") ||
+            path.startsWith("/register") ||
+            path.startsWith("/forgot-password");
+          const onLogisticsAuth = path.startsWith("/logistics/login");
+          if (!onBuyerSellerAuth && !onLogisticsAuth) {
+            const redirectParam = encodeURIComponent(path + window.location.search);
+            window.location.href = useLogisticsLogin
+              ? `/logistics/login?redirect=${redirectParam}`
+              : `/login?redirect=${redirectParam}`;
+          }
         }
       }
 

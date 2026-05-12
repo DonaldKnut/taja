@@ -24,7 +24,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/layout";
-import { SiteMegaNav, getSiteMobileNavBlocks } from "@/components/layout/SiteMegaNav";
+import { SiteMegaNav } from "@/components/layout/SiteMegaNav";
+import { MobileMegaNavAccordion } from "@/components/layout/MobileMegaNavAccordion";
 import { LogisticsPartnerPromo } from "@/components/homepage/LogisticsPartnerPromo";
 import { NewsletterSection } from "@/components/newsletter/NewsletterSection";
 import { CorporateRegistry } from "@/components/homepage/CorporateRegistry";
@@ -179,27 +180,13 @@ export default function HomePage() {
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto p-8 space-y-8">
-              {getSiteMobileNavBlocks().map((block) => (
-                <div key={block.title} className="space-y-3">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
-                    {block.title}
-                  </span>
-                  <div className="space-y-1">
-                    {block.links.map((link) => (
-                      <Link
-                        key={`${block.title}-${link.label}-${link.href}`}
-                        href={link.href}
-                        className="group flex items-center justify-between text-lg font-bold text-taja-secondary hover:text-taja-primary transition-all py-1"
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        {link.label}
-                        <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <nav className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col min-h-0">
+              <MobileMegaNavAccordion
+                pathname={pathname}
+                variant="home"
+                onNavigate={() => setMobileOpen(false)}
+                className="space-y-2 pb-4"
+              />
 
               {isAuthenticated && user ? (
                 <div className="space-y-2 pt-6 border-t border-gray-100">

@@ -23,7 +23,7 @@ export type SiteMegaNavProps = {
 function clampMegaPanelToViewport(panelEl: HTMLElement) {
   const edge = 14;
   const vw = window.innerWidth;
-  const maxW = Math.min(896, vw - edge * 2);
+  const maxW = Math.min(560, vw - edge * 2);
   panelEl.style.width = `${maxW}px`;
   panelEl.style.maxWidth = `${maxW}px`;
   panelEl.style.transform = "translateX(-50%)";
@@ -177,13 +177,13 @@ export function SiteMegaNav({ pathname, variant = "app", className, idPrefix = "
                 if (!section) return null;
                 return (
                   <>
-                    <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                    <div className="px-5 py-3.5 sm:py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{section.eyebrow}</p>
                       <p className="text-base sm:text-lg font-black text-slate-900 tracking-tight">{section.label}</p>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
                       {section.columns.map((col) => (
-                        <div key={col.heading} className="p-4 sm:p-6 space-y-2.5 sm:space-y-3">
+                        <div key={col.heading} className="p-4 sm:p-5 space-y-2.5 sm:space-y-3">
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{col.heading}</p>
                           <ul className="space-y-1 sm:space-y-2">
                             {col.links.map((link) => (
@@ -193,14 +193,23 @@ export function SiteMegaNav({ pathname, variant = "app", className, idPrefix = "
                                   className="group block rounded-xl -mx-1.5 px-2 py-2 hover:bg-slate-50 transition-colors"
                                   onClick={() => setOpen(null)}
                                 >
-                                  <span className="text-sm font-bold text-slate-900 group-hover:text-taja-primary transition-colors">
-                                    {link.label}
-                                  </span>
-                                  {link.description ? (
-                                    <span className="block text-xs text-slate-600 mt-0.5 leading-snug">
-                                      {link.description}
-                                    </span>
-                                  ) : null}
+                                  <div className="flex gap-3">
+                                    {link.icon && (
+                                      <div className="mt-0.5 shrink-0">
+                                        <link.icon className="h-4 w-4 text-slate-400 group-hover:text-taja-primary transition-colors" />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <span className="text-sm font-bold text-slate-900 group-hover:text-taja-primary transition-colors">
+                                        {link.label}
+                                      </span>
+                                      {link.description ? (
+                                        <span className="block text-xs text-slate-600 mt-0.5 leading-snug">
+                                          {link.description}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </div>
                                 </Link>
                               </li>
                             ))}
@@ -222,7 +231,10 @@ export function SiteMegaNav({ pathname, variant = "app", className, idPrefix = "
 /** Flat link list for mobile drawers — same IA as mega menu. */
 export function getSiteMobileNavBlocks() {
   return SITE_MEGA_MENU.map((section) => ({
+    id: section.id,
     title: section.label,
-    links: section.columns.flatMap((c) => c.links.map((l) => ({ label: l.label, href: l.href }))),
+    eyebrow: section.eyebrow,
+    icon: section.icon,
+    links: section.columns.flatMap((c) => c.links),
   }));
 }

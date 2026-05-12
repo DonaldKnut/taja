@@ -3,12 +3,31 @@
  * Keep hrefs aligned with real routes as the product grows.
  */
 
+import {
+  ShoppingBag,
+  Store,
+  Truck,
+  LifeBuoy,
+  BookOpen,
+  HelpCircle,
+  Sparkles,
+  Briefcase,
+  Key,
+  Info,
+  FileText,
+  Shield,
+  Rocket,
+  User,
+  Globe,
+} from "lucide-react";
+
 export type MegaMenuId = "shop" | "discover" | "logistics" | "company";
 
 export type MegaMenuLink = {
   label: string;
   href: string;
   description?: string;
+  icon?: any;
 };
 
 export type MegaMenuColumn = {
@@ -20,6 +39,7 @@ export type MegaMenuSection = {
   id: MegaMenuId;
   label: string;
   eyebrow: string;
+  icon: any;
   columns: MegaMenuColumn[];
 };
 
@@ -28,19 +48,20 @@ export const SITE_MEGA_MENU: MegaMenuSection[] = [
     id: "shop",
     label: "Shop",
     eyebrow: "Buy with confidence",
+    icon: ShoppingBag,
     columns: [
       {
         heading: "Browse",
         links: [
-          { label: "Marketplace", href: "/marketplace", description: "Search products across all shops" },
-          { label: "Shops", href: "/shops", description: "Discover trusted storefronts" },
+          { label: "Marketplace", href: "/marketplace", description: "Search products across all shops", icon: Globe },
+          { label: "Shops", href: "/shops", description: "Discover trusted storefronts", icon: Store },
         ],
       },
       {
         heading: "After you buy",
         links: [
-          { label: "Shipping & delivery", href: "/shipping", description: "How orders reach you" },
-          { label: "Support", href: "/support", description: "Help with orders and account" },
+          { label: "Shipping & delivery", href: "/shipping", description: "How orders reach you", icon: Truck },
+          { label: "Support", href: "/support", description: "Help with orders and account", icon: LifeBuoy },
         ],
       },
     ],
@@ -49,17 +70,18 @@ export const SITE_MEGA_MENU: MegaMenuSection[] = [
     id: "discover",
     label: "Discover",
     eyebrow: "Learn and explore",
+    icon: Sparkles,
     columns: [
       {
         heading: "Editorial",
         links: [
-          { label: "Journal", href: "/blog", description: "Stories, drops, and seller spotlights" },
-          { label: "How it works", href: "/how-it-works", description: "Buyers, sellers, and payouts" },
+          { label: "Journal", href: "/blog", description: "Stories, drops, and seller spotlights", icon: BookOpen },
+          { label: "How it works", href: "/how-it-works", description: "Buyers, sellers, and payouts", icon: HelpCircle },
         ],
       },
       {
         heading: "Tools",
-        links: [{ label: "AI shopping assistant", href: "/ai", description: "Ideas and product discovery" }],
+        links: [{ label: "AI shopping assistant", href: "/ai", description: "Ideas and product discovery", icon: Sparkles }],
       },
     ],
   },
@@ -67,6 +89,7 @@ export const SITE_MEGA_MENU: MegaMenuSection[] = [
     id: "logistics",
     label: "Logistics",
     eyebrow: "Deliver with Taja",
+    icon: Truck,
     columns: [
       {
         heading: "Partners",
@@ -75,17 +98,19 @@ export const SITE_MEGA_MENU: MegaMenuSection[] = [
             label: "Apply as a delivery partner",
             href: "/logistics/apply",
             description: "Bikes to trucks — earn on your schedule",
+            icon: Briefcase,
           },
           {
             label: "Rider portal login",
             href: "/logistics/login",
             description: "For approved partners with rider access",
+            icon: Key,
           },
         ],
       },
       {
         heading: "Operations",
-        links: [{ label: "Shipping overview", href: "/shipping", description: "Customer-facing delivery policy" }],
+        links: [{ label: "Shipping overview", href: "/shipping", description: "Customer-facing delivery policy", icon: Info }],
       },
     ],
   },
@@ -93,19 +118,20 @@ export const SITE_MEGA_MENU: MegaMenuSection[] = [
     id: "company",
     label: "Company",
     eyebrow: "Trust & policies",
+    icon: Shield,
     columns: [
       {
         heading: "Legal",
         links: [
-          { label: "Terms of service", href: "/terms" },
-          { label: "Privacy policy", href: "/privacy" },
+          { label: "Terms of service", href: "/terms", icon: FileText },
+          { label: "Privacy policy", href: "/privacy", icon: Shield },
         ],
       },
       {
         heading: "Sell on Taja",
         links: [
-          { label: "Open your shop", href: "/register", description: "Create a seller account" },
-          { label: "Sign in", href: "/login", description: "Buyers and sellers" },
+          { label: "Open your shop", href: "/register", description: "Create a seller account", icon: Rocket },
+          { label: "Sign in", href: "/login", description: "Buyers and sellers", icon: User },
         ],
       },
     ],
