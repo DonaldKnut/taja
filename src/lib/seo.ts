@@ -180,6 +180,8 @@ export function generateProductStructuredData(product: {
   url: string;
   rating?: { value: number; count: number };
   shopName?: string;
+  /** Approximate page opens (deduped per browser ~12h on server) */
+  views?: number;
 }) {
   const rawImages = Array.isArray(product.image) ? product.image : [product.image];
   const nonEmpty = rawImages.filter((img) => typeof img === "string" && img.trim().length > 0);
@@ -236,6 +238,14 @@ export function generateProductStructuredData(product: {
       "@type": "AggregateRating",
       ratingValue: product.rating.value,
       reviewCount: product.rating.count,
+    };
+  }
+
+  if (typeof product.views === "number" && product.views > 0) {
+    structuredData.interactionStatistic = {
+      "@type": "InteractionCounter",
+      interactionType: "https://schema.org/ViewAction",
+      userInteractionCount: Math.floor(product.views),
     };
   }
 

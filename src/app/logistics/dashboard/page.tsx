@@ -115,6 +115,28 @@ export default function LogisticsDashboardPage() {
   const [pwdSaving, setPwdSaving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [guarantorBannerDismissed, setGuarantorBannerDismissed] = useState(false);
+  const [headerRefreshing, setHeaderRefreshing] = useState(false);
+
+  const refreshDashboardQuiet = async () => {
+    try {
+      setHeaderRefreshing(true);
+      await Promise.all([loadNearbyJobs(), loadActiveJobs()]);
+      const me = await api("/api/logistics/me");
+      setProfile(me?.data || null);
+    } catch {
+      toast.error("Could not refresh");
+    } finally {
+      setHeaderRefreshing(false);
+    }
+  };
+
+  const signOutRider = async () => {
+    try {
+      await logout();
+    } finally {
+      window.location.assign("/logistics/login");
+    }
+  };
 
   const changePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -453,14 +475,24 @@ export default function LogisticsDashboardPage() {
 
             <div className="mt-auto pt-8 border-t border-slate-50">
               {profile && (
-                <div className="flex items-center gap-3 p-4 rounded-3xl bg-slate-50">
-                  <div className="h-10 w-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center font-black text-slate-400">
-                    {profile.fullName.charAt(0)}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-4 rounded-3xl bg-slate-50">
+                    <div className="h-10 w-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center font-black text-slate-400">
+                      {profile.fullName.charAt(0)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-black text-slate-900 truncate uppercase tracking-tight">{profile.fullName}</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Verified Rider</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-black text-slate-900 truncate uppercase tracking-tight">{profile.fullName}</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Verified Rider</p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void signOutRider()}
+                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" aria-hidden />
+                    Sign out
+                  </button>
                 </div>
               )}
             </div>
@@ -552,8 +584,15 @@ export default function LogisticsDashboardPage() {
                     "Switch Online"
                   )}
                 </Button>
-                <Button variant="outline" className="h-14 w-14 p-0 rounded-2xl border-slate-200">
-                  <RefreshCw className={cn("h-5 w-5 text-slate-400", loading && "animate-spin")} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-14 w-14 p-0 rounded-2xl border-slate-200"
+                  onClick={() => void refreshDashboardQuiet()}
+                  disabled={headerRefreshing || jobsLoading || activeJobsLoading}
+                  aria-label="Refresh dashboard"
+                >
+                  <RefreshCw className={cn("h-5 w-5 text-slate-400", headerRefreshing && "animate-spin")} />
                 </Button>
               </div>
             </header>

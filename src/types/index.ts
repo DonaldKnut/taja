@@ -108,6 +108,12 @@ export interface Product {
   seller: string | User;
   shop?: string | Shop;
   shopSlug?: string;
+  /** Optional override when the item does not ship from the shop's main address */
+  listingLocation?: {
+    city?: string;
+    state?: string;
+    country?: string;
+  };
   location?: string;
   tags?: string[];
   inventory?: {
@@ -121,6 +127,8 @@ export interface Product {
   isNegotiable?: boolean;
   averageRating?: number;
   reviewCount?: number;
+  /** Lifetime PDP/API view counter (increments on product fetch) */
+  views?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -133,6 +141,15 @@ export interface Shop {
   description?: string;
   logo?: string;
   banner?: string;
+  /** Business / pickup address (used as default "ships from" for products) */
+  address?: {
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
   owner: string | User;
   categories?: string[];
   isVerified?: boolean;

@@ -16,6 +16,7 @@ import { Container } from "@/components/layout/Container";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { useWishlistStore, type WishlistItem } from "@/components/wishlist";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProductViewPresence } from "@/hooks/useProductViewPresence";
 import {
   ProductDetailGallery,
   ProductDetailMeta,
@@ -51,6 +52,11 @@ export default function ProductDetailPage() {
   const { addItem, updateQuantity, toggleCart, isOpen } = useCartStore();
   const { items: wishlistItems, toggleWishlistItem } = useWishlistStore();
   const { user } = useAuth();
+
+  const viewPulse = useProductViewPresence(
+    product?.id as string | undefined,
+    typeof product?.views === "number" ? product.views : undefined
+  );
 
   const isOwner = user && product && (user.id === product.sellerId || user._id === product.sellerId);
 
@@ -311,6 +317,7 @@ export default function ProductDetailPage() {
         count: product.reviews.length,
       }
       : undefined,
+    views: typeof product.views === "number" ? product.views : undefined,
   });
 
   const breadcrumbs = generateBreadcrumbs([
@@ -326,7 +333,9 @@ export default function ProductDetailPage() {
       <StructuredData data={breadcrumbs} />
       <div className="min-h-screen bg-white text-taja-secondary selection:bg-taja-primary/30 selection:text-taja-secondary">
         <AppHeader />
-        {product.id ? <ProductViewerPresence productId={product.id} /> : null}
+        {product.id ? (
+          <ProductViewerPresence productId={product.id} totalViewing={viewPulse.totalViewing} />
+        ) : null}
 
         <ProductDetailGallery
           product={product}
@@ -375,6 +384,10 @@ export default function ProductDetailPage() {
                 setActiveTab={setActiveTab}
                 isOwner={!!isOwner}
                 onEdit={() => router.push(`/seller/products/${product.id}/edit`)}
+                viewStats={{
+                  totalViews: viewPulse.totalViews,
+                  totalViewing: viewPulse.totalViewing,
+                }}
               />
               <ProductPurchaseActions
                 product={product}

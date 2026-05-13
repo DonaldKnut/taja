@@ -8,6 +8,9 @@ import '@/models/Category'; // Ensure Category model is registered for populate(
 import { notifyOwnerViewAlert } from '@/lib/notifications';
 import { writeAuditLog } from '@/lib/audit';
 import { validateShippingPolicy } from '@/lib/delivery/shippingPolicy';
+import { sanitizeListingLocation } from '@/lib/productListingLocation';
+import { applyProductViewHit, attachProductViewDedupeCookie } from '@/lib/productViewIncrement';
+import { hashProductViewerIp, recordProductViewTelemetry } from '@/lib/productViewAnalytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,14 +43,14 @@ export async function GET(
     if (isObjectId) {
       product = await Product.findById(params.productId)
         .populate('seller', 'fullName avatar email')
-        .populate('shop', 'shopName shopSlug logo banner')
+        .populate('shop', 'shopName shopSlug logo banner address')
         .populate('category', 'name slug')
         .lean();
     } else {
       // Search by slug
       product = await Product.findOne({ slug: params.productId, status: { $ne: 'deleted' } })
         .populate('seller', 'fullName avatar email')
-        .populate('shop', 'shopName shopSlug logo banner')
+        .populate('shop', 'shopName shopSlug logo banner address')
         .populate('category', 'name slug')
         .lean();
     }
@@ -59,18 +62,33 @@ export async function GET(
       );
     }
 
-    // Increment views - use _id from the found product
-    const productId = product._id;
-    await Product.findByIdAndUpdate(productId, { $inc: { views: 1 } });
+    const productIdStr = String((product as any)._id);
+    const auth = await authenticate(request);
+    const sellerId =
+      typeof product.seller === 'object' && product.seller?._id
+        ? String(product.seller._id)
+        : String((product as any).seller);
+    const viewerUserId = auth.user?.userId ? String(auth.user.userId) : null;
+    const skipViewIncrement = Boolean(viewerUserId && viewerUserId === sellerId);
+
+    const { views: resolvedViews, setDedupeCookie } = await applyProductViewHit(
+      request,
+      productIdStr,
+      { views: (product as any).views },
+      { skipIncrement: skipViewIncrement }
+    );
+    const productPayload = { ...(product as any), views: resolvedViews };
+
+    if (!skipViewIncrement) {
+      recordProductViewTelemetry({
+        productId: productIdStr,
+        userId: viewerUserId,
+        ipHash: hashProductViewerIp(request),
+      });
+    }
 
     // Notify seller that their product is being viewed (throttled per viewer + product).
     try {
-      const auth = await authenticate(request);
-      const sellerId =
-        typeof product.seller === 'object' && product.seller?._id
-          ? String(product.seller._id)
-          : String((product as any).seller);
-      const viewerUserId = auth.user?.userId ? String(auth.user.userId) : null;
       const viewerName = auth.user?.fullName || undefined;
       const forwardedFor = request.headers.get('x-forwarded-for') || '';
       const ip = forwardedFor.split(',')[0]?.trim() || 'unknown-ip';
@@ -82,7 +100,7 @@ export async function GET(
         await notifyOwnerViewAlert({
           ownerUserId: sellerId,
           entityType: 'product',
-          entityId: String(productId),
+          entityId: productIdStr,
           entityName: (product as any).title,
           entitySlug: (product as any).slug,
           viewerName,
@@ -93,10 +111,14 @@ export async function GET(
       console.error('Product view notification error:', notifyError);
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
-      data: product,
+      data: productPayload,
     });
+    if (setDedupeCookie) {
+      attachProductViewDedupeCookie(res, productIdStr);
+    }
+    return res;
   } catch (error: any) {
     console.error('Get product error:', error);
     return NextResponse.json(
@@ -216,6 +238,21 @@ export async function PUT(
           }
         }
       });
+
+      if (Object.prototype.hasOwnProperty.call(body, 'listingLocation')) {
+        if (body.listingLocation === null) {
+          (product as any).listingLocation = undefined;
+          await Product.updateOne({ _id: product._id }, { $unset: { listingLocation: 1 } });
+        } else {
+          const sl = sanitizeListingLocation(body.listingLocation);
+          if (sl) {
+            (product as any).listingLocation = sl;
+          } else {
+            (product as any).listingLocation = undefined;
+            await Product.updateOne({ _id: product._id }, { $unset: { listingLocation: 1 } });
+          }
+        }
+      }
 
       if (product.status !== 'draft') {
         const shippingValidation = validateShippingPolicy((product as any).shipping);

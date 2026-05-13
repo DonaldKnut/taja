@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getEffectivePrice, getProductDisplayPriceRange } from "@/lib/productPricing";
 import { ProductDetailTabs } from "./ProductDetailTabs";
+import { ProductViewsLive } from "./ProductViewsLive";
 
 interface ProductDetailMetaProps {
   product: any;
@@ -19,6 +20,8 @@ interface ProductDetailMetaProps {
   setActiveTab: (tab: "description" | "specifications") => void;
   isOwner?: boolean;
   onEdit?: () => void;
+  /** Live view counts from `useProductViewPresence` on the PDP */
+  viewStats?: { totalViews: number; totalViewing: number };
 }
 
 export function ProductDetailMeta({
@@ -32,6 +35,7 @@ export function ProductDetailMeta({
   setActiveTab,
   isOwner = false,
   onEdit,
+  viewStats,
 }: ProductDetailMetaProps) {
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const selectedVariant = product.variants?.find((v: any) => String(v._id || v.id || v.name) === String(selectedVariantId));
@@ -139,6 +143,13 @@ export function ProductDetailMeta({
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-taja-secondary tracking-tighter leading-tight italic">
             {product.title}
           </h1>
+          {viewStats ? (
+            <ProductViewsLive
+              totalViews={viewStats.totalViews}
+              totalViewing={viewStats.totalViewing}
+              className="pt-1"
+            />
+          ) : null}
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-emerald-100 to-transparent"></div>
             <span className="text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em]">
@@ -169,7 +180,7 @@ export function ProductDetailMeta({
               />
             </div>
             <p className="text-[9px] font-medium text-rose-400 italic">
-              Join {Math.floor(Math.random() * 15) + 5} others viewing this exclusive piece right now.
+              High demand — complete checkout soon to secure yours.
             </p>
           </div>
         )}

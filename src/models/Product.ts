@@ -94,6 +94,15 @@ export interface IProduct extends Document {
   averageRating: number;
   reviewCount: number;
   isNegotiable?: boolean;
+  /**
+   * Optional "ships from" / listing location when the item is not at the shop's main address.
+   * If omitted, clients should use the linked shop's `address`.
+   */
+  listingLocation?: {
+    city?: string;
+    state?: string;
+    country?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -157,6 +166,11 @@ const ProductSchema = new Schema<IProduct>(
     isNegotiable: {
       type: Boolean,
       default: false,
+    },
+    listingLocation: {
+      city: { type: String, trim: true },
+      state: { type: String, trim: true },
+      country: { type: String, trim: true, default: 'Nigeria' },
     },
     images: [
       {
@@ -271,6 +285,7 @@ ProductSchema.index({ shop: 1 });
 ProductSchema.index({ category: 1 });
 ProductSchema.index({ status: 1 });
 ProductSchema.index({ featured: 1 });
+ProductSchema.index({ 'listingLocation.city': 1, 'listingLocation.state': 1 });
 ProductSchema.index({ title: 'text', description: 'text' }); // Text search
 
 const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);

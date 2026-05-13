@@ -29,7 +29,8 @@ import {
     ChevronDown,
     Video,
     Search,
-    Check
+    Check,
+    MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -113,6 +114,9 @@ export default function AdminEditProductPage() {
         status: "active" as "active" | "draft" | "suspended",
         variants: [] as any[],
         isNegotiable: false,
+        shipsFromSameAsShop: true,
+        shipsFromCity: "",
+        shipsFromState: "",
     });
 
     const [productOwner, setProductOwner] = useState<any>(null);
@@ -237,6 +241,12 @@ export default function AdminEditProductPage() {
                         weight: String(v.weight || ""),
                     })),
                     isNegotiable: !!productData.isNegotiable,
+                    shipsFromSameAsShop: !(
+                        productData.listingLocation?.city ||
+                        productData.listingLocation?.state
+                    ),
+                    shipsFromCity: productData.listingLocation?.city || "",
+                    shipsFromState: productData.listingLocation?.state || "",
                 });
             } catch (error: any) {
                 console.error("Failed to fetch data:", error);
@@ -523,6 +533,15 @@ export default function AdminEditProductPage() {
                 },
                 status: formData.status,
                 variants: cleanedVariants,
+                listingLocation: formData.shipsFromSameAsShop
+                    ? null
+                    : formData.shipsFromCity.trim() || formData.shipsFromState.trim()
+                        ? {
+                            city: formData.shipsFromCity.trim(),
+                            state: formData.shipsFromState.trim(),
+                            country: "Nigeria",
+                        }
+                        : null,
             };
 
             const response = await api(`/api/products/${productId}`, {
@@ -931,6 +950,44 @@ export default function AdminEditProductPage() {
                                         <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-widest">Allow buyers to discuss pricing</span>
                                     </label>
                                 </div>
+                            </section>
+
+                            {/* Ships from */}
+                            <section className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-100 relative overflow-hidden">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <div className="p-3 bg-sky-500/10 rounded-2xl">
+                                        <MapPin className="w-6 h-6 text-sky-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Ships from</h2>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Listing location on cards</p>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-slate-600 mb-6 max-w-2xl">
+                                    Defaults to the selected shop&apos;s business address. Override only when this SKU ships from another city.
+                                </p>
+                                <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer mb-6">
+                                    <input
+                                        type="checkbox"
+                                        name="shipsFromSameAsShop"
+                                        checked={formData.shipsFromSameAsShop}
+                                        onChange={handleChange}
+                                        className="h-5 w-5 rounded border-slate-200 text-sky-600 focus:ring-sky-500"
+                                    />
+                                    <span className="text-sm font-bold text-slate-800">Use shop address</span>
+                                </label>
+                                {!formData.shipsFromSameAsShop && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City</label>
+                                            <Input name="shipsFromCity" value={formData.shipsFromCity} onChange={handleChange} className="rounded-2xl h-14" placeholder="City" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">State</label>
+                                            <Input name="shipsFromState" value={formData.shipsFromState} onChange={handleChange} className="rounded-2xl h-14" placeholder="State" />
+                                        </div>
+                                    </div>
+                                )}
                             </section>
 
                             {/* Logistics Protocol */}

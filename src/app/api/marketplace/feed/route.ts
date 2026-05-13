@@ -5,6 +5,7 @@ import Shop from '@/models/Shop';
 import Category from '@/models/Category';
 import User from '@/models/User';
 import { authenticate } from '@/lib/middleware';
+import { resolveProductLocationLabel } from '@/lib/productListingLocation';
 
 export const dynamic = 'force-dynamic';
 
@@ -147,21 +148,14 @@ export async function GET(request: NextRequest) {
         ],
       }).distinct('_id');
 
-      if (!matchingShopIds.length) {
-        return NextResponse.json({
-          success: true,
-          data: {
-            products: [],
-            recommendedShops: [],
-            categories: [],
-            savedFilters: [],
-            personalizedHeadline: undefined,
-            experimentVariant: 'control',
-          },
-        });
+      const locationOr: Record<string, unknown>[] = [
+        { 'listingLocation.city': locationRegex },
+        { 'listingLocation.state': locationRegex },
+      ];
+      if (matchingShopIds.length) {
+        locationOr.push({ shop: { $in: matchingShopIds } });
       }
-
-      andFilters.push({ shop: { $in: matchingShopIds } });
+      andFilters.push({ $or: locationOr });
     }
 
     if (verifiedOnly) {
@@ -187,7 +181,7 @@ export async function GET(request: NextRequest) {
     // Get products
     const products = await Product.find(query)
       .populate('seller', 'fullName avatar')
-      .populate('shop', 'shopName shopSlug logo banner avatar')
+      .populate('shop', 'shopName shopSlug logo banner avatar address verification stats')
       .populate('category', 'name slug icon')
       .sort({ createdAt: -1 })
       .limit(limit)
@@ -273,13 +267,28 @@ export async function GET(request: NextRequest) {
           banner: product.shop.banner || product.shop.coverImage,
           isVerified: product.shop.verification?.status === 'verified',
           averageRating: product.shop.stats?.averageRating || 0,
+          address: product.shop.address
+            ? {
+              city: product.shop.address.city,
+              state: product.shop.address.state,
+              country: product.shop.address.country,
+            }
+            : undefined,
         }
         : undefined,
       shopSlug: product.shop?.shopSlug,
-      location: product.shop?.address?.city || 'Nigeria',
+      listingLocation: product.listingLocation
+        ? {
+          city: product.listingLocation.city,
+          state: product.listingLocation.state,
+          country: product.listingLocation.country,
+        }
+        : undefined,
+      location: resolveProductLocationLabel(product as any, product.shop || undefined) || undefined,
       averageRating: product.averageRating || 0,
       reviewCount: product.reviewCount || 0,
       likes: product.likes || 0,
+      views: product.views ?? 0,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     }));

@@ -198,8 +198,12 @@ export default function NewProductPage() {
     }[],
     isNegotiable: false,
     status: "active" as "active" | "draft",
+    shipsFromSameAsShop: true,
+    shipsFromCity: "",
+    shipsFromState: "",
   });
   const [tagInput, setTagInput] = useState("");
+  const [shopAddressHint, setShopAddressHint] = useState({ city: "", state: "" });
   const [sellerSidebarUndocked, setSellerSidebarUndocked] = useState(false);
 
   const canAddProducts = hasShop && isVerifiedSeller;
@@ -245,10 +249,14 @@ export default function NewProductPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await api("/api/shops/my") as { success?: boolean; data?: { _id: string } | null };
+        const res = await api("/api/shops/my") as { success?: boolean; data?: Record<string, unknown> | null };
         if (cancelled) return;
 
         const shop = res?.success ? res?.data ?? null : null;
+        const addr = shop && typeof shop === "object" ? (shop as any).address : null;
+        if (addr?.city || addr?.state) {
+          setShopAddressHint({ city: String(addr.city || ""), state: String(addr.state || "") });
+        }
         const verified = user?.kyc?.status === "approved";
 
         if (!shop) {
@@ -676,6 +684,16 @@ export default function NewProductPage() {
           image: v.image || undefined,
         })),
         shop: userShop._id || userShop.id,
+        ...(!formData.shipsFromSameAsShop &&
+        (formData.shipsFromCity.trim() || formData.shipsFromState.trim())
+          ? {
+              listingLocation: {
+                city: formData.shipsFromCity.trim(),
+                state: formData.shipsFromState.trim(),
+                country: "Nigeria",
+              },
+            }
+          : {}),
       };
 
       const response = await sellerApi.createProduct(productData);
@@ -1499,6 +1517,64 @@ export default function NewProductPage() {
           </motion.div>
         )}
       </div>
+    </motion.section>
+
+        {/* Ships from (listing location) */}
+    <motion.section variants={item} className="glass-panel p-8 border-white/60 rounded-[40px] relative overflow-hidden bg-gradient-to-br from-white to-sky-50/30">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2.5 bg-sky-500/10 rounded-2xl">
+          <MapPin className="h-5 w-5 text-sky-600" />
+        </div>
+        <div className="space-y-0.5">
+          <h3 className="text-[10px] font-black text-sky-600 uppercase tracking-[0.3em]">Ships from</h3>
+          <p className="text-xl font-black text-taja-secondary tracking-tighter italic">Listing location</p>
+        </div>
+      </div>
+      <p className="text-xs text-taja-secondary/70 mb-6 leading-relaxed">
+        Buyers see this on product cards. By default we use your shop address from setup.
+        Change it only if this item ships from a different city.
+      </p>
+      {(shopAddressHint.city || shopAddressHint.state) && (
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+          Shop address on file: {shopAddressHint.city}
+          {shopAddressHint.city && shopAddressHint.state ? ", " : ""}
+          {shopAddressHint.state}
+        </p>
+      )}
+      <label className="flex items-center gap-3 p-4 rounded-2xl border border-sky-100 bg-white/60 cursor-pointer mb-6">
+        <input
+          type="checkbox"
+          name="shipsFromSameAsShop"
+          checked={formData.shipsFromSameAsShop}
+          onChange={handleChange}
+          className="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+        />
+        <span className="text-sm font-bold text-taja-secondary">Same as my shop address</span>
+      </label>
+      {!formData.shipsFromSameAsShop && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">City</label>
+            <input
+              name="shipsFromCity"
+              value={formData.shipsFromCity}
+              onChange={handleChange}
+              placeholder="e.g. Ikeja"
+              className="w-full h-12 px-4 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-taja-secondary"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">State</label>
+            <input
+              name="shipsFromState"
+              value={formData.shipsFromState}
+              onChange={handleChange}
+              placeholder="e.g. Lagos"
+              className="w-full h-12 px-4 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-taja-secondary"
+            />
+          </div>
+        </div>
+      )}
     </motion.section>
 
         {/* Shipping Card */}

@@ -14,6 +14,7 @@ export { ProductBadge } from "./ProductBadge";
 export { ProductReviews } from "./ProductReviews";
 export { ProductShopSummary } from "./ProductShopSummary";
 export { ProductViewerPresence } from "./ProductViewerPresence";
+export { ProductViewsLive } from "./ProductViewsLive";
 export type { ProductCardProps } from "./ProductCard";
 export type { ProductPriceProps } from "./ProductPrice";
 export type { ProductBadgeProps } from "./ProductBadge";

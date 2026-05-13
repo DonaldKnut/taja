@@ -96,6 +96,7 @@ export default function SellerOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [broadcastingRider, setBroadcastingRider] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -148,6 +149,31 @@ export default function SellerOrderDetailPage() {
     }
   };
 
+  const handleRequestRiderBroadcast = async () => {
+    if (!order?._id) return;
+    try {
+      setBroadcastingRider(true);
+      const res = await api("/api/seller/logistics/jobs/broadcast", {
+        method: "POST",
+        body: JSON.stringify({ orderId: order._id }),
+      });
+      if (res?.success) {
+        toast.success(res.message || "Nearby riders can see this job.");
+        const pickup = res?.data?.otp?.pickupCode;
+        const drop = res?.data?.otp?.deliveryCode;
+        if (pickup && drop) {
+          toast.success(`Pickup OTP: ${pickup} · Delivery OTP: ${drop}`, { duration: 14000 });
+        }
+      } else {
+        toast.error(res?.message || "Could not request rider");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Request failed");
+    } finally {
+      setBroadcastingRider(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -163,6 +189,7 @@ export default function SellerOrderDetailPage() {
 
   const currentNarrative = narrativeStatus[order.status as keyof typeof narrativeStatus] || narrativeStatus.pending;
   const nextActions = SELLER_STATUS_FLOW[order.status] || [];
+  const canRequestRiderBroadcast = ["confirmed", "processing", "shipped"].includes(String(order.status));
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] pb-20">
@@ -470,6 +497,40 @@ export default function SellerOrderDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {canRequestRiderBroadcast && (
+              <Card className="rounded-[2.5rem] border-emerald-100/80 shadow-premium overflow-hidden glass-panel bg-gradient-to-br from-emerald-50/40 to-white">
+                <CardHeader className="px-8 pt-8 pb-4">
+                  <CardTitle className="text-lg font-black text-taja-secondary tracking-tight uppercase italic flex items-center gap-3">
+                    <Truck className="w-5 h-5 text-emerald-600" />
+                    Rider dispatch
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-8 pb-10 space-y-4">
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                    Broadcast this order to nearby riders on the logistics network. They can claim it from their rider portal; share pickup OTP only with the rider who collects from you.
+                  </p>
+                  <Button
+                    type="button"
+                    disabled={broadcastingRider}
+                    onClick={() => void handleRequestRiderBroadcast()}
+                    className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                  >
+                    {broadcastingRider ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Broadcasting…
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 mr-2" />
+                        Request nearby rider
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Payment Summary */}
             <Card className="rounded-[2.5rem] border-white/60 shadow-premium overflow-hidden glass-panel">

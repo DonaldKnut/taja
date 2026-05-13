@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       const [products, total] = await Promise.all([
         Product.find(query)
           .populate('category', 'name slug')
-          .populate('shop', 'shopName shopSlug')
+          .populate('shop', 'shopName shopSlug address')
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limit)

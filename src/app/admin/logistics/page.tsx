@@ -64,7 +64,7 @@ type DispatchJob = {
 type DeliveryEventItem = {
   _id: string;
   eventType: string;
-  actorRole: "admin" | "logistics" | "system";
+  actorRole: "admin" | "logistics" | "system" | "seller";
   actorUserId?: string;
   metadata?: Record<string, unknown>;
   createdAt: string;

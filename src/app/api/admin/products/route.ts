@@ -4,6 +4,7 @@ import Product from '@/models/Product';
 import Shop from '@/models/Shop';
 import { requireRole } from '@/lib/middleware';
 import { validateShippingPolicy } from '@/lib/delivery/shippingPolicy';
+import { sanitizeListingLocation } from '@/lib/productListingLocation';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
       const [products, total] = await Promise.all([
         Product.find(query)
           .populate('seller', 'fullName email')
-          .populate('shop', 'shopName shopSlug')
+          .populate('shop', 'shopName shopSlug address')
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limit)
@@ -123,6 +124,7 @@ export async function POST(request: NextRequest) {
         seo,
         variants,
         status = 'active',
+        listingLocation: listingLocationRaw,
       } = body;
       const normalizedImages = Array.isArray(images)
         ? images
@@ -179,6 +181,8 @@ export async function POST(request: NextRequest) {
         ? Math.max(0, normalizedInventoryQty)
         : 0;
 
+      const listingLocation = sanitizeListingLocation(listingLocationRaw);
+
       const product = await Product.create({
         seller: shop.owner,
         shop: shop._id,
@@ -232,6 +236,7 @@ export async function POST(request: NextRequest) {
         seo: seo || { tags: [] },
         status: status === 'draft' ? 'draft' : 'active',
         variants: Array.isArray(variants) ? variants : [],
+        ...(listingLocation ? { listingLocation } : {}),
       });
 
       return NextResponse.json({

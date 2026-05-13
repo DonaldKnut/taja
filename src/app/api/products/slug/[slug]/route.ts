@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Product from '@/models/Product';
-import Category from '@/models/Category'; // Explicitly import for registration
-import Shop from '@/models/Shop';         // Explicitly import for registration
-import User from '@/models/User';         // Explicitly import for registration
+import '@/models/Category';
+import '@/models/Shop';
+import '@/models/User';
 import { authenticate } from '@/lib/middleware';
 import { notifyOwnerViewAlert } from '@/lib/notifications';
+import { applyProductViewHit, attachProductViewDedupeCookie } from '@/lib/productViewIncrement';
+import { hashProductViewerIp, recordProductViewTelemetry } from '@/lib/productViewAnalytics';
+
 export const dynamic = 'force-dynamic';
 
-// GET /api/products/slug/:slug - Get product by slug
+// GET /api/products/slug/:slug - Get product by slug (canonical slug path; same view rules as /api/products/[id])
 export async function GET(
   request: NextRequest,
   { params }: { params: { slug: string } }
@@ -18,7 +21,7 @@ export async function GET(
 
     const product = await Product.findOne({ slug: params.slug, status: 'active' })
       .populate('seller', 'fullName avatar email')
-      .populate('shop', 'shopName shopSlug logo banner')
+      .populate('shop', 'shopName shopSlug logo banner address')
       .populate('category', 'name slug')
       .lean();
 
@@ -29,17 +32,32 @@ export async function GET(
       );
     }
 
-    // Increment views
-    await Product.findOneAndUpdate({ slug: params.slug }, { $inc: { views: 1 } });
+    const productIdStr = String((product as any)._id);
+    const auth = await authenticate(request);
+    const sellerId =
+      typeof product.seller === 'object' && (product.seller as any)?._id
+        ? String((product.seller as any)._id)
+        : String((product as any).seller);
+    const viewerUserId = auth.user?.userId ? String(auth.user.userId) : null;
+    const skipViewIncrement = Boolean(viewerUserId && viewerUserId === sellerId);
 
-    // Notify seller that their product is being viewed (throttled per viewer + product).
+    const { views: resolvedViews, setDedupeCookie } = await applyProductViewHit(
+      request,
+      productIdStr,
+      { views: (product as any).views },
+      { skipIncrement: skipViewIncrement }
+    );
+    const productPayload = { ...(product as any), views: resolvedViews };
+
+    if (!skipViewIncrement) {
+      recordProductViewTelemetry({
+        productId: productIdStr,
+        userId: viewerUserId,
+        ipHash: hashProductViewerIp(request),
+      });
+    }
+
     try {
-      const auth = await authenticate(request);
-      const sellerId =
-        typeof product.seller === 'object' && (product.seller as any)?._id
-          ? String((product.seller as any)._id)
-          : String((product as any).seller);
-      const viewerUserId = auth.user?.userId ? String(auth.user.userId) : null;
       const viewerName = auth.user?.fullName || undefined;
       const forwardedFor = request.headers.get('x-forwarded-for') || '';
       const ip = forwardedFor.split(',')[0]?.trim() || 'unknown-ip';
@@ -51,7 +69,7 @@ export async function GET(
         await notifyOwnerViewAlert({
           ownerUserId: sellerId,
           entityType: 'product',
-          entityId: String((product as any)._id),
+          entityId: productIdStr,
           entityName: (product as any).title,
           entitySlug: (product as any).slug,
           viewerName,
@@ -62,10 +80,14 @@ export async function GET(
       console.error('Product view notification error:', notifyError);
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
-      data: product,
+      data: productPayload,
     });
+    if (setDedupeCookie) {
+      attachProductViewDedupeCookie(res, productIdStr);
+    }
+    return res;
   } catch (error: any) {
     console.error('Get product by slug error:', error);
     return NextResponse.json(
@@ -74,11 +96,3 @@ export async function GET(
     );
   }
 }
-
-
-
-
-
-
-
-

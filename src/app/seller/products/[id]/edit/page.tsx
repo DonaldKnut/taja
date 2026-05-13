@@ -113,9 +113,13 @@ export default function EditProductPage() {
     }[],
     isNegotiable: false,
     status: "active" as "active" | "draft",
+    shipsFromSameAsShop: true,
+    shipsFromCity: "",
+    shipsFromState: "",
   });
 
   const [tagInput, setTagInput] = useState("");
+  const [shopAddressHint, setShopAddressHint] = useState({ city: "", state: "" });
 
   const selectedCategoryLabel = useMemo(() => {
     if (!formData.category) return "Select category";
@@ -236,7 +240,22 @@ export default function EditProductPage() {
             stock: String(v.stock || ""),
             weight: String(v.weight || ""),
           })),
+          shipsFromSameAsShop: !(
+            productData.listingLocation?.city ||
+            productData.listingLocation?.state
+          ),
+          shipsFromCity: productData.listingLocation?.city || "",
+          shipsFromState: productData.listingLocation?.state || "",
         });
+        const sh = typeof productData.shop === "object" && productData.shop ? (productData.shop as any) : null;
+        if (sh?.address?.city || sh?.address?.state) {
+          setShopAddressHint({
+            city: String(sh.address.city || ""),
+            state: String(sh.address.state || ""),
+          });
+        } else {
+          setShopAddressHint({ city: "", state: "" });
+        }
       } catch (error: any) {
         console.error("Failed to fetch data:", error);
         toast.error(error?.message || "Failed to load product information");
@@ -530,6 +549,15 @@ export default function EditProductPage() {
           stock: v.stock ? parseInt(v.stock) : undefined,
           weight: v.weight ? parseFloat(v.weight) : undefined,
         })),
+        listingLocation: formData.shipsFromSameAsShop
+          ? null
+          : formData.shipsFromCity.trim() || formData.shipsFromState.trim()
+            ? {
+                city: formData.shipsFromCity.trim(),
+                state: formData.shipsFromState.trim(),
+                country: "Nigeria",
+              }
+            : null,
       };
 
       const response = await api(`/api/products/${productId}`, {
@@ -1097,6 +1125,50 @@ export default function EditProductPage() {
                   </div>
                 </div>
               </section>
+
+              <motion.section variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }} className="glass-panel p-8 border-white/60 rounded-[40px] relative overflow-hidden bg-gradient-to-br from-white to-sky-50/30 shadow-premium">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 bg-sky-500/10 rounded-2xl">
+                    <MapPin className="h-5 w-5 text-sky-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-[10px] font-black text-sky-600 uppercase tracking-[0.3em]">Ships from</h3>
+                    <p className="text-xl font-black text-taja-secondary tracking-tighter italic">Listing location</p>
+                  </div>
+                </div>
+                <p className="text-xs text-taja-secondary/70 mb-6 leading-relaxed">
+                  Shown on product cards. Defaults to your shop address unless you specify a different city here.
+                </p>
+                {(shopAddressHint.city || shopAddressHint.state) && (
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+                    Shop address: {shopAddressHint.city}
+                    {shopAddressHint.city && shopAddressHint.state ? ", " : ""}
+                    {shopAddressHint.state}
+                  </p>
+                )}
+                <label className="flex items-center gap-3 p-4 rounded-2xl border border-sky-100 bg-white/60 cursor-pointer mb-6">
+                  <input
+                    type="checkbox"
+                    name="shipsFromSameAsShop"
+                    checked={formData.shipsFromSameAsShop}
+                    onChange={handleChange}
+                    className="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+                  />
+                  <span className="text-sm font-bold text-taja-secondary">Same as shop address</span>
+                </label>
+                {!formData.shipsFromSameAsShop && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">City</label>
+                      <Input name="shipsFromCity" value={formData.shipsFromCity} onChange={handleChange} placeholder="City" className="rounded-xl h-12" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">State</label>
+                      <Input name="shipsFromState" value={formData.shipsFromState} onChange={handleChange} placeholder="State" className="rounded-xl h-12" />
+                    </div>
+                  </div>
+                )}
+              </motion.section>
 
                             {/* Shipping Card */}
               <motion.section variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }} className="glass-panel p-8 border-white/60 rounded-[40px] relative overflow-hidden bg-gradient-to-br from-white to-purple-50/20 shadow-premium">

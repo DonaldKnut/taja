@@ -1,25 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Users, X } from "lucide-react";
 
-const VIEWER_STORAGE_PREFIX = "taja_product_viewer_";
 const DISMISS_PREFIX = "taja_presence_dismiss_";
 const DISMISS_MS = 10 * 60 * 1000;
-
-function getOrCreateViewerId(productId: string): string {
-  if (typeof window === "undefined") return "";
-  const key = `${VIEWER_STORAGE_PREFIX}${productId}`;
-  let id = sessionStorage.getItem(key);
-  if (!id) {
-    id =
-      typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `v_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-    sessionStorage.setItem(key, id);
-  }
-  return id;
-}
 
 function isDismissed(productId: string): boolean {
   if (typeof window === "undefined") return false;
@@ -35,54 +20,24 @@ function dismiss(productId: string) {
 
 type Props = {
   productId: string | undefined;
+  /** From parent `useProductViewPresence` — avoids a second heartbeat. */
+  totalViewing: number;
 };
 
 /**
- * Periodic heartbeats + modal when multiple people are viewing (Mongo-backed).
+ * Modal when several people view at once. Parent runs `useProductViewPresence`.
  */
-export function ProductViewerPresence({ productId }: Props) {
-  const [totalViewing, setTotalViewing] = useState(0);
+export function ProductViewerPresence({ productId, totalViewing }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const shownRef = useRef(false);
 
-  const beat = useCallback(async () => {
+  useEffect(() => {
     if (!productId) return;
-    const viewerId = getOrCreateViewerId(productId);
-    if (!viewerId) return;
-    try {
-      const res = await fetch(`/api/products/${productId}/presence`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ viewerId }),
-      });
-      const json = await res.json();
-      if (!json?.success) return;
-      const total = Number(json?.data?.totalViewing ?? 0);
-      setTotalViewing(total);
-      if (total > 1 && !isDismissed(productId) && !shownRef.current) {
-        shownRef.current = true;
-        setModalOpen(true);
-      }
-    } catch {
-      /* ignore */
+    if (totalViewing > 1 && !isDismissed(productId) && !shownRef.current) {
+      shownRef.current = true;
+      setModalOpen(true);
     }
-  }, [productId]);
-
-  useEffect(() => {
-    if (!productId) return;
-    beat();
-    const t = window.setInterval(beat, 20_000);
-    return () => window.clearInterval(t);
-  }, [productId, beat]);
-
-  useEffect(() => {
-    if (!productId) return;
-    const onVis = () => {
-      if (document.visibilityState === "visible") beat();
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [productId, beat]);
+  }, [productId, totalViewing]);
 
   if (!productId || !modalOpen || totalViewing <= 1) return null;
 

@@ -4,6 +4,7 @@ import Product from '@/models/Product';
 import { requireRole, authenticate } from '@/lib/middleware';
 import { writeAuditLog } from '@/lib/audit';
 import { validateShippingPolicy } from '@/lib/delivery/shippingPolicy';
+import { sanitizeListingLocation } from '@/lib/productListingLocation';
 import '@/models/Shop'; // ensure Shop model is registered for populate('shop')
 import '@/models/User'; // ensure User model is registered for populate('seller')
 import '@/models/Category'; // ensure Category model is registered for populate('category')
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
     const [products, total] = await Promise.all([
       Product.find(query)
         .populate('seller', 'fullName avatar')
-        .populate('shop', 'shopName shopSlug logo')
+        .populate('shop', 'shopName shopSlug logo address')
         .populate('category', 'name slug')
         .sort(sort)
         .skip(skip)
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
         shop,
         variants,
         isNegotiable,
+        listingLocation: listingLocationRaw,
       } = body;
       const normalizedImages = Array.isArray(images)
         ? images
@@ -233,6 +235,8 @@ export async function POST(request: NextRequest) {
         // Use unique slug
       }
 
+      const listingLocation = sanitizeListingLocation(listingLocationRaw);
+
       const product = await Product.create({
         seller: user.userId,
         shop: userShop._id,
@@ -277,6 +281,7 @@ export async function POST(request: NextRequest) {
         status,
         variants: variants || [],
         isNegotiable: isNegotiable || false,
+        ...(listingLocation ? { listingLocation } : {}),
       });
 
       await writeAuditLog({

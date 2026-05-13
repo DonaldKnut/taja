@@ -14,7 +14,7 @@ export type DeliveryEventType =
 export interface IDeliveryEvent extends Document {
   job: mongoose.Types.ObjectId;
   actorUserId?: mongoose.Types.ObjectId;
-  actorRole: "admin" | "logistics" | "system";
+  actorRole: "admin" | "logistics" | "system" | "seller";
   eventType: DeliveryEventType;
   metadata?: Record<string, unknown>;
   createdAt: Date;
@@ -27,7 +27,7 @@ const DeliveryEventSchema = new Schema<IDeliveryEvent>(
     actorUserId: { type: Schema.Types.ObjectId, ref: "User", index: true },
     actorRole: {
       type: String,
-      enum: ["admin", "logistics", "system"],
+      enum: ["admin", "logistics", "system", "seller"],
       required: true,
       index: true,
     },

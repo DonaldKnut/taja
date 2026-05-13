@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, Play, PlayCircle, ChevronLeft, ChevronRight, Pencil, MoreHorizontal } from "lucide-react";
+import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, Play, PlayCircle, ChevronLeft, ChevronRight, Pencil, MoreHorizontal, Eye } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ProductPrice } from "./ProductPrice";
 import { ShopLink } from "../shop/ShopLink";
@@ -20,6 +20,8 @@ import { toast } from "react-hot-toast";
 import { getAbsoluteProductUrl, getProductPath } from "@/lib/productLinks";
 import { useAuth } from "@/contexts/AuthContext";
 import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
+import { listingLocationParts, resolveProductLocationLabel } from "@/lib/productListingLocation";
+import { formatViewCount } from "@/lib/formatViewCount";
 
 const normalizeMediaUrl = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
@@ -152,12 +154,18 @@ export function ProductCard({
     (shop as any)?.reviewCount ??
     (product as any)?.reviewCount;
   const likesCount = liveLikesCount;
+  const viewCount = Math.max(0, Math.floor(Number((product as any)?.views ?? 0) || 0));
   const followerCount = shopStats?.followerCount ?? (shop as any)?.followerCount;
   const responseTime = (shop as any)?.settings?.responseTime as string | undefined;
-  const locationParts = [
-    (shop as any)?.address?.city,
-    (shop as any)?.address?.state,
-  ].filter(Boolean);
+  const locationParts = (() => {
+    const fromListing = listingLocationParts((product as any).listingLocation);
+    if (fromListing.length) return fromListing;
+    const fromShop = [(shop as any)?.address?.city, (shop as any)?.address?.state].filter(Boolean) as string[];
+    if (fromShop.length) return fromShop;
+    const label = resolveProductLocationLabel(product as any, shop);
+    if (label) return [label];
+    return [] as string[];
+  })();
   const normalizedImages = Array.isArray(product?.images)
     ? product.images
         .map((src) => normalizeMediaUrl(src))
@@ -1013,10 +1021,22 @@ export function ProductCard({
           <p className="inline-flex px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-100/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
             {typeof product.category === 'object' ? (product.category as any)?.name : (product.category || "General")}
           </p>
+          {locationParts.length > 0 && (
+            <p className="text-[10px] text-gray-500 flex items-center gap-1 min-w-0" title={locationParts.join(", ")}>
+              <MapPin className="h-3 w-3 shrink-0 text-gray-400" />
+              <span className="truncate font-semibold text-gray-600">{locationParts.join(", ")}</span>
+            </p>
+          )}
           <p className="text-[10px] text-gray-400 flex items-center gap-1.5">
             <Heart className="h-3 w-3" />
             <span>{likesCount.toLocaleString()} likes</span>
           </p>
+          {viewCount > 0 ? (
+            <p className="text-[10px] text-gray-400 flex items-center gap-1.5">
+              <Eye className="h-3 w-3 shrink-0" />
+              <span className="tabular-nums">{formatViewCount(viewCount)} views</span>
+            </p>
+          ) : null}
 
           {showSellerRow && sellerName && (
             <div className="mt-3 flex flex-col gap-2 rounded-2xl border border-gray-100/80 bg-gradient-to-b from-gray-50/50 to-gray-50/20 p-2 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-1.5 sm:from-transparent sm:to-transparent sm:shadow-none sm:border-gray-50 sm:bg-gray-50/30 group/seller-row">
