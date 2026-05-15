@@ -4,6 +4,7 @@ import LogisticsPartner from "@/models/LogisticsPartner";
 import User from "@/models/User";
 import { requireAuth } from "@/lib/middleware";
 import { notifyAdminsLogisticsGuarantorSubmitted } from "@/lib/logisticsAdminNotify";
+import { getGuarantorRelationshipRejection } from "@/lib/guarantorRelationshipGuard";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,11 @@ export async function POST(request: NextRequest) {
           { success: false, message: "Invalid characters in guarantor form" },
           { status: 400 }
         );
+      }
+
+      const relationshipReject = getGuarantorRelationshipRejection(relationship);
+      if (relationshipReject) {
+        return NextResponse.json({ success: false, message: relationshipReject }, { status: 400 });
       }
 
       const currentUser = await User.findById(user.userId).select("email").lean();

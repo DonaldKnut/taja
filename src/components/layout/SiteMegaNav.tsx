@@ -19,6 +19,8 @@ export type SiteMegaNavProps = {
   className?: string;
   /** When provided, Escape closes the open panel (keyboard). */
   idPrefix?: string;
+  /** Solid light header (e.g. marketplace): nav triggers stay near-black in dark mode. */
+  lightHeaderChrome?: boolean;
 };
 
 function clampMegaPanelToViewport(panelEl: HTMLElement) {
@@ -36,7 +38,13 @@ function clampMegaPanelToViewport(panelEl: HTMLElement) {
   panelEl.style.transform = shift === 0 ? "translateX(-50%)" : `translateX(calc(-50% + ${shift}px))`;
 }
 
-export function SiteMegaNav({ pathname, variant = "app", className, idPrefix = "mega" }: SiteMegaNavProps) {
+export function SiteMegaNav({
+  pathname,
+  variant = "app",
+  className,
+  idPrefix = "mega",
+  lightHeaderChrome = false,
+}: SiteMegaNavProps) {
   const [open, setOpen] = useState<MegaMenuId | null>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -133,8 +141,15 @@ export function SiteMegaNav({ pathname, variant = "app", className, idPrefix = "
                 aria-controls={`${idPrefix}-panel-${section.id}`}
                 className={cn(
                   triggerClass,
-                  active || isOpen ? "text-taja-primary" : "text-gray-400 hover:text-taja-secondary",
-                  variant === "home" && !(active || isOpen) && "text-taja-secondary hover:text-taja-primary"
+                  active || isOpen
+                    ? "text-taja-primary"
+                    : lightHeaderChrome
+                      ? "text-slate-900 hover:text-taja-primary dark:text-slate-900"
+                      : "text-gray-400 hover:text-taja-secondary",
+                  variant === "home" &&
+                    !(active || isOpen) &&
+                    !lightHeaderChrome &&
+                    "text-taja-secondary hover:text-taja-primary"
                 )}
                 onMouseEnter={() => {
                   cancelLeave();

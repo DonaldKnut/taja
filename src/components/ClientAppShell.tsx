@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "next-themes";
 import { Providers } from "@/components/Providers";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import { CartDrawer, useCartStore } from "@/components/cart";
@@ -59,32 +60,31 @@ export function ClientAppShell({ children }: ClientAppShellProps) {
     AUTH_ROUTES_WITHOUT_PROVIDERS.some((route) => pathname.startsWith(route));
 
   // Minimal shell for specific auth routes (no Providers, no global cart/toaster/PWA)
-  if (isAuthRouteWithoutProviders) {
-    return (
-      <>
-        <div className="min-h-screen bg-gradient-to-br from-taja-light to-white">
-          {children}
-        </div>
-        <Toaster
-          position="top-center"
-          containerClassName="toast-glass-container"
-          toastOptions={{
-            className: "toast-glass",
-            success: { className: "toast-glass toast-glass-success" },
-            error: { className: "toast-glass toast-glass-error" },
-            loading: { className: "toast-glass toast-glass-loading" },
-            duration: 4000,
-          }}
-        />
-      </>
-    );
-  }
-
-  // Full shell for all other routes (including /login which needs AuthProvider)
   return (
-    <Providers>
-      <CartShell>{children}</CartShell>
-    </Providers>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      {isAuthRouteWithoutProviders ? (
+        <>
+          <div className="min-h-screen bg-gradient-to-br from-taja-light to-white dark:from-slate-950 dark:to-slate-900">
+            {children}
+          </div>
+          <Toaster
+            position="top-center"
+            containerClassName="toast-glass-container"
+            toastOptions={{
+              className: "toast-glass",
+              success: { className: "toast-glass toast-glass-success" },
+              error: { className: "toast-glass toast-glass-error" },
+              loading: { className: "toast-glass toast-glass-loading" },
+              duration: 4000,
+            }}
+          />
+        </>
+      ) : (
+        <Providers>
+          <CartShell>{children}</CartShell>
+        </Providers>
+      )}
+    </ThemeProvider>
   );
 }
 
@@ -93,7 +93,7 @@ function CartShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-taja-light to-white pb-24 md:pb-0">
+      <div className="min-h-screen bg-gradient-to-br from-taja-light to-white pb-24 md:pb-0 dark:from-slate-950 dark:to-slate-900">
         {children}
       </div>
       <FloatingCart />

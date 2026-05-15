@@ -3,6 +3,44 @@ const withPWA = require("next-pwa")({
   disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "cloudinary-product-images",
+        expiration: {
+          maxEntries: 256,
+          maxAgeSeconds: 30 * 24 * 60 * 60,
+        },
+        cacheableResponse: { statuses: [0, 200] },
+      },
+    },
+    {
+      urlPattern: /^https:\/\/.*\.r2\.dev\/.*/i,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "r2-product-images",
+        expiration: {
+          maxEntries: 256,
+          maxAgeSeconds: 30 * 24 * 60 * 60,
+        },
+        cacheableResponse: { statuses: [0, 200] },
+      },
+    },
+    {
+      urlPattern: /\/api\/marketplace\/feed/i,
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "marketplace-feed-api",
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 5 * 60,
+        },
+        cacheableResponse: { statuses: [0, 200] },
+      },
+    },
+  ],
 });
 
 /** @type {import('next').NextConfig} */

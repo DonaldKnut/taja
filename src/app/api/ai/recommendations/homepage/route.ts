@@ -3,6 +3,7 @@ import { extractAccessTokenFromRequest } from '@/lib/auth-request-token';
 import { getHomepageRecommendations } from '@/lib/ai/recommendations';
 import Product from '@/models/Product';
 import '@/models/Shop'; // ensure Shop model is registered for populate('shop')
+import { catalogCacheHeaders } from '@/lib/httpCache';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,14 +52,17 @@ export async function GET(request: NextRequest) {
         .filter(r => r.product !== null);
     };
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        trending: enrichRecommendations(recommendations.trending),
-        personalized: enrichRecommendations(recommendations.personalized),
-        newArrivals: enrichRecommendations(recommendations.newArrivals),
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          trending: enrichRecommendations(recommendations.trending),
+          personalized: enrichRecommendations(recommendations.personalized),
+          newArrivals: enrichRecommendations(recommendations.newArrivals),
+        },
       },
-    });
+      { headers: catalogCacheHeaders(Boolean(userId)) }
+    );
   } catch (error: any) {
     console.error('[AI_RECOMMENDATIONS_HOMEPAGE] Error:', error);
     const isDbTimeout =

@@ -19,9 +19,11 @@ import toast from "react-hot-toast";
 
 export interface AppHeaderProps {
     transparent?: boolean;
+    /** Solid white bar (no glass / no dark slate bar) — classic marketplace header look. */
+    solidLightHeader?: boolean;
 }
 
-export function AppHeader({ transparent = false }: AppHeaderProps) {
+export function AppHeader({ transparent = false, solidLightHeader = false }: AppHeaderProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { user, isAuthenticated } = useAuth();
@@ -77,44 +79,26 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
         };
     }, [isAuthenticated]);
 
-    const [isVisible, setIsVisible] = useState(true);
-    const [lastScrollY, setLastScrollY] = useState(0);
-
     useEffect(() => {
         const handleScroll = () => {
-            const currentScrollY = window.scrollY;
-            
-            // Background change threshold
-            setIsScrolled(currentScrollY > 20);
-
-            // Hide/Show logic
-            if (pathname.startsWith("/product/")) {
-                if (currentScrollY > lastScrollY && currentScrollY > 100) {
-                    setIsVisible(false);
-                } else {
-                    setIsVisible(true);
-                }
-            } else {
-                setIsVisible(true);
-            }
-            
-            setLastScrollY(currentScrollY);
+            setIsScrolled(window.scrollY > 20);
         };
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
-    }, [lastScrollY]);
+    }, []);
 
     const isTransparent = transparent && !isScrolled;
 
     return (
         <>
             <header
-                className={cn(
+        className={cn(
                     "sticky top-0 w-full z-[9999] transition-all duration-500 relative overflow-visible",
-                    !isVisible && "-translate-y-full opacity-0",
-                    isTransparent
+                    solidLightHeader && !isTransparent
+                        ? "bg-white border-b border-gray-200/90 shadow-sm dark:bg-white dark:border-gray-200/90"
+                        : isTransparent
                         ? "bg-transparent border-transparent"
-                        : "bg-white/80 backdrop-blur-xl border-b border-white/40 shadow-premium"
+                        : "bg-white/80 dark:bg-slate-950/85 backdrop-blur-xl border-b border-white/40 dark:border-slate-800/60 shadow-premium"
                 )}
             >
                 <Container
@@ -131,7 +115,12 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
 
                         {/* Mega menu — desktop (nav is flex-nowrap + scrollbar-hide; Company shows xl+) */}
                         <div className="hidden min-w-0 lg:block">
-                            <SiteMegaNav pathname={pathname} variant="app" idPrefix="app-header" />
+                            <SiteMegaNav
+                                pathname={pathname}
+                                variant="app"
+                                idPrefix="app-header"
+                                lightHeaderChrome={solidLightHeader}
+                            />
                         </div>
                     </div>
 
@@ -139,7 +128,12 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                     <div className="mx-1.5 hidden min-w-0 max-w-[min(100%,10.5rem)] flex-1 basis-0 sm:max-w-[13rem] md:mx-2 md:max-w-[15rem] lg:max-w-[17rem] lg:mx-3 xl:mx-8 xl:max-w-md md:block">
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors" />
+                                <Search
+                                    className={cn(
+                                        "h-4 w-4 text-gray-400 group-focus-within:text-taja-primary transition-colors",
+                                        solidLightHeader && "text-slate-600 dark:text-slate-700"
+                                    )}
+                                />
                             </div>
                             <input
                                 type="text"
@@ -149,7 +143,12 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                         router.push(`/marketplace?search=${(e.target as HTMLInputElement).value}`);
                                     }
                                 }}
-                                className="w-full bg-taja-light/30 border-transparent rounded-full py-2.5 pl-11 pr-4 text-sm font-medium focus:bg-white focus:border-taja-primary/20 focus:ring-0 transition-all shadow-sm"
+                                className={cn(
+                                    "w-full rounded-full py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-0 transition-all shadow-sm",
+                                    solidLightHeader
+                                        ? "border border-gray-200/90 bg-gray-100 text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-taja-primary/35 dark:border-gray-200/90 dark:bg-gray-100 dark:text-slate-900 dark:placeholder:text-slate-500 dark:focus:bg-white"
+                                        : "border-transparent bg-taja-light/30 dark:bg-slate-800/50 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-taja-primary/20"
+                                )}
                             />
                         </div>
                     </div>
@@ -159,7 +158,14 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                         <div className="flex items-center gap-1 md:gap-2">
                             {isAuthenticated ? (
                                 <Link href={user?.role === "admin" ? "/admin/dashboard" : user?.role === "seller" ? "/seller/dashboard" : "/dashboard"} className="relative">
-                                    <Button variant="outline" className="rounded-full px-4 md:px-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest h-10 border-taja-light/60 hover:bg-white transition-all active:scale-95">
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "rounded-full px-4 md:px-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest h-10 border-taja-light/60 hover:bg-white transition-all active:scale-95",
+                                            solidLightHeader &&
+                                                "border-slate-300 text-slate-900 hover:bg-slate-50 dark:border-slate-300 dark:text-slate-900 dark:hover:bg-slate-50"
+                                        )}
+                                    >
                                         <User className="w-3.5 h-3.5 md:hidden" />
                                         <span className="hidden md:inline">Dashboard</span>
                                     </Button>
@@ -181,7 +187,11 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                     <Button
                                         variant="ghost"
                                         onClick={() => router.push("/login")}
-                                        className="text-[10px] font-black uppercase tracking-widest hover:bg-taja-light"
+                                        className={cn(
+                                            "text-[10px] font-black uppercase tracking-widest hover:bg-taja-light",
+                                            solidLightHeader &&
+                                                "h-10 rounded-full border border-slate-300/90 bg-white px-4 text-slate-900 shadow-sm hover:bg-slate-50 hover:text-taja-primary dark:border-slate-300/90 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-50"
+                                        )}
                                     >
                                         Sign In
                                     </Button>
@@ -197,7 +207,11 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                             <div className="relative hidden md:flex">
                                 <button
                                     onClick={() => openWishlist()}
-                                    className="p-2 text-taja-secondary hover:text-taja-primary transition-colors hover:bg-taja-light/30 rounded-full"
+                                    className={cn(
+                                        "p-2 text-taja-secondary hover:text-taja-primary transition-colors hover:bg-taja-light/30 rounded-full",
+                                        solidLightHeader &&
+                                            "text-slate-900 hover:bg-slate-100 dark:text-slate-900"
+                                    )}
                                     aria-label="Wishlist"
                                 >
                                     <Heart className="h-5 w-5 md:h-6 md:w-6" />
@@ -219,7 +233,11 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                             {/* Cart Icon - Responsive: Hidden on Mobile as Bottom Nav has it */}
                             <div className="relative hidden md:flex">
                                 <CartIcon
-                                    className="p-2 text-taja-secondary hover:text-taja-primary transition-colors hover:bg-taja-light/30 rounded-full"
+                                    className={cn(
+                                        "p-2 text-taja-secondary hover:text-taja-primary transition-colors hover:bg-taja-light/30 rounded-full",
+                                        solidLightHeader &&
+                                            "text-slate-900 hover:bg-slate-100 dark:text-slate-900"
+                                    )}
                                     iconClassName="h-5 w-5 md:h-6 md:w-6"
                                     badgeClassName="!h-4 !w-4 md:!h-5 md:!w-5 !text-[8px] md:!text-[10px] !-top-0.5 !-right-0.5 bg-taja-primary text-white border-2 border-white"
                                 />
@@ -228,7 +246,10 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                             {/* Mobile Menu Toggle */}
                             <button
                                 onClick={() => setMobileMenuOpen(true)}
-                                className="lg:hidden p-2 text-taja-secondary hover:text-taja-primary transition-colors"
+                                className={cn(
+                                    "lg:hidden p-2 text-taja-secondary hover:text-taja-primary transition-colors",
+                                    solidLightHeader && "text-slate-900 dark:text-slate-900"
+                                )}
                                 aria-label="Toggle mobile menu"
                             >
                                 <Menu className="w-6 h-6" />
@@ -254,7 +275,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                            className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-white z-[10001] shadow-2xl p-8 flex flex-col min-h-0 overflow-hidden lg:hidden"
+                            className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-white dark:bg-slate-950 z-[10001] shadow-2xl p-8 flex flex-col min-h-0 overflow-hidden lg:hidden"
                         >
                             <div className="flex items-center justify-between mb-12">
                                 <Logo size="lg" variant="header" />
@@ -284,7 +305,7 @@ export function AppHeader({ transparent = false }: AppHeaderProps) {
                                 className="overflow-y-auto pr-2 pb-4 scrollbar-hide flex-1 min-h-0 gap-2.5"
                             />
 
-                            <div className="mt-auto pt-10 border-t border-gray-100 flex flex-col gap-4">
+                            <div className="mt-auto pt-10 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-4">
                                 {isAuthenticated ? (
                                     <Button
                                         onClick={() => { 

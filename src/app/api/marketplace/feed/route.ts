@@ -6,6 +6,7 @@ import Category from '@/models/Category';
 import User from '@/models/User';
 import { authenticate } from '@/lib/middleware';
 import { resolveProductLocationLabel } from '@/lib/productListingLocation';
+import { catalogCacheHeaders } from '@/lib/httpCache';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,8 @@ export async function GET(request: NextRequest) {
     const verifiedOnly = searchParams.get('verifiedOnly') === 'true';
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10) || 50, 100);
     const includeMine = searchParams.get('includeMine') === 'true';
+    const userId = searchParams.get('userId')?.trim();
+    const isPersonalized = Boolean(userId || includeMine);
     const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     // Build query for active products (optionally include authenticated user's own non-deleted products)
@@ -307,17 +310,20 @@ export async function GET(request: NextRequest) {
       totalProducts: shop.stats?.totalProducts || 0,
     }));
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        products: transformedProducts,
-        recommendedShops: transformedShops,
-        categories: categories.map((cat: any) => cat.name),
-        savedFilters: [],
-        personalizedHeadline: undefined,
-        experimentVariant: 'control',
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          products: transformedProducts,
+          recommendedShops: transformedShops,
+          categories: categories.map((cat: any) => cat.name),
+          savedFilters: [],
+          personalizedHeadline: undefined,
+          experimentVariant: 'control',
+        },
       },
-    });
+      { headers: catalogCacheHeaders(isPersonalized) }
+    );
   } catch (error: any) {
     console.error('[Marketplace Feed] Error:', {
       message: error.message,

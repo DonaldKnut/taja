@@ -37,7 +37,14 @@ import toast from "react-hot-toast";
 import { api, sellerApi, shopsApi, uploadProductImage, uploadProductVideo } from "@/lib/api";
 import { z } from "zod";
 import { ShopRequirementModal } from "@/components/shop/ShopRequirementModal";
-import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionEditor } from "@/components/product";
+import {
+  CategoryPickerModal,
+  categoryPickerLabel,
+  ProductDescriptionEditor,
+  ProductAiFillModal,
+} from "@/components/product";
+import { mergeSellerProductFormWithAiAnalysis } from "@/lib/productAiFillFromAnalysis";
+import type { ProductImageAiAnalysis } from "@/lib/ai/imageRecognition";
 import { cn } from "@/lib/utils";
 import {
   isRichTextDescriptionEmpty,
@@ -140,6 +147,7 @@ export default function NewProductPage() {
   const [suggestingTags, setSuggestingTags] = useState(false);
   const [allCategories, setAllCategories] = useState<any[]>([]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [aiFillModalOpen, setAiFillModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -718,6 +726,23 @@ export default function NewProductPage() {
     !!formData.title.trim() &&
     !!formData.price.trim();
 
+  const handleAiFillApplied = (payload: {
+    analysis: ProductImageAiAnalysis;
+    imageUrl: string;
+    overwrite: boolean;
+    prependImage: boolean;
+  }) => {
+    setFormData((prev) =>
+      mergeSellerProductFormWithAiAnalysis(prev, payload.analysis, {
+        categories: allCategories,
+        imageUrl: payload.imageUrl,
+        prependImage: payload.prependImage,
+        overwrite: payload.overwrite,
+      })
+    );
+    toast.success("AI filled the form — review everything before you publish.");
+  };
+
   return (
     <div className="min-h-screen bg-motif-blanc selection:bg-taja-primary/30">
       {/* Navigation - Actions Bar (fixed below seller header) */}
@@ -733,7 +758,15 @@ export default function NewProductPage() {
                 Back to Products
               </Link>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-end">
+              <button
+                type="button"
+                onClick={() => setAiFillModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 border-emerald-500/30 text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100/90 transition-all"
+              >
+                <Sparkles className="h-4 w-4" />
+                AI from photo
+              </button>
               <button
                 type="button"
                 onClick={(e) => handleSubmit(e, true)}
@@ -781,7 +814,15 @@ export default function NewProductPage() {
                   <h3 className="text-[10px] font-black text-taja-primary uppercase tracking-[0.3em]">Foundation</h3>
                   <p className="text-3xl font-black text-taja-secondary tracking-tighter italic">Basic Information</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAiFillModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 border-emerald-500/35 text-emerald-800 bg-emerald-50/90 hover:bg-emerald-100 transition-all"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Fill from photo
+                  </button>
                   <button
                     type="button"
                     disabled={!formData.title.trim() || generatingDescription}
@@ -1840,6 +1881,12 @@ export default function NewProductPage() {
             prev.some((x) => String(x._id) === String(cat._id)) ? prev : [...prev, cat]
           )
         }
+      />
+
+      <ProductAiFillModal
+        open={aiFillModalOpen}
+        onClose={() => setAiFillModalOpen(false)}
+        onApplied={handleAiFillApplied}
       />
 
       <ShopRequirementModal open={!checkingShop && !hasShop} />

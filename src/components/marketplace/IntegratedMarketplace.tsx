@@ -7,6 +7,7 @@ import { Filter, Zap, Gift, Tag, Star, ChevronRight, ChevronLeft, ShoppingBag, S
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/product";
 import { useMarketplaceFeed } from "@/hooks/useMarketplaceFeed";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,8 @@ const MARKETPLACE_SLIDE_MS = 5000;
 const SPOTLIGHT_SLIDES_BEFORE_DISMISS = 3;
 const MARKETPLACE_FILTERS_RAIL_OPEN_KEY = "taja_marketplace_filters_rail_open";
 const MARKETPLACE_FILTERS_SIDEBAR_COLLAPSED_KEY = "taja_marketplace_filters_sidebar_collapsed";
+/** Standalone /marketplace mobile bottom dock — "1" expanded, default collapsed so product grid is visible */
+const MARKETPLACE_MOBILE_FILTER_DOCK_KEY = "taja_marketplace_mobile_filters_expanded";
 
 export interface IntegratedMarketplaceProps {
     isInsideDashboard?: boolean;
@@ -84,12 +87,17 @@ export function IntegratedMarketplace({
     const { user } = useAuth();
     const firstName = user?.fullName?.split(" ")[0] || "Shopper";
 
+    const debouncedSearch = useDebounce(searchQuery, 400);
+    const debouncedShop = useDebounce(shopQuery, 400);
+    const debouncedSeller = useDebounce(sellerQuery, 400);
+    const debouncedLocation = useDebounce(locationQuery, 400);
+
     const feed = useMarketplaceFeed({
         category: undefined,
-        search: searchQuery || undefined,
-        shop: shopQuery || undefined,
-        seller: sellerQuery || undefined,
-        location: locationQuery || undefined,
+        search: debouncedSearch || undefined,
+        shop: debouncedShop || undefined,
+        seller: debouncedSeller || undefined,
+        location: debouncedLocation || undefined,
         minPrice: minPrice ? Number(minPrice) : undefined,
         maxPrice: maxPrice ? Number(maxPrice) : undefined,
         verifiedOnly,
@@ -110,8 +118,8 @@ export function IntegratedMarketplace({
 
     const [filtersDocked, setFiltersDocked] = useState(false);
     const [filtersSidebarCollapsed, setFiltersSidebarCollapsed] = useState(false);
-    /** Standalone /marketplace mobile: fixed bottom filter dock — expanded by default, user can collapse */
-    const [mobileFilterDockExpanded, setMobileFilterDockExpanded] = useState(true);
+    /** Standalone /marketplace mobile: fixed bottom filter dock — collapsed by default */
+    const [mobileFilterDockExpanded, setMobileFilterDockExpanded] = useState(false);
 
     useEffect(() => {
         const saved = localStorage.getItem("taja_marketplace_filters_docked");
@@ -119,6 +127,23 @@ export function IntegratedMarketplace({
         const savedCollapsed = localStorage.getItem(MARKETPLACE_FILTERS_SIDEBAR_COLLAPSED_KEY);
         if (savedCollapsed !== null) setFiltersSidebarCollapsed(savedCollapsed === "1");
     }, []);
+
+    useEffect(() => {
+        if (hostShell || typeof window === "undefined") return;
+        const saved = localStorage.getItem(MARKETPLACE_MOBILE_FILTER_DOCK_KEY);
+        if (saved !== null) setMobileFilterDockExpanded(saved === "1");
+    }, [hostShell]);
+
+    const toggleMobileFilterDock = () => {
+        setMobileFilterDockExpanded((prev) => {
+            const next = !prev;
+            if (typeof window !== "undefined") {
+                localStorage.setItem(MARKETPLACE_MOBILE_FILTER_DOCK_KEY, next ? "1" : "0");
+            }
+            if (!next) setShowAdvancedFilters(false);
+            return next;
+        });
+    };
 
     const toggleFiltersDocked = () => {
         const next = !filtersDocked;
@@ -703,7 +728,12 @@ export function IntegratedMarketplace({
                                 "px-4 sm:px-6 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80 transition-all duration-300 lg:hidden",
                                 hostShell
                                     ? "sticky top-[5rem] z-40 border-b border-gray-100 shadow-sm py-4"
-                                    : "fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--mobile-bottom-nav-height,4.25rem))] z-[45] max-h-[min(85dvh,calc(100dvh-5rem))] flex flex-col rounded-t-2xl border border-gray-200 border-b-0 shadow-[0_-12px_40px_-8px_rgba(15,23,42,0.12)] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-w-2xl mx-auto w-[calc(100%-1rem)] sm:w-full"
+                                    : cn(
+                                          "fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--mobile-bottom-nav-height,4.25rem))] z-[45] flex flex-col rounded-t-2xl border border-gray-200 border-b-0 max-w-2xl mx-auto w-[calc(100%-1rem)] sm:w-full",
+                                          mobileFilterDockExpanded
+                                              ? "max-h-[min(85dvh,calc(100dvh-5rem))] shadow-[0_-12px_40px_-8px_rgba(15,23,42,0.12)] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+                                              : "max-h-[4.25rem] shadow-[0_-4px_20px_-6px_rgba(15,23,42,0.1)] pt-1.5 pb-1.5"
+                                      )
                             )}
                         >
                             {!hostShell && (
@@ -712,9 +742,10 @@ export function IntegratedMarketplace({
                                         type="button"
                                         aria-expanded={mobileFilterDockExpanded}
                                         aria-controls="marketplace-mobile-filter-panel"
-                                        onClick={() => setMobileFilterDockExpanded((v) => !v)}
+                                        onClick={toggleMobileFilterDock}
                                         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-taja-primary/30 hover:text-taja-primary"
                                         title={mobileFilterDockExpanded ? "Hide filters" : "Show filters"}
+                                        aria-label={mobileFilterDockExpanded ? "Collapse filters" : "Expand filters"}
                                     >
                                         <ChevronDown className={cn("h-4 w-4 transition-transform", mobileFilterDockExpanded && "rotate-180")} />
                                     </button>
@@ -1005,7 +1036,10 @@ export function IntegratedMarketplace({
                         <section
                             className={cn(
                                 "relative space-y-8 px-4 sm:px-6 mt-3 sm:mt-5 pb-20",
-                                !hostShell && "max-lg:pb-[calc(6.5rem+var(--mobile-bottom-nav-height,4.25rem)+env(safe-area-inset-bottom,0px))]"
+                                !hostShell &&
+                                    (mobileFilterDockExpanded
+                                        ? "max-lg:pb-[calc(6.5rem+var(--mobile-bottom-nav-height,4.25rem)+env(safe-area-inset-bottom,0px))]"
+                                        : "max-lg:pb-[calc(5rem+var(--mobile-bottom-nav-height,4.25rem)+env(safe-area-inset-bottom,0px))]")
                             )}
                         >
                             <div
@@ -1302,12 +1336,13 @@ export function IntegratedMarketplace({
                                                 animate={{ opacity: 1 }}
                                                 className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 md:gap-6 px-1"
                                             >
-                                                {displayedProducts.map((product) => (
+                                                {displayedProducts.map((product, index) => (
                                                     <ProductCard
                                                         key={product._id}
                                                         product={product}
                                                         isInsideDashboard={isInsideDashboard}
                                                         showSellerRow
+                                                        priority={index < 8}
                                                     />
                                                 ))}
                                             </motion.div>

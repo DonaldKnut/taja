@@ -49,6 +49,8 @@ export async function analyzeProductImage(
   seoTitle: string;
   seoDescription: string;
   suggestedPriceRange: string;
+  /** Single NGN estimate when the model returns a number (preferred over parsing the range string). */
+  suggestedPriceNgn?: number;
 }> {
   if (!genAI) {
     throw new Error('Gemini API not configured');
@@ -76,7 +78,8 @@ Return a JSON object with this exact structure:
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8"],
   "seoTitle": "SEO-optimized title (50-60 characters)",
   "seoDescription": "SEO meta description (150-160 characters)",
-  "suggestedPriceRange": "Suggested price range in Nigerian Naira (e.g., ₦25,000 - ₦30,000)"
+  "suggestedPriceRange": "Suggested price range in Nigerian Naira (e.g., ₦25,000 - ₦30,000)",
+  "suggestedPriceNgn": 27500
 }
 
 Guidelines:
@@ -88,6 +91,7 @@ Guidelines:
 - Confidence should be 0-100 based on clarity of image
 - SEO title should include main keyword
 - SEO description should be compelling for clicks
+- suggestedPriceNgn must be a single integer NGN price (typical retail), consistent with suggestedPriceRange
 
 Return ONLY valid JSON, no markdown formatting.`;
 
@@ -106,6 +110,12 @@ Return ONLY valid JSON, no markdown formatting.`;
 
     const analysis = JSON.parse(jsonText);
 
+    const suggestedPriceNgnRaw = analysis.suggestedPriceNgn;
+    const suggestedPriceNgn =
+      typeof suggestedPriceNgnRaw === "number" && Number.isFinite(suggestedPriceNgnRaw) && suggestedPriceNgnRaw > 0
+        ? Math.round(suggestedPriceNgnRaw)
+        : undefined;
+
     return {
       category: analysis.category || 'Uncategorized',
       subcategory: analysis.subcategory || 'General',
@@ -123,12 +133,15 @@ Return ONLY valid JSON, no markdown formatting.`;
       seoTitle: analysis.seoTitle || '',
       seoDescription: analysis.seoDescription || '',
       suggestedPriceRange: analysis.suggestedPriceRange || '',
+      suggestedPriceNgn,
     };
   } catch (error: any) {
     console.error('Image analysis error:', error);
     throw new Error(`Failed to analyze image: ${error.message}`);
   }
 }
+
+export type ProductImageAiAnalysis = Awaited<ReturnType<typeof analyzeProductImage>>;
 
 /**
  * Batch analyze multiple product images

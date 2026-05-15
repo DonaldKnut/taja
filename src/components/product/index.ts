@@ -22,6 +22,7 @@ export { CategoryPickerModal, categoryPickerLabel } from "./CategoryPickerModal"
 export type { CategoryPickerItem } from "./CategoryPickerModal";
 export { ProductDescriptionEditor } from "./ProductDescriptionEditor";
 export { ProductDescriptionHtml } from "./ProductDescriptionHtml";
+export { ProductAiFillModal } from "./ProductAiFillModal";
 
 
 

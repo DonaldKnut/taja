@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, Play, PlayCircle, ChevronLeft, ChevronRight, Pencil, MoreHorizontal, Eye } from "lucide-react";
+import { Heart, Star, ShoppingBag, Plus, ShieldCheck, X, ArrowRight, Users, Clock, MapPin, MessageCircle, Link2, Pencil, MoreHorizontal, Eye } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ProductPrice } from "./ProductPrice";
 import { ShopLink } from "../shop/ShopLink";
@@ -22,22 +22,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
 import { listingLocationParts, resolveProductLocationLabel } from "@/lib/productListingLocation";
 import { formatViewCount } from "@/lib/formatViewCount";
-
-const normalizeMediaUrl = (value: unknown): string | null => {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (
-    trimmed.startsWith("/") ||
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://")
-  ) {
-    return trimmed;
-  }
-  return null;
-};
-
-let activeCardVideo: HTMLVideoElement | null = null;
+import { buildProductMediaItems } from "@/lib/media/buildProductMediaItems";
+import { ProductCardMedia } from "./ProductCardMedia";
 
 export interface ProductCardProps {
   product: Product;
@@ -60,6 +46,8 @@ export interface ProductCardProps {
    * When true, show seller avatar + name block under category.
    */
   showSellerRow?: boolean;
+  /** Eager-load media for above-the-fold cards (first row). */
+  priority?: boolean;
 }
 
 export function ProductCard({
@@ -75,6 +63,7 @@ export function ProductCard({
   onClick,
   isInsideDashboard = false,
   showSellerRow = false,
+  priority = false,
 }: ProductCardProps) {
   const { user } = useAuth();
   const addItem = useCartStore((state) => state.addItem);
@@ -86,15 +75,6 @@ export function ProductCard({
   const [sellerPanelOpen, setSellerPanelOpen] = useState(false);
   const [showBubbles, setShowBubbles] = useState(false);
   const [showMediaActions, setShowMediaActions] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isTouchActive, setIsTouchActive] = useState(false);
-  const [canHover, setCanHover] = useState(false);
-  const [mediaIndex, setMediaIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
-  const [failedMedia, setFailedMedia] = useState<Set<string>>(new Set());
-  const [isNearViewport, setIsNearViewport] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     if (!optionsOpen || typeof document === "undefined") return;
@@ -166,44 +146,10 @@ export function ProductCard({
     if (label) return [label];
     return [] as string[];
   })();
-  const normalizedImages = Array.isArray(product?.images)
-    ? product.images
-        .map((src) => normalizeMediaUrl(src))
-        .filter((src): src is string => Boolean(src))
-    : [];
-  const images = normalizedImages.length
-    ? normalizedImages
-    : [fallbackImage];
-  const videoItems = (() => {
-    const raw = (product as any)?.videos;
-    if (!Array.isArray(raw)) return [] as Array<{ src: string; poster?: string }>;
-    return raw
-      .map((v: any) => {
-        if (typeof v === "string") {
-          const src = normalizeMediaUrl(v);
-          return src ? { src } : null;
-        }
-        if (!v || typeof v !== "object") return null;
-        const src = normalizeMediaUrl(v.url);
-        if (!src) return null;
-        const poster =
-          normalizeMediaUrl(v.poster) ||
-          normalizeMediaUrl(v.thumbnail) ||
-          normalizeMediaUrl(v.previewImage) ||
-          undefined;
-        return { src, poster };
-      })
-      .filter((item): item is { src: string; poster?: string } => Boolean(item))
-      .slice(0, 2);
-  })();
-  const mediaItemsRaw: Array<{ type: "image" | "video"; src: string; poster?: string }> = [
-    ...videoItems.map((item) => ({ type: "video" as const, src: item.src, poster: item.poster })),
-    ...images.map((src) => ({ type: "image" as const, src, poster: undefined })),
-  ];
-  const mediaItems = mediaItemsRaw.filter((item) => !failedMedia.has(item.src));
-  const activeMedia =
-    mediaItems[Math.max(0, Math.min(mediaIndex, mediaItems.length - 1))] ||
-    { type: "image" as const, src: fallbackImage, poster: undefined };
+  const cardImages = buildProductMediaItems(product, fallbackImage)
+    .filter((m) => m.type === "image")
+    .map((m) => m.src);
+  const thumbImage = cardImages[0] || fallbackImage;
   const productPath = getProductPath(product as any);
 
   // Derive seller display for dashboard marketplace
@@ -262,7 +208,7 @@ export function ProductCard({
       _id: product._id,
       title: product.title,
       price: product.price,
-      images: images,
+      images: cardImages,
       slug: product.slug,
       shop: {
         shopName: shopName,
@@ -285,9 +231,9 @@ export function ProductCard({
     if (nowWishlisted) {
       setShowBubbles(true);
       setTimeout(() => setShowBubbles(false), 1000);
-      toast.success("Added to wishlist", { icon: "❤️" });
+      toast.success("Added to wishlist", { icon: "â¤ï¸" });
     } else {
-      toast("Removed from wishlist", { icon: "💔" });
+      toast("Removed from wishlist", { icon: "ðŸ’”" });
     }
   };
 
@@ -296,89 +242,8 @@ export function ProductCard({
   }, [product?._id, (product as any)?.likes]);
 
   useEffect(() => {
-    setMediaIndex(0);
-    setFailedMedia(new Set());
     setShowMediaActions(false);
   }, [product?._id]);
-
-  useLayoutEffect(() => {
-    if (typeof window === "undefined" || typeof IntersectionObserver === "undefined") {
-      setIsNearViewport(true);
-      return undefined;
-    }
-    let observer: IntersectionObserver | null = null;
-    let cancelled = false;
-    let raf = 0;
-
-    const attach = () => {
-      const node = cardRef.current;
-      if (!node || cancelled) return;
-      observer = new IntersectionObserver(
-        (entries) => {
-          const entry = entries[0];
-          setIsNearViewport(Boolean(entry?.isIntersecting));
-        },
-        { root: null, rootMargin: "300px", threshold: 0.01 }
-      );
-      observer.observe(node);
-    };
-
-    attach();
-    if (!observer) {
-      raf = requestAnimationFrame(() => {
-        if (!cancelled) attach();
-      });
-    }
-
-    return () => {
-      cancelled = true;
-      if (raf) cancelAnimationFrame(raf);
-      observer?.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const update = () => setCanHover(mediaQuery.matches);
-    update();
-    mediaQuery.addEventListener?.("change", update);
-    return () => mediaQuery.removeEventListener?.("change", update);
-  }, []);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    const shouldPlay =
-      activeMedia.type === "video" &&
-      isNearViewport &&
-      ((canHover && isHovered) || (!canHover && isTouchActive));
-    if (!video || activeMedia.type !== "video") return;
-    if (shouldPlay) {
-      if (activeCardVideo && activeCardVideo !== video) {
-        activeCardVideo.pause();
-        activeCardVideo.currentTime = 0;
-      }
-      activeCardVideo = video;
-      video.play().catch(() => {});
-    } else {
-      video.pause();
-      video.currentTime = 0;
-      if (activeCardVideo === video) {
-        activeCardVideo = null;
-      }
-    }
-    return () => {
-      if (activeCardVideo === video) {
-        activeCardVideo = null;
-      }
-    };
-  }, [isHovered, isTouchActive, canHover, isNearViewport, activeMedia.type, activeMedia.src]);
-
-  const shouldPlayActiveVideo =
-    activeMedia.type === "video" &&
-    isNearViewport &&
-    ((canHover && isHovered) || (!canHover && isTouchActive));
-  const videoPoster = activeMedia.poster || images[0] || fallbackImage;
 
   const handleQuickAdd = (e: React.MouseEvent, variant?: any) => {
     e.preventDefault();
@@ -472,7 +337,7 @@ export function ProductCard({
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-10 w-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100 ring-1 ring-gray-100/50">
                       <Image
-                        src={images[0]}
+                        src={thumbImage}
                         alt=""
                         width={40}
                         height={40}
@@ -487,12 +352,12 @@ export function ProductCard({
                     </div>
                   </div>
                   <span className="text-xs font-black text-gray-900 tabular-nums shrink-0 sm:ml-0">
-                    ₦{Number(product.price ?? 0).toLocaleString()}
+                    â‚¦{Number(product.price ?? 0).toLocaleString()}
                   </span>
                 </div>
               </button>
               {product.variants?.map((v) => {
-                const thumb = (v as any).image || images[0];
+                const thumb = (v as any).image || thumbImage;
                 const price = getEffectivePrice(product.price, (v as any).price);
                 const stock = (v as any).stock ?? product.inventory?.quantity ?? product.stock ?? 0;
                 const outOfStock = stock <= 0;
@@ -530,7 +395,7 @@ export function ProductCard({
                         </div>
                       </div>
                       <span className="text-xs font-black text-gray-900 tabular-nums shrink-0 sm:ml-0">
-                        ₦{price.toLocaleString()}
+                        â‚¦{price.toLocaleString()}
                       </span>
                     </div>
                   </button>
@@ -547,12 +412,20 @@ export function ProductCard({
   const sellerPanelContent = sellerPanelOpen && shopSlug && typeof document !== "undefined" && createPortal(
     <>
       <div
-        className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm"
+        className={cn(
+          "fixed inset-0 bg-black/50 backdrop-blur-sm",
+          isInsideDashboard ? "z-[120]" : "z-[110]"
+        )}
         onClick={() => setSellerPanelOpen(false)}
         aria-hidden
       />
-      {/* Above MobileBottomNav (z-50); below cart drawer (z-[100]) */}
-      <div className="fixed inset-x-0 bottom-0 z-[91] flex justify-center px-2 pb-[env(safe-area-inset-bottom,0px)] pointer-events-none">
+      {/* Above dashboard/seller sidebar (z-[95]); below cart drawer */}
+      <div
+        className={cn(
+          "fixed inset-x-0 bottom-0 flex justify-center px-2 pb-[env(safe-area-inset-bottom,0px)] pointer-events-none",
+          isInsideDashboard ? "z-[121]" : "z-[111]"
+        )}
+      >
         <motion.div
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
@@ -611,8 +484,8 @@ export function ProductCard({
                 <div className="min-w-0">
                   <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Rating</p>
                   <p className="text-[11px] font-bold text-slate-900 truncate">
-                    {typeof ratingValue === "number" ? ratingValue.toFixed(1) : "—"}
-                    {reviewCount ? <span className="text-slate-400"> · {reviewCount} reviews</span> : null}
+                    {typeof ratingValue === "number" ? ratingValue.toFixed(1) : "â€”"}
+                    {reviewCount ? <span className="text-slate-400"> Â· {reviewCount} reviews</span> : null}
                   </p>
                 </div>
               </div>
@@ -621,7 +494,7 @@ export function ProductCard({
                 <div className="min-w-0">
                   <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Followers</p>
                   <p className="text-[11px] font-bold text-slate-900 truncate">
-                    {typeof followerCount === "number" ? followerCount.toLocaleString() : "—"}
+                    {typeof followerCount === "number" ? followerCount.toLocaleString() : "â€”"}
                   </p>
                 </div>
               </div>
@@ -630,7 +503,7 @@ export function ProductCard({
                 <div className="min-w-0">
                   <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Response</p>
                   <p className="text-[11px] font-bold text-slate-900 truncate">
-                    {responseTime || "—"}
+                    {responseTime || "â€”"}
                   </p>
                 </div>
               </div>
@@ -671,212 +544,22 @@ export function ProductCard({
 
   return (
     <motion.div
-      ref={cardRef}
       initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onTouchStart={() => setIsTouchActive(true)}
-      onTouchEnd={() => setIsTouchActive(false)}
-      onTouchCancel={() => setIsTouchActive(false)}
       className={cn("group/card flex flex-col h-full bg-white rounded-2xl sm:rounded-[2rem] border border-gray-100/50 shadow-sm hover:shadow-xl transition-all duration-500", className)}
     >
       {optionsPanelContent}
       {sellerPanelContent}
-      <div
-        className={cn(
-          "relative aspect-square overflow-hidden rounded-t-2xl sm:rounded-t-[2rem]",
-          activeMedia.type === "video"
-            ? "bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900"
-            : "bg-gray-50"
-        )}
-      >
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
-          <motion.div
-            key={activeMedia.src}
-            custom={direction}
-            variants={{
-              initial: (direction: number) => ({
-                opacity: 0,
-                x: direction > 0 ? "20%" : direction < 0 ? "-20%" : 0,
-                scale: 1.05,
-              }),
-              animate: {
-                opacity: 1,
-                x: 0,
-                scale: 1,
-                transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-              },
-              exit: (direction: number) => ({
-                opacity: 0,
-                x: direction > 0 ? "-20%" : direction < 0 ? "20%" : 0,
-                scale: 0.95,
-                transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
-              }),
-            }}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="absolute inset-0 w-full h-full"
-          >
-        {isInsideDashboard ? (
-          <div className="block w-full h-full">
-            {activeMedia.type === "video" && isNearViewport && !shouldPlayActiveVideo ? (
-              <video
-                key={`${activeMedia.src}-prefetch`}
-                src={activeMedia.src}
-                preload="metadata"
-                muted
-                playsInline
-                className="hidden"
-                aria-hidden
-              />
-            ) : null}
-            {activeMedia.type === "video" && shouldPlayActiveVideo ? (
-              <video
-                ref={videoRef}
-                key={activeMedia.src}
-                src={activeMedia.src}
-                poster={videoPoster}
-                muted
-                loop
-                playsInline
-                preload={isNearViewport ? "metadata" : "none"}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
-              />
-            ) : activeMedia.type === "video" ? (
-              <div className="relative w-full h-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={videoPoster}
-                  alt={product.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110 brightness-[0.88] contrast-[1.06]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-slate-900/35 pointer-events-none" aria-hidden />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
-                  <div className="rounded-full bg-black/35 backdrop-blur-[2px] p-3 sm:p-3.5 ring-2 ring-white/35 shadow-lg">
-                    <Play className="h-7 w-7 sm:h-8 sm:w-8 text-white fill-white/90" />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <Image
-                src={activeMedia.src}
-                alt={product.title}
-                fill
-                loading="lazy"
-                onError={() =>
-                  setFailedMedia((prev) => {
-                    const next = new Set(prev);
-                    next.add(activeMedia.src);
-                    return next;
-                  })
-                }
-                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
-              />
-            )}
-          </div>
-        ) : (
-          <Link href={productPath} onClick={handleClick} className="block w-full h-full">
-            {activeMedia.type === "video" && isNearViewport && !shouldPlayActiveVideo ? (
-              <video
-                key={`${activeMedia.src}-prefetch`}
-                src={activeMedia.src}
-                preload="metadata"
-                muted
-                playsInline
-                className="hidden"
-                aria-hidden
-              />
-            ) : null}
-            {activeMedia.type === "video" && shouldPlayActiveVideo ? (
-              <video
-                ref={videoRef}
-                key={activeMedia.src}
-                src={activeMedia.src}
-                poster={videoPoster}
-                muted
-                loop
-                playsInline
-                preload={isNearViewport ? "metadata" : "none"}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
-              />
-            ) : activeMedia.type === "video" ? (
-              <div className="relative w-full h-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={videoPoster}
-                  alt={product.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110 brightness-[0.88] contrast-[1.06]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-slate-900/35 pointer-events-none" aria-hidden />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
-                  <div className="rounded-full bg-black/35 backdrop-blur-[2px] p-3 sm:p-3.5 ring-2 ring-white/35 shadow-lg">
-                    <Play className="h-7 w-7 sm:h-8 sm:w-8 text-white fill-white/90" />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <Image
-                src={activeMedia.src}
-                alt={product.title}
-                fill
-                loading="lazy"
-                onError={() =>
-                  setFailedMedia((prev) => {
-                    const next = new Set(prev);
-                    next.add(activeMedia.src);
-                    return next;
-                  })
-                }
-                className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
-              />
-            )}
-          </Link>
-        )}
-          </motion.div>
-        </AnimatePresence>
-        {activeMedia.type === "video" && (
-          <>
-            <div className="absolute left-2.5 sm:left-4 bottom-2.5 sm:bottom-4 z-10 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full bg-black/60 text-white text-[8px] sm:text-[9px] font-black uppercase tracking-widest flex items-center gap-1 pointer-events-none">
-              <PlayCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              <span className="max-[360px]:hidden">Video Preview</span>
-            </div>
-          </>
-        )}
-        {mediaItems.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setDirection(-1);
-                setMediaIndex((idx) => (idx - 1 + mediaItems.length) % mediaItems.length);
-              }}
-              className="absolute left-1.5 sm:left-2 top-1/2 -translate-y-1/2 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
-              aria-label="Previous media"
-            >
-              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setDirection(1);
-                setMediaIndex((idx) => (idx + 1) % mediaItems.length);
-              }}
-              className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-black/45 text-white flex items-center justify-center hover:bg-black/60"
-              aria-label="Next media"
-            >
-              <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </button>
-          </>
-        )}
+      <motion.div className="relative">
+        <ProductCardMedia
+          product={product}
+          productPath={productPath}
+          fallbackImage={fallbackImage}
+          isInsideDashboard={isInsideDashboard}
+          priority={priority}
+          onNavigateClick={handleClick}
+        />
 
         {/* Mobile collapsible media actions */}
         <div className="absolute top-2.5 right-2.5 z-20 sm:hidden">
@@ -1002,7 +685,7 @@ export function ProductCard({
             Negotiable
           </div>
         )}
-      </div>
+      </motion.div>
 
       <CardContent className="p-2 sm:p-4 flex flex-col justify-between flex-grow">
         <div className="space-y-1 sm:pr-12">

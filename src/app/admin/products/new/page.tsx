@@ -28,7 +28,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { api, uploadProductImage, uploadProductVideo } from "@/lib/api";
 import toast from "react-hot-toast";
-import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionEditor } from "@/components/product";
+import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionEditor, ProductAiFillModal } from "@/components/product";
+import { mergeAdminProductNewFormWithAiAnalysis } from "@/lib/productAiFillFromAnalysis";
+import type { ProductImageAiAnalysis } from "@/lib/ai/imageRecognition";
 import { cn } from "@/lib/utils";
 import {
   isRichTextDescriptionEmpty,
@@ -67,6 +69,7 @@ export default function AdminProductsNewPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [aiFillModalOpen, setAiFillModalOpen] = useState(false);
   const [shopModalOpen, setShopModalOpen] = useState(false);
   const [shopSearch, setShopSearch] = useState("");
   const [form, setForm] = useState({
@@ -399,6 +402,32 @@ export default function AdminProductsNewPage() {
     }
   };
 
+  const handleAiFillApplied = (payload: {
+    analysis: ProductImageAiAnalysis;
+    imageUrl: string;
+    overwrite: boolean;
+    prependImage: boolean;
+  }) => {
+    setForm((prev) =>
+      mergeAdminProductNewFormWithAiAnalysis(
+        {
+          title: prev.title,
+          description: prev.description,
+          category: prev.category,
+          price: prev.price,
+        },
+        payload.analysis,
+        { categories, overwrite: payload.overwrite }
+      )
+    );
+    if (payload.prependImage && payload.imageUrl) {
+      setImageList((prev) =>
+        prev.includes(payload.imageUrl) ? prev : [payload.imageUrl, ...prev].slice(0, 10)
+      );
+    }
+    toast.success("AI applied to this draft — confirm shop, category, and images before publish.");
+  };
+
   return (
     <div className="min-h-screen bg-motif-blanc selection:bg-taja-primary/30">
       {/* ── Fixed Action Bar (just below main header) ── */}
@@ -420,7 +449,15 @@ export default function AdminProductsNewPage() {
                   Required: {missingRequired.join(", ")}
                 </p>
               )}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
+                <button
+                  type="button"
+                  onClick={() => setAiFillModalOpen(true)}
+                  className="flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 border-emerald-500/30 text-emerald-800 bg-emerald-50/90 hover:bg-emerald-100 transition-all"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  AI from photo
+                </button>
                 <button
                   type="button"
                   onClick={(e) => handleSubmit(e, true)}
@@ -1109,6 +1146,12 @@ export default function AdminProductsNewPage() {
             prev.some((x) => String(x._id) === String(cat._id)) ? prev : [...prev, cat as Category]
           )
         }
+      />
+
+      <ProductAiFillModal
+        open={aiFillModalOpen}
+        onClose={() => setAiFillModalOpen(false)}
+        onApplied={handleAiFillApplied}
       />
 
       <AnimatePresence>

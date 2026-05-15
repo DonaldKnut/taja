@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, uploadLogisticsKycImage } from "@/lib/api";
+import {
+  GUARANTOR_RELATIONSHIP_DISCLAIMER,
+  getGuarantorRelationshipRejection,
+} from "@/lib/guarantorRelationshipGuard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -116,6 +120,11 @@ export default function LogisticsDashboardPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [guarantorBannerDismissed, setGuarantorBannerDismissed] = useState(false);
   const [headerRefreshing, setHeaderRefreshing] = useState(false);
+
+  const guarantorRelationshipReject = useMemo(
+    () => getGuarantorRelationshipRejection(guarantor.relationship),
+    [guarantor.relationship]
+  );
 
   const refreshDashboardQuiet = async () => {
     try {
@@ -237,6 +246,11 @@ export default function LogisticsDashboardPage() {
       !guarantor.selfieImage.trim()
     ) {
       toast.error("Complete all guarantor details before submission");
+      return;
+    }
+    const relReject = getGuarantorRelationshipRejection(guarantor.relationship);
+    if (relReject) {
+      toast.error(relReject);
       return;
     }
     try {
@@ -952,6 +966,10 @@ export default function LogisticsDashboardPage() {
                     </div>
                   </div>
 
+                  <div className="mb-8 rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 sm:px-5 sm:py-4">
+                    <p className="text-xs font-semibold text-amber-950/90 leading-relaxed">{GUARANTOR_RELATIONSHIP_DISCLAIMER}</p>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-6">
                       <div className="space-y-2">
@@ -971,12 +989,30 @@ export default function LogisticsDashboardPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Relationship</Label>
-                        <Input 
-                          value={guarantor.relationship} 
+                        <Label htmlFor="guarantor-relationship" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                          Relationship to you
+                        </Label>
+                        <Input
+                          id="guarantor-relationship"
+                          value={guarantor.relationship}
                           onChange={(e) => setGuarantor((p) => ({ ...p, relationship: e.target.value }))}
-                          className="h-12 rounded-xl border-slate-200 bg-white"
+                          placeholder="e.g. Employer — HR Manager, Landlord, Pastor at …"
+                          autoComplete="off"
+                          aria-invalid={guarantorRelationshipReject ? true : undefined}
+                          className={cn(
+                            "h-12 rounded-xl border-slate-200 bg-white",
+                            guarantorRelationshipReject && "border-amber-500 ring-2 ring-amber-500/25"
+                          )}
                         />
+                        {guarantorRelationshipReject ? (
+                          <p className="text-xs font-bold text-amber-700 leading-snug" role="alert">
+                            {guarantorRelationshipReject}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] font-medium text-slate-500 leading-snug">
+                            Describe how they know you professionally or as a formal referee—not a spouse or partner.
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">ID Type</Label>
@@ -1073,10 +1109,16 @@ export default function LogisticsDashboardPage() {
                     <p className="text-[10px] font-bold text-slate-400 italic max-w-xs uppercase leading-relaxed">
                       By submitting, you authorize Taja to verify guarantor details for fleet security protocols.
                     </p>
-                    <Button 
-                      onClick={submitGuarantor} 
-                      disabled={submittingGuarantor || uploadingGuarantorId || uploadingGuarantorSelfie} 
-                      className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black uppercase text-[10px] tracking-[0.25em] shadow-2xl shadow-slate-900/20 active:scale-[0.98] transition-all"
+                    <Button
+                      onClick={submitGuarantor}
+                      disabled={
+                        submittingGuarantor ||
+                        uploadingGuarantorId ||
+                        uploadingGuarantorSelfie ||
+                        Boolean(guarantorRelationshipReject)
+                      }
+                      title={guarantorRelationshipReject || undefined}
+                      className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black uppercase text-[10px] tracking-[0.25em] shadow-2xl shadow-slate-900/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
                     >
                       {submittingGuarantor ? "Processing..." : "Submit Profile for Approval"}
                     </Button>

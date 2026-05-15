@@ -76,7 +76,7 @@
   }
 
   body {
-    @apply bg-white text-taja-secondary;
+    @apply bg-white text-taja-secondary dark:bg-slate-950 dark:text-slate-100;
     font-family: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
       "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
     -webkit-font-smoothing: antialiased;
@@ -88,7 +88,7 @@
   h3,
   h4 {
     font-family: var(--font-sora), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-    @apply font-bold tracking-tight text-taja-secondary;
+    @apply font-bold tracking-tight text-taja-secondary dark:text-slate-100;
   }
 
   h1 {
@@ -301,4 +301,32 @@ html {
 }
 .journal-quill .ql-editor.ql-blank::before {
   @apply text-slate-400 not-italic;
+}
+
+/* Marketplace: keep copy dark on light #F8F9FB when site dark mode is on (body/headings use light ink). */
+@layer utilities {
+  .dark .taja-marketplace-surface {
+    @apply text-slate-950;
+  }
+  .dark .taja-marketplace-surface h1,
+  .dark .taja-marketplace-surface h2,
+  .dark .taja-marketplace-surface h3,
+  .dark .taja-marketplace-surface h4 {
+    @apply text-slate-950;
+  }
+  .dark .taja-marketplace-surface .text-gray-400 {
+    @apply text-slate-800;
+  }
+  .dark .taja-marketplace-surface .text-gray-500 {
+    @apply text-slate-900;
+  }
+  .dark .taja-marketplace-surface .text-gray-600 {
+    @apply text-slate-950;
+  }
+  .dark .taja-marketplace-surface .text-slate-500 {
+    @apply text-slate-900;
+  }
+  .dark .taja-marketplace-surface .text-slate-400 {
+    @apply text-slate-700;
+  }
 }

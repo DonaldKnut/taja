@@ -16,8 +16,8 @@ function MarketplaceContent() {
   }, [isAuthenticated]);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FB]">
-      <AppHeader />
+    <div className="min-h-screen bg-[#F8F9FB] taja-marketplace-surface">
+      <AppHeader solidLightHeader />
       <main>
         <IntegratedMarketplace />
       </main>

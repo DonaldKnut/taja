@@ -40,14 +40,15 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Container } from "@/components/layout";
-import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionEditor } from "@/components/product";
+import { CategoryPickerModal, categoryPickerLabel, ProductDescriptionEditor, ProductAiFillModal } from "@/components/product";
 import {
   isRichTextDescriptionEmpty,
   looksLikeHtmlDescription,
   plainTextToRichHtml,
   sanitizeProductDescriptionHtml,
 } from "@/lib/sanitizeProductDescriptionHtml";
-import { validateShippingPolicy } from "@/lib/delivery/shippingPolicy";
+import { mergeSellerProductFormWithAiAnalysis } from "@/lib/productAiFillFromAnalysis";
+import type { ProductImageAiAnalysis } from "@/lib/ai/imageRecognition";
 
 const SELLER_SIDEBAR_COLLAPSED_KEY = "taja_seller_sidebar_collapsed";
 
@@ -127,7 +128,7 @@ export default function EditProductPage() {
     return c ? categoryPickerLabel(c) : "Select category";
   }, [formData.category, categories]);
   const [suggestedPrice, setSuggestedPrice] = useState("");
-  const [analyzingPrice, setAnalyzingPrice] = useState(false);
+  const [aiFillModalOpen, setAiFillModalOpen] = useState(false);
 
   // Fetch categories and product data
   useEffect(() => {
@@ -324,10 +325,6 @@ export default function EditProductPage() {
         images: [...prev.images, ...uploadedUrls].slice(0, 8),
       }));
       toast.success(`${uploadedUrls.length} image(s) uploaded`);
-      if (!formData.images.length && uploadedUrls[0]) {
-        // Auto-analyze first image for pricing hint
-        handleAnalyzePrice(uploadedUrls[0]);
-      }
     } catch (error: any) {
       console.error("Image upload error:", error);
       toast.error(error?.message || "Failed to upload images");
@@ -336,31 +333,27 @@ export default function EditProductPage() {
     }
   };
 
-  const handleAnalyzePrice = async (imageUrl?: string) => {
-    const target = imageUrl || formData.images[0];
-    if (!target) {
-      toast.error("Upload at least one image so AI can analyze pricing.");
-      return;
-    }
-    if (analyzingPrice) return;
-    setAnalyzingPrice(true);
-    try {
-      const res = await api("/api/ai/analyze-image", {
-        method: "POST",
-        body: JSON.stringify({ imageUrl: target }),
-      });
-      if (res?.analysis?.suggestedPriceRange) {
-        setSuggestedPrice(res.analysis.suggestedPriceRange);
-        toast.success("AI suggested a price range for this product.");
-      } else {
-        toast.error("AI could not confidently suggest a price. Try another image.");
-      }
-    } catch (error: any) {
-      console.error("AI price analysis error:", error);
-      toast.error(error?.message || "Failed to get AI price suggestion");
-    } finally {
-      setAnalyzingPrice(false);
-    }
+  const handleAiFillApplied = (payload: {
+    analysis: ProductImageAiAnalysis;
+    imageUrl: string;
+    overwrite: boolean;
+    prependImage: boolean;
+  }) => {
+    setFormData((prev) =>
+      mergeSellerProductFormWithAiAnalysis(prev, payload.analysis, {
+        categories,
+        imageUrl: payload.imageUrl,
+        prependImage: payload.prependImage,
+        overwrite: payload.overwrite,
+      })
+    );
+    const hint =
+      payload.analysis.suggestedPriceRange ||
+      (payload.analysis.suggestedPriceNgn
+        ? `≈ ₦${payload.analysis.suggestedPriceNgn.toLocaleString()}`
+        : "");
+    if (hint) setSuggestedPrice(hint);
+    toast.success("AI filled the listing — review title, category, and price before saving.");
   };
 
   const removeImage = (index: number) => {
@@ -782,7 +775,8 @@ export default function EditProductPage() {
 
               {/* Core Information */}
               <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
-                <div className="flex items-center gap-3 mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                  <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-emerald-500/10 rounded-2xl">
                     <Package className="w-5 h-5 text-emerald-500" />
                   </div>
@@ -790,6 +784,16 @@ export default function EditProductPage() {
                     <h2 className="text-lg font-black text-taja-secondary tracking-tight">Title & description</h2>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">What buyers see in the listing</p>
                   </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setAiFillModalOpen(true)}
+                    className="shrink-0 rounded-2xl text-[10px] font-black uppercase tracking-widest border-emerald-500/30 text-emerald-800 bg-emerald-50/90 hover:bg-emerald-100"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 mr-2" />
+                    Fill from photo (AI)
+                  </Button>
                 </div>
 
                 <div className="space-y-6">
@@ -1039,16 +1043,11 @@ export default function EditProductPage() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleAnalyzePrice()}
-                          disabled={analyzingPrice}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-taja-primary/10 text-[9px] font-black text-taja-primary uppercase tracking-[0.16em] hover:bg-taja-primary hover:text-white transition-colors disabled:opacity-50"
+                          onClick={() => setAiFillModalOpen(true)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-taja-primary/10 text-[9px] font-black text-taja-primary uppercase tracking-[0.16em] hover:bg-taja-primary hover:text-white transition-colors"
                         >
-                          {analyzingPrice ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-3 w-3" />
-                          )}
-                          AI Price
+                          <Sparkles className="h-3 w-3" />
+                          AI fill
                         </button>
                       </div>
                     </div>
@@ -1421,6 +1420,12 @@ export default function EditProductPage() {
             prev.some((x) => String(x._id) === String(cat._id)) ? prev : [...prev, cat]
           )
         }
+      />
+
+      <ProductAiFillModal
+        open={aiFillModalOpen}
+        onClose={() => setAiFillModalOpen(false)}
+        onApplied={handleAiFillApplied}
       />
     </div>
   );

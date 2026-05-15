@@ -9,7 +9,8 @@ import toast from "react-hot-toast";
 import { StructuredData } from "@/components/StructuredData";
 import { generateProductStructuredData, generateBreadcrumbs } from "@/lib/seo";
 import { getEffectivePrice } from "@/lib/productPricing";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { AIRecommendations } from "@/components/product/AIRecommendations";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Container } from "@/components/layout/Container";
@@ -288,7 +289,7 @@ export default function ProductDetailPage() {
     return (
       <>
         <AppHeader />
-        <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
           <div className="text-center">
             <div className="relative w-20 h-20 mx-auto mb-6">
               <div className="absolute inset-0 border-t-2 border-emerald-500 rounded-full animate-spin"></div>
@@ -331,7 +332,7 @@ export default function ProductDetailPage() {
     <>
       <StructuredData data={productStructuredData} />
       <StructuredData data={breadcrumbs} />
-      <div className="min-h-screen bg-white text-taja-secondary selection:bg-taja-primary/30 selection:text-taja-secondary">
+      <div className="min-h-screen bg-white text-taja-secondary selection:bg-taja-primary/30 selection:text-taja-secondary dark:bg-slate-950 dark:text-slate-100 dark:selection:text-slate-100">
         <AppHeader />
         {product.id ? (
           <ProductViewerPresence productId={product.id} totalViewing={viewPulse.totalViewing} />
@@ -346,16 +347,20 @@ export default function ProductDetailPage() {
           isSticky={isScrollingDown}
         />
 
-        {/* Floating Back Button */}
-        <div className="fixed top-24 left-4 sm:left-10 z-[50] pointer-events-none">
-          <Link 
-            href="/marketplace" 
-            className="pointer-events-auto inline-flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-200/50 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.15)] hover:bg-white transition-all group active:scale-95"
-          >
-            <div className="h-6 w-6 rounded-lg bg-slate-900 flex items-center justify-center transition-transform group-hover:-translate-x-1">
-              <ArrowLeft className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 pr-1">Back to Marketplace</span>
+        {/* Desktop-only fixed back — matches shop detail (mobile: rely on header / gestures) */}
+        <div className="hidden md:block fixed top-6 left-6 z-[100]">
+          <Link href="/marketplace">
+            <Button
+              variant="ghost"
+              className="bg-taja-secondary/40 hover:bg-taja-secondary/60 backdrop-blur-xl text-white border-white/20 px-5 h-11 rounded-2xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group shadow-huge"
+            >
+              <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                <ChevronLeft className="h-4 w-4" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] drop-shadow-sm">
+                Back to Marketplace
+              </span>
+            </Button>
           </Link>
         </div>
 

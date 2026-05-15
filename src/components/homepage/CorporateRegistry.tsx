@@ -78,8 +78,9 @@ export function CorporateRegistry() {
                 </h2>
 
                 <p className="text-lg text-gray-500 font-medium leading-relaxed max-w-2xl">
-                  Taja is fully incorporated with the **Corporate Affairs Commission (CAC)** of Nigeria. 
-                  We adhere to strict regulatory standards to ensure a secure, transparent, and legal 
+                  Taja is fully incorporated with the{" "}
+                  <span className="font-black text-taja-secondary">Corporate Affairs Commission (CAC)</span>{" "}
+                  of Nigeria. We adhere to strict regulatory standards to ensure a secure, transparent, and legal
                   marketplace for all buyers and sellers across the federation.
                 </p>
 
@@ -90,7 +91,7 @@ export function CorporateRegistry() {
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Registration Number</p>
-                      <p className="text-sm font-bold text-taja-secondary mt-1">RC: 1782394</p>
+                      <p className="text-sm font-bold text-taja-secondary mt-1">RC: 8961676</p>
                     </div>
                   </div>
 
