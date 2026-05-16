@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import { NotificationsModal } from "@/components/NotificationsModal";
 
 export interface AppHeaderProps {
     transparent?: boolean;
@@ -32,6 +33,7 @@ export function AppHeader({ transparent = false, solidLightHeader = false }: App
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
     const wishlistCount = wishlistItems.length;
 
     // Fetch initial notification count
@@ -40,9 +42,9 @@ export function AppHeader({ transparent = false, solidLightHeader = false }: App
 
         const fetchInitialCount = async () => {
             try {
-                const res = await api('/api/notifications?status=unread');
+                const res = await api('/api/notifications?limit=1');
                 if (res.success) {
-                    setUnreadCount(res.data.pagination.total || 0);
+                    setUnreadCount(res.data.unreadCount || 0);
                 }
             } catch (error) {
                 console.error("Failed to fetch notifications:", error);
@@ -157,7 +159,35 @@ export function AppHeader({ transparent = false, solidLightHeader = false }: App
                         {/* Authenticated Actions */}
                         <div className="flex items-center gap-1 md:gap-2">
                             {isAuthenticated ? (
-                                <Link href={user?.role === "admin" ? "/admin/dashboard" : user?.role === "seller" ? "/seller/dashboard" : "/dashboard"} className="relative">
+                                <>
+                                <button
+                                    type="button"
+                                    onClick={() => setNotificationsOpen(true)}
+                                    className={cn(
+                                        "relative p-2 rounded-full transition-colors",
+                                        solidLightHeader
+                                            ? "text-slate-900 hover:bg-slate-100"
+                                            : "text-taja-secondary hover:text-taja-primary hover:bg-taja-light/30"
+                                    )}
+                                    aria-label="Notifications"
+                                >
+                                    <Bell className="h-5 w-5 md:h-6 md:w-6" />
+                                    <AnimatePresence>
+                                        {unreadCount > 0 && (
+                                            <motion.span
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                exit={{ scale: 0 }}
+                                                className="absolute -top-0.5 -right-0.5 min-h-[1.125rem] min-w-[1.125rem] px-1 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-lg"
+                                            >
+                                                <span className="text-[8px] font-black text-white leading-none">
+                                                    {unreadCount > 99 ? "99+" : unreadCount}
+                                                </span>
+                                            </motion.span>
+                                        )}
+                                    </AnimatePresence>
+                                </button>
+                                <Link href={user?.role === "admin" ? "/admin/dashboard" : user?.role === "seller" ? "/seller/dashboard" : "/dashboard"} className="relative hidden sm:block">
                                     <Button
                                         variant="outline"
                                         className={cn(
@@ -169,19 +199,8 @@ export function AppHeader({ transparent = false, solidLightHeader = false }: App
                                         <User className="w-3.5 h-3.5 md:hidden" />
                                         <span className="hidden md:inline">Dashboard</span>
                                     </Button>
-                                    <AnimatePresence>
-                                        {unreadCount > 0 && (
-                                            <motion.div
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                exit={{ scale: 0 }}
-                                                className="absolute -top-1 -right-1 h-5 w-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-lg"
-                                            >
-                                                <span className="text-[8px] font-black text-white">{unreadCount > 99 ? "99+" : unreadCount}</span>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
                                 </Link>
+                                </>
                             ) : (
                                 <div className="hidden sm:flex items-center gap-1">
                                     <Button
@@ -307,6 +326,24 @@ export function AppHeader({ transparent = false, solidLightHeader = false }: App
 
                             <div className="mt-auto pt-10 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-4">
                                 {isAuthenticated ? (
+                                    <>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setMobileMenuOpen(false);
+                                            setNotificationsOpen(true);
+                                        }}
+                                        className="w-full rounded-2xl h-14 font-black uppercase tracking-widest text-xs gap-3 relative"
+                                    >
+                                        <Bell className="w-4 h-4" />
+                                        Notifications
+                                        {unreadCount > 0 && (
+                                            <span className="absolute top-3 right-4 min-h-5 min-w-5 px-1 rounded-full bg-emerald-500 text-white text-[10px] font-black flex items-center justify-center">
+                                                {unreadCount > 99 ? "99+" : unreadCount}
+                                            </span>
+                                        )}
+                                    </Button>
                                     <Button
                                         onClick={() => { 
                                             setMobileMenuOpen(false); 
@@ -317,6 +354,7 @@ export function AppHeader({ transparent = false, solidLightHeader = false }: App
                                         <Layout className="w-4 h-4" />
                                         {user?.role === 'admin' ? 'Admin Dashboard' : user?.role === 'seller' ? 'Seller Dashboard' : 'My Dashboard'}
                                     </Button>
+                                    </>
                                 ) : (
                                     <>
                                         <Button
@@ -346,6 +384,19 @@ export function AppHeader({ transparent = false, solidLightHeader = false }: App
                     </>
                 )}
             </AnimatePresence>
+
+            <NotificationsModal
+                open={notificationsOpen}
+                onClose={async () => {
+                    setNotificationsOpen(false);
+                    try {
+                        const res = await api("/api/notifications?limit=1");
+                        if (res.success) setUnreadCount(res.data.unreadCount || 0);
+                    } catch {
+                        /* ignore */
+                    }
+                }}
+            />
         </>
     );
 }

@@ -1,16 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   SITE_MEGA_MENU,
   isMegaMenuActive,
-  getSiteMobileNavBlocks,
   type MegaMenuId,
 } from "@/components/layout/siteMegaMenuConfig";
+import { AnimatedMegaMenuChevron, MegaMenuLinkRow } from "@/components/layout/megaMenu";
 
 export type SiteMegaNavProps = {
   pathname: string;
@@ -117,10 +115,11 @@ export function SiteMegaNav({
       : "text-sm font-bold tracking-tight px-1 py-2 rounded-lg transition-colors flex items-center gap-1";
 
   return (
-    <div
+    <motion.div
       ref={rootRef}
       className={cn("relative overflow-visible", className)}
       onMouseLeave={scheduleClose}
+      initial={false}
     >
       <nav
         className="flex flex-nowrap items-center gap-2 sm:gap-2.5 lg:gap-3 xl:gap-6 overflow-x-auto overflow-y-visible scrollbar-hide overscroll-x-contain"
@@ -162,13 +161,9 @@ export function SiteMegaNav({
                 onClick={() => setOpen((prev) => (prev === section.id ? null : section.id))}
               >
                 {section.label}
-                <ChevronDown
-                  className={cn(
-                    "h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-60 transition-transform shrink-0",
-                    isOpen && "rotate-180",
-                    variant === "app" && "hidden xl:block"
-                  )}
-                  aria-hidden
+                <AnimatedMegaMenuChevron
+                  open={isOpen}
+                  className={cn(variant === "app" && "hidden xl:block")}
                 />
               </button>
             </div>
@@ -209,32 +204,18 @@ export function SiteMegaNav({
                         <div key={col.heading} className="p-4 sm:p-5 space-y-2.5 sm:space-y-3">
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{col.heading}</p>
                           <ul className="space-y-1 sm:space-y-2">
-                            {col.links.map((link) => (
-                              <li key={link.href + link.label}>
-                                <Link
-                                  href={link.href}
-                                  className="group block rounded-xl -mx-1.5 px-2 py-2 hover:bg-slate-50 transition-colors"
-                                  onClick={() => setOpen(null)}
-                                >
-                                  <div className="flex gap-3">
-                                    {link.icon && (
-                                      <div className="mt-0.5 shrink-0">
-                                        <link.icon className="h-4 w-4 text-slate-400 group-hover:text-taja-primary transition-colors" />
-                                      </div>
-                                    )}
-                                    <div>
-                                      <span className="text-sm font-bold text-slate-900 group-hover:text-taja-primary transition-colors">
-                                        {link.label}
-                                      </span>
-                                      {link.description ? (
-                                        <span className="block text-xs text-slate-600 mt-0.5 leading-snug">
-                                          {link.description}
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                </Link>
-                              </li>
+                            {col.links.map((link, linkIndex) => (
+                              <MegaMenuLinkRow
+                                key={link.href + link.label}
+                                href={link.href}
+                                label={link.label}
+                                description={link.description}
+                                icon={link.icon}
+                                entranceDelay={linkIndex * 0.04}
+                                playEntrance
+                                onNavigate={() => setOpen(null)}
+                                variant="desktop"
+                              />
                             ))}
                           </ul>
                         </div>
@@ -247,8 +228,6 @@ export function SiteMegaNav({
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
-
-
