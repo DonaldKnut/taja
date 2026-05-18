@@ -61,7 +61,7 @@ export function ClientAppShell({ children }: ClientAppShellProps) {
 
   // Minimal shell for specific auth routes (no Providers, no global cart/toaster/PWA)
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
       {isAuthRouteWithoutProviders ? (
         <>
           <div className="min-h-screen bg-gradient-to-br from-taja-light to-white dark:from-slate-950 dark:to-slate-900">

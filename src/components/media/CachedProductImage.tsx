@@ -61,18 +61,6 @@ export function CachedProductImage({
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={lqipSrc}
-            alt=""
-            aria-hidden
-            decoding="async"
-            className={cn(
-              "absolute inset-0 h-full w-full scale-110 object-cover blur-lg",
-              loaded ? "opacity-0" : "opacity-100"
-            )}
-            style={{ transition: "opacity 0.35s ease-out" }}
-          />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
             src={displaySrc}
             alt={alt}
             decoding="async"
@@ -85,10 +73,8 @@ export function CachedProductImage({
             }}
             className={cn(
               "absolute inset-0 h-full w-full object-cover",
-              loaded ? "opacity-100" : "opacity-0",
               className
             )}
-            style={{ transition: "opacity 0.35s ease-out" }}
           />
         </>
       ) : null}
