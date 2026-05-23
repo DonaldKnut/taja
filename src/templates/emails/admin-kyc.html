@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KYC Submission Alert | Taja Admin</title>
+</head>
+
+<body
+    style="margin:0;padding:0;background-color:#f8fafc;font-family:'Inter', system-ui, -apple-system, sans-serif;color:#1e293b;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f8fafc;">
+        <tr>
+            <td align="center" style="padding:40px 16px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="600"
+                    style="max-width:600px;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+                    <!-- Cinematic Header -->
+                    <tr>
+                        <td style="background-color:#022c22;padding:40px 32px;text-align:center;">
+                            <img src="<%= logoUrl %>" alt="Taja Shop"
+                                style="max-width:150px;height:auto;margin-bottom:16px;display:inline-block;" />
+                            <h1
+                                style="margin:0;color:#34d399;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.3em;">
+                                Admin Protocol Alert</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Content Section -->
+                    <tr>
+                        <td style="padding:48px 40px;">
+                            <h2
+                                style="margin:0 0 8px;font-size:20px;font-weight:900;color:#022c22;letter-spacing:-0.02em;">
+                                New KYC Submission</h2>
+                            <p style="margin:0 0 24px;color:#64748b;font-size:14px;font-weight:500;">A user has
+                                submitted identity/seller verification and is waiting for authorization.</p>
+
+                            <div
+                                style="background-color:#f8fafc;border-radius:16px;padding:24px;margin-bottom:32px;border:1px solid #e2e8f0;">
+                                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;">
+                                            <span
+                                                style="color:#64748b;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;display:block;">Registrant
+                                                Name</span>
+                                            <p style="margin:4px 0 0;color:#022c22;font-size:15px;font-weight:700;">
+                                                <%= submitterName %>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;">
+                                            <span
+                                                style="color:#64748b;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;display:block;">Identity
+                                                ID</span>
+                                            <p style="margin:4px 0 0;color:#022c22;font-size:14px;font-weight:600;">
+                                                <%= submitterEmail %>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0;">
+                                            <span
+                                                style="color:#64748b;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;display:block;">Business
+                                                Designation</span>
+                                            <p style="margin:4px 0 0;color:#022c22;font-size:15px;font-weight:700;">
+                                                <%= businessName %>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div style="text-align:center;">
+                                <a href="<%= reviewUrl %>"
+                                    style="background-color:#022c22;color:#ffffff;padding:16px 28px;border-radius:12px;text-decoration:none;display:inline-block;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:0.15em;">Initialize
+                                    Review</a>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer Strip -->
+                    <tr>
+                        <td style="background-color:#f1f5f9;padding:24px 40px;text-align:center;">
+                            <p
+                                style="margin:0;color:#94a3b8;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">
+                                Taja Admin Control Portal • Taja Tech Innovations Limited
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

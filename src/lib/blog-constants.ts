@@ -1,0 +1,3 @@
+import { PRODUCT_IMAGE_PLACEHOLDER_URL } from "@/lib/brandAssets";
+
+export const BLOG_FALLBACK_IMAGE = PRODUCT_IMAGE_PLACEHOLDER_URL;

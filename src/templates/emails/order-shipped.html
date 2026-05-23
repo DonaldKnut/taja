@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Shipped | Taja Shop</title>
+</head>
+
+<body
+  style="margin:0;padding:0;background-color:#f8fafc;font-family:'Inter', system-ui, -apple-system, sans-serif;color:#1e293b;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f8fafc;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="600"
+          style="max-width:600px;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#059669;padding:48px 32px;text-align:center;position:relative;overflow:hidden;">
+              <div
+                style="position:absolute;top:0;right:0;width:150px;height:150px;background-color:rgba(255,255,255,0.1);filter:blur(40px);border-radius:50%;">
+              </div>
+
+              <img src="<%= logoUrl %>" alt="Taja Shop"
+                style="max-width:180px;height:auto;margin-bottom:24px;display:inline-block;" />
+
+              <h1
+                style="margin:0;color:#ffffff;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.3em;">
+                On Its Way!</h1>
+              <div style="height:1px;width:40px;background-color:#ffffff;margin:16px auto;opacity:0.3;"></div>
+              <p style="margin:0;color:#d1fae5;font-size:14px;font-weight:500;">Order #<%= orderNumber %></p>
+            </td>
+          </tr>
+
+          <!-- Content Section -->
+          <tr>
+            <td style="padding:48px 40px;">
+              <h2
+                style="margin:0 0 16px;font-size:24px;font-weight:900;color:#022c22;letter-spacing:-0.04em;text-transform:uppercase;font-style:italic;">
+                Great News, <%= customerName %>
+              </h2>
+              <p style="margin:0 0 32px;color:#64748b;font-size:16px;line-height:1.6;font-weight:500;">
+                Your order has been shipped and is on its way to you! You can track its journey in real-time using the tracking information below.
+              </p>
+
+              <!-- Tracking Info -->
+              <div
+                style="background-color:#ecfdf5;border-radius:20px;padding:32px;margin-bottom:32px;border:2px solid #059669;text-align:center;">
+                <p style="margin:0 0 8px;color:#065f46;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;">Tracking Number</p>
+                <p style="margin:0 0 16px;color:#022c22;font-size:28px;font-weight:900;font-family:monospace;letter-spacing:0.05em;"><%= trackingNumber %></p>
+                <p style="margin:0 0 16px;color:#065f46;font-size:14px;">via <%= provider === 'gokada' ? 'Gokada' : 'Kwik Delivery' %></p>
+                <a href="<%= trackingUrl %>"
+                  style="background-color:#059669;color:#ffffff;padding:14px 28px;border-radius:99px;text-decoration:none;display:inline-block;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Track Package</a>
+              </div>
+
+              <!-- Delivery Estimate -->
+              <div
+                style="background-color:#f8fafc;border-radius:20px;padding:24px;margin-bottom:32px;border:1px solid #e2e8f0;">
+                <h3 style="margin:0 0 16px;font-size:14px;font-weight:900;color:#022c22;text-transform:uppercase;letter-spacing:0.1em;">Estimated Delivery</h3>
+                <p style="margin:0 0 8px;color:#022c22;font-size:24px;font-weight:900;"><%= estimatedDelivery %></p>
+                <p style="margin:0;color:#64748b;font-size:14px;">to <%= shippingAddress.city %>, <%= shippingAddress.state %></p>
+              </div>
+
+              <!-- Driver Info (if available) -->
+              <% if (driver) { %>
+              <div
+                style="background-color:#f8fafc;border-radius:20px;padding:24px;margin-bottom:32px;border:1px solid #e2e8f0;">
+                <h3 style="margin:0 0 16px;font-size:14px;font-weight:900;color:#022c22;text-transform:uppercase;letter-spacing:0.1em;">Your Delivery Partner</h3>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td style="width:60px;vertical-align:middle;">
+                      <div style="width:50px;height:50px;background-color:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">🚚</div>
+                    </td>
+                    <td style="padding-left:16px;vertical-align:middle;">
+                      <p style="margin:0 0 4px;color:#022c22;font-size:16px;font-weight:700;"><%= driver.name %></p>
+                      <p style="margin:0 0 4px;color:#64748b;font-size:14px;"><%= driver.vehicleType %> • <%= driver.vehicleNumber %></p>
+                      <% if (driver.rating) { %>
+                      <p style="margin:0;color:#f59e0b;font-size:14px;">★ <%= driver.rating %>/5</p>
+                      <% } %>
+                    </td>
+                    <td style="text-align:right;vertical-align:middle;">
+                      <a href="tel:<%= driver.phone %>" style="background-color:#022c22;color:#ffffff;padding:10px 20px;border-radius:99px;text-decoration:none;display:inline-block;font-weight:700;font-size:12px;">Call Driver</a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              <% } %>
+
+              <!-- Order Summary -->
+              <div
+                style="background-color:#f8fafc;border-radius:20px;padding:24px;margin-bottom:32px;border:1px solid #e2e8f0;">
+                <h3 style="margin:0 0 16px;font-size:14px;font-weight:900;color:#022c22;text-transform:uppercase;letter-spacing:0.1em;">What's Coming</h3>
+                <% items.forEach(function(item) { %>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:12px;">
+                  <tr>
+                    <td style="vertical-align:middle;">
+                      <p style="margin:0;color:#022c22;font-size:14px;font-weight:600;"><%= item.name %></p>
+                      <p style="margin:0;color:#64748b;font-size:12px;">Qty: <%= item.quantity %></p>
+                    </td>
+                    <td style="text-align:right;vertical-align:middle;">
+                      <p style="margin:0;color:#059669;font-size:14px;font-weight:700;">₦<%= item.price.toLocaleString() %></p>
+                    </td>
+                  </tr>
+                </table>
+                <% }); %>
+              </div>
+
+              <!-- Important Info -->
+              <div style="background-color:#fff7ed;border-radius:20px;padding:24px;margin-bottom:32px;border:1px solid #fed7aa;">
+                <h3 style="margin:0 0 12px;font-size:14px;font-weight:900;color:#9a3412;text-transform:uppercase;letter-spacing:0.1em;">Important</h3>
+                <ul style="margin:0;padding-left:20px;color:#9a3412;font-size:14px;line-height:1.8;">
+                  <li>Please have someone available to receive the package</li>
+                  <li>You'll need to provide a signature or OTP for delivery</li>
+                  <li>Confirm delivery in your dashboard to release payment to seller</li>
+                </ul>
+              </div>
+
+              <div style="text-align:center;">
+                <a href="<%= orderUrl %>"
+                  style="background-color:#022c22;color:#ffffff;padding:18px 32px;border-radius:99px;text-decoration:none;display:inline-block;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:0.2em;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">View Full Order</a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f1f5f9;padding:24px 40px;text-align:center;">
+              <p
+                style="margin:0 0 8px;color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">
+                © <%= year %> Taja Tech Innovations Limited
+              </p>
+              <p style="margin:0;color:#94a3b8;font-size:12px;">
+                Need help? <a href="mailto:support@tajaapp.shop" style="color:#059669;text-decoration:none;">Contact Support</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

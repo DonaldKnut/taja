@@ -1,0 +1,360 @@
+import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
+import connectDB from '@/lib/db';
+import Product from '@/models/Product';
+import Shop from '@/models/Shop';
+import { authenticate, requireAuth } from '@/lib/middleware';
+import '@/models/Category'; // Ensure Category model is registered for populate('category')
+import { notifyOwnerViewAlert } from '@/lib/notifications';
+import { writeAuditLog } from '@/lib/audit';
+import { validateShippingPolicy } from '@/lib/delivery/shippingPolicy';
+import { sanitizeListingLocation } from '@/lib/productListingLocation';
+import { applyProductViewHit, attachProductViewDedupeCookie } from '@/lib/productViewIncrement';
+import { hashProductViewerIp, recordProductViewTelemetry } from '@/lib/productViewAnalytics';
+
+export const dynamic = 'force-dynamic';
+
+const normalizeMediaUrl = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://')
+  ) {
+    return trimmed;
+  }
+  return null;
+};
+
+// GET /api/products/:productId - Get product by ID or slug
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { productId: string } }
+) {
+  try {
+    await connectDB();
+
+    // Check if productId is a valid ObjectId, otherwise search by slug
+    const isObjectId = mongoose.Types.ObjectId.isValid(params.productId);
+
+    let product;
+    if (isObjectId) {
+      product = await Product.findById(params.productId)
+        .populate('seller', 'fullName avatar email')
+        .populate('shop', 'shopName shopSlug logo banner address')
+        .populate('category', 'name slug')
+        .lean();
+    } else {
+      // Search by slug
+      product = await Product.findOne({ slug: params.productId, status: { $ne: 'deleted' } })
+        .populate('seller', 'fullName avatar email')
+        .populate('shop', 'shopName shopSlug logo banner address')
+        .populate('category', 'name slug')
+        .lean();
+    }
+
+    if (!product) {
+      return NextResponse.json(
+        { success: false, message: 'Product not found' },
+        { status: 404 }
+      );
+    }
+
+    const productIdStr = String((product as any)._id);
+    const auth = await authenticate(request);
+    const sellerId =
+      typeof product.seller === 'object' && product.seller?._id
+        ? String(product.seller._id)
+        : String((product as any).seller);
+    const viewerUserId = auth.user?.userId ? String(auth.user.userId) : null;
+    const skipViewIncrement = Boolean(viewerUserId && viewerUserId === sellerId);
+
+    const { views: resolvedViews, setDedupeCookie } = await applyProductViewHit(
+      request,
+      productIdStr,
+      { views: (product as any).views },
+      { skipIncrement: skipViewIncrement }
+    );
+    const productPayload = { ...(product as any), views: resolvedViews };
+
+    if (!skipViewIncrement) {
+      recordProductViewTelemetry({
+        productId: productIdStr,
+        userId: viewerUserId,
+        ipHash: hashProductViewerIp(request),
+      });
+    }
+
+    // Notify seller that their product is being viewed (throttled per viewer + product).
+    try {
+      const viewerName = auth.user?.fullName || undefined;
+      const forwardedFor = request.headers.get('x-forwarded-for') || '';
+      const ip = forwardedFor.split(',')[0]?.trim() || 'unknown-ip';
+      const ua = request.headers.get('user-agent') || 'unknown-ua';
+      const anonViewerKey = `anon:${ip}:${ua.slice(0, 80)}`;
+      const viewerKey = viewerUserId ? `user:${viewerUserId}` : anonViewerKey;
+
+      if (sellerId && viewerUserId !== sellerId) {
+        await notifyOwnerViewAlert({
+          ownerUserId: sellerId,
+          entityType: 'product',
+          entityId: productIdStr,
+          entityName: (product as any).title,
+          entitySlug: (product as any).slug,
+          viewerName,
+          viewerKey,
+        });
+      }
+    } catch (notifyError) {
+      console.error('Product view notification error:', notifyError);
+    }
+
+    const res = NextResponse.json({
+      success: true,
+      data: productPayload,
+    });
+    if (setDedupeCookie) {
+      attachProductViewDedupeCookie(res, productIdStr);
+    }
+    return res;
+  } catch (error: any) {
+    console.error('Get product error:', error);
+    return NextResponse.json(
+      { success: false, message: error.message || 'Failed to fetch product' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/products/:productId - Update product
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { productId: string } }
+) {
+  return requireAuth(async (req, user) => {
+    try {
+      await connectDB();
+
+      const product = await Product.findById(params.productId);
+
+      if (!product) {
+        return NextResponse.json(
+          { success: false, message: 'Product not found' },
+          { status: 404 }
+        );
+      }
+
+      // Check if user owns the product or is admin
+      if (product.seller.toString() !== user.userId && user.role !== 'admin') {
+        return NextResponse.json(
+          { success: false, message: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+
+      const body = await request.json();
+
+      // Clean variants: drop any empty rows without a name to avoid validation errors
+      if (Array.isArray(body.variants)) {
+        body.variants = body.variants.filter(
+          (v: any) => v && typeof v.name === 'string' && v.name.trim().length > 0
+        );
+      }
+      if (Array.isArray(body.videos) && body.videos.length > 2) {
+        return NextResponse.json(
+          { success: false, message: 'Maximum 2 videos are allowed per product' },
+          { status: 400 }
+        );
+      }
+      if (Array.isArray(body.videos)) {
+        body.videos = body.videos
+          .map((v: any) => {
+            const normalizedUrl = normalizeMediaUrl(typeof v === 'string' ? v : v?.url);
+            return normalizedUrl
+              ? { ...(typeof v === 'object' && v ? v : {}), url: normalizedUrl, type: 'video' as const }
+              : null;
+          })
+          .filter((v): v is { url: string; type: 'video' } => Boolean(v))
+          .slice(0, 2);
+      }
+      if (Array.isArray(body.images)) {
+        body.images = body.images
+          .map((img: unknown) => normalizeMediaUrl(img))
+          .filter((img): img is string => Boolean(img))
+          .slice(0, 8);
+      }
+      const allowedFields = [
+        'title',
+        'description',
+        'longDescription',
+        'category',
+        'subcategory',
+        'condition',
+        'price',
+        'maxPrice',
+        'compareAtPrice',
+        'images',
+        'videos',
+        'inventory',
+        'shipping',
+        'specifications',
+        'seo',
+        'status',
+        'variants',
+        'isNegotiable',
+      ];
+
+      allowedFields.forEach((field) => {
+        if (body[field] !== undefined) {
+          if (field === 'inventory' || field === 'shipping' || field === 'seo') {
+            // For nested objects, we want to merge but prevent learking Mongoose internals
+            // Best way is to convert the existing Mongoose document to a plain object first if it exists
+            const existingValue = product[field] && typeof (product[field] as any).toObject === 'function'
+              ? (product[field] as any).toObject()
+              : (product as any)[field];
+
+            const merged = { ...existingValue, ...body[field] };
+            if (field === 'shipping' && body.shipping && typeof body.shipping === 'object') {
+              const inc = body.shipping as Record<string, unknown>;
+              if ('lagosMainlandDelivery' in inc && inc.lagosMainlandDelivery === null) {
+                delete (merged as any).lagosMainlandDelivery;
+              }
+              if ('lagosIslandDelivery' in inc && inc.lagosIslandDelivery === null) {
+                delete (merged as any).lagosIslandDelivery;
+              }
+            }
+            (product as any)[field] = merged;
+          } else if (field === 'specifications') {
+            // Specifications is a Map, should be replaced entirely or merged carefully
+            // Replacing entirely is safer if the user sends the full set
+            product.specifications = body[field];
+          } else if (field === 'maxPrice' && body[field] === null) {
+            // Clear legacy product-level max range; do not store null on a Number path
+            product.set('maxPrice', undefined);
+          } else {
+            (product as any)[field] = body[field];
+          }
+        }
+      });
+
+      if (Object.prototype.hasOwnProperty.call(body, 'listingLocation')) {
+        if (body.listingLocation === null) {
+          (product as any).listingLocation = undefined;
+          await Product.updateOne({ _id: product._id }, { $unset: { listingLocation: 1 } });
+        } else {
+          const sl = sanitizeListingLocation(body.listingLocation);
+          if (sl) {
+            (product as any).listingLocation = sl;
+          } else {
+            (product as any).listingLocation = undefined;
+            await Product.updateOne({ _id: product._id }, { $unset: { listingLocation: 1 } });
+          }
+        }
+      }
+
+      if (product.status !== 'draft') {
+        const shippingValidation = validateShippingPolicy((product as any).shipping);
+        if (!shippingValidation.isValid) {
+          return NextResponse.json(
+            { success: false, message: shippingValidation.message || 'Invalid shipping policy' },
+            { status: 400 }
+          );
+        }
+      }
+
+      await product.save();
+
+      if (body.maxPrice === null) {
+        await Product.updateOne({ _id: product._id }, { $unset: { maxPrice: 1 } });
+      }
+
+      await writeAuditLog({
+        request,
+        actorUserId: user.userId,
+        actorRole: user.role,
+        action: 'product.update',
+        entityType: 'product',
+        entityId: String(product._id),
+        metadata: {
+          status: product.status,
+          price: product.price,
+          imageCount: Array.isArray(product.images) ? product.images.length : 0,
+          videoCount: Array.isArray((product as any).videos) ? (product as any).videos.length : 0,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Product updated successfully',
+        data: product,
+      });
+    } catch (error: any) {
+      console.error('Update product error:', error);
+      return NextResponse.json(
+        { success: false, message: error.message || 'Failed to update product' },
+        { status: 500 }
+      );
+    }
+  })(request);
+}
+
+// DELETE /api/products/:productId - Delete product
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { productId: string } }
+) {
+  return requireAuth(async (req, user) => {
+    try {
+      await connectDB();
+
+      // Check if productId is a valid ObjectId, otherwise search by slug
+      const isObjectId = mongoose.Types.ObjectId.isValid(params.productId);
+      const product = isObjectId
+        ? await Product.findById(params.productId)
+        : await Product.findOne({ slug: params.productId, status: { $ne: 'deleted' } });
+
+      if (!product) {
+        return NextResponse.json(
+          { success: false, message: 'Product not found' },
+          { status: 404 }
+        );
+      }
+
+      // Check if user owns the product or is admin
+      if (product.seller.toString() !== user.userId && user.role !== 'admin') {
+        return NextResponse.json(
+          { success: false, message: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+
+      // Soft delete
+      product.status = 'deleted';
+      await product.save();
+
+      await writeAuditLog({
+        request,
+        actorUserId: user.userId,
+        actorRole: user.role,
+        action: 'product.delete',
+        entityType: 'product',
+        entityId: String(product._id),
+        metadata: { slug: product.slug, title: product.title },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Product deleted successfully',
+      });
+    } catch (error: any) {
+      console.error('Delete product error:', error);
+      return NextResponse.json(
+        { success: false, message: error.message || 'Failed to delete product' },
+        { status: 500 }
+      );
+    }
+  })(request);
+}
+

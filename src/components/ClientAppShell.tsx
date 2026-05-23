@@ -1,0 +1,121 @@
+"use client";
+
+import React, { useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "next-themes";
+import { Providers } from "@/components/Providers";
+import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
+import { CartDrawer, useCartStore } from "@/components/cart";
+import { WishlistDrawer } from "@/components/wishlist/WishlistDrawer";
+import { FloatingCart } from "@/components/ui/FloatingCart";
+import { CookieConsent } from "@/components/layout/CookieConsent";
+
+interface ClientAppShellProps {
+  children: React.ReactNode;
+}
+
+/** In dev, unregister any /sw.js so stale precached webpack chunks cannot break HMR (factory undefined `.call`). */
+function useUnregisterServiceWorkersInDevelopment() {
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    let cancelled = false;
+    void navigator.serviceWorker
+      .getRegistrations()
+      .then((regs) => {
+        if (cancelled) return;
+        return Promise.all(regs.map((r) => r.unregister()));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+}
+
+const AUTH_ROUTES_WITHOUT_PROVIDERS = [
+  // Removed /login because it now needs AuthProvider for useAuth()
+  // Removed /register because it now needs AuthProvider for useAuth()
+  "/forgot-password",
+  "/reset-password",
+  // Note: /auth/callback is NOT in this list because it needs AuthProvider
+  // to call refreshUser() after OAuth completes
+];
+
+/**
+ * Client app shell with conditional providers:
+ * - Most auth-related routes get a minimal shell (no Providers) to avoid
+ *   triggering the webpack runtime bug we've seen on some routes.
+ * - /login, /register and all other routes get the full Providers tree (Auth + ErrorBoundary).
+ *
+ * This ensures most auth pages stay stable while login, register and the rest of the app
+ * can use AuthContext and error boundaries.
+ */
+export function ClientAppShell({ children }: ClientAppShellProps) {
+  useUnregisterServiceWorkersInDevelopment();
+  const pathname = usePathname();
+  const isAuthRouteWithoutProviders =
+    typeof pathname === "string" &&
+    AUTH_ROUTES_WITHOUT_PROVIDERS.some((route) => pathname.startsWith(route));
+
+  // Minimal shell for specific auth routes (no Providers, no global cart/toaster/PWA)
+  return (
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
+      {isAuthRouteWithoutProviders ? (
+        <>
+          <div className="min-h-screen bg-gradient-to-br from-taja-light to-white dark:from-slate-950 dark:to-slate-900">
+            {children}
+          </div>
+          <Toaster
+            position="top-center"
+            containerClassName="toast-glass-container"
+            toastOptions={{
+              className: "toast-glass",
+              success: { className: "toast-glass toast-glass-success" },
+              error: { className: "toast-glass toast-glass-error" },
+              loading: { className: "toast-glass toast-glass-loading" },
+              duration: 4000,
+            }}
+          />
+        </>
+      ) : (
+        <Providers>
+          <CartShell>{children}</CartShell>
+        </Providers>
+      )}
+    </ThemeProvider>
+  );
+}
+
+function CartShell({ children }: { children: React.ReactNode }) {
+  const { isOpen, toggleCart } = useCartStore();
+
+  return (
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-taja-light to-white pb-24 md:pb-0 dark:from-slate-950 dark:to-slate-900">
+        {children}
+      </div>
+      <FloatingCart />
+      <MobileBottomNav />
+      <CookieConsent />
+      <CartDrawer isOpen={isOpen} onClose={toggleCart} />
+      <WishlistDrawer />
+      <Toaster
+        position="top-center"
+        containerClassName="toast-glass-container"
+        toastOptions={{
+          className: "toast-glass",
+          success: { className: "toast-glass toast-glass-success" },
+          error: { className: "toast-glass toast-glass-error" },
+          loading: { className: "toast-glass toast-glass-loading" },
+          duration: 4000,
+        }}
+      />
+    </>
+  );
+}
+
+
+
+
