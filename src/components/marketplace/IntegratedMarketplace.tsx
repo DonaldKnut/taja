@@ -793,20 +793,13 @@ export function IntegratedMarketplace({
                                 "px-4 sm:px-6 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80 transition-all duration-300 lg:hidden",
                                 cn(
                                     "fixed inset-x-0 z-[45] flex flex-col rounded-t-2xl border border-gray-200 border-b-0 max-w-2xl mx-auto w-[calc(100%-1rem)] sm:w-full",
-                                    hostShell
-                                        ? cn(
-                                              // Inside seller/buyer shell: no bottom nav, dock at safe-area bottom
-                                              "bottom-[env(safe-area-inset-bottom,0px)]",
-                                              mobileFilterDockExpanded
-                                                  ? "max-h-[min(85dvh,calc(100dvh-5rem))] shadow-[0_-12px_40px_-8px_rgba(15,23,42,0.12)] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
-                                                  : "max-h-[4.25rem] shadow-[0_-4px_20px_-6px_rgba(15,23,42,0.1)] pt-1.5 pb-1.5"
-                                          )
-                                        : cn(
-                                              "bottom-[calc(env(safe-area-inset-bottom,0px)+var(--mobile-bottom-nav-height,4.25rem))]",
-                                              mobileFilterDockExpanded
-                                                  ? "max-h-[min(85dvh,calc(100dvh-5rem))] shadow-[0_-12px_40px_-8px_rgba(15,23,42,0.12)] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
-                                                  : "max-h-[4.25rem] shadow-[0_-4px_20px_-6px_rgba(15,23,42,0.1)] pt-1.5 pb-1.5"
-                                          )
+                                    // Both hostShell (seller/buyer) and standalone: dock above the bottom nav bar
+                                    cn(
+                                        "bottom-[calc(env(safe-area-inset-bottom,0px)+var(--mobile-bottom-nav-height,4.25rem))]",
+                                        mobileFilterDockExpanded
+                                            ? "max-h-[min(85dvh,calc(100dvh-5rem))] shadow-[0_-12px_40px_-8px_rgba(15,23,42,0.12)] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+                                            : "max-h-[4.25rem] shadow-[0_-4px_20px_-6px_rgba(15,23,42,0.1)] pt-1.5 pb-1.5"
+                                    )
                                 )
                             )}
                         >
