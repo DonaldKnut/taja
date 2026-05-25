@@ -130,7 +130,21 @@ export async function api(path: string, opts: Options = {}) {
             path.startsWith("/register") ||
             path.startsWith("/forgot-password");
           const onLogisticsAuth = path.startsWith("/logistics/login");
-          if (!onBuyerSellerAuth && !onLogisticsAuth) {
+
+          // Only redirect to login on routes that actually require authentication.
+          // Public pages (marketplace, homepage, product, shop, blog, etc.) should
+          // silently drop the stale token without kicking the user to /login.
+          const protectedRoutes = [
+            "/dashboard",
+            "/checkout",
+            "/seller",
+            "/admin",
+            "/logistics/dashboard",
+            "/onboarding",
+          ];
+          const onProtectedPage = protectedRoutes.some((r) => path.startsWith(r));
+
+          if (!onBuyerSellerAuth && !onLogisticsAuth && onProtectedPage) {
             const redirectParam = encodeURIComponent(path + window.location.search);
             window.location.href = useLogisticsLogin
               ? `/logistics/login?redirect=${redirectParam}`

@@ -95,7 +95,7 @@ export function AppHeader({ transparent = false, solidLightHeader = false }: App
         <>
             <header
         className={cn(
-                    "sticky top-0 w-full z-[9999] transition-all duration-500 relative overflow-visible",
+                    "fixed top-0 left-0 right-0 w-full z-[9999] transition-all duration-500 overflow-visible",
                     solidLightHeader && !isTransparent
                         ? "bg-white border-b border-gray-200/90 shadow-sm dark:bg-white dark:border-gray-200/90"
                         : isTransparent
@@ -277,6 +277,8 @@ export function AppHeader({ transparent = false, solidLightHeader = false }: App
                     </div>
                 </Container>
             </header>
+            {/* Spacer to offset fixed header height */}
+            <div className="h-20" aria-hidden="true" />
 
             {/* Mobile Menu Overlay */}
             <AnimatePresence>

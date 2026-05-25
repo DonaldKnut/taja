@@ -97,10 +97,10 @@ export function ProductDetailGallery({
         <div className="lg:hidden relative aspect-square mb-4">
           <div
             className={cn(
-              "w-full bg-slate-50 overflow-hidden z-20 transition-all duration-700 ease-in-out",
+              "w-full bg-slate-50 overflow-hidden transition-all duration-700 ease-in-out",
               isSticky
-                ? "fixed top-0 left-0 right-0 h-[35vh] sm:h-[40vh] shadow-2xl border-b border-white/20"
-                : "relative h-full"
+                ? "fixed top-0 left-0 right-0 h-[35vh] sm:h-[40vh] shadow-2xl border-b border-white/20 z-[10000]"
+                : "relative h-full z-20"
             )}
           >
             {renderMainMedia()}

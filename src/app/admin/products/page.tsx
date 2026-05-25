@@ -1,35 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
     Search,
     Package,
-    Filter,
     Eye,
     Clock,
     CheckCircle,
     XCircle,
     AlertTriangle,
-    MoreVertical,
     ChevronLeft,
     ChevronRight,
     TrendingUp,
     Store,
-    Tag,
-    BarChart2,
     Pause,
     Play,
     Trash2,
     Pencil,
+    X,
+    ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
+import { Card, CardContent } from "@/components/ui/Card";
 import { api } from "@/lib/api";
 import { toast } from "react-hot-toast";
-import { Badge } from "@/components/ui/Badge";
 import { ConfirmModal } from "@/components/modal/ConfirmModal";
+import { cn } from "@/lib/utils";
 
 interface Product {
     _id: string;
@@ -45,10 +42,18 @@ interface Product {
         fullName: string;
     };
     shop?: {
+        _id: string;
         shopName: string;
     };
     images: string[];
     createdAt: string;
+}
+
+interface ShopOption {
+    _id: string;
+    shopName: string;
+    shopSlug: string;
+    owner?: { fullName?: string; email?: string };
 }
 
 const STATUS_CONFIG = {
@@ -74,8 +79,27 @@ export default function AdminProductsPage() {
         productId: null,
         action: null,
     });
+
+    // Shop filter state
+    const [shops, setShops] = useState<ShopOption[]>([]);
+    const [shopSearch, setShopSearch] = useState("");
+    const [selectedShop, setSelectedShop] = useState<ShopOption | null>(null);
+    const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
+    const shopDropdownRef = useRef<HTMLDivElement>(null);
+
     // Track admin sidebar collapsed state so the bottom filter bar offsets correctly
     const [adminSidebarCollapsed, setAdminSidebarCollapsed] = useState(false);
+
+    // Close shop dropdown on outside click
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (shopDropdownRef.current && !shopDropdownRef.current.contains(e.target as Node)) {
+                setShopDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
 
     useEffect(() => {
         try {
@@ -90,9 +114,24 @@ export default function AdminProductsPage() {
         return () => window.removeEventListener("storage", onStorage);
     }, []);
 
+    // Fetch shops for the shop picker
+    useEffect(() => {
+        const fetchShops = async () => {
+            try {
+                const res = await api("/api/admin/shops?limit=500");
+                if (res?.success && Array.isArray(res?.data)) {
+                    setShops(res.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch shops", err);
+            }
+        };
+        fetchShops();
+    }, []);
+
     useEffect(() => {
         fetchProducts();
-    }, [page, statusFilter, categoryFilter]);
+    }, [page, statusFilter, categoryFilter, selectedShop]);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -149,6 +188,8 @@ export default function AdminProductsPage() {
             if (search.trim()) params.append("search", search.trim());
             if (statusFilter) params.append("status", statusFilter);
             if (categoryFilter) params.append("category", categoryFilter);
+            // If a specific shop is selected, search by that shop's name (exact)
+            if (selectedShop) params.append("shopId", selectedShop._id);
 
             const response = await api(`/api/admin/products?${params.toString()}`);
             if (response?.success) {
@@ -168,6 +209,23 @@ export default function AdminProductsPage() {
         e.preventDefault();
         setPage(1);
         fetchProducts();
+    };
+
+    const filteredShops = shops.filter((shop) => {
+        const q = shopSearch.trim().toLowerCase();
+        if (!q) return true;
+        return (
+            shop.shopName.toLowerCase().includes(q) ||
+            (shop.owner?.fullName ?? "").toLowerCase().includes(q) ||
+            (shop.owner?.email ?? "").toLowerCase().includes(q)
+        );
+    });
+
+    const clearShopFilter = () => {
+        setSelectedShop(null);
+        setShopSearch("");
+        setShopDropdownOpen(false);
+        setPage(1);
     };
 
     return (
@@ -265,6 +323,26 @@ export default function AdminProductsPage() {
                 </Card>
             </div>
 
+            {/* Active shop filter banner */}
+            {selectedShop && (
+                <div className="mb-6 flex items-center gap-3 px-5 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl w-fit">
+                    <Store className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span className="text-sm font-black text-emerald-900">
+                        Showing products for: <span className="text-emerald-600">{selectedShop.shopName}</span>
+                        {selectedShop.owner?.fullName && (
+                            <span className="text-emerald-400 font-bold"> · {selectedShop.owner.fullName}</span>
+                        )}
+                    </span>
+                    <button
+                        onClick={clearShopFilter}
+                        className="ml-2 p-1 rounded-full hover:bg-emerald-100 text-emerald-500 hover:text-emerald-700 transition-colors"
+                        title="Clear shop filter"
+                    >
+                        <X className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            )}
+
             {/* ── Fixed bottom filter bar ──────────────────────────────────────────── */}
             <div
                 className={cn(
@@ -285,6 +363,94 @@ export default function AdminProductsPage() {
                             />
                         </div>
                         <div className="flex items-center gap-0 border-t md:border-t-0 md:border-l border-slate-100 overflow-x-auto">
+                            {/* Shop picker */}
+                            <div className="relative h-12 shrink-0" ref={shopDropdownRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShopDropdownOpen((o) => !o)}
+                                    className={cn(
+                                        "h-12 px-5 flex items-center gap-2 bg-transparent border-none focus:ring-0 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-colors border-r border-slate-100",
+                                        selectedShop ? "text-emerald-600" : "text-slate-500 hover:text-emerald-600"
+                                    )}
+                                >
+                                    <Store className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="max-w-[120px] truncate">
+                                        {selectedShop ? selectedShop.shopName : "All Shops"}
+                                    </span>
+                                    {selectedShop ? (
+                                        <X
+                                            className="h-3 w-3 shrink-0 hover:text-rose-500"
+                                            onClick={(e) => { e.stopPropagation(); clearShopFilter(); }}
+                                        />
+                                    ) : (
+                                        <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", shopDropdownOpen && "rotate-180")} />
+                                    )}
+                                </button>
+
+                                {shopDropdownOpen && (
+                                    <div className="absolute bottom-14 left-0 z-50 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                                        <div className="p-3 border-b border-slate-100">
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                                <input
+                                                    autoFocus
+                                                    placeholder="Search shops..."
+                                                    className="w-full h-9 pl-9 pr-3 text-sm font-bold text-slate-900 bg-slate-50 rounded-xl border border-slate-100 focus:outline-none focus:border-emerald-400 placeholder:text-slate-300"
+                                                    value={shopSearch}
+                                                    onChange={(e) => setShopSearch(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="max-h-60 overflow-y-auto">
+                                            <button
+                                                type="button"
+                                                onClick={clearShopFilter}
+                                                className={cn(
+                                                    "w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest transition-colors hover:bg-slate-50",
+                                                    !selectedShop ? "text-emerald-600 bg-emerald-50/50" : "text-slate-500"
+                                                )}
+                                            >
+                                                All Shops
+                                            </button>
+                                            {filteredShops.length === 0 ? (
+                                                <p className="px-4 py-6 text-center text-xs text-slate-400 font-bold">No shops found</p>
+                                            ) : (
+                                                filteredShops.map((shop) => (
+                                                    <button
+                                                        key={shop._id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedShop(shop);
+                                                            setShopDropdownOpen(false);
+                                                            setPage(1);
+                                                        }}
+                                                        className={cn(
+                                                            "w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 border-t border-slate-50",
+                                                            selectedShop?._id === shop._id && "bg-emerald-50/60"
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className="h-7 w-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                                                                <Store className="h-3.5 w-3.5 text-emerald-600" />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="text-xs font-black text-slate-900 truncate">{shop.shopName}</p>
+                                                                {shop.owner?.fullName && (
+                                                                    <p className="text-[10px] font-bold text-slate-400 truncate">{shop.owner.fullName}</p>
+                                                                )}
+                                                            </div>
+                                                            {selectedShop?._id === shop._id && (
+                                                                <CheckCircle className="h-3.5 w-3.5 text-emerald-500 ml-auto shrink-0" />
+                                                            )}
+                                                        </div>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <select
                                 value={categoryFilter}
                                 onChange={(e) => setCategoryFilter(e.target.value)}
@@ -335,7 +501,24 @@ export default function AdminProductsPage() {
                                     </tr>
                                 ) : products.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500 italic">No products found</td>
+                                        <td colSpan={6} className="px-6 py-16 text-center">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center">
+                                                    <Package className="h-6 w-6 text-slate-400" />
+                                                </div>
+                                                <p className="text-sm font-black text-slate-400 uppercase tracking-widest">
+                                                    {selectedShop ? `No products found for ${selectedShop.shopName}` : "No products found"}
+                                                </p>
+                                                {selectedShop && (
+                                                    <button
+                                                        onClick={clearShopFilter}
+                                                        className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:underline"
+                                                    >
+                                                        Clear shop filter
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
                                     </tr>
                                 ) : (
                                     products.map((product) => (
@@ -359,10 +542,26 @@ export default function AdminProductsPage() {
                                             </td>
                                             <td className="px-6 py-5 text-center">
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-sm font-black text-slate-900 tracking-tight flex items-center gap-1.5">
-                                                        <Store className="h-3 w-3 text-emerald-500" />
+                                                    <button
+                                                        type="button"
+                                                        title="Filter by this shop"
+                                                        onClick={() => {
+                                                            if (product.shop) {
+                                                                const shopData = shops.find(s => s._id === product.shop!._id);
+                                                                if (shopData) {
+                                                                    setSelectedShop(shopData);
+                                                                    setPage(1);
+                                                                }
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "text-sm font-black text-slate-900 tracking-tight flex items-center gap-1.5 group/shop",
+                                                            product.shop && "hover:text-emerald-600 transition-colors cursor-pointer"
+                                                        )}
+                                                    >
+                                                        <Store className="h-3 w-3 text-emerald-500 group-hover/shop:scale-110 transition-transform" />
                                                         {product.shop?.shopName || 'External Merchant'}
-                                                    </span>
+                                                    </button>
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{product.seller.fullName}</span>
                                                 </div>
                                             </td>
