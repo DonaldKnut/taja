@@ -241,12 +241,12 @@ export default function DashboardLayout({
                   <Link
                     href="/admin/dashboard"
                     onClick={onNavigate}
-                    className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-950 text-emerald-400 border border-emerald-500/20 shadow-lg hover:shadow-emerald/20 transition-all group"
+                    className="flex items-center gap-3 p-4 rounded-2xl bg-white text-taja-secondary border border-gray-100 shadow-sm hover:border-taja-primary/20 hover:shadow-md transition-all group"
                   >
-                    <Zap className="h-[18px] w-[18px] animate-pulse" />
+                    <Zap className="h-[18px] w-[18px] text-taja-primary" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mb-1">Admin Dashboard</p>
-                      <p className="text-[10px] text-emerald-500/60 font-medium">Manage Platform</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mb-1 text-taja-secondary">Admin Dashboard</p>
+                      <p className="text-[10px] text-gray-400 font-medium">Manage platform</p>
                     </div>
                   </Link>
                 </div>

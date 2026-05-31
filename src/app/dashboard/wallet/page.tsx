@@ -124,7 +124,7 @@ export default function WalletPage() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-5xl mx-auto space-y-14 py-10 pb-24 px-4 md:px-0">
+      <div className="max-w-5xl mx-auto space-y-14 py-10 pb-24 px-4 sm:px-6 md:px-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-black text-taja-secondary tracking-tight leading-tight">
@@ -143,7 +143,7 @@ export default function WalletPage() {
             >
               <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-[-20deg]" />
               <PlusCircle className="mr-3 h-4 w-4" />
-              {funding ? "Synching..." : "Inject Capital"}
+              {funding ? "Processing..." : "Add Money"}
             </button>
           </div>
         </div>
@@ -227,7 +227,7 @@ export default function WalletPage() {
                       className="h-14 rounded-full px-10 bg-white/5 backdrop-blur-xl border border-white/10 text-white text-[11px] font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all active:scale-95" 
                       onClick={refresh}
                     >
-                      Sync Wallet
+                      Refresh Balance
                     </button>
                   </div>
                 </div>
@@ -386,7 +386,7 @@ export default function WalletPage() {
                   onClick={handleFund}
                   disabled={funding}
                 >
-                  {funding ? "Processing..." : "Inject Capital"}
+                  {funding ? "Processing..." : "Add Money"}
                   <ArrowRight className="ml-3 h-4 w-4 group-hover/fund:translate-x-1 transition-transform" />
                 </Button>
                 

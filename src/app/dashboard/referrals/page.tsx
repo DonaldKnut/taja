@@ -92,15 +92,15 @@ export default function ReferralsPage() {
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Coordinate copied to clipboard");
+      toast.success("Copied to clipboard");
     } catch {
-      toast.error("Copy operation failed");
+      toast.error("Failed to copy");
     }
   };
 
   const handleApply = async () => {
     const code = applyCode.trim().toUpperCase();
-    if (!code) return toast.error("Coordinate required");
+    if (!code) return toast.error("Please enter a referral code");
     setApplying(true);
     try {
       const res = await api("/api/referrals/apply", {
@@ -108,14 +108,14 @@ export default function ReferralsPage() {
         body: JSON.stringify({ code }),
       }) as any;
       if (res?.success) {
-        toast.success("Affiliation synchronized");
+        toast.success("Referral code applied!");
         setApplyCode("");
         await load();
       } else {
-        toast.error(res?.message || "Sync failed");
+        toast.error(res?.message || "Could not apply code");
       }
     } catch (e: any) {
-      toast.error(e?.message || "Operation aborted");
+      toast.error(e?.message || "Something went wrong");
     } finally {
       setApplying(false);
     }

@@ -1,86 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>New Shop Protocol | Taja Admin</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
 </head>
-
-<body
-    style="margin:0;padding:0;background-color:#f8fafc;font-family:'Inter', system-ui, -apple-system, sans-serif;color:#1e293b;">
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f8fafc;">
-        <tr>
-            <td align="center" style="padding:40px 16px;">
-                <table role="presentation" cellpadding="0" cellspacing="0" width="600"
-                    style="max-width:600px;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
-                    <!-- Cinematic Header -->
-                    <tr>
-                        <td style="background-color:#022c22;padding:40px 32px;text-align:center;">
-                            <img src="<%= logoUrl %>" alt="Taja Shop"
-                                style="max-width:150px;height:auto;margin-bottom:16px;display:inline-block;" />
-                            <h1
-                                style="margin:0;color:#34d399;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.3em;">
-                                Network Expansion Alert</h1>
-                        </td>
-                    </tr>
-
-                    <!-- Content Section -->
-                    <tr>
-                        <td style="padding:48px 40px;">
-                            <h2
-                                style="margin:0 0 8px;font-size:20px;font-weight:900;color:#022c22;letter-spacing:-0.02em;">
-                                New Shop Registered</h2>
-                            <p style="margin:0 0 24px;color:#64748b;font-size:14px;font-weight:500;">A new curator has
-                                initialized a shop and is waiting for network verification.</p>
-
-                            <div
-                                style="background-color:#f8fafc;border-radius:16px;padding:24px;margin-bottom:32px;border:1px solid #e2e8f0;">
-                                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-                                    <tr>
-                                        <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;">
-                                            <span
-                                                style="color:#64748b;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;display:block;">Shop
-                                                Alias</span>
-                                            <p style="margin:4px 0 0;color:#059669;font-size:16px;font-weight:900;">
-                                                <%= shopName %>
-                                            </p>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:8px 0;">
-                                            <span
-                                                style="color:#64748b;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;display:block;">Master
-                                                Curator</span>
-                                            <p style="margin:4px 0 0;color:#022c22;font-size:14px;font-weight:700;">
-                                                <%= ownerName %> (<%= ownerEmail %>)
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-
-                            <div style="text-align:center;">
-                                <a href="<%= reviewUrl %>"
-                                    style="background-color:#022c22;color:#ffffff;padding:16px 28px;border-radius:12px;text-decoration:none;display:inline-block;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:0.15em;">Verify
-                                    Shop Protocol</a>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <!-- Footer Strip -->
-                    <tr>
-                        <td style="background-color:#f1f5f9;padding:24px 40px;text-align:center;">
-                            <p
-                                style="margin:0;color:#94a3b8;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">
-                                Taja Admin Control Portal • Expanding the Ecosystem
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+<body style="margin:0;padding:0;">
+  <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f7; padding:32px 0;">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px 28px;border:1px solid #edf0f4;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <img src="<%= logoUrl %>" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:12px;" />
+      </div>
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:6px;">New Shop</div>
+      <div style="font-size:20px;font-weight:900;color:#0f172a;margin-bottom:12px;">A New Shop Has Been Created</div>
+      <p style="font-size:14px;color:#334155;margin:0 0 16px;line-height:1.6;">
+        A seller has set up a new shop and is waiting for you to verify their account before they can start selling.
+      </p>
+      <div style="background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:24px;border:1px solid #e2e8f0;font-size:14px;color:#0f172a;line-height:1.6;">
+        <p style="margin:0 0 8px;"><strong>Shop Name:</strong> <%= shopName %></p>
+        <p style="margin:0;"><strong>Owner:</strong> <%= ownerName %> (<%= ownerEmail %>)</p>
+      </div>
+      <div style="text-align:center;margin-bottom:24px;">
+        <a href="<%= reviewUrl %>" style="display:inline-block;background:#0f172a;color:#ffffff;padding:12px 28px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;">
+          Review Shop
+        </a>
+      </div>
+      <p style="font-size:12px;color:#9ca3af;margin:0;text-align:center;">
+        © <%= year %> Taja Admin
+      </p>
+    </div>
+  </div>
 </body>
-
 </html>

@@ -26,6 +26,7 @@ import {
   BoxSelect,
   Link2,
   Upload,
+  MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -53,6 +54,7 @@ interface SellerProduct {
   views: number;
   likes: number;
   sales: number;
+  location?: string;
 }
 
 const container = {
@@ -142,6 +144,11 @@ export default function SellerProductsPage() {
             views: product.views || 0,
             likes: product.likes || 0,
             sales: product.sales || 0,
+            location: product.listingLocation?.city && product.listingLocation?.state
+              ? `${product.listingLocation.city}, ${product.listingLocation.state}`
+              : product.shop?.address?.city && product.shop?.address?.state
+                ? `${product.shop.address.city}, ${product.shop.address.state}`
+                : "Nigeria",
           }));
           setProducts(transformedProducts);
         }
@@ -337,8 +344,8 @@ export default function SellerProductsPage() {
       className="max-w-7xl mx-auto space-y-10 pb-20 px-4 sm:px-10 py-10"
     >
       {/* Header */}
-      <motion.div variants={item} className="flex flex-col lg:flex-row justify-between items-end gap-8">
-        <div className="space-y-2">
+      <motion.div variants={item} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 lg:gap-8">
+        <div className="space-y-2 w-full">
           <div className="flex items-center gap-3">
             <h1 className="text-4xl md:text-5xl font-black text-taja-secondary tracking-tighter uppercase italic">
               Your <span className="text-taja-primary">Products</span>
@@ -349,8 +356,9 @@ export default function SellerProductsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="glass-card flex p-1 border-white/60">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-3 w-full lg:w-auto">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="glass-card flex p-1 border-white/60 shrink-0">
             <button onClick={() => setViewMode("list")} className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-taja-primary text-white shadow-emerald' : 'text-gray-400 hover:text-gray-600'}`}>
               <List className="h-4 w-4" />
             </button>
@@ -359,7 +367,8 @@ export default function SellerProductsPage() {
             </button>
           </div>
 
-          <div className="h-8 w-px bg-white/40 mx-2" />
+          <div className="hidden sm:block h-8 w-px bg-white/40 mx-2" />
+          </div>
 
           {checkingShop ? (
             <div className="w-32 h-12 rounded-2xl bg-white/40 animate-pulse" />
@@ -375,7 +384,7 @@ export default function SellerProductsPage() {
               </span>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <label className="cursor-pointer">
                 <input
                   type="file"
@@ -471,7 +480,7 @@ export default function SellerProductsPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full">
           <Button variant="outline" className={`h-14 flex-1 rounded-[20px] border-white/60 text-[10px] font-black uppercase tracking-widest ${selected.size > 0 ? 'bg-taja-primary text-white border-taja-primary shadow-emerald' : ''}`}>
             <Tag className="mr-2 h-4 w-4" /> Bulk Actions ({selected.size})
           </Button>
@@ -532,7 +541,7 @@ export default function SellerProductsPage() {
                   {/* Background Shine */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-                  <div className="flex items-center gap-6 flex-1">
+                  <div className="flex items-center gap-4 sm:gap-6 flex-1 w-full">
                     <div className="w-8 shrink-0">
                       <input
                         type="checkbox"
@@ -551,7 +560,10 @@ export default function SellerProductsPage() {
                         <span className="text-[9px] font-bold text-gray-400 font-mono italic">ID: {product.id.slice(0, 8).toUpperCase()}</span>
                       </div>
                       <h4 className="text-lg font-black text-taja-secondary truncate mb-1 group-hover:text-taja-primary transition-colors">{product.title}</h4>
-                      <div className="flex items-center gap-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        {product.location && (
+                          <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> {product.location}</span>
+                        )}
                         <span className="flex items-center gap-1.5"><Eye className="h-3 w-3" /> {product.views.toLocaleString()}</span>
                         <span className="flex items-center gap-1.5"><Tag className="h-3 w-3" /> {product.likes.toLocaleString()} likes</span>
                         <span className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3" /> {product.sales.toLocaleString()}</span>
@@ -560,7 +572,7 @@ export default function SellerProductsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between lg:justify-end gap-10 mt-4 lg:mt-0">
+                  <div className="flex flex-wrap items-center justify-between lg:justify-end gap-4 sm:gap-6 lg:gap-10 mt-4 lg:mt-0 w-full lg:w-auto">
                     <div className="w-auto lg:w-32 text-left lg:text-left">
                       <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Yield</p>
                       <p className="text-lg font-black text-taja-secondary tracking-tight">₦{product.price.toLocaleString()}</p>
@@ -636,9 +648,15 @@ export default function SellerProductsPage() {
                       <span className="text-[9px] font-black text-taja-primary uppercase tracking-widest">{product.category}</span>
                       <p className="text-sm font-black text-taja-secondary">₦{product.price.toLocaleString()}</p>
                     </div>
-                    <h4 className="text-sm font-black text-taja-secondary line-clamp-2 mb-4 group-hover:text-taja-primary transition-colors">{product.title}</h4>
-                    <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                    <h4 className="text-sm font-black text-taja-secondary line-clamp-2 mb-2 group-hover:text-taja-primary transition-colors">{product.title}</h4>
+                    {product.location && (
+                      <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+                        <MapPin className="h-3 w-3" />
+                        <span>{product.location}</span>
+                      </div>
+                    )}
+                    <div className="mt-auto pt-4 border-t border-white/10 flex flex-wrap gap-4 items-center justify-between">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1"><Eye className="h-3 w-3" /> {product.views}</span>
                         <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1"><Tag className="h-3 w-3" /> {product.likes}</span>
                         <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> {product.sales}</span>

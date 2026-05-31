@@ -49,6 +49,30 @@ import {
 } from "@/lib/sanitizeProductDescriptionHtml";
 import { mergeSellerProductFormWithAiAnalysis } from "@/lib/productAiFillFromAnalysis";
 import type { ProductImageAiAnalysis } from "@/lib/ai/imageRecognition";
+import { validateShippingPolicy } from "@/lib/delivery/shippingPolicy";
+
+const categoryFields: Record<string, string[]> = {
+  "Fashion & Clothing": ["size", "color", "gender", "material"],
+  "Fashion": ["size", "color", "gender", "material"],
+  "Electronics & Gadgets": ["brand", "model", "technicalSpecs", "warranty"],
+  "Electronics": ["brand", "model", "technicalSpecs", "warranty"],
+  "Medicines & Health": ["manufacturer", "expiryDate", "dosage", "ingredients"],
+  "Medicines": ["manufacturer", "expiryDate", "dosage", "ingredients"],
+};
+
+const sizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+const colors = [
+  "Black",
+  "White",
+  "Red",
+  "Blue",
+  "Green",
+  "Yellow",
+  "Pink",
+  "Purple",
+  "Gray",
+  "Brown",
+];
 
 const SELLER_SIDEBAR_COLLAPSED_KEY = "taja_seller_sidebar_collapsed";
 
@@ -57,10 +81,13 @@ export default function EditProductPage() {
   const params = useParams();
   const productId = params?.id as string;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const variantImageInputRef = useRef<HTMLInputElement>(null);
+  const variantImageIndexRef = useRef<number>(0);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingVideos, setUploadingVideos] = useState(false);
+  const [uploadingVariantImage, setUploadingVariantImage] = useState<number | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [sellerSidebarUndocked, setSellerSidebarUndocked] = useState(false);
@@ -110,6 +137,7 @@ export default function EditProductPage() {
       stock: string;
       weight: string;
       sku?: string;
+      image?: string;
       active: boolean;
     }[],
     isNegotiable: false,
@@ -127,6 +155,18 @@ export default function EditProductPage() {
     const c = categories.find((x) => String(x._id) === String(formData.category));
     return c ? categoryPickerLabel(c) : "Select category";
   }, [formData.category, categories]);
+
+  const activeCategoryFields = useMemo(() => {
+    if (!formData.category) return [];
+    const cat = categories.find((x) => String(x._id) === String(formData.category));
+    if (!cat) return [];
+    const name = cat.name || "";
+    const matchedKey = Object.keys(categoryFields).find(
+      (k) => k.toLowerCase() === name.toLowerCase() || name.toLowerCase().includes(k.toLowerCase())
+    );
+    return matchedKey ? categoryFields[matchedKey] : [];
+  }, [formData.category, categories]);
+
   const [suggestedPrice, setSuggestedPrice] = useState("");
   const [aiFillModalOpen, setAiFillModalOpen] = useState(false);
 
@@ -425,6 +465,17 @@ export default function EditProductPage() {
     }
   };
 
+  const removeTag = (tag: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      seo: {
+        ...prev.seo,
+        tags: prev.seo.tags.filter((t) => t !== tag),
+      },
+    }));
+  };
+
+
   const addVariant = () => {
     setFormData(prev => ({
       ...prev,
@@ -448,6 +499,34 @@ export default function EditProductPage() {
       newVariants[index] = { ...newVariants[index], [field]: value };
       return { ...prev, variants: newVariants };
     });
+  };
+
+  const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const variantIndex = variantImageIndexRef.current;
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file?.type.startsWith("image/")) {
+      toast.error("Select an image file (JPG, PNG, etc.)");
+      return;
+    }
+    if (formData.images.length >= 8) {
+      toast.error("Max 8 images. Remove one from the main product images first.");
+      return;
+    }
+    setUploadingVariantImage(variantIndex);
+    try {
+      const url = await uploadProductImage(file);
+      setFormData((prev) => ({
+        ...prev,
+        images: [...prev.images, url].slice(0, 8),
+      }));
+      updateVariant(variantIndex, "image", url);
+      toast.success("Variant image uploaded");
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
+      setUploadingVariantImage(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
@@ -857,6 +936,190 @@ export default function EditProductPage() {
                 </div>
               </section>
 
+              {/* Specifications Section */}
+              <section className="glass-panel p-6 sm:p-10 border-white/60 rounded-[30px] sm:rounded-[40px] mt-10 shadow-premium bg-gradient-to-br from-white to-gray-50/30">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2.5 bg-taja-primary/10 rounded-2xl">
+                    <Settings className="w-5 h-5 text-taja-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-taja-secondary tracking-tight">Specifications</h2>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Product details & characteristics</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
+                  <div className="group space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                      Brand (Optional)
+                    </label>
+                    <Input
+                      name="specifications.brand"
+                      type="text"
+                      value={formData.specifications?.brand || ""}
+                      onChange={handleChange}
+                      className="rounded-2xl h-14 border-gray-100 focus:border-taja-primary transition-all text-sm font-bold text-taja-secondary"
+                      placeholder="e.g. Sony, Nike"
+                    />
+                  </div>
+                  <div className="group space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 group-focus-within:text-taja-primary transition-colors">
+                      Material (Optional)
+                    </label>
+                    <Input
+                      name="specifications.material"
+                      type="text"
+                      value={formData.specifications?.material || ""}
+                      onChange={handleChange}
+                      className="rounded-2xl h-14 border-gray-100 focus:border-taja-primary transition-all text-sm font-bold text-taja-secondary"
+                      placeholder="e.g. Cotton, Leather, Denim"
+                    />
+                  </div>
+                </div>
+
+                {/* Dynamic Specifications based on Category */}
+                {formData.category && activeCategoryFields.length > 0 && (
+                  <div className="space-y-8 mt-8 pt-8 border-t border-gray-100">
+                    {/* Fashion Fields */}
+                    {activeCategoryFields.includes("size") && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                        <div className="group space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Size</label>
+                          <select
+                            name="specifications.size"
+                            value={formData.specifications?.size || ""}
+                            onChange={handleChange}
+                            className="w-full h-14 px-5 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all font-bold text-taja-secondary text-[11px] font-black uppercase tracking-widest"
+                          >
+                            <option value="">Select size</option>
+                            {sizes.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="group space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Color</label>
+                          <select
+                            name="specifications.color"
+                            value={formData.specifications?.color || ""}
+                            onChange={handleChange}
+                            className="w-full h-14 px-5 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all font-bold text-taja-secondary text-[11px] font-black uppercase tracking-widest"
+                          >
+                            <option value="">Select color</option>
+                            {colors.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="group space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Gender</label>
+                          <select
+                            name="specifications.gender"
+                            value={formData.specifications?.gender || ""}
+                            onChange={handleChange}
+                            className="w-full h-14 px-5 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all font-bold text-taja-secondary text-[11px] font-black uppercase tracking-widest"
+                          >
+                            <option value="">Select gender</option>
+                            <option value="men">Men</option>
+                            <option value="women">Women</option>
+                            <option value="unisex">Unisex</option>
+                            <option value="kids">Kids</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Electronics Fields */}
+                    {activeCategoryFields.includes("model") && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                        <div className="group space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Model Name/Number</label>
+                          <Input
+                            name="specifications.model"
+                            type="text"
+                            value={formData.specifications?.model || ""}
+                            onChange={handleChange}
+                            className="rounded-2xl h-14 border-gray-100 focus:border-taja-primary transition-all text-sm font-bold text-taja-secondary"
+                            placeholder="e.g. iPhone 15 Pro"
+                          />
+                        </div>
+                        <div className="group space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Warranty Period</label>
+                          <Input
+                            name="specifications.warranty"
+                            type="text"
+                            value={formData.specifications?.warranty || ""}
+                            onChange={handleChange}
+                            className="rounded-2xl h-14 border-gray-100 focus:border-taja-primary transition-all text-sm font-bold text-taja-secondary"
+                            placeholder="e.g. 1 Year Local Warranty"
+                          />
+                        </div>
+                        <div className="group space-y-2 sm:col-span-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Technical Specifications</label>
+                          <textarea
+                            name="specifications.technicalSpecs"
+                            rows={4}
+                            value={formData.specifications?.technicalSpecs || ""}
+                            onChange={handleChange}
+                            className="w-full p-5 bg-white border border-gray-100 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all rounded-2xl text-sm font-medium text-taja-secondary resize-none"
+                            placeholder="e.g. 8GB RAM, 256GB SSD, OLED Display..."
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Medicines Fields */}
+                    {activeCategoryFields.includes("expiryDate") && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                        <div className="group space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Manufacturer</label>
+                          <Input
+                            name="specifications.manufacturer"
+                            type="text"
+                            value={formData.specifications?.manufacturer || ""}
+                            onChange={handleChange}
+                            className="rounded-2xl h-14 border-gray-100 focus:border-taja-primary transition-all text-sm font-bold text-taja-secondary"
+                            placeholder="e.g. Pfizer, GSK"
+                          />
+                        </div>
+                        <div className="group space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Expiry Date</label>
+                          <Input
+                            name="specifications.expiryDate"
+                            type="date"
+                            value={formData.specifications?.expiryDate ? formData.specifications.expiryDate.substring(0, 10) : ""}
+                            onChange={handleChange}
+                            className="rounded-2xl h-14 border-gray-100 focus:border-taja-primary transition-all text-sm font-bold text-taja-secondary"
+                          />
+                        </div>
+                        <div className="group space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Dosage Instructions</label>
+                          <Input
+                            name="specifications.dosage"
+                            type="text"
+                            value={formData.specifications?.dosage || ""}
+                            onChange={handleChange}
+                            className="rounded-2xl h-14 border-gray-100 focus:border-taja-primary transition-all text-sm font-bold text-taja-secondary"
+                            placeholder="e.g. 1 tablet twice daily"
+                          />
+                        </div>
+                        <div className="group space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Active Ingredients</label>
+                          <Input
+                            name="specifications.ingredients"
+                            type="text"
+                            value={formData.specifications?.ingredients || ""}
+                            onChange={handleChange}
+                            className="rounded-2xl h-14 border-gray-100 focus:border-taja-primary transition-all text-sm font-bold text-taja-secondary"
+                            placeholder="e.g. Paracetamol 500mg"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+
               {/* Product Variations Section */}
               <section className="glass-panel p-6 sm:p-10 border-white/60 rounded-[30px] sm:rounded-[40px] mt-10 shadow-premium bg-gradient-to-br from-white to-gray-50/30">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 sm:mb-10">
@@ -880,10 +1143,18 @@ export default function EditProductPage() {
                   </Button>
                 </div>
 
+                {/* Hidden file input for variant image uploads */}
+                <input
+                  ref={variantImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  aria-hidden
+                  onChange={handleVariantImageUpload}
+                />
+
                 {formData.variants.length > 0 ? (
                   <div className="space-y-10">
-                    {/* Grid layout labels are now inside the cards for more space */}
-
                     <AnimatePresence>
                       {formData.variants.map((variant, index) => (
                         <motion.div
@@ -891,7 +1162,7 @@ export default function EditProductPage() {
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.95 }}
-                          className="relative p-6 sm:p-4 glass-card bg-white border-gray-100 rounded-[2rem] sm:rounded-[1.5rem] shadow-sm hover:shadow-premium transition-all group"
+                          className="relative p-6 sm:p-8 glass-card bg-white border-gray-100 rounded-[2rem] shadow-sm hover:shadow-premium transition-all group"
                         >
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-start">
                              {/* Option Name Input */}
@@ -942,6 +1213,63 @@ export default function EditProductPage() {
                                  className="w-full h-16 px-6 bg-gray-50/50 border border-gray-100 focus:border-taja-primary focus:bg-white focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-[20px] text-base font-medium text-gray-500 shadow-sm"
                                />
                              </div>
+
+                             {/* Variant Image Section */}
+                             <div className="sm:col-span-2 space-y-3 pt-2">
+                               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                                 Variant Image
+                               </label>
+                               <div className="flex flex-col sm:flex-row gap-6 items-center bg-gray-50/30 p-4 rounded-[2rem] border border-gray-100/50">
+                                 <div className="flex-shrink-0">
+                                   {variant.image ? (
+                                     <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white shadow-premium">
+                                       <img src={variant.image} alt="" className="w-full h-full object-cover" />
+                                     </div>
+                                   ) : (
+                                     <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-200 bg-white flex flex-col items-center justify-center gap-1 text-gray-300">
+                                       <Camera className="w-6 h-6" />
+                                       <span className="text-[8px] font-black uppercase tracking-widest">No Image</span>
+                                     </div>
+                                   )}
+                                 </div>
+
+                                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                                   <select
+                                     value={variant.image || ""}
+                                     onChange={(e) => updateVariant(index, "image", e.target.value)}
+                                     className="w-full h-14 px-6 bg-white border border-gray-100 focus:border-taja-primary focus:ring-8 focus:ring-taja-primary/5 transition-all rounded-xl text-xs font-bold text-taja-secondary appearance-none shadow-sm"
+                                     disabled={uploadingVariantImage === index}
+                                   >
+                                     <option value="">{formData.images.length ? "Pick from product photos" : "Pick Image"}</option>
+                                     {formData.images.map((url, idx) => (
+                                       <option key={url} value={url}>Photo {idx + 1}</option>
+                                     ))}
+                                   </select>
+
+                                   <button
+                                     type="button"
+                                     onClick={() => {
+                                       variantImageIndexRef.current = index;
+                                       variantImageInputRef.current?.click();
+                                     }}
+                                     disabled={uploadingVariantImage !== null || formData.images.length >= 8}
+                                     className="flex items-center justify-center gap-2 h-14 px-6 rounded-xl border border-gray-200 bg-white text-[10px] font-black uppercase tracking-widest text-taja-secondary hover:bg-gray-50 hover:border-taja-primary transition-all shadow-sm disabled:opacity-50"
+                                   >
+                                     {uploadingVariantImage === index ? (
+                                       <Loader2 className="h-5 w-5 animate-spin text-taja-primary" />
+                                     ) : (
+                                       <Plus className="h-5 w-5" />
+                                     )}
+                                     {uploadingVariantImage === index ? "Uploading..." : "Upload New Photo"}
+                                   </button>
+                                 </div>
+                               </div>
+                               {formData.images.length === 0 && (
+                                 <p className="text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2 leading-snug mt-2">
+                                   Add product images above first, or upload a photo just for this option.
+                                 </p>
+                               )}
+                             </div>
                            </div>
 
                            {/* Absolute Remove Button */}
@@ -978,7 +1306,7 @@ export default function EditProductPage() {
                     <Zap className="w-4 h-4 text-white" />
                   </div>
                   <p className="text-[10px] font-bold text-blue-900 leading-relaxed uppercase tracking-widest mt-1">
-                    Add options like size or color so buyers can pick. Each option can have its own price and stock.
+                    Add options like size or color so buyers can pick. Each option can have its own price, stock and photo.
                   </p>
                 </div>
               </section>
@@ -1346,6 +1674,96 @@ export default function EditProductPage() {
                   </div>
                 </div>
               </motion.section>
+
+              {/* SEO & Discovery Section */}
+              <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2.5 bg-amber-500/10 rounded-2xl">
+                    <Tag className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-taja-secondary tracking-tight">SEO & Discovery</h2>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Search engine optimization & tags</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Meta Title */}
+                  <div className="group space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Meta Title</label>
+                    <Input
+                      name="seo.metaTitle"
+                      type="text"
+                      value={formData.seo?.metaTitle || ""}
+                      onChange={handleChange}
+                      className="rounded-xl h-12 text-sm font-semibold border-gray-100"
+                      placeholder="SEO Title (defaults to product title)"
+                    />
+                  </div>
+
+                  {/* Meta Description */}
+                  <div className="group space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Meta Description</label>
+                    <textarea
+                      name="seo.metaDescription"
+                      rows={3}
+                      value={formData.seo?.metaDescription || ""}
+                      onChange={handleChange}
+                      className="w-full p-4 bg-white border border-gray-100 focus:outline-none focus:ring-2 focus:ring-taja-primary/20 focus:border-taja-primary transition-all rounded-xl text-sm font-medium text-taja-secondary resize-none"
+                      placeholder="Short summary for search results"
+                    />
+                  </div>
+
+                  {/* Marketplace Tags */}
+                  <div className="group space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Discovery Tags</label>
+                    <div className="relative flex items-center">
+                      <Input
+                        type="text"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+                        className="rounded-xl h-12 pr-20 text-sm font-semibold border-gray-100"
+                        placeholder="Add tag..."
+                      />
+                      <button
+                        type="button"
+                        onClick={addTag}
+                        className="absolute right-2 h-8 px-4 bg-taja-secondary text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-taja-primary transition-all shadow-sm"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Tags list */}
+                  <div className="flex flex-wrap gap-2 min-h-[40px] pt-2">
+                    <AnimatePresence initial={false}>
+                      {(formData.seo?.tags || []).map((tag) => (
+                        <motion.span
+                          key={tag}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          className="inline-flex items-center px-3 py-1.5 bg-gray-50 border border-gray-100 text-taja-secondary text-[9px] font-bold uppercase tracking-wider rounded-full shadow-sm"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => removeTag(tag)}
+                            className="ml-2 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </motion.span>
+                      ))}
+                    </AnimatePresence>
+                    {(!formData.seo?.tags || formData.seo.tags.length === 0) && (
+                      <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest italic pt-2">No tags added yet.</p>
+                    )}
+                  </div>
+                </div>
+              </section>
 
               {/* Visibility Panel */}
               <section className="glass-panel rounded-[2.5rem] p-8 border-white/60 shadow-premium">

@@ -34,30 +34,14 @@ const loadTemplate = (templateName: string): string => {
 };
 
 // Render template with variables (simple string replacement)
-const renderTemplate = (
-  template: string,
-  variables: Record<string, any>,
-): string => {
+const renderTemplate = (template: string, variables: Record<string, any>): string => {
   let rendered = template;
   Object.keys(variables).forEach((key) => {
     const regex = new RegExp(`<%= ${key} %>`, "g");
     const value = variables[key] || "";
     rendered = rendered.replace(regex, String(value));
   });
-  // Handle conditional logo rendering
-  if (variables.logoUrl) {
-    rendered = rendered.replace(
-      /<% if \(typeof logoUrl !== 'undefined' && logoUrl\) \{ %>[\s\S]*?<% \} else \{ %>[\s\S]*?<% \} %>/g,
-      `<img src="${variables.logoUrl}" alt="Taja.Shop Logo" style="max-width:200px;height:auto;margin-bottom:12px;" />`,
-    );
-  } else {
-    rendered = rendered
-      .replace(
-        /<% if \(typeof logoUrl !== 'undefined' && logoUrl\) \{ %>[\s\S]*?<% \} else \{ %>/g,
-        "",
-      )
-      .replace(/<% \} %>/g, "");
-  }
+  // Handle conditional logo rendering (removing this logic as all templates will now just use <%= logoUrl %> directly)
   return rendered;
 };
 
@@ -162,32 +146,43 @@ export async function sendSellerApprovedEmail(
   const safeShopName = shopName || "your shop";
 
   const html = `
-    <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f7; padding:32px 0;">
-      <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px 28px;border:1px solid #edf0f4;">
-        <div style="text-align:center;margin-bottom:24px;">
-          <img src="${process.env.LOGO_URL || TAJA_LOGO_URL}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:12px;" />
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+    </head>
+    <body style="margin:0;padding:0;">
+      <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f7; padding:32px 0;">
+        <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px 28px;border:1px solid #edf0f4;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <img src="${process.env.LOGO_URL || TAJA_LOGO_URL}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:12px;" />
+          </div>
+          <p style="font-size:14px;color:#111827;margin:0 0 12px;">Hi ${safeName},</p>
+          <p style="font-size:14px;color:#111827;margin:0 0 12px;">
+            Great news — your seller verification has been <strong>approved</strong> and ${safeShopName} is now cleared to start selling on <strong>Taja.Shop</strong>.
+          </p>
+          <p style="font-size:14px;color:#111827;margin:0 0 16px;">
+            You can now create and publish products, receive orders, and manage your business directly from your Seller Dashboard.
+          </p>
+          <div style="text-align:center;margin:24px 0 28px;">
+            <a href="${dashboardUrl}"
+               style="display:inline-block;background:#111827;color:#ffffff;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;">
+              Open Seller Dashboard
+            </a>
+          </div>
+          <p style="font-size:13px;color:#6b7280;margin:0 0 4px;">
+            If you didn’t request seller access, please contact support immediately.
+          </p>
+          <p style="font-size:12px;color:#9ca3af;margin-top:24px;">
+            © ${new Date().getFullYear()} Taja.Shop. All rights reserved.
+          </p>
         </div>
-        <p style="font-size:14px;color:#111827;margin:0 0 12px;">Hi ${safeName},</p>
-        <p style="font-size:14px;color:#111827;margin:0 0 12px;">
-          Great news — your seller verification has been <strong>approved</strong> and ${safeShopName} is now cleared to start selling on <strong>Taja.Shop</strong>.
-        </p>
-        <p style="font-size:14px;color:#111827;margin:0 0 16px;">
-          You can now create and publish products, receive orders, and manage your business directly from your Seller Dashboard.
-        </p>
-        <div style="text-align:center;margin:24px 0 28px;">
-          <a href="${dashboardUrl}"
-             style="display:inline-block;background:#111827;color:#ffffff;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;">
-            Open Seller Dashboard
-          </a>
-        </div>
-        <p style="font-size:13px;color:#6b7280;margin:0 0 4px;">
-          If you didn’t request seller access, please contact support immediately.
-        </p>
-        <p style="font-size:12px;color:#9ca3af;margin-top:24px;">
-          © ${new Date().getFullYear()} Taja.Shop. All rights reserved.
-        </p>
       </div>
-    </div>
+    </body>
+    </html>
   `;
 
   try {
@@ -393,11 +388,26 @@ export async function sendBroadcastEmail(
       process.env.LOGO_URL ||
       TAJA_LOGO_URL;
     const html = `
-      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
-        <img src="${logoUrl}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:24px;" />
-        <div style="color:#333;line-height:1.6;">${htmlMessage}</div>
-        <p style="margin-top:32px;font-size:12px;color:#888;">© ${new Date().getFullYear()} Taja.Shop. You received this because you are registered on our platform.</p>
-      </div>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="light">
+        <meta name="supported-color-schemes" content="light">
+      </head>
+      <body style="margin:0;padding:0;">
+        <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f7; padding:32px 0;">
+          <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px 28px;border:1px solid #edf0f4;">
+            <div style="text-align:center;margin-bottom:24px;">
+              <img src="${logoUrl}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:12px;" />
+            </div>
+            <div style="font-size:14px;color:#111827;line-height:1.6;">${htmlMessage}</div>
+            <p style="margin-top:32px;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} Taja.Shop. You received this because you are registered on our platform.</p>
+          </div>
+        </div>
+      </body>
+      </html>
     `;
 
     return await sendTransactionalMail(email, subject, html);
@@ -699,24 +709,38 @@ export async function sendSupportTicketCreatedEmail(params: {
 
   const url = supportTicketLink(params.ticketId);
   const html = `
-    <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:#f5f5f7; padding:32px 0;">
-      <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #edf0f4;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">
-          <div>
-            <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#10b981;font-weight:800;">New Support Ticket</div>
-            <div style="font-size:18px;font-weight:900;color:#0f172a;margin-top:6px;">#${params.ticketNumber} — ${params.subject}</div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+    </head>
+    <body style="margin:0;padding:0;">
+      <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f7; padding:32px 0;">
+        <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px 28px;border:1px solid #edf0f4;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <img src="${process.env.LOGO_URL || TAJA_LOGO_URL}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:12px;" />
           </div>
-          <a href="${url}" style="background:#0f172a;color:white;padding:10px 14px;border-radius:999px;font-size:12px;font-weight:800;text-decoration:none;">Open in Admin</a>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">
+            <div>
+              <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#10b981;font-weight:800;">New Support Ticket</div>
+              <div style="font-size:18px;font-weight:900;color:#0f172a;margin-top:6px;">#${params.ticketNumber} — ${params.subject}</div>
+            </div>
+            <a href="${url}" style="background:#0f172a;color:white;padding:10px 14px;border-radius:999px;font-size:12px;font-weight:800;text-decoration:none;">Open in Admin</a>
+          </div>
+          <div style="font-size:13px;color:#334155;line-height:1.6;">
+            <p style="margin:0 0 10px;">
+              <strong>Requester:</strong> ${params.requesterName || "—"} ${params.requesterEmail ? `(${params.requesterEmail})` : ""}
+            </p>
+            <p style="margin:0 0 10px;"><strong>Category:</strong> ${params.category || "general"} &nbsp; • &nbsp; <strong>Priority:</strong> ${params.priority || "medium"}</p>
+          </div>
+          <p style="margin-top:24px;font-size:12px;color:#9ca3af;">Taja.Shop • ${new Date().getFullYear()}</p>
         </div>
-        <div style="font-size:13px;color:#334155;line-height:1.6;">
-          <p style="margin:0 0 10px;">
-            <strong>Requester:</strong> ${params.requesterName || "—"} ${params.requesterEmail ? `(${params.requesterEmail})` : ""}
-          </p>
-          <p style="margin:0 0 10px;"><strong>Category:</strong> ${params.category || "general"} &nbsp; • &nbsp; <strong>Priority:</strong> ${params.priority || "medium"}</p>
-        </div>
-        <p style="margin-top:18px;font-size:12px;color:#64748b;">Taja.Shop • ${new Date().getFullYear()}</p>
       </div>
-    </div>
+    </body>
+    </html>
   `;
 
   const r = await deliverHtmlMail({
@@ -756,24 +780,38 @@ export async function sendSupportTicketNewMessageEmail(params: {
 
   const url = supportTicketLink(params.ticketId);
   const html = `
-    <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:#f5f5f7; padding:32px 0;">
-      <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #edf0f4;">
-        <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#f59e0b;font-weight:800;">New Customer Message</div>
-        <div style="font-size:18px;font-weight:900;color:#0f172a;margin-top:6px;">#${params.ticketNumber} — ${params.subject}</div>
-        <p style="margin:12px 0 0;color:#334155;font-size:13px;">
-          <strong>From:</strong> ${params.senderName || "—"} ${params.senderEmail ? `(${params.senderEmail})` : ""}
-        </p>
-        <div style="margin-top:14px;background:#0f172a0a;border:1px solid #e2e8f0;border-radius:12px;padding:14px;">
-          <div style="color:#0f172a;font-size:13px;white-space:pre-wrap;line-height:1.55;">
-            ${params.messagePreview}
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+    </head>
+    <body style="margin:0;padding:0;">
+      <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f7; padding:32px 0;">
+        <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px 28px;border:1px solid #edf0f4;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <img src="${process.env.LOGO_URL || TAJA_LOGO_URL}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:12px;" />
           </div>
+          <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#f59e0b;font-weight:800;">New Customer Message</div>
+          <div style="font-size:18px;font-weight:900;color:#0f172a;margin-top:6px;">#${params.ticketNumber} — ${params.subject}</div>
+          <p style="margin:12px 0 0;color:#334155;font-size:13px;">
+            <strong>From:</strong> ${params.senderName || "—"} ${params.senderEmail ? `(${params.senderEmail})` : ""}
+          </p>
+          <div style="margin-top:14px;background:#0f172a0a;border:1px solid #e2e8f0;border-radius:12px;padding:14px;">
+            <div style="color:#0f172a;font-size:13px;white-space:pre-wrap;line-height:1.55;">
+              ${params.messagePreview}
+            </div>
+          </div>
+          <div style="margin-top:24px;text-align:center;">
+            <a href="${url}" style="display:inline-block;background:#0f172a;color:white;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:800;text-decoration:none;">Reply in Admin</a>
+          </div>
+          <p style="margin-top:24px;font-size:12px;color:#9ca3af;">Taja.Shop • ${new Date().getFullYear()}</p>
         </div>
-        <div style="margin-top:16px;">
-          <a href="${url}" style="background:#0f172a;color:white;padding:10px 14px;border-radius:999px;font-size:12px;font-weight:800;text-decoration:none;">Reply in Admin</a>
-        </div>
-        <p style="margin-top:18px;font-size:12px;color:#64748b;">Taja.Shop • ${new Date().getFullYear()}</p>
       </div>
-    </div>
+    </body>
+    </html>
   `;
 
   const r = await deliverHtmlMail({
@@ -803,19 +841,33 @@ export async function sendSupportTicketAssignedEmail(params: {
 
   const url = supportTicketLink(params.ticketId);
   const html = `
-    <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:#f5f5f7; padding:32px 0;">
-      <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #edf0f4;">
-        <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#10b981;font-weight:800;">Ticket Assigned</div>
-        <div style="font-size:18px;font-weight:900;color:#0f172a;margin-top:6px;">#${params.ticketNumber} — ${params.subject}</div>
-        <p style="margin:12px 0 0;color:#334155;font-size:13px;">
-          Hi ${params.assigneeName || "there"}, this ticket has been assigned to you${params.assignedByName ? ` by ${params.assignedByName}` : ""}.
-        </p>
-        <div style="margin-top:16px;">
-          <a href="${url}" style="background:#0f172a;color:white;padding:10px 14px;border-radius:999px;font-size:12px;font-weight:800;text-decoration:none;">Open ticket</a>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+    </head>
+    <body style="margin:0;padding:0;">
+      <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f7; padding:32px 0;">
+        <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px 28px;border:1px solid #edf0f4;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <img src="${process.env.LOGO_URL || TAJA_LOGO_URL}" alt="Taja.Shop" style="max-width:180px;height:auto;margin-bottom:12px;" />
+          </div>
+          <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#10b981;font-weight:800;">Ticket Assigned</div>
+          <div style="font-size:18px;font-weight:900;color:#0f172a;margin-top:6px;">#${params.ticketNumber} — ${params.subject}</div>
+          <p style="margin:12px 0 0;color:#334155;font-size:13px;">
+            Hi ${params.assigneeName || "there"}, this ticket has been assigned to you${params.assignedByName ? ` by ${params.assignedByName}` : ""}.
+          </p>
+          <div style="margin-top:24px;text-align:center;">
+            <a href="${url}" style="display:inline-block;background:#0f172a;color:white;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:800;text-decoration:none;">Open ticket</a>
+          </div>
+          <p style="margin-top:24px;font-size:12px;color:#9ca3af;">Taja.Shop • ${new Date().getFullYear()}</p>
         </div>
-        <p style="margin-top:18px;font-size:12px;color:#64748b;">Taja.Shop • ${new Date().getFullYear()}</p>
       </div>
-    </div>
+    </body>
+    </html>
   `;
 
   const r = await deliverHtmlMail({
