@@ -38,7 +38,25 @@
     --font-sora: "Sora";
     --font-jakarta: "Plus Jakarta Sans";
   }
+}
 
+/* ── Naira sign (₦) glyph fix ──────────────────────────────────────────────
+   Sora and Plus Jakarta Sans don't include the Naira sign (U+20A6), causing
+   it to render as a distorted "N". This @font-face intercepts only that single
+   code point and hands it to system fonts that render it cleanly.
+   ─────────────────────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "Sora";
+  src: local("Arial"), local("Segoe UI"), local("Helvetica Neue"), local("sans-serif");
+  unicode-range: U+20A6; /* ₦ Naira sign */
+}
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: local("Arial"), local("Segoe UI"), local("Helvetica Neue"), local("sans-serif");
+  unicode-range: U+20A6; /* ₦ Naira sign */
+}
+
+@layer base {
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
